@@ -1,0 +1,25 @@
+# 環境変数
+.env
+.env.local
+.env.*.local
+
+# 依存関係
+node_modules/
+
+# ビルド成果物
+.next/
+dist/
+build/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# エディタ
+.vscode/
+*.swp
+
+# 戦略資料（ローカル管理）
+*.pdf
+*.pptx
+*.xlsx
