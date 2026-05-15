@@ -3,9 +3,9 @@ import Link from "next/link"
 import { Suspense } from "react"
 import { createClient } from "@/lib/supabase/server"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { MOCK_LESSONS } from "@/lib/mock-data"
 import { LessonFilters } from "@/components/lesson/lesson-filters"
+import { CalendarDays, MapPin, Clock, User } from "lucide-react"
 import type { LessonWithInstructor } from "@/types/database"
 
 function getLessonImage(title: string): string {
@@ -69,7 +69,7 @@ export default async function LessonsPage({ searchParams }: LessonsPageProps) {
     <div>
       <h1 className="mb-6 text-2xl font-bold">レッスンを探す</h1>
       {isMock && (
-        <p className="mb-4 rounded-md bg-amber-50 px-4 py-2 text-sm text-amber-700 border border-amber-200">
+        <p className="mb-4 rounded-lg border-l-4 border-amber-400 bg-amber-50 px-4 py-3 text-sm text-amber-700">
           サンプルデータを表示しています。実際のレッスンはSupabaseにデータを登録すると表示されます。
         </p>
       )}
@@ -84,37 +84,52 @@ export default async function LessonsPage({ searchParams }: LessonsPageProps) {
         <div className="grid gap-4 sm:grid-cols-2">
           {lessons.map((lesson) => (
             <Link key={lesson.id} href={`/lessons/${lesson.id}`}>
-              <Card className="overflow-hidden transition-shadow hover:shadow-md">
-                <div className="relative h-40 w-full">
+              <Card className="group overflow-hidden transition-all hover:shadow-lg hover:shadow-blue-500/5 hover:border-blue-200">
+                <div className="relative h-44 w-full overflow-hidden">
                   <Image
                     src={getLessonImage(lesson.title)}
                     alt={lesson.title}
                     fill
-                    className="object-cover"
+                    className="object-cover transition-transform duration-300 group-hover:scale-105"
                     sizes="(max-width: 640px) 100vw, 50vw"
                   />
-                </div>
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <CardTitle className="text-lg">{lesson.title}</CardTitle>
-                    <Badge variant="secondary">
-                      {lesson.price.toLocaleString()}円
-                    </Badge>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+                  <div className="absolute bottom-3 right-3">
+                    <span className="rounded-full bg-blue-500 px-3 py-1 text-sm font-semibold text-white shadow-sm">
+                      ¥{lesson.price.toLocaleString()}
+                    </span>
                   </div>
+                </div>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base leading-snug">{lesson.title}</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-2 text-sm text-muted-foreground">
-                  <p>
-                    {new Date(lesson.scheduled_at).toLocaleDateString("ja-JP", {
-                      month: "long",
-                      day: "numeric",
-                      weekday: "short",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </p>
-                  <p>{lesson.location}</p>
-                  <p>{lesson.duration_minutes}分</p>
-                  <p>指導員: {lesson.instructor?.name ?? "不明"}</p>
+                <CardContent className="space-y-1.5 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-1.5">
+                    <CalendarDays className="h-3.5 w-3.5 shrink-0 text-blue-400" />
+                    <span>
+                      {new Date(lesson.scheduled_at).toLocaleDateString("ja-JP", {
+                        month: "long",
+                        day: "numeric",
+                        weekday: "short",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <MapPin className="h-3.5 w-3.5 shrink-0 text-blue-400" />
+                    <span>{lesson.location}</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-1.5">
+                      <Clock className="h-3.5 w-3.5 text-blue-400" />
+                      <span>{lesson.duration_minutes}分</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <User className="h-3.5 w-3.5 text-blue-400" />
+                      <span>{lesson.instructor?.name ?? "不明"}</span>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </Link>
