@@ -1,5 +1,5 @@
 # 作業ステータス
-最終更新: 2026-05-15 14:00
+最終更新: 2026-05-16 16:00
 
 ---
 
@@ -23,13 +23,27 @@ SchoolBoost AI → ドキュメント整備完了・開発は Rangers 後に着�
 
 ## 次にやること
 
-- [ ] Supabase プロジェクト作成（ブラウザ操作）← docs/browser-setup-guide.md 参照
-- [ ] Stripe アカウント作成（ブラウザ操作）
-- [ ] .env.local に環境変数を設定
-- [ ] Supabase でマイグレーション実行（SQL Editor で 00001 → 00002 の順）
-- [ ] Vercel プロジェクト作成 + GitHub 連携
-- [ ] テストユーザー作成 + seed.sql 実行（デモデータ投入）
-- [ ] 動作確認（ローカルで全フロー通し）
+### Rangers UI 改善（完了）
+- [x] mcp-image の動作確認（画像生成テスト）
+- [x] レッスン検索画面：各レッスンカードにイメージ画像を表示
+- [x] 指導員ページ：先生の似顔絵/アバター画像を生成して表示
+- [x] プロフィール画像アップロード機能の実装
+  - ⚠️ Supabase Storage `avatars` バケットの作成が必要（Supabase Dashboard > Storage > New bucket）
+  - Public bucket で作成し、RLSポリシーで自分のみアップロード可能にする
+- [x] ヘッダー修正：ユーザー名テキスト → プロフィール画像（丸アイコン）に変更
+
+### 次にやること（再起動後）
+- [ ] Playwright拡張機能インストール済み → Rangers の各ページをブラウザで確認してUI/UX改善を実施
+
+### 外部サービス接続（次セッションで再開）
+- [x] Supabase プロジェクト作成
+- [x] Supabase マイグレーション実行（00001 → 00002）
+- [x] Stripe アカウント作成・APIキー取得
+- [x] Vercel デプロイ済み
+- [x] 環境変数設定済み（STRIPE_WEBHOOK_SECRET 以外）
+- [x] Stripe Webhook 設定済み（URL: https://swim-os-seven.vercel.app/api/webhooks/stripe）
+- [x] Vercel 再デプロイ済み（STRIPE_WEBHOOK_SECRET 追加後）
+- [x] 動作確認完了（レッスン作成 → 予約 → Stripe決済 → 確定まで全フロー通過）
 - SchoolBoost AI：LINE Developers チャネル申請（審査待ちのため早めに）
 
 ---
@@ -53,6 +67,46 @@ SchoolBoost AI → ドキュメント整備完了・開発は Rangers 後に着�
 ---
 
 ## 作業ログ
+
+### 2026-05-16
+
+**Rangers コード機能追加（完了）**
+
+- 認証フロー修正: Supabaseメールレート制限エラー調査 → Confirm email OFF で解決
+- 登録後リダイレクト: /register/confirm → /dashboard に変更
+- モックデータ追加: DB空のときサンプルデータを表示（レッスン・予約・ダッシュボード）
+- モックレッスン詳細の404修正
+- 指導員ルートにロールガード追加
+- レッスン一覧にキーワード検索・料金ソート機能追加
+- スイマーの予約キャンセル機能追加
+- 指導員の予約確定機能（pending → confirmed）追加
+- プロフィールページにメール・ロール表示追加
+- Stripe未設定時は決済スキップして予約確定するフォールバック追加
+- 予約ありのレッスン削除ガード追加
+- RLSポリシー修正（指導員が予約ステータスを更新できるように）
+- カスタム404・エラーページ追加
+- ローディングスケルトン追加
+- レッスンの公開・下書き切り替え機能追加
+- 指導員ダッシュボードに今月の売上追加
+- browser-setup-guide.md を現状に合わせて更新
+
+**外部サービス接続（途中）**
+
+- Supabase・Stripe・Vercel・環境変数（STRIPE_WEBHOOK_SECRET以外）: 設定済み
+- Stripe Webhook: 未設定 → 次セッションで再開（「次にやること > 外部サービス接続」参照）
+
+---
+
+**Rangers UI 改善（2026-05-16 完了）**
+
+- mcp-image で画像生成（クロール・平泳ぎ・バタフライ・子ども・田中レイ先生・山本カナ先生）
+- レッスン一覧・詳細カードに種別イメージ画像を表示
+- ナビゲーションのユーザー名 → アバターアイコン（画像 or イニシャル）に変更
+- プロフィール画像アップロード UI を実装（Supabase Storage 連携）
+  - ⚠️ Supabase Dashboard で `avatars` バケットの作成が必要（Public）
+- next.config.ts に Supabase Storage リモートパターン追加
+
+---
 
 ### 2026-05-15（2回目）
 
