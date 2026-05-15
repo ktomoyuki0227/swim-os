@@ -1,3 +1,4 @@
+import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -5,7 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { MOCK_BOOKINGS } from "@/lib/mock-data"
 import { CancelBookingButton } from "@/components/booking/cancel-booking-button"
 import { bookingStatusLabels, bookingStatusVariants } from "@/lib/lesson-utils"
-import { CalendarDays, MapPin, Banknote } from "lucide-react"
+import { CalendarDays, MapPin, Banknote, ChevronRight } from "lucide-react"
 
 interface BookingsPageProps {
   searchParams: Promise<{ success?: string }>
@@ -33,31 +34,51 @@ export default async function BookingsPage({ searchParams }: BookingsPageProps) 
 
   return (
     <div>
+      <h1 className="mb-4 text-2xl font-bold">予約履歴</h1>
+
       {success && (
-        <div className="mb-6 rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-800">
-          予約が完了しました。レッスン当日をお楽しみに!
+        <div className="mb-4 rounded-lg border-l-4 border-green-400 bg-green-50 px-4 py-3 text-sm text-green-800">
+          予約が完了しました。レッスン当日をお楽しみに！
         </div>
       )}
-      <h1 className="mb-6 text-2xl font-bold">予約履歴</h1>
+
       {isMock && (
         <p className="mb-4 rounded-lg border-l-4 border-amber-400 bg-amber-50 px-4 py-3 text-sm text-amber-700">
           サンプルデータを表示しています。予約すると実際のデータが表示されます。
         </p>
       )}
+
       {bookings.length === 0 ? (
-        <p className="text-muted-foreground">
-          まだ予約がありません。
-        </p>
+        <div className="flex flex-col items-center gap-3 py-16 text-center">
+          <p className="text-muted-foreground">まだ予約がありません。</p>
+          <Link href="/lessons" className="text-sm text-blue-600 underline underline-offset-4">
+            レッスンを探す
+          </Link>
+        </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {bookings.map((booking) => (
-            <Card key={booking.id}>
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <CardTitle className="text-lg">
-                    {booking.lesson?.title ?? "不明なレッスン"}
-                  </CardTitle>
-                  <Badge variant={bookingStatusVariants[booking.status]}>
+            <Card key={booking.id} className="overflow-hidden transition-shadow hover:shadow-md">
+              <CardHeader className="pb-2">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    {booking.lesson && !isMock ? (
+                      <Link
+                        href={`/lessons/${booking.lesson.id}`}
+                        className="group flex items-center gap-1 hover:text-blue-600"
+                      >
+                        <CardTitle className="text-base leading-snug group-hover:text-blue-600">
+                          {booking.lesson.title}
+                        </CardTitle>
+                        <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+                      </Link>
+                    ) : (
+                      <CardTitle className="text-base leading-snug">
+                        {booking.lesson?.title ?? "不明なレッスン"}
+                      </CardTitle>
+                    )}
+                  </div>
+                  <Badge variant={bookingStatusVariants[booking.status]} className="shrink-0">
                     {bookingStatusLabels[booking.status]}
                   </Badge>
                 </div>
