@@ -104,6 +104,17 @@ export async function deleteLesson(lessonId: string) {
     return { error: "ログインが必要です" }
   }
 
+  // 有効な予約が存在する場合は削除不可
+  const { count } = await supabase
+    .from("bookings")
+    .select("*", { count: "exact", head: true })
+    .eq("lesson_id", lessonId)
+    .in("status", ["pending", "confirmed"])
+
+  if (count && count > 0) {
+    return { error: `予約が${count}件あるため削除できません。先にキャンセルしてください。` }
+  }
+
   const { error } = await supabase
     .from("lessons")
     .delete()

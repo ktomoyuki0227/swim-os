@@ -12,23 +12,35 @@ interface DeleteLessonButtonProps {
 export function DeleteLessonButton({ lessonId }: DeleteLessonButtonProps) {
   const [confirming, setConfirming] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const router = useRouter()
 
   async function handleDelete() {
     setLoading(true)
-    await deleteLesson(lessonId)
+    const result = await deleteLesson(lessonId)
+    if (result?.error) {
+      setError(result.error)
+      setLoading(false)
+      setConfirming(false)
+      return
+    }
     router.push("/instructor/lessons")
   }
 
   if (!confirming) {
     return (
-      <Button
-        variant="destructive"
-        className="w-full"
-        onClick={() => setConfirming(true)}
-      >
-        レッスンを削除
-      </Button>
+      <div>
+        {error && (
+          <p className="mb-2 text-sm text-destructive">{error}</p>
+        )}
+        <Button
+          variant="destructive"
+          className="w-full"
+          onClick={() => { setError(null); setConfirming(true) }}
+        >
+          レッスンを削除
+        </Button>
+      </div>
     )
   }
 
