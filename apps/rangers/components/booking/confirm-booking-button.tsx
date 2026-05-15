@@ -3,6 +3,8 @@
 import { useState } from "react"
 import { confirmBooking } from "@/actions/bookings"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { CheckCircle2 } from "lucide-react"
 
 interface ConfirmBookingButtonProps {
   bookingId: string
@@ -15,6 +17,7 @@ export function ConfirmBookingButton({ bookingId }: ConfirmBookingButtonProps) {
 
   async function handleConfirm() {
     setLoading(true)
+    setError(null)
     const result = await confirmBooking(bookingId)
     if (result?.error) {
       setError(result.error)
@@ -25,15 +28,21 @@ export function ConfirmBookingButton({ bookingId }: ConfirmBookingButtonProps) {
   }
 
   if (done) {
-    return <span className="text-xs text-green-600 font-medium">確定済み</span>
+    return (
+      <Badge variant="default" className="gap-1">
+        <CheckCircle2 className="h-3 w-3" />
+        確定済み
+      </Badge>
+    )
   }
 
   return (
-    <div>
-      {error && <p className="mb-1 text-xs text-destructive">{error}</p>}
+    <div className="flex flex-col items-end gap-1">
+      {error && <p className="text-xs text-destructive">{error}</p>}
       <Button
         size="sm"
         variant="outline"
+        className="border-blue-200 text-blue-700 hover:bg-blue-50"
         onClick={handleConfirm}
         disabled={loading}
       >
