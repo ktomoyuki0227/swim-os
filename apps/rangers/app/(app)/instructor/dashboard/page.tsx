@@ -3,6 +3,7 @@ import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { MOCK_LESSONS } from "@/lib/mock-data"
 
 export default async function InstructorDashboardPage() {
   const supabase = await createClient()
@@ -21,7 +22,7 @@ export default async function InstructorDashboardPage() {
     .eq("instructor_id", user.id)
 
   // 今後のレッスン
-  const { data: upcomingLessons } = await supabase
+  const { data: dbUpcomingLessons } = await supabase
     .from("lessons")
     .select("*")
     .eq("instructor_id", user.id)
@@ -31,11 +32,16 @@ export default async function InstructorDashboardPage() {
     .limit(5)
 
   // 予約数（自分のレッスンへの予約）
-  const { count: bookingCount } = await supabase
+  const { count: dbBookingCount } = await supabase
     .from("bookings")
     .select("*, lesson:lessons!inner(*)", { count: "exact", head: true })
     .eq("lesson.instructor_id", user.id)
     .in("status", ["pending", "confirmed"])
+
+  const isMock = (lessonCount ?? 0) === 0
+  const upcomingLessons = isMock ? MOCK_LESSONS.slice(0, 3) : (dbUpcomingLessons ?? [])
+  const bookingCount = isMock ? 5 : (dbBookingCount ?? 0)
+  const displayLessonCount = isMock ? MOCK_LESSONS.length : (lessonCount ?? 0)
 
   return (
     <div className="space-y-6">
@@ -46,6 +52,12 @@ export default async function InstructorDashboardPage() {
         </Link>
       </div>
 
+      {isMock && (
+        <p className="rounded-md bg-amber-50 px-4 py-2 text-sm text-amber-700 border border-amber-200">
+          サンプルデータを表示しています。レッスンを作成すると実際のデータが表示されます。
+        </p>
+      )}
+
       <div className="grid gap-4 sm:grid-cols-3">
         <Card>
           <CardHeader>
@@ -54,7 +66,7 @@ export default async function InstructorDashboardPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold">{lessonCount ?? 0}</p>
+            <p className="text-3xl font-bold">{displayLessonCount}</p>
           </CardContent>
         </Card>
         <Card>

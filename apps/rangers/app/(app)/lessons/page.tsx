@@ -2,21 +2,31 @@ import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { MOCK_LESSONS } from "@/lib/mock-data"
 
 export default async function LessonsPage() {
   const supabase = await createClient()
 
-  const { data: lessons } = await supabase
+  const { data: dbLessons } = await supabase
     .from("lessons")
     .select("*, instructor:profiles!instructor_id(id, name, avatar_url)")
     .eq("status", "published")
     .gte("scheduled_at", new Date().toISOString())
     .order("scheduled_at", { ascending: true })
 
+  const lessons = dbLessons && dbLessons.length > 0 ? dbLessons : MOCK_LESSONS
+
+  const isMock = !dbLessons || dbLessons.length === 0
+
   return (
     <div>
       <h1 className="mb-6 text-2xl font-bold">レッスンを探す</h1>
-      {!lessons || lessons.length === 0 ? (
+      {isMock && (
+        <p className="mb-4 rounded-md bg-amber-50 px-4 py-2 text-sm text-amber-700 border border-amber-200">
+          サンプルデータを表示しています。実際のレッスンはSupabaseにデータを登録すると表示されます。
+        </p>
+      )}
+      {lessons.length === 0 ? (
         <p className="text-muted-foreground">
           現在公開中のレッスンはありません。
         </p>

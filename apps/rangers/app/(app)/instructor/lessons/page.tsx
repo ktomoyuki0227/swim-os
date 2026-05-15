@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { MOCK_LESSONS } from "@/lib/mock-data"
 
 const statusLabels: Record<string, string> = {
   draft: "下書き",
@@ -27,11 +28,14 @@ export default async function InstructorLessonsPage() {
     redirect("/login")
   }
 
-  const { data: lessons } = await supabase
+  const { data: dbLessons } = await supabase
     .from("lessons")
     .select("*")
     .eq("instructor_id", user.id)
     .order("created_at", { ascending: false })
+
+  const isMock = !dbLessons || dbLessons.length === 0
+  const lessons = isMock ? MOCK_LESSONS : dbLessons
 
   return (
     <div>
@@ -42,7 +46,13 @@ export default async function InstructorLessonsPage() {
         </Link>
       </div>
 
-      {!lessons || lessons.length === 0 ? (
+      {isMock && (
+        <p className="mb-4 rounded-md bg-amber-50 px-4 py-2 text-sm text-amber-700 border border-amber-200">
+          サンプルデータを表示しています。レッスンを作成すると実際のデータが表示されます。
+        </p>
+      )}
+
+      {lessons.length === 0 ? (
         <p className="text-muted-foreground">
           レッスンがありません。最初のレッスンを作成しましょう。
         </p>

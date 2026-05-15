@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { MOCK_BOOKINGS } from "@/lib/mock-data"
 
 const statusLabels: Record<string, string> = {
   pending: "確認待ち",
@@ -30,11 +31,14 @@ export default async function BookingsPage({ searchParams }: BookingsPageProps) 
     redirect("/login")
   }
 
-  const { data: bookings } = await supabase
+  const { data: dbBookings } = await supabase
     .from("bookings")
     .select("*, lesson:lessons(*)")
     .eq("swimmer_id", user.id)
     .order("created_at", { ascending: false })
+
+  const isMock = !dbBookings || dbBookings.length === 0
+  const bookings = isMock ? MOCK_BOOKINGS : dbBookings
 
   return (
     <div>
@@ -44,7 +48,12 @@ export default async function BookingsPage({ searchParams }: BookingsPageProps) 
         </div>
       )}
       <h1 className="mb-6 text-2xl font-bold">予約履歴</h1>
-      {!bookings || bookings.length === 0 ? (
+      {isMock && (
+        <p className="mb-4 rounded-md bg-amber-50 px-4 py-2 text-sm text-amber-700 border border-amber-200">
+          サンプルデータを表示しています。予約すると実際のデータが表示されます。
+        </p>
+      )}
+      {bookings.length === 0 ? (
         <p className="text-muted-foreground">
           まだ予約がありません。
         </p>
