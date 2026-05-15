@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -32,6 +32,25 @@ export function Navigation({ role, userName, avatarUrl }: NavigationProps) {
   const pathname = usePathname()
   const links = role === "instructor" ? instructorLinks : swimmerLinks
   const [menuOpen, setMenuOpen] = useState(false)
+  const menuButtonRef = useRef<HTMLButtonElement>(null)
+
+  // ESCキーでメニューを閉じる
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape" && menuOpen) {
+        setMenuOpen(false)
+        menuButtonRef.current?.focus()
+      }
+    }
+    document.addEventListener("keydown", handleKeyDown)
+    return () => document.removeEventListener("keydown", handleKeyDown)
+  }, [menuOpen])
+
+  // ページ遷移時にメニューを閉じる
+  useEffect(() => {
+    setMenuOpen(false)
+  }, [pathname])
+
   const initials = userName
     .split(/\s+/)
     .map((n) => n[0])
@@ -90,11 +109,13 @@ export function Navigation({ role, userName, avatarUrl }: NavigationProps) {
 
         {/* Mobile menu button */}
         <button
+          ref={menuButtonRef}
           type="button"
           className="flex h-9 w-9 items-center justify-center rounded-md hover:bg-muted md:hidden"
           onClick={() => setMenuOpen((prev) => !prev)}
-          aria-label="メニュー"
+          aria-label={menuOpen ? "メニューを閉じる" : "メニューを開く"}
           aria-expanded={menuOpen}
+          aria-controls="mobile-menu"
         >
           <svg
             width="20"
@@ -123,7 +144,7 @@ export function Navigation({ role, userName, avatarUrl }: NavigationProps) {
 
       {/* Mobile menu */}
       {menuOpen && (
-        <nav className="animate-in slide-in-from-top-2 fade-in border-t px-4 pb-4 pt-2 duration-150 md:hidden">
+        <nav id="mobile-menu" className="animate-in slide-in-from-top-2 fade-in border-t px-4 pb-4 pt-2 duration-150 md:hidden">
           <div className="flex flex-col gap-1">
             {links.map((link) => (
               <Link
