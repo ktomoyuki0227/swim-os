@@ -2,13 +2,14 @@
  * レッスンタイトルから対応する画像パスを返す
  */
 export function getLessonImage(title: string): string {
-  if (title.includes("子ども") || title.includes("キッズ")) {
+  const t = title.toLowerCase()
+  if (t.includes("子ども") || t.includes("キッズ") || t.includes("kids")) {
     return "/images/lessons/children.jpg"
   }
-  if (title.includes("バタフライ") || title.includes("背泳ぎ")) {
+  if (t.includes("バタフライ") || t.includes("背泳ぎ") || t.includes("butterfly") || t.includes("backstroke")) {
     return "/images/lessons/butterfly.jpg"
   }
-  if (title.includes("平泳ぎ")) {
+  if (t.includes("平泳ぎ") || t.includes("breaststroke")) {
     return "/images/lessons/breaststroke.jpg"
   }
   return "/images/lessons/crawl.jpg"

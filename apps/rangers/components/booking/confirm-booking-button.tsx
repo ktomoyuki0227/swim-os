@@ -38,7 +38,7 @@ export function ConfirmBookingButton({ bookingId }: ConfirmBookingButtonProps) {
 
   return (
     <div className="flex flex-col items-end gap-1">
-      {error && <p className="text-xs text-destructive">{error}</p>}
+      {error && <p role="alert" className="text-xs text-destructive">{error}</p>}
       <Button
         size="sm"
         variant="outline"

@@ -30,7 +30,7 @@ export function ToggleStatusButton({ lessonId, currentStatus }: ToggleStatusButt
 
   return (
     <div className="flex flex-col items-end gap-1">
-      {error && <p className="text-xs text-destructive">{error}</p>}
+      {error && <p role="alert" className="text-xs text-destructive">{error}</p>}
       <Button
         variant={isPublished ? "outline" : "default"}
         size="sm"

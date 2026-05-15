@@ -4,11 +4,25 @@ import Link from "next/link"
 import { Suspense } from "react"
 import { createClient } from "@/lib/supabase/server"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Skeleton } from "@/components/ui/skeleton"
 import { MOCK_LESSONS } from "@/lib/mock-data"
 import { LessonFilters } from "@/components/lesson/lesson-filters"
 import { getLessonImage } from "@/lib/lesson-utils"
 import { CalendarDays, MapPin, Clock, User, Search } from "lucide-react"
 import type { LessonWithInstructor } from "@/types/database"
+
+function LessonFiltersFallback() {
+  return (
+    <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+      <Skeleton className="h-10 w-full sm:max-w-xs" />
+      <div className="flex gap-2">
+        <Skeleton className="h-9 w-16" />
+        <Skeleton className="h-9 w-24" />
+        <Skeleton className="h-9 w-24" />
+      </div>
+    </div>
+  )
+}
 
 export const metadata: Metadata = {
   title: "レッスンを探す",
@@ -67,7 +81,7 @@ export default async function LessonsPage({ searchParams }: LessonsPageProps) {
           サンプルデータを表示しています。実際のレッスンはSupabaseにデータを登録すると表示されます。
         </p>
       )}
-      <Suspense>
+      <Suspense fallback={<LessonFiltersFallback />}>
         <LessonFilters />
       </Suspense>
 

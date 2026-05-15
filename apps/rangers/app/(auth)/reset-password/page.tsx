@@ -1,16 +1,48 @@
 "use client"
 
-import { useActionState } from "react"
+import { useActionState, useState } from "react"
+import Link from "next/link"
 import { updatePassword, type ResetPasswordState } from "@/actions/auth"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { CheckCircle2 } from "lucide-react"
 
 const initialState: ResetPasswordState = { error: null, success: false }
 
 export default function ResetPasswordPage() {
   const [state, formAction, isPending] = useActionState(updatePassword, initialState)
+  const [password, setPassword] = useState("")
+  const [confirm, setConfirm] = useState("")
+
+  const mismatch = confirm.length > 0 && password !== confirm
+
+  if (state.success) {
+    return (
+      <div className="w-full max-w-md">
+        <Card className="w-full border-white/10 bg-white/95 shadow-2xl backdrop-blur-sm">
+          <CardHeader className="text-center">
+            <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-green-50">
+              <CheckCircle2 className="h-7 w-7 text-green-500" />
+            </div>
+            <CardTitle className="text-xl text-green-600">パスワードを更新しました</CardTitle>
+            <CardDescription>
+              新しいパスワードでログインしてください。
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Link href="/login">
+              <Button className="w-full">ログインページへ</Button>
+            </Link>
+          </CardContent>
+        </Card>
+        <p className="mt-6 text-center text-sm text-slate-400">
+          Rangers · マスターズ水泳レッスン予約
+        </p>
+      </div>
+    )
+  }
 
   return (
     <div className="w-full max-w-md">
@@ -24,7 +56,7 @@ export default function ResetPasswordPage() {
         <CardContent>
           <form action={formAction} className="space-y-4">
             {state.error && (
-              <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              <p role="alert" className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
                 {state.error}
               </p>
             )}
@@ -37,6 +69,8 @@ export default function ResetPasswordPage() {
                 minLength={6}
                 required
                 autoComplete="new-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
               />
             </div>
             <div className="space-y-2">
@@ -48,9 +82,21 @@ export default function ResetPasswordPage() {
                 minLength={6}
                 required
                 autoComplete="new-password"
+                value={confirm}
+                onChange={(e) => setConfirm(e.target.value)}
+                aria-invalid={mismatch}
               />
+              {mismatch && (
+                <p role="alert" className="text-xs text-destructive">
+                  パスワードが一致しません
+                </p>
+              )}
             </div>
-            <Button type="submit" className="w-full" disabled={isPending}>
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={isPending || mismatch}
+            >
               {isPending ? "更新中..." : "パスワードを更新"}
             </Button>
           </form>

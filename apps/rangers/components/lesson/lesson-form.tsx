@@ -36,7 +36,10 @@ export function LessonForm({ lesson }: LessonFormProps) {
   return (
     <form action={formAction} className="space-y-4">
       {state.error && (
-        <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+        <p
+          role="alert"
+          className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive"
+        >
           {state.error}
         </p>
       )}
@@ -105,7 +108,7 @@ export function LessonForm({ lesson }: LessonFormProps) {
             name="scheduled_at"
             type="datetime-local"
             defaultValue={defaultScheduledAt}
-            min={lesson ? undefined : getMinDateTime()}
+            min={getMinDateTime()}
             required
           />
           <p className="text-xs text-muted-foreground">過去の日時は選択できません</p>

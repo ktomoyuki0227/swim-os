@@ -22,6 +22,13 @@ export function LessonFilters() {
     setInputValue(currentQ)
   }, [currentQ])
 
+  // アンマウント時にデバウンスタイマーをクリーンアップ
+  useEffect(() => {
+    return () => {
+      if (debounceTimer.current) clearTimeout(debounceTimer.current)
+    }
+  }, [])
+
   const createQueryString = useCallback(
     (name: string, value: string) => {
       const params = new URLSearchParams(searchParams.toString())

@@ -43,15 +43,18 @@ export default function ProfilePage() {
       import("@/lib/supabase/client").then(({ createClient }) =>
         createClient().auth.getUser()
       ),
-    ]).then(([profile, { data }]) => {
-      if (profile) {
-        setName(profile.name)
-        setRole(profile.role)
-        setAvatarUrl(profile.avatar_url)
-      }
-      if (data.user?.email) setEmail(data.user.email)
-      setIsLoading(false)
-    })
+    ])
+      .then(([profile, { data }]) => {
+        if (profile) {
+          setName(profile.name)
+          setRole(profile.role)
+          setAvatarUrl(profile.avatar_url)
+        }
+        if (data.user?.email) setEmail(data.user.email)
+      })
+      .finally(() => {
+        setIsLoading(false)
+      })
   }, [])
 
   useEffect(() => {
@@ -98,10 +101,14 @@ export default function ProfilePage() {
             </div>
             <form action={avatarAction} className="flex flex-col items-center gap-2">
               {avatarState.error && (
-                <p className="text-sm text-destructive">{avatarState.error}</p>
+                <p role="alert" className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                  {avatarState.error}
+                </p>
               )}
               {avatarState.success && (
-                <p className="text-sm text-green-600">画像を更新しました。</p>
+                <p role="status" className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-700">
+                  画像を更新しました。
+                </p>
               )}
               <Label
                 htmlFor="avatar"
@@ -160,10 +167,14 @@ export default function ProfilePage() {
 
           <form action={formAction} className="space-y-4">
             {state.error && (
-              <p className="text-sm text-destructive">{state.error}</p>
+              <p role="alert" className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                {state.error}
+              </p>
             )}
             {state.success && (
-              <p className="text-sm text-green-600">プロフィールを更新しました。</p>
+              <p role="status" className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-700">
+                プロフィールを更新しました。
+              </p>
             )}
             <div className="space-y-2">
               <Label htmlFor="name">名前</Label>

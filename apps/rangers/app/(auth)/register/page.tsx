@@ -23,7 +23,9 @@ export default function RegisterPage() {
         <CardContent>
           <form action={formAction} className="space-y-4">
             {state.error && (
-              <p className="text-sm text-destructive">{state.error}</p>
+              <p role="alert" className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                {state.error}
+              </p>
             )}
             <div className="space-y-2">
               <Label htmlFor="name">名前</Label>

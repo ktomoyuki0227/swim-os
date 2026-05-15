@@ -130,7 +130,7 @@ export async function updatePassword(
     return { error: "パスワードの更新に失敗しました", success: false }
   }
 
-  redirect("/login")
+  return { error: null, success: true }
 }
 
 export async function loginWithGoogle(): Promise<void> {
