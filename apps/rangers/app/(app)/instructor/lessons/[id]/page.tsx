@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { LessonForm } from "@/components/lesson/lesson-form"
 import { DeleteLessonButton } from "@/components/lesson/delete-lesson-button"
+import { ConfirmBookingButton } from "@/components/booking/confirm-booking-button"
 import { MOCK_LESSONS } from "@/lib/mock-data"
 
 interface InstructorLessonDetailPageProps {
@@ -88,7 +89,15 @@ export default async function InstructorLessonDetailPage({
                   <span className="text-sm">
                     {booking.swimmer?.name ?? "不明"}
                   </span>
-                  <Badge variant="secondary">{booking.status}</Badge>
+                  <div className="flex items-center gap-2">
+                    {booking.status === "pending" && !isMock ? (
+                      <ConfirmBookingButton bookingId={booking.id} />
+                    ) : (
+                      <Badge variant={booking.status === "confirmed" ? "default" : "secondary"}>
+                        {booking.status === "confirmed" ? "確定" : booking.status === "pending" ? "確認待ち" : booking.status}
+                      </Badge>
+                    )}
+                  </div>
                 </li>
               ))}
             </ul>
