@@ -9,6 +9,8 @@ function WaveIcon({ className }: { className?: string }) {
       viewBox="0 0 1440 120"
       className={className}
       preserveAspectRatio="none"
+      aria-hidden="true"
+      focusable="false"
     >
       <path
         d="M0,64 C360,120 720,0 1080,64 C1260,96 1380,80 1440,64 L1440,120 L0,120 Z"

@@ -19,7 +19,7 @@ export async function login(
 
   const result = loginSchema.safeParse(raw)
   if (!result.success) {
-    return { error: result.error.issues[0].message }
+    return { error: result.error.issues.map((i) => i.message).join("・") }
   }
 
   const supabase = await createClient()
@@ -45,7 +45,7 @@ export async function register(
 
   const result = registerSchema.safeParse(raw)
   if (!result.success) {
-    return { error: result.error.issues[0].message }
+    return { error: result.error.issues.map((i) => i.message).join("・") }
   }
 
   const supabase = await createClient()
@@ -142,11 +142,9 @@ export async function loginWithGoogle(): Promise<void> {
     },
   })
 
-  if (error) {
-    throw new Error("Google ログインに失敗しました")
+  if (error || !data.url) {
+    redirect("/login?error=google")
   }
 
-  if (data.url) {
-    redirect(data.url)
-  }
+  redirect(data.url)
 }

@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect } from "react"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { AlertCircle } from "lucide-react"
 
@@ -11,20 +12,35 @@ interface ErrorProps {
 
 export default function Error({ error, reset }: ErrorProps) {
   useEffect(() => {
-    console.error(error)
+    // 開発環境のみコンソール出力（本番では外部ロギングサービスに送る）
+    if (process.env.NODE_ENV === "development") {
+      console.error(error)
+    }
   }, [error])
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-4 text-center">
       <div className="flex h-20 w-20 items-center justify-center rounded-full bg-red-50">
-        <AlertCircle className="h-10 w-10 text-red-400" />
+        <AlertCircle className="h-10 w-10 text-red-400" aria-hidden="true" />
       </div>
-      <p className="text-7xl font-bold text-red-100">500</p>
+      <p className="text-7xl font-bold text-red-100" aria-hidden="true">500</p>
       <h1 className="text-2xl font-bold">エラーが発生しました</h1>
       <p className="max-w-sm text-muted-foreground">
-        予期せぬエラーが発生しました。再試行してください。
+        予期せぬエラーが発生しました。再試行するか、ホームに戻ってください。
       </p>
-      <Button onClick={reset}>もう一度試す</Button>
+      {error.digest && (
+        <p className="text-xs text-muted-foreground">
+          エラーID: <code className="font-mono">{error.digest}</code>
+        </p>
+      )}
+      <div className="flex gap-3">
+        <Button variant="outline" onClick={reset}>
+          もう一度試す
+        </Button>
+        <Link href="/dashboard">
+          <Button>ホームに戻る</Button>
+        </Link>
+      </div>
     </div>
   )
 }

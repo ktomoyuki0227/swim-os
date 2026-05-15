@@ -1,6 +1,7 @@
 "use client"
 
-import { useActionState } from "react"
+import { useActionState, Suspense } from "react"
+import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { login, loginWithGoogle, type AuthState } from "@/actions/auth"
 import { Button } from "@/components/ui/button"
@@ -10,8 +11,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 
 const initialState: AuthState = { error: null }
 
-export default function LoginPage() {
+const urlErrorMessages: Record<string, string> = {
+  google: "Google ログインに失敗しました。もう一度お試しください。",
+}
+
+function LoginForm() {
   const [state, formAction, isPending] = useActionState(login, initialState)
+  const searchParams = useSearchParams()
+  const urlError = searchParams.get("error")
+  const displayError = state.error ?? (urlError ? (urlErrorMessages[urlError] ?? null) : null)
 
   return (
     <div className="w-full max-w-md">
@@ -22,9 +30,9 @@ export default function LoginPage() {
         </CardHeader>
         <CardContent>
           <form action={formAction} className="space-y-4">
-            {state.error && (
+            {displayError && (
               <p role="alert" className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                {state.error}
+                {displayError}
               </p>
             )}
             <div className="space-y-2">
@@ -86,5 +94,13 @@ export default function LoginPage() {
         Rangers · マスターズ水泳レッスン予約
       </p>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   )
 }

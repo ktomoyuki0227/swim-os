@@ -28,7 +28,7 @@ export async function updateProfile(
 
   const result = profileSchema.safeParse(raw)
   if (!result.success) {
-    return { error: result.error.issues[0].message, success: false }
+    return { error: result.error.issues.map((i) => i.message).join("・"), success: false }
   }
 
   const { error } = await supabase

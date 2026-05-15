@@ -3,6 +3,8 @@
 import { useState } from "react"
 import { cancelBooking } from "@/actions/bookings"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { XCircle } from "lucide-react"
 
 interface CancelBookingButtonProps {
   bookingId: string
@@ -12,6 +14,7 @@ export function CancelBookingButton({ bookingId }: CancelBookingButtonProps) {
   const [confirming, setConfirming] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [cancelled, setCancelled] = useState(false)
 
   async function handleCancel() {
     setLoading(true)
@@ -20,7 +23,18 @@ export function CancelBookingButton({ bookingId }: CancelBookingButtonProps) {
       setError(result.error)
       setLoading(false)
       setConfirming(false)
+    } else {
+      setCancelled(true)
     }
+  }
+
+  if (cancelled) {
+    return (
+      <Badge variant="destructive" className="gap-1">
+        <XCircle className="h-3 w-3" />
+        キャンセル済み
+      </Badge>
+    )
   }
 
   if (!confirming) {
@@ -38,7 +52,7 @@ export function CancelBookingButton({ bookingId }: CancelBookingButtonProps) {
 
   return (
     <div className="space-y-2">
-      {error && <p className="text-xs text-destructive">{error}</p>}
+      {error && <p role="alert" className="text-xs text-destructive">{error}</p>}
       <div className="flex gap-2">
         <Button
           variant="outline"

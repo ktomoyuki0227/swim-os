@@ -34,7 +34,7 @@ export async function createLesson(
 
   const result = lessonSchema.safeParse(raw)
   if (!result.success) {
-    return { error: result.error.issues[0].message }
+    return { error: result.error.issues.map((i) => i.message).join("・") }
   }
 
   const { error } = await supabase.from("lessons").insert({
@@ -77,7 +77,7 @@ export async function updateLesson(
 
   const result = lessonSchema.safeParse(raw)
   if (!result.success) {
-    return { error: result.error.issues[0].message }
+    return { error: result.error.issues.map((i) => i.message).join("・") }
   }
 
   const { error } = await supabase
