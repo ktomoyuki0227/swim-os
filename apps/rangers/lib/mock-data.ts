@@ -12,7 +12,7 @@ function daysFromNow(days: number) {
 export const MOCK_INSTRUCTOR = {
   id: "mock-instructor-1",
   name: "田中 レイ",
-  avatar_url: null,
+  avatar_url: "/images/instructors/tanaka-rei.jpg",
 }
 
 export const MOCK_LESSONS: LessonWithInstructor[] = [
@@ -59,7 +59,7 @@ export const MOCK_LESSONS: LessonWithInstructor[] = [
     location: "右京区温水プール",
     status: "published",
     created_at: now.toISOString(),
-    instructor: { id: "mock-instructor-2", name: "山本 カナ", avatar_url: null },
+    instructor: { id: "mock-instructor-2", name: "山本 カナ", avatar_url: "/images/instructors/yamamoto-kana.jpg" },
   },
   {
     id: "mock-lesson-4",

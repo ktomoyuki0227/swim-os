@@ -1,3 +1,4 @@
+import Image from "next/image"
 import Link from "next/link"
 import { Suspense } from "react"
 import { createClient } from "@/lib/supabase/server"
@@ -6,6 +7,19 @@ import { Badge } from "@/components/ui/badge"
 import { MOCK_LESSONS } from "@/lib/mock-data"
 import { LessonFilters } from "@/components/lesson/lesson-filters"
 import type { LessonWithInstructor } from "@/types/database"
+
+function getLessonImage(title: string): string {
+  if (title.includes("子ども") || title.includes("キッズ")) {
+    return "/images/lessons/children.jpg"
+  }
+  if (title.includes("バタフライ") || title.includes("背泳ぎ")) {
+    return "/images/lessons/butterfly.jpg"
+  }
+  if (title.includes("平泳ぎ")) {
+    return "/images/lessons/breaststroke.jpg"
+  }
+  return "/images/lessons/crawl.jpg"
+}
 
 interface LessonsPageProps {
   searchParams: Promise<{ q?: string; sort?: string }>
@@ -70,7 +84,16 @@ export default async function LessonsPage({ searchParams }: LessonsPageProps) {
         <div className="grid gap-4 sm:grid-cols-2">
           {lessons.map((lesson) => (
             <Link key={lesson.id} href={`/lessons/${lesson.id}`}>
-              <Card className="transition-shadow hover:shadow-md">
+              <Card className="overflow-hidden transition-shadow hover:shadow-md">
+                <div className="relative h-40 w-full">
+                  <Image
+                    src={getLessonImage(lesson.title)}
+                    alt={lesson.title}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 640px) 100vw, 50vw"
+                  />
+                </div>
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <CardTitle className="text-lg">{lesson.title}</CardTitle>

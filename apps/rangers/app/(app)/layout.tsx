@@ -28,7 +28,7 @@ export default async function AppLayout({
 
   return (
     <>
-      <Navigation role={profile.role} userName={profile.name} />
+      <Navigation role={profile.role} userName={profile.name} avatarUrl={profile.avatar_url} />
       <main className="mx-auto max-w-5xl flex-1 px-4 py-6">{children}</main>
     </>
   )

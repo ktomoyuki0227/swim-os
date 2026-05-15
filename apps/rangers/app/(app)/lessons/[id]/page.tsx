@@ -1,3 +1,4 @@
+import Image from "next/image"
 import { notFound } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -5,6 +6,19 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { BookingButton } from "@/components/booking/booking-button"
 import { MOCK_LESSONS } from "@/lib/mock-data"
+
+function getLessonImage(title: string): string {
+  if (title.includes("子ども") || title.includes("キッズ")) {
+    return "/images/lessons/children.jpg"
+  }
+  if (title.includes("バタフライ") || title.includes("背泳ぎ")) {
+    return "/images/lessons/butterfly.jpg"
+  }
+  if (title.includes("平泳ぎ")) {
+    return "/images/lessons/breaststroke.jpg"
+  }
+  return "/images/lessons/crawl.jpg"
+}
 
 interface LessonDetailPageProps {
   params: Promise<{ id: string }>
@@ -67,7 +81,17 @@ export default async function LessonDetailPage({
           これはサンプルデータです。実際の予約はできません。
         </p>
       )}
-      <Card>
+      <Card className="overflow-hidden">
+        <div className="relative h-56 w-full">
+          <Image
+            src={getLessonImage(lesson.title)}
+            alt={lesson.title}
+            fill
+            className="object-cover"
+            priority
+            sizes="(max-width: 768px) 100vw, 672px"
+          />
+        </div>
         <CardHeader>
           <div className="flex items-start justify-between">
             <CardTitle className="text-2xl">{lesson.title}</CardTitle>

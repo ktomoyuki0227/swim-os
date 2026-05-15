@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
@@ -11,6 +12,7 @@ import type { UserRole } from "@/types/database"
 interface NavigationProps {
   role: UserRole
   userName: string
+  avatarUrl?: string | null
 }
 
 const swimmerLinks = [
@@ -25,10 +27,16 @@ const instructorLinks = [
   { href: "/profile", label: "プロフィール" },
 ]
 
-export function Navigation({ role, userName }: NavigationProps) {
+export function Navigation({ role, userName, avatarUrl }: NavigationProps) {
   const pathname = usePathname()
   const links = role === "instructor" ? instructorLinks : swimmerLinks
   const [menuOpen, setMenuOpen] = useState(false)
+  const initials = userName
+    .split(/\s+/)
+    .map((n) => n[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase()
 
   return (
     <header className="border-b bg-background">
@@ -57,7 +65,21 @@ export function Navigation({ role, userName }: NavigationProps) {
 
         {/* Desktop */}
         <div className="hidden items-center gap-3 md:flex">
-          <span className="text-sm text-muted-foreground">{userName}</span>
+          <Link href="/profile" aria-label={`${userName}のプロフィール`}>
+            {avatarUrl ? (
+              <Image
+                src={avatarUrl}
+                alt={userName}
+                width={32}
+                height={32}
+                className="rounded-full object-cover ring-1 ring-border"
+              />
+            ) : (
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-medium text-primary-foreground ring-1 ring-border">
+                {initials}
+              </span>
+            )}
+          </Link>
           <form action={logout}>
             <Button variant="ghost" size="sm" type="submit">
               ログアウト
@@ -119,7 +141,22 @@ export function Navigation({ role, userName }: NavigationProps) {
             ))}
           </div>
           <div className="mt-3 flex items-center justify-between border-t pt-3">
-            <span className="text-sm text-muted-foreground">{userName}</span>
+            <Link href="/profile" className="flex items-center gap-2" onClick={() => setMenuOpen(false)}>
+              {avatarUrl ? (
+                <Image
+                  src={avatarUrl}
+                  alt={userName}
+                  width={28}
+                  height={28}
+                  className="rounded-full object-cover"
+                />
+              ) : (
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs font-medium text-primary-foreground">
+                  {initials}
+                </span>
+              )}
+              <span className="text-sm text-muted-foreground">{userName}</span>
+            </Link>
             <form action={logout}>
               <Button variant="ghost" size="sm" type="submit">
                 ログアウト

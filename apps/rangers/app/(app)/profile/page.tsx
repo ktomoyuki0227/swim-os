@@ -1,14 +1,22 @@
 "use client"
 
-import { useActionState, useEffect, useState } from "react"
-import { updateProfile, getProfile, type ProfileActionState } from "@/actions/profile"
+import { useActionState, useEffect, useRef, useState } from "react"
+import Image from "next/image"
+import {
+  updateProfile,
+  uploadAvatar,
+  getProfile,
+  type ProfileActionState,
+  type AvatarActionState,
+} from "@/actions/profile"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 
-const initialState: ProfileActionState = { error: null, success: false }
+const initialProfileState: ProfileActionState = { error: null, success: false }
+const initialAvatarState: AvatarActionState = { error: null, success: false }
 
 const roleLabels: Record<string, string> = {
   swimmer: "スイマー",
@@ -17,22 +25,23 @@ const roleLabels: Record<string, string> = {
 }
 
 export default function ProfilePage() {
-  const [state, formAction, isPending] = useActionState(
-    updateProfile,
-    initialState
-  )
+  const [state, formAction, isPending] = useActionState(updateProfile, initialProfileState)
+  const [avatarState, avatarAction, isAvatarPending] = useActionState(uploadAvatar, initialAvatarState)
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [role, setRole] = useState("")
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     getProfile().then((profile) => {
       if (profile) {
         setName(profile.name)
         setRole(profile.role)
+        setAvatarUrl(profile.avatar_url)
       }
     })
-    // メールアドレスはsupabase authから取得
     import("@/lib/supabase/client").then(({ createClient }) => {
       const supabase = createClient()
       supabase.auth.getUser().then(({ data }) => {
@@ -41,6 +50,23 @@ export default function ProfilePage() {
     })
   }, [])
 
+  useEffect(() => {
+    if (avatarState.success && avatarState.avatarUrl) {
+      setAvatarUrl(avatarState.avatarUrl)
+      setPreviewUrl(null)
+      if (fileInputRef.current) fileInputRef.current.value = ""
+    }
+  }, [avatarState])
+
+  const initials = name
+    .split(/\s+/)
+    .map((n) => n[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase()
+
+  const displayUrl = previewUrl ?? avatarUrl
+
   return (
     <div className="mx-auto max-w-md">
       <Card>
@@ -48,6 +74,58 @@ export default function ProfilePage() {
           <CardTitle>プロフィール設定</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* アバター */}
+          <div className="flex flex-col items-center gap-3">
+            <div className="relative h-20 w-20">
+              {displayUrl ? (
+                <Image
+                  src={displayUrl}
+                  alt={name}
+                  fill
+                  className="rounded-full object-cover ring-2 ring-border"
+                />
+              ) : (
+                <span className="flex h-20 w-20 items-center justify-center rounded-full bg-primary text-2xl font-medium text-primary-foreground ring-2 ring-border">
+                  {initials || "?"}
+                </span>
+              )}
+            </div>
+            <form action={avatarAction} className="flex flex-col items-center gap-2">
+              {avatarState.error && (
+                <p className="text-sm text-destructive">{avatarState.error}</p>
+              )}
+              {avatarState.success && (
+                <p className="text-sm text-green-600">画像を更新しました。</p>
+              )}
+              <Label
+                htmlFor="avatar"
+                className="cursor-pointer rounded-md border px-3 py-1.5 text-sm hover:bg-muted"
+              >
+                画像を選択
+              </Label>
+              <input
+                ref={fileInputRef}
+                id="avatar"
+                name="avatar"
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (file) {
+                    setPreviewUrl(URL.createObjectURL(file))
+                  }
+                }}
+              />
+              {previewUrl && (
+                <Button type="submit" size="sm" disabled={isAvatarPending}>
+                  {isAvatarPending ? "アップロード中..." : "この画像を保存"}
+                </Button>
+              )}
+            </form>
+            <p className="text-xs text-muted-foreground">JPEG・PNG・WebP / 2MB以下</p>
+          </div>
+
           {/* アカウント情報（読み取り専用） */}
           <div className="rounded-lg bg-muted/50 px-4 py-3 space-y-2 text-sm">
             <div className="flex items-center justify-between">
@@ -65,9 +143,7 @@ export default function ProfilePage() {
               <p className="text-sm text-destructive">{state.error}</p>
             )}
             {state.success && (
-              <p className="text-sm text-green-600">
-                プロフィールを更新しました。
-              </p>
+              <p className="text-sm text-green-600">プロフィールを更新しました。</p>
             )}
             <div className="space-y-2">
               <Label htmlFor="name">名前</Label>
