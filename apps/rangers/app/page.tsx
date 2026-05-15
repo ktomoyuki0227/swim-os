@@ -1,5 +1,7 @@
+import type React from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { Search, BookOpen, CreditCard } from "lucide-react"
 
 function WaveIcon({ className }: { className?: string }) {
   return (
@@ -106,17 +108,17 @@ export default function HomePage() {
 
           <div className="grid gap-6 sm:grid-cols-3 sm:gap-8">
             <FeatureCard
-              icon="🏊"
+              icon={<Search className="h-6 w-6" />}
               title="レッスンを見つける"
               description="日時・場所・指導員で検索。あなたにぴったりのレッスンを簡単に予約。"
             />
             <FeatureCard
-              icon="📋"
+              icon={<BookOpen className="h-6 w-6" />}
               title="レッスンを公開する"
               description="指導員として自由にレッスンを作成・公開。定員・料金・場所を自由に設定。"
             />
             <FeatureCard
-              icon="💳"
+              icon={<CreditCard className="h-6 w-6" />}
               title="安全なオンライン決済"
               description="Stripe による安全な決済。予約時に支払いが完了するのでトラブルなし。"
             />
@@ -191,13 +193,15 @@ function FeatureCard({
   title,
   description,
 }: {
-  icon: string
+  icon: React.ReactNode
   title: string
   description: string
 }) {
   return (
-    <div className="rounded-xl border bg-card p-6 transition-shadow hover:shadow-md">
-      <div className="mb-3 text-3xl">{icon}</div>
+    <div className="group rounded-xl border bg-card p-6 transition-all hover:border-blue-200 hover:shadow-lg hover:shadow-blue-500/5">
+      <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600 transition-colors group-hover:bg-blue-500 group-hover:text-white">
+        {icon}
+      </div>
       <h3 className="mb-2 text-lg font-semibold">{title}</h3>
       <p className="text-sm leading-relaxed text-muted-foreground">
         {description}
