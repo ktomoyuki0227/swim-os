@@ -79,6 +79,45 @@ export async function createBooking(lessonId: string) {
   }
 }
 
+export async function cancelBooking(bookingId: string) {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    return { error: "ログインが必要です" }
+  }
+
+  const { data: booking } = await supabase
+    .from("bookings")
+    .select("id, status, swimmer_id")
+    .eq("id", bookingId)
+    .eq("swimmer_id", user.id)
+    .single()
+
+  if (!booking) {
+    return { error: "予約が見つかりません" }
+  }
+
+  if (booking.status === "cancelled") {
+    return { error: "すでにキャンセル済みです" }
+  }
+
+  const { error } = await supabase
+    .from("bookings")
+    .update({ status: "cancelled" })
+    .eq("id", bookingId)
+    .eq("swimmer_id", user.id)
+
+  if (error) {
+    return { error: "キャンセルに失敗しました" }
+  }
+
+  revalidatePath("/bookings")
+  return { success: true }
+}
+
 export async function getMyBookings() {
   const supabase = await createClient()
   const {

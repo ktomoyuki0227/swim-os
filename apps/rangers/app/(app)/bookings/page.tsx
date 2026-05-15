@@ -3,6 +3,7 @@ import { redirect } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { MOCK_BOOKINGS } from "@/lib/mock-data"
+import { CancelBookingButton } from "@/components/booking/cancel-booking-button"
 
 const statusLabels: Record<string, string> = {
   pending: "確認待ち",
@@ -71,7 +72,7 @@ export default async function BookingsPage({ searchParams }: BookingsPageProps) 
                   </Badge>
                 </div>
               </CardHeader>
-              <CardContent className="text-sm text-muted-foreground">
+              <CardContent className="space-y-3 text-sm text-muted-foreground">
                 {booking.lesson && (
                   <div className="flex flex-col gap-1 sm:flex-row sm:gap-4">
                     <p>
@@ -89,6 +90,9 @@ export default async function BookingsPage({ searchParams }: BookingsPageProps) 
                     <p>{booking.lesson.location}</p>
                     <p>{booking.lesson.price.toLocaleString()}円</p>
                   </div>
+                )}
+                {!isMock && booking.status !== "cancelled" && (
+                  <CancelBookingButton bookingId={booking.id} />
                 )}
               </CardContent>
             </Card>
