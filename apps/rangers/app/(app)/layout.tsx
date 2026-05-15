@@ -23,6 +23,9 @@ export default async function AppLayout({
     .single()
 
   if (!profile) {
+    // プロフィールなし = 不完全なアカウント状態。サインアウトしてから /login に戻す
+    // （サインアウトせずにリダイレクトすると middleware が /dashboard に戻してループする）
+    await supabase.auth.signOut()
     redirect("/login")
   }
 

@@ -55,15 +55,13 @@ export default async function InstructorDashboardPage() {
     .eq("status", "confirmed")
     .gte("created_at", startOfMonth.toISOString())
 
+  // Supabase の join 結果は型上 T | T[] になるため正規化する
+  const toOne = <T,>(val: T | T[]): T | null =>
+    Array.isArray(val) ? (val[0] ?? null) : val
+
   const monthlyRevenue = confirmedBookings
-    ?.filter((b) => {
-      const lesson = Array.isArray(b.lesson) ? b.lesson[0] : b.lesson
-      return lesson?.instructor_id === user.id
-    })
-    .reduce((sum, b) => {
-      const lesson = Array.isArray(b.lesson) ? b.lesson[0] : b.lesson
-      return sum + (lesson?.price ?? 0)
-    }, 0) ?? 0
+    ?.filter((b) => toOne(b.lesson)?.instructor_id === user.id)
+    .reduce((sum, b) => sum + (toOne(b.lesson)?.price ?? 0), 0) ?? 0
 
   const isMock = (lessonCount ?? 0) === 0
   const upcomingLessons = isMock ? MOCK_LESSONS.slice(0, 3) : (dbUpcomingLessons ?? [])

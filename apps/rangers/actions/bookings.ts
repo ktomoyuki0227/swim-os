@@ -155,6 +155,7 @@ export async function confirmBooking(bookingId: string) {
     return { error: "予約が見つかりません" }
   }
 
+  // Supabase の join 結果は型上 T | T[] になるため正規化する
   const lesson = Array.isArray(booking.lesson) ? booking.lesson[0] : booking.lesson
   if (lesson?.instructor_id !== user.id) {
     return { error: "権限がありません" }

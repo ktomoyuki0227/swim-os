@@ -9,6 +9,7 @@ export interface Profile {
   role: UserRole
   name: string
   avatar_url: string | null
+  /** 将来の Stripe Connect 決済のために予約済み。現時点では未使用。 */
   stripe_account_id: string | null
   created_at: string
 }

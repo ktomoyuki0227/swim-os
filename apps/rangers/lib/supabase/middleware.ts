@@ -33,13 +33,14 @@ export async function updateSession(request: NextRequest) {
     }
   )
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: { user } } = await (supabase.auth as any).getUser()
+  const { data: { user } } = await supabase.auth.getUser()
 
   // 未ログインユーザーを認証ページ以外からリダイレクト
   const isAuthPage =
     request.nextUrl.pathname.startsWith("/login") ||
-    request.nextUrl.pathname.startsWith("/register")
+    request.nextUrl.pathname.startsWith("/register") ||
+    request.nextUrl.pathname.startsWith("/forgot-password") ||
+    request.nextUrl.pathname.startsWith("/reset-password")
 
   const isApiRoute = request.nextUrl.pathname.startsWith("/api")
 

@@ -9,6 +9,18 @@ export interface LessonActionState {
   error: string | null
 }
 
+function parseLessonFormData(formData: FormData) {
+  return {
+    title: formData.get("title") as string,
+    description: formData.get("description") as string,
+    price: Number(formData.get("price")),
+    capacity: Number(formData.get("capacity")),
+    scheduled_at: formData.get("scheduled_at") as string,
+    duration_minutes: Number(formData.get("duration_minutes")),
+    location: formData.get("location") as string,
+  }
+}
+
 export async function createLesson(
   _prevState: LessonActionState,
   formData: FormData
@@ -22,17 +34,7 @@ export async function createLesson(
     return { error: "ログインが必要です" }
   }
 
-  const raw = {
-    title: formData.get("title") as string,
-    description: formData.get("description") as string,
-    price: Number(formData.get("price")),
-    capacity: Number(formData.get("capacity")),
-    scheduled_at: formData.get("scheduled_at") as string,
-    duration_minutes: Number(formData.get("duration_minutes")),
-    location: formData.get("location") as string,
-  }
-
-  const result = lessonSchema.safeParse(raw)
+  const result = lessonSchema.safeParse(parseLessonFormData(formData))
   if (!result.success) {
     return { error: result.error.issues.map((i) => i.message).join("・") }
   }
@@ -65,17 +67,7 @@ export async function updateLesson(
     return { error: "ログインが必要です" }
   }
 
-  const raw = {
-    title: formData.get("title") as string,
-    description: formData.get("description") as string,
-    price: Number(formData.get("price")),
-    capacity: Number(formData.get("capacity")),
-    scheduled_at: formData.get("scheduled_at") as string,
-    duration_minutes: Number(formData.get("duration_minutes")),
-    location: formData.get("location") as string,
-  }
-
-  const result = lessonSchema.safeParse(raw)
+  const result = lessonSchema.safeParse(parseLessonFormData(formData))
   if (!result.success) {
     return { error: result.error.issues.map((i) => i.message).join("・") }
   }

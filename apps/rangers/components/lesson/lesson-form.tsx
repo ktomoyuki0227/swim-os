@@ -30,7 +30,11 @@ export function LessonForm({ lesson }: LessonFormProps) {
   const [state, formAction, isPending] = useActionState(action, initialState)
 
   const defaultScheduledAt = lesson
-    ? new Date(lesson.scheduled_at).toISOString().slice(0, 16)
+    ? (() => {
+        const d = new Date(lesson.scheduled_at)
+        const pad = (n: number) => String(n).padStart(2, "0")
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+      })()
     : ""
 
   return (
