@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import { notFound, redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -11,6 +12,26 @@ import { MOCK_LESSONS } from "@/lib/mock-data"
 
 interface InstructorLessonDetailPageProps {
   params: Promise<{ id: string }>
+}
+
+export async function generateMetadata({
+  params,
+}: InstructorLessonDetailPageProps): Promise<Metadata> {
+  const { id } = await params
+
+  if (id.startsWith("mock-")) {
+    const lesson = MOCK_LESSONS.find((l) => l.id === id)
+    return { title: lesson ? `${lesson.title} - 編集` : "レッスン編集" }
+  }
+
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from("lessons")
+    .select("title")
+    .eq("id", id)
+    .single()
+
+  return { title: data ? `${data.title} - 編集` : "レッスン編集" }
 }
 
 export default async function InstructorLessonDetailPage({

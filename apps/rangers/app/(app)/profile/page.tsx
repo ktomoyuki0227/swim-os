@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Mail, ShieldCheck } from "lucide-react"
 
 const initialProfileState: ProfileActionState = { error: null, success: false }
@@ -33,21 +34,23 @@ export default function ProfilePage() {
   const [role, setRole] = useState("")
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    getProfile().then((profile) => {
+    Promise.all([
+      getProfile(),
+      import("@/lib/supabase/client").then(({ createClient }) =>
+        createClient().auth.getUser()
+      ),
+    ]).then(([profile, { data }]) => {
       if (profile) {
         setName(profile.name)
         setRole(profile.role)
         setAvatarUrl(profile.avatar_url)
       }
-    })
-    import("@/lib/supabase/client").then(({ createClient }) => {
-      const supabase = createClient()
-      supabase.auth.getUser().then(({ data }) => {
-        if (data.user?.email) setEmail(data.user.email)
-      })
+      if (data.user?.email) setEmail(data.user.email)
+      setIsLoading(false)
     })
   }, [])
 
@@ -78,7 +81,9 @@ export default function ProfilePage() {
           {/* アバター */}
           <div className="flex flex-col items-center gap-3">
             <div className="relative h-20 w-20">
-              {displayUrl ? (
+              {isLoading ? (
+                <Skeleton className="h-20 w-20 rounded-full" />
+              ) : displayUrl ? (
                 <Image
                   src={displayUrl}
                   alt={name}
@@ -134,14 +139,22 @@ export default function ProfilePage() {
                 <Mail className="h-3.5 w-3.5" />
                 メールアドレス
               </span>
-              <span className="text-right text-xs">{email || "取得中..."}</span>
+              {isLoading ? (
+                <Skeleton className="h-4 w-40" />
+              ) : (
+                <span className="text-right text-xs">{email}</span>
+              )}
             </div>
             <div className="flex items-center justify-between">
               <span className="flex items-center gap-1.5 text-muted-foreground">
                 <ShieldCheck className="h-3.5 w-3.5" />
                 ロール
               </span>
-              <Badge variant="secondary">{roleLabels[role] ?? role}</Badge>
+              {isLoading ? (
+                <Skeleton className="h-5 w-16" />
+              ) : (
+                <Badge variant="secondary">{roleLabels[role] ?? role}</Badge>
+              )}
             </div>
           </div>
 
@@ -154,15 +167,19 @@ export default function ProfilePage() {
             )}
             <div className="space-y-2">
               <Label htmlFor="name">名前</Label>
-              <Input
-                id="name"
-                name="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-              />
+              {isLoading ? (
+                <Skeleton className="h-10 w-full" />
+              ) : (
+                <Input
+                  id="name"
+                  name="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                />
+              )}
             </div>
-            <Button type="submit" className="w-full" disabled={isPending}>
+            <Button type="submit" className="w-full" disabled={isPending || isLoading}>
               {isPending ? "保存中..." : "保存"}
             </Button>
           </form>
