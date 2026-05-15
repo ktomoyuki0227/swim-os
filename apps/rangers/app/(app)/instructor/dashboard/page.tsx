@@ -38,10 +38,32 @@ export default async function InstructorDashboardPage() {
     .eq("lesson.instructor_id", user.id)
     .in("status", ["pending", "confirmed"])
 
+  // 今月の売上（確定済み予約 × レッスン料金）
+  const startOfMonth = new Date()
+  startOfMonth.setDate(1)
+  startOfMonth.setHours(0, 0, 0, 0)
+
+  const { data: confirmedBookings } = await supabase
+    .from("bookings")
+    .select("lesson:lessons!inner(price, instructor_id)")
+    .eq("status", "confirmed")
+    .gte("created_at", startOfMonth.toISOString())
+
+  const monthlyRevenue = confirmedBookings
+    ?.filter((b) => {
+      const lesson = Array.isArray(b.lesson) ? b.lesson[0] : b.lesson
+      return lesson?.instructor_id === user.id
+    })
+    .reduce((sum, b) => {
+      const lesson = Array.isArray(b.lesson) ? b.lesson[0] : b.lesson
+      return sum + (lesson?.price ?? 0)
+    }, 0) ?? 0
+
   const isMock = (lessonCount ?? 0) === 0
   const upcomingLessons = isMock ? MOCK_LESSONS.slice(0, 3) : (dbUpcomingLessons ?? [])
   const bookingCount = isMock ? 5 : (dbBookingCount ?? 0)
   const displayLessonCount = isMock ? MOCK_LESSONS.length : (lessonCount ?? 0)
+  const displayRevenue = isMock ? 18500 : monthlyRevenue
 
   return (
     <div className="space-y-6">
@@ -58,7 +80,7 @@ export default async function InstructorDashboardPage() {
         </p>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader>
             <CardTitle className="text-sm text-muted-foreground">
@@ -88,6 +110,18 @@ export default async function InstructorDashboardPage() {
           <CardContent>
             <p className="text-3xl font-bold">
               {upcomingLessons?.length ?? 0}
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm text-muted-foreground">
+              今月の売上
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold">
+              ¥{displayRevenue.toLocaleString()}
             </p>
           </CardContent>
         </Card>
