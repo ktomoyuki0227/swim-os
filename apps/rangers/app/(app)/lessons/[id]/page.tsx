@@ -1,0 +1,125 @@
+import { notFound } from "next/navigation"
+import { createClient } from "@/lib/supabase/server"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Separator } from "@/components/ui/separator"
+import { BookingButton } from "@/components/booking/booking-button"
+
+interface LessonDetailPageProps {
+  params: Promise<{ id: string }>
+}
+
+export default async function LessonDetailPage({
+  params,
+}: LessonDetailPageProps) {
+  const { id } = await params
+  const supabase = await createClient()
+
+  const { data: lesson } = await supabase
+    .from("lessons")
+    .select("*, instructor:profiles!instructor_id(id, name, avatar_url)")
+    .eq("id", id)
+    .eq("status", "published")
+    .single()
+
+  if (!lesson) {
+    notFound()
+  }
+
+  // 予約数を取得
+  const { count: bookingCount } = await supabase
+    .from("bookings")
+    .select("*", { count: "exact", head: true })
+    .eq("lesson_id", id)
+    .in("status", ["pending", "confirmed"])
+
+  const spotsLeft = lesson.capacity - (bookingCount ?? 0)
+
+  // 自分が予約済みかどうかチェック
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  let alreadyBooked = false
+  if (user) {
+    const { data: existing } = await supabase
+      .from("bookings")
+      .select("id")
+      .eq("lesson_id", id)
+      .eq("swimmer_id", user.id)
+      .in("status", ["pending", "confirmed"])
+      .maybeSingle()
+    alreadyBooked = !!existing
+  }
+
+  return (
+    <div className="mx-auto max-w-2xl">
+      <Card>
+        <CardHeader>
+          <div className="flex items-start justify-between">
+            <CardTitle className="text-2xl">{lesson.title}</CardTitle>
+            <Badge variant="secondary" className="text-lg">
+              {lesson.price.toLocaleString()}円
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 gap-3 text-sm sm:gap-4">
+            <div>
+              <p className="text-muted-foreground">日時</p>
+              <p className="font-medium">
+                {new Date(lesson.scheduled_at).toLocaleDateString("ja-JP", {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                  weekday: "short",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </p>
+            </div>
+            <div>
+              <p className="text-muted-foreground">時間</p>
+              <p className="font-medium">{lesson.duration_minutes}分</p>
+            </div>
+            <div>
+              <p className="text-muted-foreground">場所</p>
+              <p className="font-medium">{lesson.location}</p>
+            </div>
+            <div>
+              <p className="text-muted-foreground">空き</p>
+              <p className="font-medium">
+                {spotsLeft > 0
+                  ? `残り ${spotsLeft} / ${lesson.capacity} 名`
+                  : "満員"}
+              </p>
+            </div>
+          </div>
+
+          <Separator />
+
+          <div>
+            <p className="mb-1 text-sm text-muted-foreground">指導員</p>
+            <p className="font-medium">{lesson.instructor?.name ?? "不明"}</p>
+          </div>
+
+          <Separator />
+
+          <div>
+            <p className="mb-1 text-sm text-muted-foreground">説明</p>
+            <p className="whitespace-pre-wrap">{lesson.description}</p>
+          </div>
+
+          <Separator />
+
+          <BookingButton
+            lessonId={lesson.id}
+            price={lesson.price}
+            isFull={spotsLeft <= 0}
+            alreadyBooked={alreadyBooked}
+          />
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
