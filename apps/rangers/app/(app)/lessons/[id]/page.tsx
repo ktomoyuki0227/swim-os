@@ -2,10 +2,10 @@ import Image from "next/image"
 import { notFound } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { BookingButton } from "@/components/booking/booking-button"
 import { MOCK_LESSONS } from "@/lib/mock-data"
+import { CalendarDays, Clock, MapPin, Users, User } from "lucide-react"
 
 function getLessonImage(title: string): string {
   if (title.includes("子ども") || title.includes("キッズ")) {
@@ -77,12 +77,12 @@ export default async function LessonDetailPage({
   return (
     <div className="mx-auto max-w-2xl">
       {isMock && (
-        <p className="mb-4 rounded-md bg-amber-50 px-4 py-2 text-sm text-amber-700 border border-amber-200">
+        <p className="mb-4 rounded-lg border-l-4 border-amber-400 bg-amber-50 px-4 py-3 text-sm text-amber-700">
           これはサンプルデータです。実際の予約はできません。
         </p>
       )}
       <Card className="overflow-hidden">
-        <div className="relative h-56 w-full">
+        <div className="relative h-64 w-full">
           <Image
             src={getLessonImage(lesson.title)}
             alt={lesson.title}
@@ -91,61 +91,78 @@ export default async function LessonDetailPage({
             priority
             sizes="(max-width: 768px) 100vw, 672px"
           />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+          <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between">
+            <CardTitle className="text-2xl text-white drop-shadow-md">{lesson.title}</CardTitle>
+            <span className="rounded-full bg-blue-500 px-4 py-1.5 text-lg font-bold text-white shadow-lg">
+              ¥{lesson.price.toLocaleString()}
+            </span>
+          </div>
         </div>
-        <CardHeader>
-          <div className="flex items-start justify-between">
-            <CardTitle className="text-2xl">{lesson.title}</CardTitle>
-            <Badge variant="secondary" className="text-lg">
-              {lesson.price.toLocaleString()}円
-            </Badge>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-3 text-sm sm:gap-4">
-            <div>
-              <p className="text-muted-foreground">日時</p>
-              <p className="font-medium">
-                {new Date(lesson.scheduled_at).toLocaleDateString("ja-JP", {
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                  weekday: "short",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </p>
+        <CardContent className="space-y-4 pt-5">
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div className="flex items-start gap-2">
+              <CalendarDays className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
+              <div>
+                <p className="text-xs text-muted-foreground">日時</p>
+                <p className="font-medium">
+                  {new Date(lesson.scheduled_at).toLocaleDateString("ja-JP", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                    weekday: "short",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="text-muted-foreground">時間</p>
-              <p className="font-medium">{lesson.duration_minutes}分</p>
+            <div className="flex items-start gap-2">
+              <Clock className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
+              <div>
+                <p className="text-xs text-muted-foreground">時間</p>
+                <p className="font-medium">{lesson.duration_minutes}分</p>
+              </div>
             </div>
-            <div>
-              <p className="text-muted-foreground">場所</p>
-              <p className="font-medium">{lesson.location}</p>
+            <div className="flex items-start gap-2">
+              <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
+              <div>
+                <p className="text-xs text-muted-foreground">場所</p>
+                <p className="font-medium">{lesson.location}</p>
+              </div>
             </div>
-            <div>
-              <p className="text-muted-foreground">空き</p>
-              <p className="font-medium">
-                {spotsLeft > 0
-                  ? `残り ${spotsLeft} / ${lesson.capacity} 名`
-                  : "満員"}
-              </p>
+            <div className="flex items-start gap-2">
+              <Users className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
+              <div>
+                <p className="text-xs text-muted-foreground">空き</p>
+                <p className={`font-medium ${spotsLeft === 0 ? "text-destructive" : spotsLeft <= 2 ? "text-orange-500" : ""}`}>
+                  {spotsLeft > 0
+                    ? `残り ${spotsLeft} / ${lesson.capacity} 名`
+                    : "満員"}
+                </p>
+              </div>
             </div>
-          </div>
-
-          <Separator />
-
-          <div>
-            <p className="mb-1 text-sm text-muted-foreground">指導員</p>
-            <p className="font-medium">{lesson.instructor?.name ?? "不明"}</p>
           </div>
 
           <Separator />
 
-          <div>
-            <p className="mb-1 text-sm text-muted-foreground">説明</p>
-            <p className="whitespace-pre-wrap">{lesson.description}</p>
+          <div className="flex items-start gap-2">
+            <User className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
+            <div>
+              <p className="text-xs text-muted-foreground">指導員</p>
+              <p className="font-medium">{lesson.instructor?.name ?? "不明"}</p>
+            </div>
           </div>
+
+          {lesson.description && (
+            <>
+              <Separator />
+              <div>
+                <p className="mb-2 text-xs text-muted-foreground">説明</p>
+                <p className="whitespace-pre-wrap text-sm leading-relaxed">{lesson.description}</p>
+              </div>
+            </>
+          )}
 
           <Separator />
 
