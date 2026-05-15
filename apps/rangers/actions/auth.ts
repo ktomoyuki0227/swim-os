@@ -83,6 +83,56 @@ export async function logout() {
   redirect("/login")
 }
 
+export interface ResetPasswordState {
+  error: string | null
+  success: boolean
+}
+
+export async function requestPasswordReset(
+  _prevState: ResetPasswordState,
+  formData: FormData
+): Promise<ResetPasswordState> {
+  const email = (formData.get("email") as string)?.trim()
+  if (!email) {
+    return { error: "メールアドレスを入力してください", success: false }
+  }
+
+  const supabase = await createClient()
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}/reset-password`,
+  })
+
+  if (error) {
+    return { error: "送信に失敗しました。もう一度お試しください", success: false }
+  }
+
+  return { error: null, success: true }
+}
+
+export async function updatePassword(
+  _prevState: ResetPasswordState,
+  formData: FormData
+): Promise<ResetPasswordState> {
+  const password = formData.get("password") as string
+  const confirm = formData.get("confirm") as string
+
+  if (!password || password.length < 6) {
+    return { error: "パスワードは6文字以上で入力してください", success: false }
+  }
+  if (password !== confirm) {
+    return { error: "パスワードが一致しません", success: false }
+  }
+
+  const supabase = await createClient()
+  const { error } = await supabase.auth.updateUser({ password })
+
+  if (error) {
+    return { error: "パスワードの更新に失敗しました", success: false }
+  }
+
+  redirect("/login")
+}
+
 export async function loginWithGoogle(): Promise<void> {
   const supabase = await createClient()
   const { data, error } = await supabase.auth.signInWithOAuth({
