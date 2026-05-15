@@ -16,6 +16,7 @@ interface NavigationProps {
 }
 
 const swimmerLinks = [
+  { href: "/dashboard", label: "ホーム" },
   { href: "/lessons", label: "レッスン検索" },
   { href: "/bookings", label: "予約履歴" },
   { href: "/profile", label: "プロフィール" },
