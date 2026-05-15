@@ -59,7 +59,7 @@ export async function register(
   })
 
   if (signUpError) {
-    return { error: `[DEBUG] ${signUpError.message}` }
+    return { error: "登録に失敗しました。別のメールアドレスをお試しください" }
   }
 
   // プロフィールのロールを更新
@@ -74,7 +74,7 @@ export async function register(
       .eq("id", user.id)
   }
 
-  redirect("/register/confirm")
+  redirect("/dashboard")
 }
 
 export async function logout() {
