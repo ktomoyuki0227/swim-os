@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { LessonForm } from "@/components/lesson/lesson-form"
 import { DeleteLessonButton } from "@/components/lesson/delete-lesson-button"
+import { MOCK_LESSONS } from "@/lib/mock-data"
 
 interface InstructorLessonDetailPageProps {
   params: Promise<{ id: string }>
@@ -23,27 +24,45 @@ export default async function InstructorLessonDetailPage({
     redirect("/login")
   }
 
-  const { data: lesson } = await supabase
+  const { data: dbLesson } = await supabase
     .from("lessons")
     .select("*")
     .eq("id", id)
     .eq("instructor_id", user.id)
     .single()
 
+  const isMock = !dbLesson && id.startsWith("mock-")
+  const lesson = dbLesson ?? (isMock ? MOCK_LESSONS.find((l) => l.id === id) : null)
+
   if (!lesson) {
     notFound()
   }
 
-  // 予約者一覧
-  const { data: bookings } = await supabase
-    .from("bookings")
-    .select("*, swimmer:profiles!swimmer_id(id, name, avatar_url)")
-    .eq("lesson_id", id)
-    .in("status", ["pending", "confirmed"])
-    .order("created_at", { ascending: true })
+  // 予約者一覧（モックの場合はサンプルデータ）
+  const { data: dbBookings } = isMock
+    ? { data: null }
+    : await supabase
+        .from("bookings")
+        .select("*, swimmer:profiles!swimmer_id(id, name, avatar_url)")
+        .eq("lesson_id", id)
+        .in("status", ["pending", "confirmed"])
+        .order("created_at", { ascending: true })
+
+  const mockBookings = isMock
+    ? [
+        { id: "mb-1", swimmer: { id: "s1", name: "山田 太郎", avatar_url: null }, status: "confirmed" },
+        { id: "mb-2", swimmer: { id: "s2", name: "鈴木 花子", avatar_url: null }, status: "pending" },
+      ]
+    : null
+  const bookings = dbBookings ?? mockBookings ?? []
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
+      {isMock && (
+        <p className="rounded-md bg-amber-50 px-4 py-2 text-sm text-amber-700 border border-amber-200">
+          これはサンプルデータです。実際のレッスンを作成すると編集・削除できます。
+        </p>
+      )}
       {/* 予約者一覧 */}
       <Card>
         <CardHeader>
@@ -77,19 +96,23 @@ export default async function InstructorLessonDetailPage({
         </CardContent>
       </Card>
 
-      {/* レッスン編集 */}
-      <Card>
-        <CardHeader>
-          <CardTitle>レッスンを編集</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <LessonForm lesson={lesson} />
-        </CardContent>
-      </Card>
+      {!isMock && (
+        <>
+          {/* レッスン編集 */}
+          <Card>
+            <CardHeader>
+              <CardTitle>レッスンを編集</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <LessonForm lesson={lesson} />
+            </CardContent>
+          </Card>
 
-      <Separator />
+          <Separator />
 
-      <DeleteLessonButton lessonId={lesson.id} />
+          <DeleteLessonButton lessonId={lesson.id} />
+        </>
+      )}
     </div>
   )
 }

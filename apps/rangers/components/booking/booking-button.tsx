@@ -16,6 +16,7 @@ interface BookingButtonProps {
   price: number
   isFull: boolean
   alreadyBooked: boolean
+  isMock?: boolean
 }
 
 export function BookingButton({
@@ -23,7 +24,16 @@ export function BookingButton({
   price,
   isFull,
   alreadyBooked,
+  isMock = false,
 }: BookingButtonProps) {
+  if (isMock) {
+    return (
+      <Button disabled className="w-full">
+        サンプルデータのため予約不可
+      </Button>
+    )
+  }
+
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [clientSecret, setClientSecret] = useState<string | null>(null)
