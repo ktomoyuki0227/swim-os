@@ -5,21 +5,9 @@ import { createClient } from "@/lib/supabase/server"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { MOCK_LESSONS } from "@/lib/mock-data"
 import { LessonFilters } from "@/components/lesson/lesson-filters"
+import { getLessonImage } from "@/lib/lesson-utils"
 import { CalendarDays, MapPin, Clock, User } from "lucide-react"
 import type { LessonWithInstructor } from "@/types/database"
-
-function getLessonImage(title: string): string {
-  if (title.includes("子ども") || title.includes("キッズ")) {
-    return "/images/lessons/children.jpg"
-  }
-  if (title.includes("バタフライ") || title.includes("背泳ぎ")) {
-    return "/images/lessons/butterfly.jpg"
-  }
-  if (title.includes("平泳ぎ")) {
-    return "/images/lessons/breaststroke.jpg"
-  }
-  return "/images/lessons/crawl.jpg"
-}
 
 interface LessonsPageProps {
   searchParams: Promise<{ q?: string; sort?: string }>

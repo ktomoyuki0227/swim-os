@@ -4,19 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { MOCK_BOOKINGS } from "@/lib/mock-data"
 import { CancelBookingButton } from "@/components/booking/cancel-booking-button"
+import { bookingStatusLabels, bookingStatusVariants } from "@/lib/lesson-utils"
 import { CalendarDays, MapPin, Banknote } from "lucide-react"
-
-const statusLabels: Record<string, string> = {
-  pending: "確認待ち",
-  confirmed: "確定",
-  cancelled: "キャンセル済み",
-}
-
-const statusVariants: Record<string, "default" | "secondary" | "destructive"> = {
-  pending: "secondary",
-  confirmed: "default",
-  cancelled: "destructive",
-}
 
 interface BookingsPageProps {
   searchParams: Promise<{ success?: string }>
@@ -68,8 +57,8 @@ export default async function BookingsPage({ searchParams }: BookingsPageProps) 
                   <CardTitle className="text-lg">
                     {booking.lesson?.title ?? "不明なレッスン"}
                   </CardTitle>
-                  <Badge variant={statusVariants[booking.status]}>
-                    {statusLabels[booking.status]}
+                  <Badge variant={bookingStatusVariants[booking.status]}>
+                    {bookingStatusLabels[booking.status]}
                   </Badge>
                 </div>
               </CardHeader>

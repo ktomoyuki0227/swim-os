@@ -5,20 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { BookingButton } from "@/components/booking/booking-button"
 import { MOCK_LESSONS } from "@/lib/mock-data"
+import { getLessonImage } from "@/lib/lesson-utils"
 import { CalendarDays, Clock, MapPin, Users, User } from "lucide-react"
-
-function getLessonImage(title: string): string {
-  if (title.includes("子ども") || title.includes("キッズ")) {
-    return "/images/lessons/children.jpg"
-  }
-  if (title.includes("バタフライ") || title.includes("背泳ぎ")) {
-    return "/images/lessons/butterfly.jpg"
-  }
-  if (title.includes("平泳ぎ")) {
-    return "/images/lessons/breaststroke.jpg"
-  }
-  return "/images/lessons/crawl.jpg"
-}
 
 interface LessonDetailPageProps {
   params: Promise<{ id: string }>

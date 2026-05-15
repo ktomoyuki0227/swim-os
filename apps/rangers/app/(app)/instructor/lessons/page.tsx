@@ -5,19 +5,8 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { MOCK_LESSONS } from "@/lib/mock-data"
+import { lessonStatusLabels, lessonStatusVariants } from "@/lib/lesson-utils"
 import { CalendarDays, MapPin, Users, ChevronRight } from "lucide-react"
-
-const statusLabels: Record<string, string> = {
-  draft: "下書き",
-  published: "公開中",
-  cancelled: "キャンセル",
-}
-
-const statusVariants: Record<string, "default" | "secondary" | "destructive"> = {
-  draft: "secondary",
-  published: "default",
-  cancelled: "destructive",
-}
 
 export default async function InstructorLessonsPage() {
   const supabase = await createClient()
@@ -69,8 +58,8 @@ export default async function InstructorLessonsPage() {
                   <div className="min-w-0 flex-1 space-y-1.5">
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="truncate font-medium">{lesson.title}</p>
-                      <Badge variant={statusVariants[lesson.status]}>
-                        {statusLabels[lesson.status]}
+                      <Badge variant={lessonStatusVariants[lesson.status]}>
+                        {lessonStatusLabels[lesson.status]}
                       </Badge>
                     </div>
                     <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
