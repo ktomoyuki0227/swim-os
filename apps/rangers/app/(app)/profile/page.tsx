@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
+import { Mail, ShieldCheck } from "lucide-react"
 
 const initialProfileState: ProfileActionState = { error: null, success: false }
 const initialAvatarState: AvatarActionState = { error: null, success: false }
@@ -127,13 +128,19 @@ export default function ProfilePage() {
           </div>
 
           {/* アカウント情報（読み取り専用） */}
-          <div className="rounded-lg bg-muted/50 px-4 py-3 space-y-2 text-sm">
+          <div className="rounded-lg bg-muted/50 px-4 py-3 space-y-2.5 text-sm">
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">メールアドレス</span>
-              <span>{email || "取得中..."}</span>
+              <span className="flex items-center gap-1.5 text-muted-foreground">
+                <Mail className="h-3.5 w-3.5" />
+                メールアドレス
+              </span>
+              <span className="text-right text-xs">{email || "取得中..."}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">ロール</span>
+              <span className="flex items-center gap-1.5 text-muted-foreground">
+                <ShieldCheck className="h-3.5 w-3.5" />
+                ロール
+              </span>
               <Badge variant="secondary">{roleLabels[role] ?? role}</Badge>
             </div>
           </div>
