@@ -94,6 +94,32 @@ export async function updateLesson(
   redirect("/instructor/lessons")
 }
 
+export async function toggleLessonStatus(lessonId: string, currentStatus: string) {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    return { error: "ログインが必要です" }
+  }
+
+  const nextStatus = currentStatus === "published" ? "draft" : "published"
+
+  const { error } = await supabase
+    .from("lessons")
+    .update({ status: nextStatus })
+    .eq("id", lessonId)
+    .eq("instructor_id", user.id)
+
+  if (error) {
+    return { error: "ステータスの変更に失敗しました" }
+  }
+
+  revalidatePath("/instructor/lessons")
+  return { success: true, newStatus: nextStatus }
+}
+
 export async function deleteLesson(lessonId: string) {
   const supabase = await createClient()
   const {

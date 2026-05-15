@@ -6,6 +6,7 @@ import { Separator } from "@/components/ui/separator"
 import { LessonForm } from "@/components/lesson/lesson-form"
 import { DeleteLessonButton } from "@/components/lesson/delete-lesson-button"
 import { ConfirmBookingButton } from "@/components/booking/confirm-booking-button"
+import { ToggleStatusButton } from "@/components/lesson/toggle-status-button"
 import { MOCK_LESSONS } from "@/lib/mock-data"
 
 interface InstructorLessonDetailPageProps {
@@ -107,6 +108,17 @@ export default async function InstructorLessonDetailPage({
 
       {!isMock && (
         <>
+          {/* 公開・下書き切り替え */}
+          <div className="flex items-center justify-between rounded-lg border px-4 py-3">
+            <div>
+              <p className="text-sm font-medium">公開ステータス</p>
+              <p className="text-xs text-muted-foreground">
+                {lesson.status === "published" ? "現在公開中です" : "現在は非公開（下書き）です"}
+              </p>
+            </div>
+            <ToggleStatusButton lessonId={lesson.id} currentStatus={lesson.status} />
+          </div>
+
           {/* レッスン編集 */}
           <Card>
             <CardHeader>
