@@ -52,7 +52,7 @@ export function Navigation({ role, userName, avatarUrl }: NavigationProps) {
                 href={link.href}
                 className={cn(
                   "rounded-md px-3 py-1.5 text-sm transition-colors",
-                  pathname === link.href
+                  pathname === link.href || (link.href !== "/profile" && pathname.startsWith(link.href + "/"))
                     ? "bg-blue-50 text-blue-700 font-medium"
                     : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 )}
@@ -122,7 +122,7 @@ export function Navigation({ role, userName, avatarUrl }: NavigationProps) {
 
       {/* Mobile menu */}
       {menuOpen && (
-        <nav className="border-t px-4 pb-4 pt-2 md:hidden">
+        <nav className="animate-in slide-in-from-top-2 fade-in border-t px-4 pb-4 pt-2 duration-150 md:hidden">
           <div className="flex flex-col gap-1">
             {links.map((link) => (
               <Link
@@ -131,7 +131,7 @@ export function Navigation({ role, userName, avatarUrl }: NavigationProps) {
                 onClick={() => setMenuOpen(false)}
                 className={cn(
                   "rounded-md px-3 py-2 text-sm transition-colors",
-                  pathname === link.href
+                  pathname === link.href || (link.href !== "/profile" && pathname.startsWith(link.href + "/"))
                     ? "bg-muted font-medium text-foreground"
                     : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 )}
