@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { MOCK_LESSONS } from "@/lib/mock-data"
+import { BookOpen, CalendarCheck, Clock, TrendingUp, ChevronRight } from "lucide-react"
 
 export default async function InstructorDashboardPage() {
   const supabase = await createClient()
@@ -75,54 +76,62 @@ export default async function InstructorDashboardPage() {
       </div>
 
       {isMock && (
-        <p className="rounded-md bg-amber-50 px-4 py-2 text-sm text-amber-700 border border-amber-200">
+        <p className="rounded-lg border-l-4 border-amber-400 bg-amber-50 px-4 py-3 text-sm text-amber-700">
           サンプルデータを表示しています。レッスンを作成すると実際のデータが表示されます。
         </p>
       )}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
-          <CardHeader>
-            <CardTitle className="text-sm text-muted-foreground">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
               レッスン数
             </CardTitle>
+            <BookOpen className="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-bold">{displayLessonCount}</p>
+            <p className="mt-1 text-xs text-muted-foreground">作成済みレッスン</p>
           </CardContent>
         </Card>
         <Card>
-          <CardHeader>
-            <CardTitle className="text-sm text-muted-foreground">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
               予約数
             </CardTitle>
+            <CalendarCheck className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-bold">{bookingCount ?? 0}</p>
+            <p className="mt-1 text-xs text-muted-foreground">受付中・確定済み</p>
           </CardContent>
         </Card>
         <Card>
-          <CardHeader>
-            <CardTitle className="text-sm text-muted-foreground">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
               今後のレッスン
             </CardTitle>
+            <Clock className="h-4 w-4 text-orange-500" />
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-bold">
               {upcomingLessons?.length ?? 0}
             </p>
+            <p className="mt-1 text-xs text-muted-foreground">予定されているレッスン</p>
           </CardContent>
         </Card>
         <Card>
-          <CardHeader>
-            <CardTitle className="text-sm text-muted-foreground">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
               今月の売上
             </CardTitle>
+            <TrendingUp className="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-bold">
               ¥{displayRevenue.toLocaleString()}
             </p>
+            <p className="mt-1 text-xs text-muted-foreground">確定済み予約の合計</p>
           </CardContent>
         </Card>
       </div>
@@ -140,9 +149,9 @@ export default async function InstructorDashboardPage() {
                 key={lesson.id}
                 href={`/instructor/lessons/${lesson.id}`}
               >
-                <Card className="transition-shadow hover:shadow-md">
-                  <CardContent className="flex flex-col gap-2 py-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="min-w-0">
+                <Card className="group transition-all hover:border-blue-200 hover:shadow-md hover:shadow-blue-500/5">
+                  <CardContent className="flex items-center gap-4 py-4">
+                    <div className="min-w-0 flex-1">
                       <p className="truncate font-medium">{lesson.title}</p>
                       <p className="text-sm text-muted-foreground">
                         {new Date(lesson.scheduled_at).toLocaleDateString(
@@ -155,13 +164,14 @@ export default async function InstructorDashboardPage() {
                             minute: "2-digit",
                           }
                         )}
-                        {" / "}
+                        {" · "}
                         {lesson.location}
                       </p>
                     </div>
-                    <p className="shrink-0 text-sm font-medium">
-                      {lesson.price.toLocaleString()}円
-                    </p>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <p className="text-sm font-semibold">{lesson.price.toLocaleString()}円</p>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+                    </div>
                   </CardContent>
                 </Card>
               </Link>
