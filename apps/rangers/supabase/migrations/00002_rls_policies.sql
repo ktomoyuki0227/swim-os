@@ -50,5 +50,14 @@ create policy "スイマーのみ予約作成可"
     )
   );
 
-create policy "自分の予約のみ更新可"
+create policy "自分の予約のみ更新可（スイマー）"
   on bookings for update using (swimmer_id = auth.uid());
+
+create policy "自分のレッスンの予約を更新可（指導員）"
+  on bookings for update using (
+    exists (
+      select 1 from lessons
+      where lessons.id = bookings.lesson_id
+      and lessons.instructor_id = auth.uid()
+    )
+  );
