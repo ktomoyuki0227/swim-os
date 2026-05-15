@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { MOCK_BOOKINGS } from "@/lib/mock-data"
 import { CancelBookingButton } from "@/components/booking/cancel-booking-button"
+import { CalendarDays, MapPin, Banknote } from "lucide-react"
 
 const statusLabels: Record<string, string> = {
   pending: "確認待ち",
@@ -50,7 +51,7 @@ export default async function BookingsPage({ searchParams }: BookingsPageProps) 
       )}
       <h1 className="mb-6 text-2xl font-bold">予約履歴</h1>
       {isMock && (
-        <p className="mb-4 rounded-md bg-amber-50 px-4 py-2 text-sm text-amber-700 border border-amber-200">
+        <p className="mb-4 rounded-lg border-l-4 border-amber-400 bg-amber-50 px-4 py-3 text-sm text-amber-700">
           サンプルデータを表示しています。予約すると実際のデータが表示されます。
         </p>
       )}
@@ -72,27 +73,40 @@ export default async function BookingsPage({ searchParams }: BookingsPageProps) 
                   </Badge>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-3 text-sm text-muted-foreground">
+              <CardContent className="space-y-2 text-sm text-muted-foreground">
                 {booking.lesson && (
-                  <div className="flex flex-col gap-1 sm:flex-row sm:gap-4">
-                    <p>
-                      {new Date(booking.lesson.scheduled_at).toLocaleDateString(
-                        "ja-JP",
-                        {
-                          month: "long",
-                          day: "numeric",
-                          weekday: "short",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        }
-                      )}
-                    </p>
-                    <p>{booking.lesson.location}</p>
-                    <p>{booking.lesson.price.toLocaleString()}円</p>
+                  <div className="flex flex-col gap-1.5">
+                    <div className="flex items-center gap-1.5">
+                      <CalendarDays className="h-3.5 w-3.5 shrink-0 text-blue-400" />
+                      <span>
+                        {new Date(booking.lesson.scheduled_at).toLocaleDateString(
+                          "ja-JP",
+                          {
+                            month: "long",
+                            day: "numeric",
+                            weekday: "short",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          }
+                        )}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-1.5">
+                        <MapPin className="h-3.5 w-3.5 shrink-0 text-blue-400" />
+                        <span>{booking.lesson.location}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <Banknote className="h-3.5 w-3.5 shrink-0 text-blue-400" />
+                        <span>{booking.lesson.price.toLocaleString()}円</span>
+                      </div>
+                    </div>
                   </div>
                 )}
                 {!isMock && booking.status !== "cancelled" && (
-                  <CancelBookingButton bookingId={booking.id} />
+                  <div className="pt-1">
+                    <CancelBookingButton bookingId={booking.id} />
+                  </div>
                 )}
               </CardContent>
             </Card>
