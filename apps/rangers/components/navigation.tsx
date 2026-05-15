@@ -39,22 +39,22 @@ export function Navigation({ role, userName, avatarUrl }: NavigationProps) {
     .toUpperCase()
 
   return (
-    <header className="border-b bg-background">
+    <header className="border-b bg-background shadow-sm">
       <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
         <div className="flex items-center gap-6">
-          <Link href="/dashboard" className="text-lg font-bold">
+          <Link href="/dashboard" className="text-lg font-bold text-blue-600">
             Rangers
           </Link>
-          <nav className="hidden gap-4 md:flex">
+          <nav className="hidden gap-1 md:flex">
             {links.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
                 className={cn(
-                  "text-sm transition-colors hover:text-foreground",
+                  "rounded-md px-3 py-1.5 text-sm transition-colors",
                   pathname === link.href
-                    ? "text-foreground font-medium"
-                    : "text-muted-foreground"
+                    ? "bg-blue-50 text-blue-700 font-medium"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 )}
               >
                 {link.label}
