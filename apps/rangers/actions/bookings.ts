@@ -51,6 +51,22 @@ export async function createBooking(lessonId: string) {
     return { error: "すでにこのレッスンを予約しています" }
   }
 
+  // Stripe未設定の場合は決済なしで予約確定
+  if (!process.env.STRIPE_SECRET_KEY) {
+    const { error: bookingError } = await supabase.from("bookings").insert({
+      lesson_id: lessonId,
+      swimmer_id: user.id,
+      status: "confirmed",
+      stripe_payment_intent_id: null,
+    })
+
+    if (bookingError) {
+      return { error: "予約の作成に失敗しました" }
+    }
+
+    return { clientSecret: null, bookingId: null, skipPayment: true }
+  }
+
   // Stripe PaymentIntent 作成
   const paymentIntent = await stripe.paymentIntents.create({
     amount: lesson.price,

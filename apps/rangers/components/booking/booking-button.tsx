@@ -66,6 +66,11 @@ export function BookingButton({
       return
     }
 
+    if ("skipPayment" in result && result.skipPayment) {
+      window.location.href = "/bookings?success=true"
+      return
+    }
+
     if ("clientSecret" in result && result.clientSecret) {
       setClientSecret(result.clientSecret)
     }
