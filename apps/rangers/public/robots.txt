@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /bookings
+Disallow: /profile
+Disallow: /instructor/
+
+Sitemap: https://rangers.groove-house.com/sitemap.xml
