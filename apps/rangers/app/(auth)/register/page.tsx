@@ -14,10 +14,10 @@ export default function RegisterPage() {
   const [state, formAction, isPending] = useActionState(register, initialState)
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4">
-      <Card className="w-full max-w-md">
+    <div className="w-full max-w-md">
+      <Card className="w-full border-white/10 bg-white/95 shadow-2xl backdrop-blur-sm">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">新規登録</CardTitle>
+          <CardTitle className="text-2xl text-blue-600">新規登録</CardTitle>
           <CardDescription>Rangers アカウントを作成</CardDescription>
         </CardHeader>
         <CardContent>
@@ -85,6 +85,9 @@ export default function RegisterPage() {
           </p>
         </CardContent>
       </Card>
+      <p className="mt-6 text-center text-sm text-slate-400">
+        Rangers · マスターズ水泳レッスン予約
+      </p>
     </div>
   )
 }

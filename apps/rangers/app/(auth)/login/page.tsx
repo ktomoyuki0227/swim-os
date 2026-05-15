@@ -14,10 +14,10 @@ export default function LoginPage() {
   const [state, formAction, isPending] = useActionState(login, initialState)
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4">
-      <Card className="w-full max-w-md">
+    <div className="w-full max-w-md">
+      <Card className="w-full border-white/10 bg-white/95 shadow-2xl backdrop-blur-sm">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Rangers</CardTitle>
+          <CardTitle className="text-2xl text-blue-600">Rangers</CardTitle>
           <CardDescription>ログインしてレッスンを始めましょう</CardDescription>
         </CardHeader>
         <CardContent>
@@ -54,7 +54,7 @@ export default function LoginPage() {
               <span className="w-full border-t" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-2 text-muted-foreground">または</span>
+              <span className="bg-white/95 px-2 text-muted-foreground">または</span>
             </div>
           </div>
 
@@ -72,6 +72,9 @@ export default function LoginPage() {
           </p>
         </CardContent>
       </Card>
+      <p className="mt-6 text-center text-sm text-slate-400">
+        Rangers · マスターズ水泳レッスン予約
+      </p>
     </div>
   )
 }
