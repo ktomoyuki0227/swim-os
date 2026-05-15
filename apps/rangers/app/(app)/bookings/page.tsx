@@ -1,5 +1,10 @@
+import type { Metadata } from "next"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
+
+export const metadata: Metadata = {
+  title: "予約履歴",
+}
 import { redirect } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"

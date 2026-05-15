@@ -1,6 +1,12 @@
+import type { Metadata } from "next"
 import Image from "next/image"
 import Link from "next/link"
 import { Suspense } from "react"
+
+export const metadata: Metadata = {
+  title: "レッスンを探す",
+  description: "マスターズ水泳・個人指導のレッスンを検索・予約。日程や場所で絞り込んで、あなたにぴったりの指導員を見つけましょう。",
+}
 import { createClient } from "@/lib/supabase/server"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { MOCK_LESSONS } from "@/lib/mock-data"

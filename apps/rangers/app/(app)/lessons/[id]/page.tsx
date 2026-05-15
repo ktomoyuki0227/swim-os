@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import Image from "next/image"
 import { notFound } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
@@ -7,6 +8,40 @@ import { BookingButton } from "@/components/booking/booking-button"
 import { MOCK_LESSONS } from "@/lib/mock-data"
 import { getLessonImage } from "@/lib/lesson-utils"
 import { CalendarDays, Clock, MapPin, Users, User } from "lucide-react"
+
+export async function generateMetadata({
+  params,
+}: LessonDetailPageProps): Promise<Metadata> {
+  const { id } = await params
+
+  if (id.startsWith("mock-")) {
+    const lesson = MOCK_LESSONS.find((l) => l.id === id)
+    if (!lesson) return {}
+    return {
+      title: lesson.title,
+      description: `${lesson.title} — ${lesson.duration_minutes}分 · ¥${lesson.price.toLocaleString()} · ${lesson.location}`,
+    }
+  }
+
+  const supabase = await createClient()
+  const { data: lesson } = await supabase
+    .from("lessons")
+    .select("title, description, price, duration_minutes, location")
+    .eq("id", id)
+    .single()
+
+  if (!lesson) return {}
+
+  return {
+    title: lesson.title,
+    description: lesson.description
+      ?? `${lesson.title} — ${lesson.duration_minutes}分 · ¥${lesson.price.toLocaleString()} · ${lesson.location}`,
+    openGraph: {
+      title: lesson.title,
+      description: lesson.description ?? undefined,
+    },
+  }
+}
 
 interface LessonDetailPageProps {
   params: Promise<{ id: string }>

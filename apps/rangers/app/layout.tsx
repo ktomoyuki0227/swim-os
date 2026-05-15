@@ -13,8 +13,23 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Rangers - マスターズ水泳レッスン予約",
-  description: "マスターズ水泳・個人指導のレッスン予約プラットフォーム",
+  title: {
+    default: "Rangers - マスターズ水泳レッスン予約",
+    template: "%s | Rangers",
+  },
+  description: "マスターズ水泳・個人指導のレッスン予約プラットフォーム。指導員と直接つながり、あなたのペースで上達しよう。",
+  openGraph: {
+    title: "Rangers - マスターズ水泳レッスン予約",
+    description: "マスターズ水泳・個人指導のレッスン予約プラットフォーム",
+    type: "website",
+    locale: "ja_JP",
+    siteName: "Rangers",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Rangers - マスターズ水泳レッスン予約",
+    description: "マスターズ水泳・個人指導のレッスン予約プラットフォーム",
+  },
 };
 
 export default function RootLayout({
