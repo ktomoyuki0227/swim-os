@@ -2,18 +2,18 @@ import type { Metadata } from "next"
 import Image from "next/image"
 import Link from "next/link"
 import { Suspense } from "react"
-
-export const metadata: Metadata = {
-  title: "レッスンを探す",
-  description: "マスターズ水泳・個人指導のレッスンを検索・予約。日程や場所で絞り込んで、あなたにぴったりの指導員を見つけましょう。",
-}
 import { createClient } from "@/lib/supabase/server"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { MOCK_LESSONS } from "@/lib/mock-data"
 import { LessonFilters } from "@/components/lesson/lesson-filters"
 import { getLessonImage } from "@/lib/lesson-utils"
-import { CalendarDays, MapPin, Clock, User } from "lucide-react"
+import { CalendarDays, MapPin, Clock, User, Search } from "lucide-react"
 import type { LessonWithInstructor } from "@/types/database"
+
+export const metadata: Metadata = {
+  title: "レッスンを探す",
+  description: "マスターズ水泳・個人指導のレッスンを検索・予約。日程や場所で絞り込んで、あなたにぴったりの指導員を見つけましょう。",
+}
 
 interface LessonsPageProps {
   searchParams: Promise<{ q?: string; sort?: string }>
@@ -70,65 +70,81 @@ export default async function LessonsPage({ searchParams }: LessonsPageProps) {
       <Suspense>
         <LessonFilters />
       </Suspense>
+
       {lessons.length === 0 ? (
-        <p className="text-muted-foreground">
-          {q ? `「${q}」に一致するレッスンはありません。` : "現在公開中のレッスンはありません。"}
-        </p>
-      ) : (
-        <div className="grid gap-4 sm:grid-cols-2">
-          {lessons.map((lesson) => (
-            <Link key={lesson.id} href={`/lessons/${lesson.id}`}>
-              <Card className="group overflow-hidden transition-all hover:shadow-lg hover:shadow-blue-500/5 hover:border-blue-200">
-                <div className="relative h-44 w-full overflow-hidden">
-                  <Image
-                    src={getLessonImage(lesson.title)}
-                    alt={lesson.title}
-                    fill
-                    className="object-cover transition-transform duration-300 group-hover:scale-105"
-                    sizes="(max-width: 640px) 100vw, 50vw"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
-                  <div className="absolute bottom-3 right-3">
-                    <span className="rounded-full bg-blue-500 px-3 py-1 text-sm font-semibold text-white shadow-sm">
-                      ¥{lesson.price.toLocaleString()}
-                    </span>
-                  </div>
-                </div>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base leading-snug">{lesson.title}</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-1.5 text-sm text-muted-foreground">
-                  <div className="flex items-center gap-1.5">
-                    <CalendarDays className="h-3.5 w-3.5 shrink-0 text-blue-400" />
-                    <span>
-                      {new Date(lesson.scheduled_at).toLocaleDateString("ja-JP", {
-                        month: "long",
-                        day: "numeric",
-                        weekday: "short",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <MapPin className="h-3.5 w-3.5 shrink-0 text-blue-400" />
-                    <span>{lesson.location}</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-1.5">
-                      <Clock className="h-3.5 w-3.5 text-blue-400" />
-                      <span>{lesson.duration_minutes}分</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <User className="h-3.5 w-3.5 text-blue-400" />
-                      <span>{lesson.instructor?.name ?? "不明"}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
+        <div className="flex flex-col items-center gap-4 py-16 text-center">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+            <Search className="h-8 w-8 text-muted-foreground" />
+          </div>
+          <div className="space-y-1">
+            <p className="font-medium">
+              {q ? `「${q}」に一致するレッスンはありません` : "現在公開中のレッスンはありません"}
+            </p>
+            {q && (
+              <p className="text-sm text-muted-foreground">
+                別のキーワードで検索してみてください
+              </p>
+            )}
+          </div>
         </div>
+      ) : (
+        <>
+          <p className="mb-4 text-sm text-muted-foreground">{lessons.length}件のレッスン</p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {lessons.map((lesson) => (
+              <Link key={lesson.id} href={`/lessons/${lesson.id}`}>
+                <Card className="group overflow-hidden transition-all hover:shadow-lg hover:shadow-blue-500/5 hover:border-blue-200">
+                  <div className="relative h-44 w-full overflow-hidden">
+                    <Image
+                      src={getLessonImage(lesson.title)}
+                      alt={lesson.title}
+                      fill
+                      className="object-cover transition-transform duration-300 group-hover:scale-105"
+                      sizes="(max-width: 640px) 100vw, 50vw"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+                    <div className="absolute bottom-3 right-3">
+                      <span className="rounded-full bg-blue-500 px-3 py-1 text-sm font-semibold text-white shadow-sm">
+                        ¥{lesson.price.toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base leading-snug">{lesson.title}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-1.5 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-1.5">
+                      <CalendarDays className="h-3.5 w-3.5 shrink-0 text-blue-400" />
+                      <span>
+                        {new Date(lesson.scheduled_at).toLocaleDateString("ja-JP", {
+                          month: "long",
+                          day: "numeric",
+                          weekday: "short",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <MapPin className="h-3.5 w-3.5 shrink-0 text-blue-400" />
+                      <span>{lesson.location}</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-1.5">
+                        <Clock className="h-3.5 w-3.5 text-blue-400" />
+                        <span>{lesson.duration_minutes}分</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <User className="h-3.5 w-3.5 text-blue-400" />
+                        <span>{lesson.instructor?.name ?? "不明"}</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </>
       )}
     </div>
   )

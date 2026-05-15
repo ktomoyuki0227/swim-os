@@ -1,15 +1,15 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { redirect } from "next/navigation"
-
-export const metadata: Metadata = {
-  title: "ダッシュボード",
-}
 import { createClient } from "@/lib/supabase/server"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { MOCK_LESSONS } from "@/lib/mock-data"
 import { BookOpen, CalendarCheck, Clock, TrendingUp, ChevronRight } from "lucide-react"
+
+export const metadata: Metadata = {
+  title: "ダッシュボード",
+}
 
 export default async function InstructorDashboardPage() {
   const supabase = await createClient()
@@ -144,9 +144,12 @@ export default async function InstructorDashboardPage() {
       <div>
         <h2 className="mb-4 text-lg font-semibold">直近のレッスン</h2>
         {!upcomingLessons || upcomingLessons.length === 0 ? (
-          <p className="text-muted-foreground">
-            今後のレッスンはありません。
-          </p>
+          <div className="rounded-xl border border-dashed px-6 py-10 text-center">
+            <p className="text-sm text-muted-foreground">今後の公開レッスンはありません</p>
+            <Link href="/instructor/lessons/new" className="mt-3 inline-block text-sm text-blue-600 underline underline-offset-4">
+              レッスンを作成する
+            </Link>
+          </div>
         ) : (
           <div className="space-y-3">
             {upcomingLessons.map((lesson) => (

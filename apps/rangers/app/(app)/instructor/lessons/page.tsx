@@ -1,17 +1,17 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { redirect } from "next/navigation"
-
-export const metadata: Metadata = {
-  title: "レッスン管理",
-}
 import { createClient } from "@/lib/supabase/server"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { MOCK_LESSONS } from "@/lib/mock-data"
 import { lessonStatusLabels, lessonStatusVariants } from "@/lib/lesson-utils"
-import { CalendarDays, MapPin, Users, ChevronRight } from "lucide-react"
+import { CalendarDays, MapPin, Users, ChevronRight, BookOpen } from "lucide-react"
+
+export const metadata: Metadata = {
+  title: "レッスン管理",
+}
 
 export default async function InstructorLessonsPage() {
   const supabase = await createClient()
@@ -48,9 +48,18 @@ export default async function InstructorLessonsPage() {
       )}
 
       {lessons.length === 0 ? (
-        <p className="text-muted-foreground">
-          レッスンがありません。最初のレッスンを作成しましょう。
-        </p>
+        <div className="flex flex-col items-center gap-4 py-16 text-center">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-blue-50">
+            <BookOpen className="h-8 w-8 text-blue-400" />
+          </div>
+          <div className="space-y-1">
+            <p className="font-medium">レッスンがまだありません</p>
+            <p className="text-sm text-muted-foreground">最初のレッスンを作成して生徒の予約を受け付けましょう</p>
+          </div>
+          <Link href="/instructor/lessons/new">
+            <Button>最初のレッスンを作成</Button>
+          </Link>
+        </div>
       ) : (
         <div className="space-y-3">
           {lessons.map((lesson) => (

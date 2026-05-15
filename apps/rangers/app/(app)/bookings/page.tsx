@@ -1,17 +1,17 @@
 import type { Metadata } from "next"
 import Link from "next/link"
-import { createClient } from "@/lib/supabase/server"
-
-export const metadata: Metadata = {
-  title: "予約履歴",
-}
 import { redirect } from "next/navigation"
+import { createClient } from "@/lib/supabase/server"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { MOCK_BOOKINGS } from "@/lib/mock-data"
 import { CancelBookingButton } from "@/components/booking/cancel-booking-button"
 import { bookingStatusLabels, bookingStatusVariants } from "@/lib/lesson-utils"
 import { CalendarDays, MapPin, Banknote, ChevronRight } from "lucide-react"
+
+export const metadata: Metadata = {
+  title: "予約履歴",
+}
 
 interface BookingsPageProps {
   searchParams: Promise<{ success?: string }>
