@@ -61,7 +61,7 @@ export default async function InstructorLessonDetailPage({
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       {isMock && (
-        <p className="rounded-md bg-amber-50 px-4 py-2 text-sm text-amber-700 border border-amber-200">
+        <p className="rounded-lg border-l-4 border-amber-400 bg-amber-50 px-4 py-3 text-sm text-amber-700">
           これはサンプルデータです。実際のレッスンを作成すると編集・削除できます。
         </p>
       )}
@@ -82,25 +82,32 @@ export default async function InstructorLessonDetailPage({
             </p>
           ) : (
             <ul className="space-y-2">
-              {bookings.map((booking) => (
-                <li
-                  key={booking.id}
-                  className="flex items-center justify-between rounded-md border px-3 py-2"
-                >
-                  <span className="text-sm">
-                    {booking.swimmer?.name ?? "不明"}
-                  </span>
-                  <div className="flex items-center gap-2">
-                    {booking.status === "pending" && !isMock ? (
-                      <ConfirmBookingButton bookingId={booking.id} />
-                    ) : (
-                      <Badge variant={booking.status === "confirmed" ? "default" : "secondary"}>
-                        {booking.status === "confirmed" ? "確定" : booking.status === "pending" ? "確認待ち" : booking.status}
-                      </Badge>
-                    )}
-                  </div>
-                </li>
-              ))}
+              {bookings.map((booking) => {
+                const name = booking.swimmer?.name ?? "不明"
+                const initials = name.replace(/\s/g, "").slice(0, 2)
+                return (
+                  <li
+                    key={booking.id}
+                    className="flex items-center justify-between rounded-md border px-3 py-2"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-medium text-blue-700">
+                        {initials}
+                      </span>
+                      <span className="text-sm font-medium">{name}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {booking.status === "pending" && !isMock ? (
+                        <ConfirmBookingButton bookingId={booking.id} />
+                      ) : (
+                        <Badge variant={booking.status === "confirmed" ? "default" : "secondary"}>
+                          {booking.status === "confirmed" ? "確定" : booking.status === "pending" ? "確認待ち" : booking.status}
+                        </Badge>
+                      )}
+                    </div>
+                  </li>
+                )
+              })}
             </ul>
           )}
         </CardContent>
