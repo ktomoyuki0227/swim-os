@@ -81,6 +81,21 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJxxxxxxxxxx...
 
 ---
 
+## Step 4.5: デモ用テストデータを投入（推奨）
+
+`apps/school-boost-ai/supabase/seed.sql` を SQL Editor で実行する。
+
+投入されるデータ:
+- クラス4種（幼児・ジュニアA/B・選手育成）
+- スケジュール7コマ
+- 会員8名（育成級1〜8を1名ずつカバー）
+- 入会登録（各クラス2名）
+- 今月の月謝（paid/unpaid/overdue混在でデモ映えする）
+- 出席記録（直近月曜分）
+- お知らせ2件
+
+---
+
 ## Step 5: ローカル動作確認
 
 ```bash

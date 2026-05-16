@@ -32,7 +32,7 @@ export async function updateSession(request: NextRequest) {
   const pathname = request.nextUrl.pathname
 
   // 認証不要のパス
-  const publicPaths = ['/login', '/apply', '/api/webhooks']
+  const publicPaths = ['/login', '/register', '/apply', '/api/webhooks']
   const isPublicPath = publicPaths.some((p) => pathname.startsWith(p))
 
   if (!user && !isPublicPath) {

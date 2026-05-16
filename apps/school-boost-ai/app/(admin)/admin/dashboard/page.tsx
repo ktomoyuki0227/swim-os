@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Users, ClipboardCheck, CreditCard, TrendingUp, AlertCircle, Star } from 'lucide-react'
 import { currentMonth, monthLabel } from '@/lib/utils/date'
+import { InviteLinkCard } from '@/components/school/invite-link-card'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -195,6 +196,14 @@ export default async function DashboardPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Invite link */}
+        {profile.schools?.invite_code && (
+          <InviteLinkCard
+            inviteCode={profile.schools.invite_code}
+            appUrl={process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'}
+          />
+        )}
       </div>
     </>
   )
