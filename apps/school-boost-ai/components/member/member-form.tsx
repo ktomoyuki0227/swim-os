@@ -9,13 +9,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { createMember } from '@/actions/members'
+import { enrollMember } from '@/actions/classes'
 import { toast } from 'sonner'
 
 interface MemberFormProps {
   schoolId: string
+  classId?: string
 }
 
-export function MemberForm({ schoolId }: MemberFormProps) {
+export function MemberForm({ schoolId, classId }: MemberFormProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [gender, setGender] = useState<string>('')
@@ -42,6 +44,13 @@ export function MemberForm({ schoolId }: MemberFormProps) {
 
     if (result?.error) {
       toast.error(result.error)
+      return
+    }
+
+    if (classId && result?.id) {
+      await enrollMember(result.id, classId)
+      toast.success('会員を追加してクラスに登録しました')
+      router.push(`/admin/schedules/${classId}`)
     } else {
       toast.success('会員を追加しました')
       router.push('/admin/members')

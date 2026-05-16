@@ -47,14 +47,16 @@ export async function createMember(schoolId: string, formData: MemberFormData) {
     return { error: result.error.issues[0].message }
   }
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('members')
     .insert({ ...result.data, school_id: schoolId })
+    .select('id')
+    .single()
 
   if (error) return { error: error.message }
 
   revalidatePath('/admin/members')
-  return { success: true }
+  return { success: true, id: data.id }
 }
 
 export async function updateMember(id: string, formData: Partial<MemberFormData>) {
