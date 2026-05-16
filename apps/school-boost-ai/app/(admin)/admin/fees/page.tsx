@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { currentMonth, monthLabel, formatDate } from '@/lib/utils/date'
 import { FeeStatusToggle } from '@/components/fee/fee-status-toggle'
+import { BulkFeeGenerator } from '@/components/fee/bulk-fee-generator'
 import { CreditCard, TrendingUp } from 'lucide-react'
 
 const FEE_STATUS = {
@@ -52,20 +53,23 @@ export default async function FeesPage({
       <Header title="月謝管理" />
       <div className="p-6 space-y-4">
         {/* Month selector */}
-        <div className="flex items-center gap-4">
-          <form>
-            <input
-              type="month"
-              name="month"
-              defaultValue={targetMonth.slice(0, 7)}
-              onChange={(e) => {
-                const form = e.target.form
-                if (form) form.submit()
-              }}
-              className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </form>
-          <span className="text-sm font-medium text-gray-700">{monthLabel(targetMonth)}</span>
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-3">
+            <form>
+              <input
+                type="month"
+                name="month"
+                defaultValue={targetMonth.slice(0, 7)}
+                onChange={(e) => {
+                  const form = e.target.form
+                  if (form) form.submit()
+                }}
+                className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </form>
+            <span className="text-sm font-medium text-gray-700">{monthLabel(targetMonth)}</span>
+          </div>
+          <BulkFeeGenerator schoolId={profile.school_id} targetMonth={targetMonth} />
         </div>
 
         {/* Summary cards */}
@@ -163,8 +167,9 @@ export default async function FeesPage({
                 })}
               </div>
             ) : (
-              <div className="py-12 text-center text-gray-400 text-sm">
-                この月の月謝データがありません
+              <div className="py-12 text-center space-y-3">
+                <p className="text-gray-400 text-sm">この月の月謝データがありません</p>
+                <BulkFeeGenerator schoolId={profile.school_id} targetMonth={targetMonth} />
               </div>
             )}
           </CardContent>

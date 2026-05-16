@@ -78,17 +78,39 @@ export async function updateFeeStatus(
 export async function bulkCreateFees(
   schoolId: string,
   targetMonth: string,
-  entries: Array<{ member_id: string; amount: number }>
+  entries?: Array<{ member_id: string; amount: number }>
 ) {
   const supabase = await createClient()
 
-  const records = entries.map((e) => ({
-    school_id: schoolId,
-    member_id: e.member_id,
-    amount: e.amount,
-    target_month: targetMonth,
-    status: 'unpaid' as const,
-  }))
+  let records: Array<{ school_id: string; member_id: string; amount: number; target_month: string; status: 'unpaid' }>
+
+  if (entries) {
+    records = entries.map((e) => ({
+      school_id: schoolId,
+      member_id: e.member_id,
+      amount: e.amount,
+      target_month: targetMonth,
+      status: 'unpaid' as const,
+    }))
+  } else {
+    // Auto: fetch all active members and generate with default amount 8000
+    const { data: members, error: membersError } = await supabase
+      .from('members')
+      .select('id')
+      .eq('school_id', schoolId)
+      .eq('status', 'active')
+
+    if (membersError) return { error: membersError.message }
+    if (!members || members.length === 0) return { error: '在籍会員が見つかりません' }
+
+    records = members.map((m) => ({
+      school_id: schoolId,
+      member_id: m.id,
+      amount: 8000,
+      target_month: targetMonth,
+      status: 'unpaid' as const,
+    }))
+  }
 
   const { error } = await supabase
     .from('monthly_fees')
