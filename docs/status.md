@@ -1,12 +1,12 @@
 # 作業ステータス
-最終更新: 2026-05-16 16:00
+最終更新: 2026-05-16 (SchoolBoost AI 初回実装完了)
 
 ---
 
 ## 現在のフェーズ
 
-Rangers → コード実装完了・外部サービス接続待ち（目標：5月末）
-SchoolBoost AI → ドキュメント整備完了・開発は Rangers 後に着手
+Rangers → コード実装完了・外部サービス接続済み・デプロイ済み
+SchoolBoost AI → コード実装完了・ビルド通過 / ともくんがSupabase・Vercel設定待ち（PoC締切：5/31）
 
 ---
 
@@ -32,19 +32,20 @@ SchoolBoost AI → ドキュメント整備完了・開発は Rangers 後に着�
   - Public bucket で作成し、RLSポリシーで自分のみアップロード可能にする
 - [x] ヘッダー修正：ユーザー名テキスト → プロフィール画像（丸アイコン）に変更
 
-### 次にやること（再起動後）
-- [ ] Playwright拡張機能インストール済み → Rangers の各ページをブラウザで確認してUI/UX改善を実施
+### SchoolBoost AI（ともくんが手動でやること）
+→ 詳細は `apps/school-boost-ai/docs/setup-browser-tasks.md` を参照
 
-### 外部サービス接続（次セッションで再開）
-- [x] Supabase プロジェクト作成
-- [x] Supabase マイグレーション実行（00001 → 00002）
-- [x] Stripe アカウント作成・APIキー取得
-- [x] Vercel デプロイ済み
-- [x] 環境変数設定済み（STRIPE_WEBHOOK_SECRET 以外）
-- [x] Stripe Webhook 設定済み（URL: https://swim-os-seven.vercel.app/api/webhooks/stripe）
-- [x] Vercel 再デプロイ済み（STRIPE_WEBHOOK_SECRET 追加後）
-- [x] 動作確認完了（レッスン作成 → 予約 → Stripe決済 → 確定まで全フロー通過）
-- SchoolBoost AI：LINE Developers チャネル申請（審査待ちのため早めに）
+- [ ] Supabase プロジェクト作成（Rangers とは別）
+- [ ] `001_initial_schema.sql` を SQL Editor で実行
+- [ ] admin@hydoor.jp ユーザー作成 + profiles に role='admin' セット
+- [ ] `.env.local` に Supabase URL・anon key を設定
+- [ ] ローカルで `pnpm dev` → PoC フロー（登録→出席→月謝）を確認
+- [ ] Vercel デプロイ（Root Directory: apps/school-boost-ai）
+- [ ] LINE Developers チャネル申請（Phase 2 用・審査に時間かかるので早めに）
+
+### Rangers（完了）
+- [x] Supabase・Stripe・Vercel 接続済み
+- [x] 動作確認完了（レッスン作成 → 予約 → Stripe決済 → 確定）
 
 ---
 
@@ -68,7 +69,25 @@ SchoolBoost AI → ドキュメント整備完了・開発は Rangers 後に着�
 
 ## 作業ログ
 
-### 2026-05-16
+### 2026-05-16（SchoolBoost AI 初回実装）
+
+**SchoolBoost AI コード実装（完了・ビルド通過）**
+
+- DB スキーマ設計・マイグレーション SQL 作成（001_initial_schema.sql）
+  - テーブル: schools / profiles / members / classes / schedules / enrollments / attendance_records / monthly_fees / grade_levels / grade_histories / announcements / applications
+  - RLS ポリシー・トリガー（updated_at・新規ユーザー自動プロフィール生成）
+  - デモデータ: HYDOOR スクール + 8育成級
+- TypeScript 型定義（types/database.ts）
+- Server Actions（actions/: auth / members / classes / attendance / fees）
+- 管理者向け全ページ実装（14画面）
+- 保護者向けモバイル UI 実装（5画面）
+- shadcn/ui コンポーネント導入（select / dialog / dropdown-menu 等）
+- ビルドエラー修正（parallel route conflict / Zod .issues / Base UI asChild 非対応 / Next.js 16 proxy.ts 移行）
+- ブラウザ手動セットアップガイド作成（docs/setup-browser-tasks.md）
+
+---
+
+### 2026-05-16（Rangers UI 改善・バグ修正）
 
 **Rangers コード機能追加（完了）**
 
@@ -105,6 +124,17 @@ SchoolBoost AI → ドキュメント整備完了・開発は Rangers 後に着�
 - プロフィール画像アップロード UI を実装（Supabase Storage 連携）
   - ⚠️ Supabase Dashboard で `avatars` バケットの作成が必要（Public）
 - next.config.ts に Supabase Storage リモートパターン追加
+
+---
+
+**Rangers コード品質・バグ修正（2026-05-16 完了）**
+
+- `actions/lessons.ts`: parseLessonFormData ヘルパーを updateLesson にも適用（重複除去）
+- `lib/supabase/middleware.ts`: forgot-password・reset-password を isAuthPage に追加（パスワードリセットメールが未ログイン状態で機能しないバグを修正）、`as any` キャスト除去
+- `app/(app)/layout.tsx`: プロフィールなし時にサインアウトしてから /login にリダイレクト（無限ループ防止）
+- `components/lesson/lesson-form.tsx`: defaultScheduledAt をローカルタイムで生成（UTC→JST 9時間ズレを修正）
+- `types/database.ts`: stripe_account_id に将来用途コメントを追加
+- `instructor/dashboard/page.tsx`: Array.isArray 重複を toOne ヘルパーで整理
 
 ---
 
