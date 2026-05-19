@@ -31,9 +31,25 @@ export async function updateProfile(
     return { error: result.error.issues.map((i) => i.message).join("・"), success: false }
   }
 
+  // 指導員向け追加フィールド
+  const bio = (formData.get("bio") as string | null) ?? null
+  const career = (formData.get("career") as string | null) ?? null
+  const achievements = (formData.get("achievements") as string | null) ?? null
+  const prefecture = (formData.get("prefecture") as string | null) ?? null
+  const specialties = formData.getAll("specialties") as string[]
+  const targetAges = formData.getAll("target_ages") as string[]
+
   const { error } = await supabase
     .from("profiles")
-    .update({ name: result.data.name })
+    .update({
+      name: result.data.name,
+      bio: bio || null,
+      career: career || null,
+      achievements: achievements || null,
+      prefecture: prefecture || null,
+      specialties: specialties.length > 0 ? specialties : [],
+      target_ages: targetAges.length > 0 ? targetAges : [],
+    })
     .eq("id", user.id)
 
   if (error) {
