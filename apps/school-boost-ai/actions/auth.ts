@@ -6,9 +6,9 @@ import { z } from 'zod'
 import { redirect } from 'next/navigation'
 
 export async function login(
-  _prevState: { error: string } | null,
+  _prevState: { error: string; redirect?: never } | { error?: never; redirect: string } | null,
   formData: FormData
-): Promise<{ error: string } | null> {
+): Promise<{ error: string; redirect?: never } | { error?: never; redirect: string }> {
   const supabase = await createClient()
 
   const raw = {
@@ -32,11 +32,7 @@ export async function login(
     .eq('id', authData.user.id)
     .single()
 
-  if (profile?.role === 'parent') {
-    redirect('/parent/mypage')
-  }
-
-  redirect('/admin/dashboard')
+  return { redirect: profile?.role === 'parent' ? '/parent/mypage' : '/admin/dashboard' }
 }
 
 const registerSchema = z.object({

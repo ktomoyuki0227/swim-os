@@ -1,6 +1,7 @@
 'use client'
 
-import { useActionState } from 'react'
+import { useActionState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { login } from '@/actions/auth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -9,7 +10,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Waves, AlertCircle } from 'lucide-react'
 
 export default function LoginPage() {
+  const router = useRouter()
   const [state, formAction, pending] = useActionState(login, null)
+
+  useEffect(() => {
+    if (state && 'redirect' in state && state.redirect) {
+      router.push(state.redirect)
+    }
+  }, [state, router])
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-cyan-50 p-4">
@@ -29,7 +37,7 @@ export default function LoginPage() {
           </CardHeader>
           <CardContent>
             <form action={formAction} className="space-y-4">
-              {state?.error && (
+              {state && 'error' in state && state.error && (
                 <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
                   <AlertCircle className="w-4 h-4 flex-shrink-0" />
                   {state.error}
