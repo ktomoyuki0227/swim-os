@@ -5,7 +5,10 @@ import { loginSchema } from '@/lib/validations'
 import { z } from 'zod'
 import { redirect } from 'next/navigation'
 
-export async function login(formData: FormData) {
+export async function login(
+  _prevState: { error: string } | null,
+  formData: FormData
+): Promise<{ error: string } | null> {
   const supabase = await createClient()
 
   const raw = {
@@ -43,7 +46,10 @@ const registerSchema = z.object({
   invite_code: z.string().min(1, '招待コードを入力してください'),
 })
 
-export async function registerParent(formData: FormData) {
+export async function registerParent(
+  _prevState: { error: string } | null,
+  formData: FormData
+): Promise<{ error: string } | null> {
   const supabase = await createClient()
 
   const raw = {
