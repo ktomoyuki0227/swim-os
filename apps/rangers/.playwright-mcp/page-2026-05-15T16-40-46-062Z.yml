@@ -1,0 +1,110 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e4]:
+        - link "Rangers" [ref=e5] [cursor=pointer]:
+          - /url: /dashboard
+        - navigation [ref=e6]:
+          - link "ダッシュボード" [ref=e7] [cursor=pointer]:
+            - /url: /instructor/dashboard
+          - link "レッスン管理" [ref=e8] [cursor=pointer]:
+            - /url: /instructor/lessons
+          - link "プロフィール" [ref=e9] [cursor=pointer]:
+            - /url: /profile
+      - generic [ref=e10]:
+        - link "田中レイのプロフィール" [ref=e11] [cursor=pointer]:
+          - /url: /profile
+          - generic [ref=e12]: 田
+        - button "ログアウト" [ref=e14]
+  - main [ref=e15]:
+    - generic [ref=e16]:
+      - generic [ref=e17]:
+        - heading "レッスン管理" [level=1] [ref=e18]
+        - link "新規作成" [ref=e19] [cursor=pointer]:
+          - /url: /instructor/lessons/new
+          - button "新規作成" [ref=e20]
+      - paragraph [ref=e21]: サンプルデータを表示しています。レッスンを作成すると実際のデータが表示されます。
+      - generic [ref=e22]:
+        - link "初心者クロール入門 公開中 5月19日(火) 10:00 京都市北区プール 定員6名 3,500円" [ref=e23] [cursor=pointer]:
+          - /url: /instructor/lessons/mock-lesson-1
+          - generic [ref=e25]:
+            - generic [ref=e26]:
+              - generic [ref=e27]:
+                - paragraph [ref=e28]: 初心者クロール入門
+                - generic [ref=e29]: 公開中
+              - generic [ref=e30]:
+                - generic [ref=e31]:
+                  - img [ref=e32]
+                  - text: 5月19日(火) 10:00
+                - generic [ref=e34]:
+                  - img [ref=e35]
+                  - text: 京都市北区プール
+                - generic [ref=e38]:
+                  - img [ref=e39]
+                  - text: 定員6名
+            - generic [ref=e44]:
+              - paragraph [ref=e45]: 3,500円
+              - img [ref=e46]
+        - link "平泳ぎ・フォーム改善 公開中 5月21日(木) 10:00 左京区スポーツセンター 定員4名 4,000円" [ref=e48] [cursor=pointer]:
+          - /url: /instructor/lessons/mock-lesson-2
+          - generic [ref=e50]:
+            - generic [ref=e51]:
+              - generic [ref=e52]:
+                - paragraph [ref=e53]: 平泳ぎ・フォーム改善
+                - generic [ref=e54]: 公開中
+              - generic [ref=e55]:
+                - generic [ref=e56]:
+                  - img [ref=e57]
+                  - text: 5月21日(木) 10:00
+                - generic [ref=e59]:
+                  - img [ref=e60]
+                  - text: 左京区スポーツセンター
+                - generic [ref=e63]:
+                  - img [ref=e64]
+                  - text: 定員4名
+            - generic [ref=e69]:
+              - paragraph [ref=e70]: 4,000円
+              - img [ref=e71]
+        - link "背泳ぎ・バタフライ基礎 公開中 5月23日(土) 10:00 右京区温水プール 定員3名 5,000円" [ref=e73] [cursor=pointer]:
+          - /url: /instructor/lessons/mock-lesson-3
+          - generic [ref=e75]:
+            - generic [ref=e76]:
+              - generic [ref=e77]:
+                - paragraph [ref=e78]: 背泳ぎ・バタフライ基礎
+                - generic [ref=e79]: 公開中
+              - generic [ref=e80]:
+                - generic [ref=e81]:
+                  - img [ref=e82]
+                  - text: 5月23日(土) 10:00
+                - generic [ref=e84]:
+                  - img [ref=e85]
+                  - text: 右京区温水プール
+                - generic [ref=e88]:
+                  - img [ref=e89]
+                  - text: 定員3名
+            - generic [ref=e94]:
+              - paragraph [ref=e95]: 5,000円
+              - img [ref=e96]
+        - link "子ども水慣れクラス（4〜6歳） 公開中 5月26日(火) 10:00 伏見区スイミング 定員8名 2,500円" [ref=e98] [cursor=pointer]:
+          - /url: /instructor/lessons/mock-lesson-4
+          - generic [ref=e100]:
+            - generic [ref=e101]:
+              - generic [ref=e102]:
+                - paragraph [ref=e103]: 子ども水慣れクラス（4〜6歳）
+                - generic [ref=e104]: 公開中
+              - generic [ref=e105]:
+                - generic [ref=e106]:
+                  - img [ref=e107]
+                  - text: 5月26日(火) 10:00
+                - generic [ref=e109]:
+                  - img [ref=e110]
+                  - text: 伏見区スイミング
+                - generic [ref=e113]:
+                  - img [ref=e114]
+                  - text: 定員8名
+            - generic [ref=e119]:
+              - paragraph [ref=e120]: 2,500円
+              - img [ref=e121]
+  - button "Open Next.js Dev Tools" [ref=e128] [cursor=pointer]:
+    - img [ref=e129]
+  - alert [ref=e132]

@@ -1,0 +1,25 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - generic [ref=e7]: Rangers
+        - generic [ref=e8]: ログインしてレッスンを始めましょう
+      - generic [ref=e9]:
+        - generic [ref=e10]:
+          - generic [ref=e11]:
+            - generic [ref=e12]: メールアドレス
+            - textbox "メールアドレス" [ref=e13]:
+              - /placeholder: mail@example.com
+          - generic [ref=e14]:
+            - generic [ref=e15]: パスワード
+            - textbox "パスワード" [ref=e16]
+          - button "ログイン" [ref=e17]
+        - generic [ref=e22]: または
+        - button "Google でログイン" [ref=e24]
+        - paragraph [ref=e25]:
+          - text: アカウントをお持ちでない方は
+          - link "新規登録" [ref=e26] [cursor=pointer]:
+            - /url: /register
+    - paragraph [ref=e27]: Rangers · マスターズ水泳レッスン予約
+  - button "Open Next.js Dev Tools" [ref=e33] [cursor=pointer]:
+    - img [ref=e34]

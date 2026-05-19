@@ -1,0 +1,12 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - img [ref=e4]
+    - paragraph [ref=e8]: "404"
+    - heading "ページが見つかりません" [level=1] [ref=e9]
+    - paragraph [ref=e10]: お探しのページは存在しないか、移動した可能性があります。
+    - link "ダッシュボードに戻る" [ref=e11] [cursor=pointer]:
+      - /url: /dashboard
+      - button "ダッシュボードに戻る" [ref=e12]
+  - button "Open Next.js Dev Tools" [ref=e18] [cursor=pointer]:
+    - img [ref=e19]
+  - alert [ref=e22]

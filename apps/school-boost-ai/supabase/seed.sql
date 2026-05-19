@@ -125,7 +125,7 @@ on conflict do nothing;
 -- =========================================
 -- 9. お知らせ
 -- =========================================
-insert into public.announcements (school_id, author_id, title, body, is_published, target_type)
+insert into public.announcements (school_id, created_by, title, body, is_published, target_type)
 select
   '00000000-0000-0000-0000-000000000001',
   p.id,
@@ -138,7 +138,7 @@ where p.role = 'admin'
   and p.school_id = '00000000-0000-0000-0000-000000000001'
 limit 1;
 
-insert into public.announcements (school_id, author_id, title, body, is_published, target_type)
+insert into public.announcements (school_id, created_by, title, body, is_published, target_type)
 select
   '00000000-0000-0000-0000-000000000001',
   p.id,

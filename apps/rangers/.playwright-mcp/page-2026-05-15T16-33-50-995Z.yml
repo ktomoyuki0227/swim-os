@@ -1,0 +1,51 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e4]:
+        - link "Rangers" [ref=e5] [cursor=pointer]:
+          - /url: /dashboard
+        - navigation [ref=e6]:
+          - link "ダッシュボード" [ref=e7] [cursor=pointer]:
+            - /url: /instructor/dashboard
+          - link "レッスン管理" [ref=e8] [cursor=pointer]:
+            - /url: /instructor/lessons
+          - link "プロフィール" [ref=e9] [cursor=pointer]:
+            - /url: /profile
+      - generic [ref=e10]:
+        - link "田中レイのプロフィール" [ref=e11] [cursor=pointer]:
+          - /url: /profile
+          - generic [ref=e12]: 田
+        - button "ログアウト" [ref=e14]
+  - main [ref=e15]:
+    - generic [ref=e17]:
+      - generic [ref=e19]: 新しいレッスンを作成
+      - generic [ref=e21]:
+        - generic [ref=e22]:
+          - generic [ref=e23]: タイトル
+          - textbox "タイトル" [ref=e24]:
+            - /placeholder: "例: 初心者向けクロール指導"
+        - generic [ref=e25]:
+          - generic [ref=e26]: 説明
+          - textbox "説明" [ref=e27]:
+            - /placeholder: レッスンの内容を記入してください
+        - generic [ref=e28]:
+          - generic [ref=e29]:
+            - generic [ref=e30]: 料金（円）
+            - spinbutton "料金（円）" [ref=e31]: "3000"
+          - generic [ref=e32]:
+            - generic [ref=e33]: 定員
+            - spinbutton "定員" [ref=e34]: "5"
+        - generic [ref=e35]:
+          - generic [ref=e36]:
+            - generic [ref=e37]: 日時
+            - textbox "日時" [ref=e38]
+          - generic [ref=e39]:
+            - generic [ref=e40]: 時間（分）
+            - spinbutton "時間（分）" [ref=e41]: "60"
+        - generic [ref=e42]:
+          - generic [ref=e43]: 場所
+          - textbox "場所" [ref=e44]:
+            - /placeholder: "例: 東京辰巳国際水泳場"
+        - button "レッスンを作成" [ref=e45]
+  - button "Open Next.js Dev Tools" [ref=e51] [cursor=pointer]:
+    - img [ref=e52]

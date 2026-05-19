@@ -1,0 +1,27 @@
+- generic [active] [ref=e1]:
+  - button "Open Next.js Dev Tools" [ref=e43] [cursor=pointer]:
+    - generic [ref=e46]:
+      - text: Rendering
+      - generic [ref=e47]:
+        - generic [ref=e48]: .
+        - generic [ref=e49]: .
+        - generic [ref=e50]: .
+  - alert [ref=e42]
+  - banner [ref=e51]:
+    - generic [ref=e52]:
+      - generic [ref=e53]:
+        - link "Rangers" [ref=e54] [cursor=pointer]:
+          - /url: /dashboard
+        - navigation [ref=e55]:
+          - link "ダッシュボード" [ref=e56] [cursor=pointer]:
+            - /url: /instructor/dashboard
+          - link "レッスン管理" [ref=e57] [cursor=pointer]:
+            - /url: /instructor/lessons
+          - link "プロフィール" [ref=e58] [cursor=pointer]:
+            - /url: /profile
+      - generic [ref=e59]:
+        - link "田中レイのプロフィール" [ref=e60] [cursor=pointer]:
+          - /url: /profile
+          - generic [ref=e61]: 田
+        - button "ログアウト" [ref=e63]
+  - main [ref=e64]

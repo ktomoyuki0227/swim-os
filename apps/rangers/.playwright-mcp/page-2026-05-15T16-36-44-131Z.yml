@@ -1,0 +1,51 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e4]:
+        - link "Rangers" [ref=e5] [cursor=pointer]:
+          - /url: /dashboard
+        - navigation [ref=e6]:
+          - link "ダッシュボード" [ref=e7] [cursor=pointer]:
+            - /url: /instructor/dashboard
+          - link "レッスン管理" [ref=e8] [cursor=pointer]:
+            - /url: /instructor/lessons
+          - link "プロフィール" [ref=e9] [cursor=pointer]:
+            - /url: /profile
+      - generic [ref=e10]:
+        - link "田中レイのプロフィール" [ref=e11] [cursor=pointer]:
+          - /url: /profile
+          - generic [ref=e12]: 田
+        - button "ログアウト" [ref=e14]
+  - main [ref=e15]:
+    - generic [ref=e16]:
+      - heading "レッスンを探す" [level=1] [ref=e17]
+      - generic [ref=e18]:
+        - textbox "キーワードで検索（タイトル・場所）" [ref=e19]
+        - generic [ref=e20]:
+          - button "日付順" [ref=e21]
+          - button "料金が安い順" [ref=e22]
+          - button "料金が高い順" [ref=e23]
+      - link "a ¥3,000 a 5月30日(土) 09:55 太陽が丘 60分 山田先生" [ref=e25] [cursor=pointer]:
+        - /url: /lessons/0e86bd3a-95ee-47e4-9f46-8a9c6b8fdd3b
+        - generic [ref=e26]:
+          - generic [ref=e27]:
+            - img "a" [ref=e28]
+            - generic [ref=e31]: ¥3,000
+          - generic [ref=e33]: a
+          - generic [ref=e34]:
+            - generic [ref=e35]:
+              - img [ref=e36]
+              - generic [ref=e38]: 5月30日(土) 09:55
+            - generic [ref=e39]:
+              - img [ref=e40]
+              - generic [ref=e43]: 太陽が丘
+            - generic [ref=e44]:
+              - generic [ref=e45]:
+                - img [ref=e46]
+                - generic [ref=e49]: 60分
+              - generic [ref=e50]:
+                - img [ref=e51]
+                - generic [ref=e54]: 山田先生
+  - button "Open Next.js Dev Tools" [ref=e60] [cursor=pointer]:
+    - img [ref=e61]
+  - alert [ref=e64]

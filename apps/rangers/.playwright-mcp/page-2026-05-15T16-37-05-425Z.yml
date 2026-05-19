@@ -1,0 +1,48 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e4]:
+        - link "Rangers" [ref=e5] [cursor=pointer]:
+          - /url: /dashboard
+        - navigation [ref=e6]:
+          - link "ダッシュボード" [ref=e7] [cursor=pointer]:
+            - /url: /instructor/dashboard
+          - link "レッスン管理" [ref=e8] [cursor=pointer]:
+            - /url: /instructor/lessons
+          - link "プロフィール" [ref=e9] [cursor=pointer]:
+            - /url: /profile
+      - generic [ref=e10]:
+        - link "田中レイのプロフィール" [ref=e11] [cursor=pointer]:
+          - /url: /profile
+          - generic [ref=e12]: 田
+        - button "ログアウト" [ref=e14]
+  - main [ref=e15]:
+    - generic [ref=e66]:
+      - img "a" [ref=e68]
+      - generic [ref=e70]:
+        - generic [ref=e71]: a
+        - generic [ref=e72]: 3,000円
+      - generic [ref=e73]:
+        - generic [ref=e74]:
+          - generic [ref=e75]:
+            - paragraph [ref=e76]: 日時
+            - paragraph [ref=e77]: 2026年5月30日(土) 09:55
+          - generic [ref=e78]:
+            - paragraph [ref=e79]: 時間
+            - paragraph [ref=e80]: 60分
+          - generic [ref=e81]:
+            - paragraph [ref=e82]: 場所
+            - paragraph [ref=e83]: 太陽が丘
+          - generic [ref=e84]:
+            - paragraph [ref=e85]: 空き
+            - paragraph [ref=e86]: 残り 5 / 5 名
+        - generic [ref=e87]:
+          - paragraph [ref=e88]: 指導員
+          - paragraph [ref=e89]: 山田先生
+        - generic [ref=e90]:
+          - paragraph [ref=e91]: 説明
+          - paragraph [ref=e92]: a
+        - button "予約する（3,000円）" [ref=e94]
+  - button "Open Next.js Dev Tools" [ref=e60] [cursor=pointer]:
+    - img [ref=e61]
+  - alert [ref=e64]

@@ -1,8 +1,7 @@
 'use client'
 
-import { useActionState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { login } from '@/actions/auth'
+import { useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -10,14 +9,29 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Waves, AlertCircle } from 'lucide-react'
 
 export default function LoginPage() {
-  const router = useRouter()
-  const [state, formAction, pending] = useActionState(login, null)
+  const [error, setError] = useState<string | null>(null)
+  const [pending, setPending] = useState(false)
 
-  useEffect(() => {
-    if (state && 'redirect' in state && state.redirect) {
-      router.push(state.redirect)
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    setError(null)
+    setPending(true)
+
+    const form = e.currentTarget
+    const email = (form.elements.namedItem('email') as HTMLInputElement).value
+    const password = (form.elements.namedItem('password') as HTMLInputElement).value
+
+    const supabase = createClient()
+    const { error: authError } = await supabase.auth.signInWithPassword({ email, password })
+
+    if (authError) {
+      setError('メールアドレスまたはパスワードが正しくありません')
+      setPending(false)
+      return
     }
-  }, [state, router])
+
+    window.location.href = '/'
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-cyan-50 p-4">
@@ -36,11 +50,11 @@ export default function LoginPage() {
             <CardDescription>管理者・コーチ用ログイン画面</CardDescription>
           </CardHeader>
           <CardContent>
-            <form action={formAction} className="space-y-4">
-              {state && 'error' in state && state.error && (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {error && (
                 <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
                   <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                  {state.error}
+                  {error}
                 </div>
               )}
               <div className="space-y-2">
