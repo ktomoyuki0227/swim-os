@@ -87,59 +87,102 @@ export default async function HomePage() {
   return (
     <>
       {/* ===== HERO ===== */}
-      <section className="bg-gradient-to-r from-sky-50 via-blue-50 to-cyan-50">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <div className="flex flex-col items-center gap-8 py-12 sm:flex-row sm:py-16 lg:py-20">
-            {/* テキスト */}
-            <div className="flex-1 text-center sm:text-left">
-              <p className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700">
+      <section className="relative overflow-hidden bg-sky-100" style={{ minHeight: "420px" }}>
+        {/* 右半分に水泳選手の画像（絶対配置） */}
+        <div className="absolute right-0 top-0 h-full w-[62%] sm:w-[56%]">
+          <Image
+            src="/images/lp/hero-swimmer-portrait.jpg"
+            alt="マスターズスイマーのレッスン風景"
+            fill
+            className="object-cover object-[65%_center]"
+            priority
+          />
+          {/* 左端をグラデーションでフェードさせ背景と馴染ませる */}
+          <div className="absolute inset-0 bg-gradient-to-r from-sky-100 via-sky-100/70 to-transparent" />
+        </div>
+
+        {/* デコレーション：浮遊する幾何学シェイプ */}
+        {/* 左側 */}
+        <div className="pointer-events-none absolute left-[4%] top-[14%] h-14 w-14 rounded-full bg-white/60" />
+        <div className="pointer-events-none absolute left-[9%] top-[64%] h-9 w-9 rounded-full bg-sky-300/50" />
+        <div className="pointer-events-none absolute left-[2%] top-[46%] h-6 w-6 rounded-full bg-white/70" />
+        {/* 左側 斜め線 */}
+        <svg className="pointer-events-none absolute left-[14%] top-[6%] h-28 w-28 opacity-25" viewBox="0 0 100 100" aria-hidden="true">
+          <line x1="0" y1="25" x2="75" y2="100" stroke="white" strokeWidth="3.5" />
+          <line x1="12" y1="5" x2="87" y2="80" stroke="white" strokeWidth="3.5" />
+          <line x1="24" y1="0" x2="99" y2="75" stroke="white" strokeWidth="3.5" />
+        </svg>
+        {/* 左下 小三角 */}
+        <svg className="pointer-events-none absolute bottom-[22%] left-[5%] h-7 w-7 opacity-80" viewBox="0 0 24 24" aria-hidden="true">
+          <polygon points="12,2 22,20 2,20" fill="#FCD34D" />
+        </svg>
+        <svg className="pointer-events-none absolute bottom-[14%] left-[16%] h-5 w-5 opacity-70" viewBox="0 0 24 24" aria-hidden="true">
+          <polygon points="12,2 22,20 2,20" fill="#38BDF8" />
+        </svg>
+        {/* 右端シェイプ（画像の後ろ） */}
+        <div className="pointer-events-none absolute right-[3%] top-[10%] h-5 w-5 rounded-full bg-sky-400/60" />
+        <svg className="pointer-events-none absolute right-[7%] top-[18%] h-6 w-6 opacity-80" viewBox="0 0 24 24" aria-hidden="true">
+          <polygon points="12,2 22,20 2,20" fill="#FB923C" />
+        </svg>
+        <svg className="pointer-events-none absolute right-[12%] bottom-[20%] h-20 w-20 opacity-20" viewBox="0 0 100 100" aria-hidden="true">
+          <line x1="0" y1="25" x2="75" y2="100" stroke="#0EA5E9" strokeWidth="3.5" />
+          <line x1="12" y1="5" x2="87" y2="80" stroke="#0EA5E9" strokeWidth="3.5" />
+          <line x1="24" y1="0" x2="99" y2="75" stroke="#0EA5E9" strokeWidth="3.5" />
+        </svg>
+        <svg className="pointer-events-none absolute right-[4%] bottom-[30%] h-5 w-5 opacity-80" viewBox="0 0 24 24" aria-hidden="true">
+          <polygon points="12,2 22,20 2,20" fill="#FCD34D" />
+        </svg>
+        {/* 半月シェイプ */}
+        <svg className="pointer-events-none absolute bottom-[18%] left-[22%] h-10 w-10 opacity-60" viewBox="0 0 40 40" aria-hidden="true">
+          <path d="M20,5 A15,15 0 0,1 20,35 A15,15 0 0,0 20,5 Z" fill="#FDBA74" />
+        </svg>
+        <svg className="pointer-events-none absolute right-[15%] top-[12%] h-8 w-8 opacity-60" viewBox="0 0 40 40" aria-hidden="true">
+          <path d="M20,5 A15,15 0 0,1 20,35 A15,15 0 0,0 20,5 Z" fill="#38BDF8" />
+        </svg>
+
+        {/* テキストコンテンツ（左側に重ねる） */}
+        <div className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6">
+          <div className="flex min-h-[380px] items-center py-14 sm:min-h-[440px] sm:py-20">
+            <div className="w-[52%] sm:w-[46%] lg:w-[42%]">
+              <p className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-blue-500/10 px-3 py-1 text-xs font-semibold text-blue-700">
                 マスターズ水泳専門
               </p>
-              <h1 className="mb-4 text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-4xl md:text-[2.75rem]">
+              <h1 className="mb-4 text-2xl font-bold leading-tight tracking-tight text-slate-900 sm:text-3xl md:text-4xl">
                 水泳の個人指導なら
                 <br />
                 <span className="text-blue-600">Rangers</span>
               </h1>
-              <p className="mb-6 text-base leading-relaxed text-slate-600 sm:text-lg">
-                元日本代表・プロコーチによるマンツーマン指導。
+              <p className="mb-5 text-sm leading-relaxed text-slate-600 sm:text-base">
+                元日本代表・プロコーチによる
                 <br />
-                マスターズスイマーの目標に寄り添います。
+                マンツーマン指導。
+                <br />
+                マスターズスイマーの目標に
+                <br />
+                寄り添います。
               </p>
-              <div className="mb-6 flex flex-wrap justify-center gap-4 text-sm text-slate-500 sm:justify-start">
-                <span className="flex items-center gap-1.5">
-                  <Users className="h-4 w-4 text-blue-400" />
-                  厳選コーチ在籍
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                  高満足度
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <Shield className="h-4 w-4 text-blue-400" />
-                  入会金・月会費無料
-                </span>
-              </div>
               <Link href="/instructors">
-                <Button size="lg" className="bg-blue-500 px-8 text-base hover:bg-blue-600">
+                <Button size="lg" className="bg-blue-500 px-6 text-sm hover:bg-blue-600 sm:px-8 sm:text-base">
                   まずは無料で体験する
                 </Button>
               </Link>
             </div>
-
-            {/* 画像 */}
-            <div className="w-full flex-1 sm:max-w-none">
-              <div className="overflow-hidden rounded-2xl shadow-xl">
-                <Image
-                  src="/images/lp/hero-swimmer.jpg"
-                  alt="マスターズスイマーのレッスン風景"
-                  width={640}
-                  height={400}
-                  className="h-56 w-full object-cover sm:h-72 lg:h-80"
-                  priority
-                />
-              </div>
-            </div>
           </div>
+        </div>
+
+        {/* 下部ウェーブ（次セクションへの自然な接続） */}
+        <div className="absolute bottom-0 left-0 w-full leading-none">
+          <svg
+            viewBox="0 0 1440 56"
+            preserveAspectRatio="none"
+            className="h-10 w-full sm:h-14"
+            aria-hidden="true"
+          >
+            <path
+              d="M0,28 C240,56 480,0 720,28 C960,56 1200,14 1440,28 L1440,56 L0,56 Z"
+              fill="white"
+            />
+          </svg>
         </div>
       </section>
 
