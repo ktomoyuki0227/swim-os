@@ -21,14 +21,12 @@ const swimmerLinks = [
   { href: "/lessons", label: "レッスン一覧" },
   { href: "/bookings", label: "予約履歴" },
   { href: "/messages", label: "メッセージ" },
-  { href: "/profile", label: "プロフィール" },
 ]
 
 const instructorLinks = [
   { href: "/instructor/dashboard", label: "ダッシュボード" },
   { href: "/instructor/lessons", label: "レッスン管理" },
   { href: "/messages", label: "メッセージ" },
-  { href: "/profile", label: "プロフィール" },
 ]
 
 export function Navigation({ role, userName, avatarUrl }: NavigationProps) {
