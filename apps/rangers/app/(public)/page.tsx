@@ -89,7 +89,7 @@ export default async function HomePage() {
       {/* ===== HERO ===== */}
       <section className="relative overflow-hidden bg-sky-100" style={{ minHeight: "420px" }}>
         {/* 右半分に水泳選手の画像（絶対配置・右50%カバー） */}
-        <div className="absolute right-0 top-0 h-full w-[63%] sm:w-[59%]">
+        <div className="absolute right-0 top-0 h-full w-[66%] sm:w-[62%]">
           <Image
             src="/images/lp/hero-swimmer-portrait.jpg"
             alt="マスターズスイマーのレッスン風景"
