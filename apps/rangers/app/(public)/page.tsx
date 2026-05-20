@@ -88,17 +88,17 @@ export default async function HomePage() {
     <>
       {/* ===== HERO ===== */}
       <section className="relative overflow-hidden bg-sky-100" style={{ minHeight: "420px" }}>
-        {/* 右半分に水泳選手の画像（絶対配置） */}
-        <div className="absolute right-0 top-0 h-full w-[62%] sm:w-[56%]">
+        {/* 右半分に水泳選手の画像（絶対配置・右50%カバー） */}
+        <div className="absolute right-0 top-0 h-full w-[58%] sm:w-[54%]">
           <Image
             src="/images/lp/hero-swimmer-portrait.jpg"
             alt="マスターズスイマーのレッスン風景"
             fill
-            className="object-cover object-[65%_center]"
+            className="object-cover object-[40%_center]"
             priority
           />
           {/* 左端をグラデーションでフェードさせ背景と馴染ませる */}
-          <div className="absolute inset-0 bg-gradient-to-r from-sky-100 via-sky-100/70 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-sky-100 via-sky-100/50 to-transparent" />
         </div>
 
         {/* デコレーション：浮遊する幾何学シェイプ */}
@@ -140,32 +140,38 @@ export default async function HomePage() {
           <path d="M20,5 A15,15 0 0,1 20,35 A15,15 0 0,0 20,5 Z" fill="#38BDF8" />
         </svg>
 
-        {/* テキストコンテンツ（左側に重ねる） */}
+        {/* テキストコンテンツ（左50%内で中央揃え） */}
         <div className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6">
-          <div className="flex min-h-[380px] items-center py-14 sm:min-h-[440px] sm:py-20">
-            <div className="w-[52%] sm:w-[46%] lg:w-[42%]">
-              <p className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-blue-500/10 px-3 py-1 text-xs font-semibold text-blue-700">
-                マスターズ水泳専門
-              </p>
-              <h1 className="mb-4 text-2xl font-bold leading-tight tracking-tight text-slate-900 sm:text-3xl md:text-4xl">
-                水泳の個人指導なら
-                <br />
-                <span className="text-blue-600">Rangers</span>
-              </h1>
-              <p className="mb-5 text-sm leading-relaxed text-slate-600 sm:text-base">
-                元日本代表・プロコーチによる
-                <br />
-                マンツーマン指導。
-                <br />
-                マスターズスイマーの目標に
-                <br />
-                寄り添います。
-              </p>
-              <Link href="/instructors">
-                <Button size="lg" className="bg-blue-500 px-6 text-sm hover:bg-blue-600 sm:px-8 sm:text-base">
-                  まずは無料で体験する
-                </Button>
-              </Link>
+          <div className="flex min-h-[400px] items-center py-14 sm:min-h-[460px] sm:py-20">
+            {/* 左50%ゾーン・コンテンツを中央に寄せる */}
+            <div className="flex w-1/2 justify-center">
+              <div className="w-full max-w-xs sm:max-w-sm">
+                <p className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-blue-500/10 px-3 py-1 text-xs font-semibold text-blue-700">
+                  マスターズ水泳専門
+                </p>
+                <h1 className="mb-5 text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-4xl md:text-5xl">
+                  水泳の個人指導なら
+                  <br />
+                  <span className="text-blue-600">Rangers</span>
+                </h1>
+                <p className="mb-6 text-sm leading-relaxed text-slate-600 sm:text-base">
+                  元日本代表・プロコーチによる
+                  <br />
+                  マンツーマン指導。
+                  <br />
+                  マスターズスイマーの目標に
+                  <br />
+                  寄り添います。
+                </p>
+                <Link href="/instructors" className="block">
+                  <Button
+                    size="lg"
+                    className="w-full bg-blue-500 py-6 text-base font-bold hover:bg-blue-600 sm:text-lg"
+                  >
+                    まずは無料で体験する
+                  </Button>
+                </Link>
+              </div>
             </div>
           </div>
         </div>
