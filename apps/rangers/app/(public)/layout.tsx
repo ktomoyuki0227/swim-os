@@ -34,7 +34,7 @@ export default async function PublicLayout({
               <Link
                 key={href}
                 href={href}
-                className="rounded-md px-2.5 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                className="whitespace-nowrap rounded-md px-2.5 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
               >
                 {label}
               </Link>

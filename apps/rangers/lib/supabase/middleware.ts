@@ -44,7 +44,15 @@ export async function updateSession(request: NextRequest) {
 
   const isApiRoute = request.nextUrl.pathname.startsWith("/api")
 
-  if (!user && !isAuthPage && !isApiRoute && request.nextUrl.pathname !== "/") {
+  // ログインなしで閲覧できる公開ページ
+  const isPublicPage =
+    request.nextUrl.pathname === "/" ||
+    request.nextUrl.pathname.startsWith("/about") ||
+    request.nextUrl.pathname.startsWith("/price") ||
+    request.nextUrl.pathname.startsWith("/faq") ||
+    request.nextUrl.pathname.startsWith("/instructors")
+
+  if (!user && !isAuthPage && !isApiRoute && !isPublicPage) {
     const url = request.nextUrl.clone()
     url.pathname = "/login"
     const redirectResponse = NextResponse.redirect(url)

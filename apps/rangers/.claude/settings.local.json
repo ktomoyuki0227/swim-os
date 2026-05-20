@@ -15,7 +15,8 @@
       "mcp__plugin_ecc_playwright__browser_click",
       "mcp__plugin_ecc_playwright__browser_snapshot",
       "Bash(pnpm tsc:*)",
-      "Bash(pnpm build:*)"
+      "Bash(pnpm build:*)",
+      "Bash(npm run:*)"
     ]
   }
 }
