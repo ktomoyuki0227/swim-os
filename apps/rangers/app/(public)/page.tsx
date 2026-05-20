@@ -145,7 +145,7 @@ export default async function HomePage() {
           <div className="flex min-h-[400px] items-center py-14 sm:min-h-[460px] sm:py-20">
             {/* 左50%ゾーン・コンテンツを中央に寄せる */}
             <div className="flex w-1/2 justify-center">
-              <div className="w-full max-w-xs sm:max-w-sm">
+              <div className="w-full max-w-sm sm:max-w-md">
                 <p className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-blue-500/10 px-3 py-1 text-xs font-semibold text-blue-700">
                   マスターズ水泳専門
                 </p>
