@@ -2,18 +2,21 @@ import Link from "next/link"
 import Image from "next/image"
 import { createClient } from "@/lib/supabase/server"
 import { Button } from "@/components/ui/button"
-import { Star, MapPin, ChevronRight, Shield, Users, Clock, Calendar } from "lucide-react"
+import { ChevronRight } from "lucide-react"
 import type { Profile, LessonWithInstructor } from "@/types/database"
 
 function StarRating({ rating, count }: { rating: number; count: number }) {
+  const filled = Math.round(rating)
   return (
     <div className="flex items-center gap-1">
-      <div className="flex">
+      <div className="flex gap-0.5">
         {[1, 2, 3, 4, 5].map((s) => (
-          <Star
+          <span
             key={s}
-            className={`h-3.5 w-3.5 ${s <= Math.round(rating) ? "fill-yellow-400 text-yellow-400" : "text-gray-200"}`}
-          />
+            className={`text-sm leading-none ${s <= filled ? "text-yellow-400" : "text-gray-200"}`}
+          >
+            ●
+          </span>
         ))}
       </div>
       <span className="text-xs font-medium text-yellow-600">{rating.toFixed(1)}</span>
@@ -204,29 +207,31 @@ export default async function HomePage() {
           <div className="grid gap-6 sm:grid-cols-3">
             {[
               {
-                icon: "🏊",
+                img: "/images/lp/icons/icon-individual-coaching.jpg",
                 title: "個人コーチ",
                 desc: "あなたの課題・目標に合わせた完全マンツーマン指導。スケジュールも自由に設定できます。",
                 href: "/instructors",
                 linkText: "コーチを探す",
               },
               {
-                icon: "👥",
+                img: "/images/lp/icons/icon-group-lesson.jpg",
                 title: "グループレッスン",
                 desc: "仲間と一緒に楽しく上達。少人数制で丁寧な指導を受けながら、モチベーションも維持できます。",
                 href: "/instructors",
                 linkText: "レッスンを見る",
               },
               {
-                icon: "🏆",
+                img: "/images/lp/icons/icon-masters.jpg",
                 title: "マスターズ特化",
                 desc: "年齢を重ねた身体に合わせた指導が得意なコーチが多数在籍。競技から趣味まで幅広く対応。",
                 href: "/about",
                 linkText: "詳しく見る",
               },
-            ].map(({ icon, title, desc, href, linkText }) => (
+            ].map(({ img, title, desc, href, linkText }) => (
               <div key={title} className="rounded-xl border bg-card p-6 transition hover:shadow-md">
-                <div className="mb-4 text-3xl">{icon}</div>
+                <div className="mb-4 h-16 w-16 overflow-hidden rounded-xl">
+                  <Image src={img} alt={title} width={64} height={64} className="h-full w-full object-cover" />
+                </div>
                 <h3 className="mb-2 text-lg font-bold">{title}</h3>
                 <p className="mb-4 text-sm leading-relaxed text-muted-foreground">{desc}</p>
                 <Link href={href} className="flex items-center gap-1 text-sm font-medium text-blue-600 hover:underline">
@@ -343,8 +348,7 @@ export default async function HomePage() {
                         <p className="text-xs text-muted-foreground">{instructor?.name} コーチ</p>
                       </div>
                       <div className="shrink-0 text-right">
-                        <div className="mb-1 flex items-center gap-1 text-xs text-muted-foreground">
-                          <Calendar className="h-3.5 w-3.5" />
+                        <div className="mb-1 text-xs text-muted-foreground">
                           {formatLessonDate(lesson.scheduled_at)}
                         </div>
                         <p className="text-sm font-semibold text-blue-600">
@@ -372,8 +376,8 @@ export default async function HomePage() {
       <section className="bg-slate-800 py-10 px-4">
         <div className="mx-auto flex max-w-4xl flex-col items-center gap-6 sm:flex-row sm:justify-between">
           <div className="flex items-center gap-4 text-center sm:text-left">
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-blue-500 text-2xl">
-              🏊
+            <div className="h-14 w-14 shrink-0 overflow-hidden rounded-full">
+              <Image src="/images/lp/icons/icon-individual-coaching.jpg" alt="" width={56} height={56} className="h-full w-full object-cover" />
             </div>
             <div>
               <p className="text-xs text-slate-400">コーチ選びに困ったら...</p>
@@ -494,10 +498,7 @@ export default async function HomePage() {
                         </p>
                       )}
                       {coach.prefecture && (
-                        <p className="flex items-center gap-0.5 text-xs text-muted-foreground">
-                          <MapPin className="h-3 w-3" />
-                          {coach.prefecture}
-                        </p>
+                        <p className="text-xs text-muted-foreground">{coach.prefecture}</p>
                       )}
                     </div>
                   </div>
@@ -546,24 +547,24 @@ export default async function HomePage() {
           <div className="grid gap-6 sm:grid-cols-3">
             {[
               {
-                icon: <Star className="h-7 w-7" />,
+                img: "/images/lp/icons/icon-elite-coach.jpg",
                 title: "厳選コーチ",
                 desc: "元日本代表・プロ選手など実績豊富なコーチのみ在籍。指導力を厳格に審査しています。",
               },
               {
-                icon: <Clock className="h-7 w-7" />,
+                img: "/images/lp/icons/icon-flexible-schedule.jpg",
                 title: "自由な日程・場所",
                 desc: "好きな時間・好きな場所でレッスン。カレンダー予約または日程リクエストで柔軟に対応。",
               },
               {
-                icon: <Shield className="h-7 w-7" />,
+                img: "/images/lp/icons/icon-safety.jpg",
                 title: "安心・安全",
                 desc: "入会金・月会費0円。クレジットカード決済でお金のトラブルなし。",
               },
-            ].map(({ icon, title, desc }) => (
+            ].map(({ img, title, desc }) => (
               <div key={title} className="rounded-xl border bg-card p-6 text-center">
-                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-blue-50 text-blue-500">
-                  {icon}
+                <div className="mx-auto mb-4 h-14 w-14 overflow-hidden rounded-xl">
+                  <Image src={img} alt={title} width={56} height={56} className="h-full w-full object-cover" />
                 </div>
                 <h3 className="mb-2 font-bold">{title}</h3>
                 <p className="text-sm leading-relaxed text-muted-foreground">{desc}</p>

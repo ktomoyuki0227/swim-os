@@ -1,5 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { Header } from '@/components/layout/header'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -7,6 +6,8 @@ import { Button } from '@/components/ui/button'
 import { UserPlus, Search, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 import { formatDate, getAge } from '@/lib/utils/date'
+
+const SCHOOL_ID = '00000000-0000-0000-0000-000000000001'
 
 const STATUS_LABELS = {
   active: { label: '在籍', variant: 'default' as const },
@@ -21,17 +22,7 @@ export default async function MembersPage({
 }: {
   searchParams: Promise<{ q?: string; status?: string }>
 }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('school_id')
-    .eq('id', user.id)
-    .single()
-
-  if (!profile?.school_id) redirect('/admin/dashboard')
+  const supabase = createAdminClient()
 
   const params = await searchParams
   const q = params.q ?? ''
@@ -40,7 +31,7 @@ export default async function MembersPage({
   let query = supabase
     .from('members')
     .select('*, profiles!parent_id(name, phone)')
-    .eq('school_id', profile.school_id)
+    .eq('school_id', SCHOOL_ID)
     .order('name_kana')
 
   if (statusFilter !== 'all') {

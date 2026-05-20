@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { createAnnouncement } from '@/actions/announcements'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -23,34 +23,19 @@ export default function NewAnnouncementPage() {
 
     const form = e.currentTarget
     const data = new FormData(form)
-    const supabase = createClient()
 
-    const { data: { user } } = await supabase.auth.getUser()
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('school_id')
-      .eq('id', user!.id)
-      .single()
-
-    const { error } = await supabase
-      .from('announcements')
-      .insert({
-        school_id: profile!.school_id,
+    try {
+      await createAnnouncement({
         title: data.get('title') as string,
         body: data.get('body') as string,
-        target_type: targetType,
-        is_published: isPublished,
-        published_at: isPublished ? new Date().toISOString() : null,
-        created_by: user!.id,
+        targetType,
+        isPublished,
       })
-
-    setLoading(false)
-
-    if (error) {
-      toast.error(error.message)
-    } else {
       toast.success(isPublished ? 'お知らせを公開しました' : '下書きとして保存しました')
       router.push('/admin/announcements')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'エラーが発生しました')
+      setLoading(false)
     }
   }
 

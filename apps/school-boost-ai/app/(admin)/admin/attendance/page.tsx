@@ -1,26 +1,17 @@
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { Header } from '@/components/layout/header'
 import { AttendanceSheet } from '@/components/attendance/attendance-sheet'
 import { Card, CardContent } from '@/components/ui/card'
 import { DAY_LABELS } from '@/types/database'
+
+const SCHOOL_ID = '00000000-0000-0000-0000-000000000001'
 
 export default async function AttendancePage({
   searchParams,
 }: {
   searchParams: Promise<{ date?: string; schedule_id?: string }>
 }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('school_id')
-    .eq('id', user.id)
-    .single()
-
-  if (!profile?.school_id) redirect('/admin/dashboard')
+  const supabase = createAdminClient()
 
   const params = await searchParams
   const today = new Date().toISOString().split('T')[0]
@@ -42,7 +33,7 @@ export default async function AttendancePage({
     `)
     .eq('day_of_week', dayOfWeek)
     .eq('is_active', true)
-    .eq('classes.school_id', profile.school_id)
+    .eq('classes.school_id', SCHOOL_ID)
 
   const selectedScheduleId = params.schedule_id ?? schedules?.[0]?.id
 

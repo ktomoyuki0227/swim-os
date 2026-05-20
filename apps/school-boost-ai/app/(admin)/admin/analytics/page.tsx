@@ -1,35 +1,24 @@
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { Header } from '@/components/layout/header'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { TrendingUp, Users, CreditCard, Star } from 'lucide-react'
 import { currentMonth, monthLabel } from '@/lib/utils/date'
 
+const SCHOOL_ID = '00000000-0000-0000-0000-000000000001'
+
 export default async function AnalyticsPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('school_id')
-    .eq('id', user.id)
-    .single()
-
-  if (!profile?.school_id) redirect('/admin/dashboard')
-
-  const schoolId = profile.school_id
+  const supabase = createAdminClient()
   const thisMonth = currentMonth()
 
   const [membersRes, feesRes, attendanceRes, gradesRes] = await Promise.all([
     supabase
       .from('members')
       .select('id, status, current_level, created_at')
-      .eq('school_id', schoolId),
+      .eq('school_id', SCHOOL_ID),
     supabase
       .from('monthly_fees')
       .select('status, amount, target_month')
-      .eq('school_id', schoolId)
+      .eq('school_id', SCHOOL_ID)
       .gte('target_month', new Date(Date.now() - 6 * 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]),
     supabase
       .from('attendance_records')

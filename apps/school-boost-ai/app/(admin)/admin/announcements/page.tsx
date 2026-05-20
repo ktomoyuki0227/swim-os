@@ -1,5 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { Header } from '@/components/layout/header'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -8,18 +7,10 @@ import { Plus, Bell, BellOff } from 'lucide-react'
 import Link from 'next/link'
 import { formatDate } from '@/lib/utils/date'
 
+const SCHOOL_ID = '00000000-0000-0000-0000-000000000001'
+
 export default async function AnnouncementsPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('school_id')
-    .eq('id', user.id)
-    .single()
-
-  if (!profile?.school_id) redirect('/admin/dashboard')
+  const supabase = createAdminClient()
 
   const { data: announcements } = await supabase
     .from('announcements')
@@ -27,7 +18,7 @@ export default async function AnnouncementsPage() {
       *,
       profiles!created_by(name)
     `)
-    .eq('school_id', profile.school_id)
+    .eq('school_id', SCHOOL_ID)
     .order('created_at', { ascending: false })
 
   return (

@@ -1,34 +1,25 @@
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { Header } from '@/components/layout/header'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Star, TrendingUp } from 'lucide-react'
 import { GradeEvaluationForm } from '@/components/grade/grade-evaluation-form'
 
+const SCHOOL_ID = '00000000-0000-0000-0000-000000000001'
+
 export default async function GradesPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('school_id, role')
-    .eq('id', user.id)
-    .single()
-
-  if (!profile?.school_id) redirect('/admin/dashboard')
+  const supabase = createAdminClient()
 
   const [gradeLevelsRes, membersRes] = await Promise.all([
     supabase
       .from('grade_levels')
       .select('*')
-      .eq('school_id', profile.school_id)
+      .eq('school_id', SCHOOL_ID)
       .order('level'),
     supabase
       .from('members')
       .select('id, name, name_kana, current_level, status')
-      .eq('school_id', profile.school_id)
+      .eq('school_id', SCHOOL_ID)
       .eq('status', 'active')
       .order('current_level'),
   ])

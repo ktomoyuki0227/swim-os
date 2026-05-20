@@ -1,28 +1,19 @@
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { Card, CardContent } from '@/components/ui/card'
 import { Bell } from 'lucide-react'
 import { formatDate } from '@/lib/utils/date'
 
+const SCHOOL_ID = '00000000-0000-0000-0000-000000000001'
+
 export default async function ParentAnnouncementsPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  const supabase = createAdminClient()
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('school_id')
-    .eq('id', user.id)
-    .single()
-
-  const { data: announcements } = profile?.school_id
-    ? await supabase
-        .from('announcements')
-        .select('*')
-        .eq('school_id', profile.school_id)
-        .eq('is_published', true)
-        .order('published_at', { ascending: false })
-    : { data: [] }
+  const { data: announcements } = await supabase
+    .from('announcements')
+    .select('*')
+    .eq('school_id', SCHOOL_ID)
+    .eq('is_published', true)
+    .order('published_at', { ascending: false })
 
   return (
     <div className="p-4 space-y-4">

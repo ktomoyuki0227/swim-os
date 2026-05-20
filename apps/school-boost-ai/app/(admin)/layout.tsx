@@ -1,27 +1,10 @@
 import { Sidebar } from '@/components/layout/sidebar'
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
 
-export default async function AdminLayout({
+export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) redirect('/login')
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single()
-
-  if (!profile || !['admin', 'coach'].includes(profile.role)) {
-    redirect('/login')
-  }
-
   return (
     <div className="flex h-screen bg-[oklch(0.975_0.004_240)]">
       <Sidebar />

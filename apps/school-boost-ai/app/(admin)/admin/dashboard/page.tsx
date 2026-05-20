@@ -1,5 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { Header } from '@/components/layout/header'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -7,44 +6,32 @@ import { Users, ClipboardCheck, CreditCard, TrendingUp, AlertCircle, Star } from
 import { currentMonth, monthLabel } from '@/lib/utils/date'
 import { InviteLinkCard } from '@/components/school/invite-link-card'
 
+const SCHOOL_ID = '00000000-0000-0000-0000-000000000001'
+
 export default async function DashboardPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*, schools(*)')
-    .eq('id', user.id)
-    .single()
-
-  if (!profile?.school_id) {
-    return (
-      <div className="p-8 text-center text-gray-500">
-        スクールに紐づいていません。管理者に招待リンクを発行してもらってください。
-      </div>
-    )
-  }
-
-  const schoolId = profile.school_id
+  const supabase = createAdminClient()
   const thisMonth = currentMonth()
 
-  // Parallel data fetch
-  const [membersRes, feesRes, todayAttendanceRes] = await Promise.all([
+  const [membersRes, feesRes, todayAttendanceRes, schoolRes] = await Promise.all([
     supabase
       .from('members')
       .select('id, status, current_level')
-      .eq('school_id', schoolId),
+      .eq('school_id', SCHOOL_ID),
     supabase
       .from('monthly_fees')
       .select('status, amount')
-      .eq('school_id', schoolId)
+      .eq('school_id', SCHOOL_ID)
       .eq('target_month', thisMonth),
     supabase
       .from('attendance_records')
       .select('status')
       .gte('lesson_date', new Date().toISOString().split('T')[0])
       .lte('lesson_date', new Date().toISOString().split('T')[0]),
+    supabase
+      .from('schools')
+      .select('name, invite_code')
+      .eq('id', SCHOOL_ID)
+      .single(),
   ])
 
   const members = membersRes.data ?? []
@@ -99,14 +86,15 @@ export default async function DashboardPage() {
     levelCounts[l] = (levelCounts[l] ?? 0) + 1
   })
 
+  const school = schoolRes.data
+
   return (
     <>
       <Header title="ダッシュボード" />
       <div className="p-6 space-y-6">
-        {/* School name */}
         <div>
           <p className="text-sm text-gray-500">
-            {profile.schools?.name ?? 'スクール名未設定'}
+            {school?.name ?? 'スクール名未設定'}
           </p>
         </div>
 
@@ -198,9 +186,9 @@ export default async function DashboardPage() {
         </div>
 
         {/* Invite link */}
-        {profile.schools?.invite_code && (
+        {school?.invite_code && (
           <InviteLinkCard
-            inviteCode={profile.schools.invite_code}
+            inviteCode={school.invite_code}
             appUrl={process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'}
           />
         )}

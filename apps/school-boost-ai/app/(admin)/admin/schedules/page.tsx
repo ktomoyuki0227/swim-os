@@ -1,5 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { Header } from '@/components/layout/header'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -8,20 +7,12 @@ import { Plus } from 'lucide-react'
 import Link from 'next/link'
 import { DAY_LABELS } from '@/types/database'
 
+const SCHOOL_ID = '00000000-0000-0000-0000-000000000001'
+
 const DAYS = [1, 2, 3, 4, 5, 6, 0] as const // 月〜日の順
 
 export default async function SchedulesPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('school_id')
-    .eq('id', user.id)
-    .single()
-
-  if (!profile?.school_id) redirect('/admin/dashboard')
+  const supabase = createAdminClient()
 
   const { data: classes } = await supabase
     .from('classes')
@@ -31,7 +22,7 @@ export default async function SchedulesPage() {
       schedules(id, day_of_week, start_time, end_time, is_active),
       enrollments(id)
     `)
-    .eq('school_id', profile.school_id)
+    .eq('school_id', SCHOOL_ID)
     .eq('is_active', true)
     .order('name')
 

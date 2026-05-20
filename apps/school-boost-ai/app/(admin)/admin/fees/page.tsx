@@ -1,5 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { Header } from '@/components/layout/header'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -7,6 +6,8 @@ import { currentMonth, monthLabel, formatDate } from '@/lib/utils/date'
 import { FeeStatusToggle } from '@/components/fee/fee-status-toggle'
 import { BulkFeeGenerator } from '@/components/fee/bulk-fee-generator'
 import { CreditCard, TrendingUp } from 'lucide-react'
+
+const SCHOOL_ID = '00000000-0000-0000-0000-000000000001'
 
 const FEE_STATUS = {
   unpaid: { label: '未払い', variant: 'destructive' as const },
@@ -19,17 +20,7 @@ export default async function FeesPage({
 }: {
   searchParams: Promise<{ month?: string }>
 }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('school_id')
-    .eq('id', user.id)
-    .single()
-
-  if (!profile?.school_id) redirect('/admin/dashboard')
+  const supabase = createAdminClient()
 
   const params = await searchParams
   const targetMonth = params.month ?? currentMonth()
@@ -40,7 +31,7 @@ export default async function FeesPage({
       *,
       members(id, name, name_kana, status)
     `)
-    .eq('school_id', profile.school_id)
+    .eq('school_id', SCHOOL_ID)
     .eq('target_month', targetMonth)
     .order('members(name_kana)')
 
@@ -69,7 +60,7 @@ export default async function FeesPage({
             </form>
             <span className="text-sm font-medium text-gray-700">{monthLabel(targetMonth)}</span>
           </div>
-          <BulkFeeGenerator schoolId={profile.school_id} targetMonth={targetMonth} />
+          <BulkFeeGenerator schoolId={SCHOOL_ID} targetMonth={targetMonth} />
         </div>
 
         {/* Summary cards */}
@@ -169,7 +160,7 @@ export default async function FeesPage({
             ) : (
               <div className="py-12 text-center space-y-3">
                 <p className="text-gray-400 text-sm">この月の月謝データがありません</p>
-                <BulkFeeGenerator schoolId={profile.school_id} targetMonth={targetMonth} />
+                <BulkFeeGenerator schoolId={SCHOOL_ID} targetMonth={targetMonth} />
               </div>
             )}
           </CardContent>
