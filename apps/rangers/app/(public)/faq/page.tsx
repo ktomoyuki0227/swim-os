@@ -79,42 +79,68 @@ const faqs = [
 
 export default function FaqPage() {
   return (
-    <div className="mx-auto max-w-3xl px-4 py-12">
-      <h1 className="mb-3 text-3xl font-bold">よくある質問</h1>
-      <p className="mb-10 text-muted-foreground">
-        解決しない場合は{" "}
-        <Link href="/messages" className="text-blue-600 hover:underline">
-          サポートへお問い合わせ
-        </Link>{" "}
-        ください
-      </p>
+    <div>
+      {/* ヒーロー */}
+      <section className="bg-gradient-to-b from-sky-50 to-white py-20 text-center">
+        <div className="mx-auto max-w-2xl px-4">
+          <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-blue-500">
+            FAQ
+          </p>
+          <h1 className="mb-4 text-4xl font-bold tracking-tight sm:text-5xl">よくある質問</h1>
+          <p className="text-muted-foreground">
+            解決しない場合は{" "}
+            <Link href="/messages" className="text-blue-600 hover:underline">
+              サポートへお問い合わせ
+            </Link>{" "}
+            ください
+          </p>
+        </div>
+      </section>
 
-      <div className="space-y-10">
-        {faqs.map((section) => (
-          <section key={section.category}>
-            <h2 className="mb-4 border-l-4 border-blue-500 pl-3 text-lg font-bold">
-              {section.category}
-            </h2>
-            <div className="space-y-4">
-              {section.items.map((item) => (
-                <details
-                  key={item.q}
-                  className="group rounded-xl border bg-card open:shadow-sm"
-                >
-                  <summary className="flex cursor-pointer items-center justify-between px-5 py-4 font-medium list-none">
-                    <span>{item.q}</span>
-                    <span className="ml-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-45">
-                      +
-                    </span>
-                  </summary>
-                  <p className="px-5 pb-4 text-sm leading-relaxed text-muted-foreground">
-                    {item.a}
-                  </p>
-                </details>
-              ))}
-            </div>
-          </section>
-        ))}
+      {/* FAQ本体 */}
+      <div className="mx-auto max-w-3xl px-4 py-16">
+        <div className="space-y-12">
+          {faqs.map((section) => (
+            <section key={section.category}>
+              <div className="mb-5 flex items-center gap-3">
+                <div className="h-6 w-1 rounded-full bg-blue-500" />
+                <h2 className="text-lg font-bold">{section.category}</h2>
+              </div>
+              <div className="space-y-2">
+                {section.items.map((item) => (
+                  <details
+                    key={item.q}
+                    className="group overflow-hidden rounded-xl border bg-white transition-all open:shadow-sm"
+                  >
+                    <summary className="flex cursor-pointer list-none items-center justify-between px-6 py-4 font-medium">
+                      <span>{item.q}</span>
+                      <span className="ml-4 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-sm font-bold text-muted-foreground transition-transform group-open:rotate-45">
+                        +
+                      </span>
+                    </summary>
+                    <div className="border-t bg-muted/20 px-6 py-4">
+                      <p className="text-sm leading-relaxed text-muted-foreground">{item.a}</p>
+                    </div>
+                  </details>
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
+
+        {/* お問い合わせ */}
+        <div className="mt-16 rounded-2xl bg-sky-50 p-8 text-center">
+          <p className="mb-1 font-semibold">解決しませんでしたか？</p>
+          <p className="mb-5 text-sm text-muted-foreground">
+            サポートチームがお答えします。
+          </p>
+          <Link
+            href="/messages"
+            className="inline-flex items-center gap-2 rounded-full bg-blue-500 px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-600"
+          >
+            サポートに問い合わせる
+          </Link>
+        </div>
       </div>
     </div>
   )

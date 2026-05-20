@@ -2,7 +2,6 @@ import type { Metadata } from "next"
 import Image from "next/image"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
-import { Star, MapPin, ChevronRight } from "lucide-react"
 import { SWIM_SPECIALTIES, PREFECTURES, TARGET_AGES } from "@/types/database"
 import type { Profile } from "@/types/database"
 
@@ -21,14 +20,17 @@ interface InstructorsPageProps {
 }
 
 function StarRating({ rating, count }: { rating: number; count: number }) {
+  const rounded = Math.round(rating)
   return (
     <div className="flex items-center gap-1">
       <div className="flex">
         {[1, 2, 3, 4, 5].map((s) => (
-          <Star
+          <span
             key={s}
-            className={`h-3.5 w-3.5 ${s <= Math.round(rating) ? "fill-yellow-400 text-yellow-400" : "text-gray-200"}`}
-          />
+            className={`text-sm leading-none ${s <= rounded ? "text-yellow-400" : "text-gray-200"}`}
+          >
+            ●
+          </span>
         ))}
       </div>
       <span className="text-xs font-medium text-yellow-600">{rating.toFixed(1)}</span>
@@ -64,7 +66,7 @@ function InstructorCard({ instructor }: { instructor: Profile }) {
             <h3 className="font-semibold leading-tight group-hover:text-blue-600">
               {instructor.name} コーチ
             </h3>
-            <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+            <span className="mt-0.5 shrink-0 text-xs text-muted-foreground transition-transform group-hover:translate-x-0.5">›</span>
           </div>
 
           {instructor.review_count > 0 && (
@@ -81,9 +83,8 @@ function InstructorCard({ instructor }: { instructor: Profile }) {
 
           <div className="flex flex-wrap items-center gap-2">
             {instructor.prefecture && (
-              <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                <MapPin className="h-3 w-3" />
-                {instructor.prefecture}
+              <span className="text-xs text-muted-foreground">
+                📍 {instructor.prefecture}
               </span>
             )}
             {instructor.specialties?.slice(0, 3).map((s) => (
