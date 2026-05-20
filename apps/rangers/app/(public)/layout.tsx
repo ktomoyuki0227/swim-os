@@ -27,9 +27,9 @@ export default async function PublicLayout({
             {[
               { href: "/about", label: "ご利用ガイド" },
               { href: "/instructors", label: "コーチを探す" },
-              { href: "/price", label: "料金" },
-              { href: "/faq", label: "よくある質問" },
-              { href: "/register", label: "コーチ登録" },
+              { href: "/price", label: "料金のしくみ" },
+              { href: "/faq", label: "FAQ" },
+              { href: "/coach-recruit", label: "コーチ登録について" },
             ].map(({ href, label }) => (
               <Link
                 key={href}

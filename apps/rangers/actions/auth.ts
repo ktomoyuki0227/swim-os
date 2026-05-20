@@ -74,7 +74,7 @@ export async function register(
       .eq("id", user.id)
   }
 
-  redirect("/dashboard")
+  redirect("/register/sent")
 }
 
 export async function logout() {

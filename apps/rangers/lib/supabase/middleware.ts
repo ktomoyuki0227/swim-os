@@ -50,7 +50,10 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname.startsWith("/about") ||
     request.nextUrl.pathname.startsWith("/price") ||
     request.nextUrl.pathname.startsWith("/faq") ||
-    request.nextUrl.pathname.startsWith("/instructors")
+    request.nextUrl.pathname.startsWith("/instructors") ||
+    request.nextUrl.pathname.startsWith("/coach-recruit") ||
+    request.nextUrl.pathname.startsWith("/register/sent") ||
+    request.nextUrl.pathname.startsWith("/onboarding/complete")
 
   if (!user && !isAuthPage && !isApiRoute && !isPublicPage) {
     const url = request.nextUrl.clone()
