@@ -14,40 +14,35 @@ export default async function PublicLayout({
     <div className="flex min-h-screen flex-col">
       {/* ヘッダー */}
       <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="mx-auto flex h-20 max-w-6xl items-center justify-between px-4 sm:px-6">
-          <div className="flex items-center gap-6">
+        <div className="mx-auto grid h-20 max-w-6xl grid-cols-3 items-center px-4 sm:px-6">
+          {/* ロゴ（左） */}
+          <div>
             <Link href="/" className="text-lg font-bold text-blue-600">
               Rangers
             </Link>
-            <nav className="hidden items-center gap-1 sm:flex">
-              <Link
-                href="/instructors"
-                className="rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              >
-                コーチを探す
-              </Link>
-              <Link
-                href="/about"
-                className="rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              >
-                Rangers とは
-              </Link>
-              <Link
-                href="/price"
-                className="rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              >
-                料金
-              </Link>
-              <Link
-                href="/faq"
-                className="rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              >
-                よくある質問
-              </Link>
-            </nav>
           </div>
 
-          <div className="flex items-center gap-2">
+          {/* ナビ（中央） */}
+          <nav className="hidden items-center justify-center gap-0.5 sm:flex">
+            {[
+              { href: "/about", label: "ご利用ガイド" },
+              { href: "/instructors", label: "コーチを探す" },
+              { href: "/price", label: "料金" },
+              { href: "/faq", label: "よくある質問" },
+              { href: "/register", label: "コーチ登録" },
+            ].map(({ href, label }) => (
+              <Link
+                key={href}
+                href={href}
+                className="rounded-md px-2.5 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              >
+                {label}
+              </Link>
+            ))}
+          </nav>
+
+          {/* ボタン（右） */}
+          <div className="flex items-center justify-end gap-2">
             {user ? (
               <Link href="/dashboard">
                 <Button size="sm" className="bg-blue-500 hover:bg-blue-600">

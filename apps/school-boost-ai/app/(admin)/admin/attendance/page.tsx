@@ -1,6 +1,7 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { Header } from '@/components/layout/header'
 import { AttendanceSheet } from '@/components/attendance/attendance-sheet'
+import { DatePicker } from '@/components/attendance/date-picker'
 import { Card, CardContent } from '@/components/ui/card'
 import { DAY_LABELS } from '@/types/database'
 
@@ -52,21 +53,7 @@ export default async function AttendancePage({
       <div className="p-6 space-y-4">
         {/* Date picker */}
         <div className="flex items-center gap-4">
-          <form>
-            <input
-              type="date"
-              name="date"
-              defaultValue={selectedDate}
-              onChange={(e) => {
-                const form = e.target.form
-                if (form) form.submit()
-              }}
-              className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            {selectedScheduleId && (
-              <input type="hidden" name="schedule_id" value={selectedScheduleId} />
-            )}
-          </form>
+          <DatePicker defaultValue={selectedDate} scheduleId={selectedScheduleId} />
           <span className="text-sm text-gray-500">
             {new Intl.DateTimeFormat('ja-JP', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' }).format(new Date(selectedDate))}
           </span>

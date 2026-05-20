@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { currentMonth, monthLabel, formatDate } from '@/lib/utils/date'
 import { FeeStatusToggle } from '@/components/fee/fee-status-toggle'
 import { BulkFeeGenerator } from '@/components/fee/bulk-fee-generator'
+import { MonthPicker } from '@/components/fee/month-picker'
 import { CreditCard, TrendingUp } from 'lucide-react'
 
 const SCHOOL_ID = '00000000-0000-0000-0000-000000000001'
@@ -46,18 +47,7 @@ export default async function FeesPage({
         {/* Month selector */}
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-3">
-            <form>
-              <input
-                type="month"
-                name="month"
-                defaultValue={targetMonth.slice(0, 7)}
-                onChange={(e) => {
-                  const form = e.target.form
-                  if (form) form.submit()
-                }}
-                className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </form>
+            <MonthPicker defaultValue={targetMonth.slice(0, 7)} />
             <span className="text-sm font-medium text-gray-700">{monthLabel(targetMonth)}</span>
           </div>
           <BulkFeeGenerator schoolId={SCHOOL_ID} targetMonth={targetMonth} />
