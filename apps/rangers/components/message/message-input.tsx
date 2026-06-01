@@ -3,6 +3,7 @@
 import { useRef, useState, useTransition } from "react"
 import { Send } from "lucide-react"
 import { sendMessage } from "@/actions/messages"
+import { useToast } from "@/components/toast"
 
 interface MessageInputProps {
   receiverId: string
@@ -10,14 +11,13 @@ interface MessageInputProps {
 
 export function MessageInput({ receiverId }: MessageInputProps) {
   const [content, setContent] = useState("")
-  const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const { showToast } = useToast()
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!content.trim()) return
-    setError(null)
 
     const fd = new FormData()
     fd.append("receiver_id", receiverId)
@@ -26,7 +26,7 @@ export function MessageInput({ receiverId }: MessageInputProps) {
     startTransition(async () => {
       const res = await sendMessage(fd)
       if (res.error) {
-        setError(res.error)
+        showToast(res.error, "error")
       } else {
         setContent("")
         textareaRef.current?.focus()
@@ -61,9 +61,6 @@ export function MessageInput({ receiverId }: MessageInputProps) {
       >
         <Send className="h-4 w-4" />
       </button>
-      {error && (
-        <p className="absolute bottom-16 left-4 text-xs text-destructive">{error}</p>
-      )}
     </form>
   )
 }

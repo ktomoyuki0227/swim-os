@@ -53,7 +53,8 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname.startsWith("/instructors") ||
     request.nextUrl.pathname.startsWith("/coach-recruit") ||
     request.nextUrl.pathname.startsWith("/register/sent") ||
-    request.nextUrl.pathname.startsWith("/onboarding/complete")
+    request.nextUrl.pathname.startsWith("/onboarding/complete") ||
+    request.nextUrl.pathname.startsWith("/teams/join")
 
   if (!user && !isAuthPage && !isApiRoute && !isPublicPage) {
     const url = request.nextUrl.clone()
@@ -65,10 +66,16 @@ export async function updateSession(request: NextRequest) {
     return redirectResponse
   }
 
-  // ログイン済みユーザーが認証ページにアクセスした場合はリダイレクト
+  // ログイン済みユーザーが認証ページにアクセスした場合はロールに応じてリダイレクト
   if (user && isAuthPage) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single()
+
     const url = request.nextUrl.clone()
-    url.pathname = "/dashboard"
+    url.pathname = profile?.role === "instructor" ? "/instructor/dashboard" : "/dashboard"
     const redirectResponse = NextResponse.redirect(url)
     supabaseResponse.cookies.getAll().forEach((cookie) => {
       redirectResponse.cookies.set(cookie)

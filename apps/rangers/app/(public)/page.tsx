@@ -1,602 +1,379 @@
-import Link from "next/link"
 import Image from "next/image"
+import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
 import { Button } from "@/components/ui/button"
-import { ChevronRight } from "lucide-react"
-import type { Profile, LessonWithInstructor } from "@/types/database"
-
-function StarRating({ rating, count }: { rating: number; count: number }) {
-  const filled = Math.round(rating)
-  return (
-    <div className="flex items-center gap-1">
-      <div className="flex gap-0.5">
-        {[1, 2, 3, 4, 5].map((s) => (
-          <span
-            key={s}
-            className={`text-sm leading-none ${s <= filled ? "text-yellow-400" : "text-gray-200"}`}
-          >
-            ●
-          </span>
-        ))}
-      </div>
-      <span className="text-xs font-medium text-yellow-600">{rating.toFixed(1)}</span>
-      {count > 0 && <span className="text-xs text-muted-foreground">({count}件)</span>}
-    </div>
-  )
-}
-
-function formatLessonDate(dateStr: string) {
-  const d = new Date(dateStr)
-  const weekdays = "日月火水木金土"
-  const mm = d.getMonth() + 1
-  const dd = d.getDate()
-  const day = weekdays[d.getDay()]
-  const hh = d.getHours().toString().padStart(2, "0")
-  const min = d.getMinutes().toString().padStart(2, "0")
-  return `${mm}月${dd}日（${day}）${hh}:${min}〜`
-}
 
 export default async function HomePage() {
   const supabase = await createClient()
 
-  const [{ data: groupLessonsRaw }, { data: newCoachesRaw }, { data: newReviewsRaw }] =
-    await Promise.all([
-      // 開催予定グループレッスン（直近3件）
-      supabase
-        .from("lessons")
-        .select(
-          "*, instructor:profiles!instructor_id(id, name, avatar_url, rating_avg, review_count)",
-        )
-        .eq("status", "published")
-        .eq("lesson_type", "group")
-        .gte("scheduled_at", new Date().toISOString())
-        .order("scheduled_at", { ascending: true })
-        .limit(3),
+  const { data: publicSessionsRaw } = await supabase
+    .from("practice_sessions")
+    .select("*, team:teams(id, name)")
+    .eq("is_external", true)
+    .eq("session_status", "open")
+    .gte("scheduled_at", new Date().toISOString())
+    .order("scheduled_at", { ascending: true })
+    .limit(5)
 
-      // 新着コーチ（最新6名）
-      supabase
-        .from("profiles")
-        .select("*")
-        .eq("role", "instructor")
-        .order("created_at", { ascending: false })
-        .limit(6),
-
-      // 新着口コミ（最新5件）
-      supabase
-        .from("reviews")
-        .select(
-          "id, rating, comment, created_at, reviewer:profiles!reviewer_id(name), instructor:profiles!instructor_id(name)",
-        )
-        .order("created_at", { ascending: false })
-        .limit(5),
-    ])
-
-  const groupLessons = (groupLessonsRaw ?? []) as LessonWithInstructor[]
-  const newCoaches = (newCoachesRaw ?? []) as Profile[]
-  type ReviewRow = {
-    id: string
-    rating: number
-    comment: string | null
-    created_at: string
-    reviewer: { name: string } | null
-    instructor: { name: string } | null
-  }
-  const newReviews = (newReviewsRaw ?? []).map((r) => ({
-    ...r,
-    reviewer: Array.isArray(r.reviewer) ? (r.reviewer[0] ?? null) : r.reviewer,
-    instructor: Array.isArray(r.instructor) ? (r.instructor[0] ?? null) : r.instructor,
-  })) as ReviewRow[]
+  const publicSessions = (publicSessionsRaw ?? []) as Record<string, unknown>[]
 
   return (
     <>
       {/* ===== HERO ===== */}
-      <section className="relative overflow-hidden bg-sky-100" style={{ minHeight: "420px" }}>
-        {/* 右半分に水泳選手の画像（絶対配置・右50%カバー） */}
-        <div className="absolute right-0 top-0 h-full w-[75%] sm:w-[71%]">
-          <Image
-            src="/images/lp/hero-swimmer-portrait.jpg"
-            alt="マスターズスイマーのレッスン風景"
-            fill
-            className="object-cover object-[40%_center]"
-            priority
-          />
-          {/* 左端をグラデーションでフェードさせ背景と馴染ませる */}
-          <div className="absolute inset-0 bg-gradient-to-r from-sky-100 via-sky-100/50 to-transparent" />
+      <section className="relative overflow-hidden bg-[#1a2332] px-4 py-20 sm:py-28">
+        {/* Background pattern */}
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          <div className="absolute -right-32 -top-32 h-96 w-96 rounded-full bg-[#005F8C]/20" />
+          <div className="absolute -bottom-24 -left-24 h-72 w-72 rounded-full bg-[#005F8C]/10" />
+          <svg className="absolute left-0 top-0 h-full w-full opacity-5" viewBox="0 0 400 400" aria-hidden="true">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <line key={i} x1={0} y1={i * 55} x2={400} y2={i * 55} stroke="white" strokeWidth="1" />
+            ))}
+          </svg>
         </div>
 
-        {/* デコレーション：浮遊する幾何学シェイプ */}
-        {/* 左側 */}
-        <div className="pointer-events-none absolute left-[4%] top-[14%] h-14 w-14 rounded-full bg-white/60" />
-        <div className="pointer-events-none absolute left-[9%] top-[64%] h-9 w-9 rounded-full bg-sky-300/50" />
-        <div className="pointer-events-none absolute left-[2%] top-[46%] h-6 w-6 rounded-full bg-white/70" />
-        {/* 左側 斜め線 */}
-        <svg className="pointer-events-none absolute left-[14%] top-[6%] h-28 w-28 opacity-25" viewBox="0 0 100 100" aria-hidden="true">
-          <line x1="0" y1="25" x2="75" y2="100" stroke="white" strokeWidth="3.5" />
-          <line x1="12" y1="5" x2="87" y2="80" stroke="white" strokeWidth="3.5" />
-          <line x1="24" y1="0" x2="99" y2="75" stroke="white" strokeWidth="3.5" />
-        </svg>
-        {/* 左下 小三角 */}
-        <svg className="pointer-events-none absolute bottom-[22%] left-[5%] h-7 w-7 opacity-80" viewBox="0 0 24 24" aria-hidden="true">
-          <polygon points="12,2 22,20 2,20" fill="#FCD34D" />
-        </svg>
-        <svg className="pointer-events-none absolute bottom-[14%] left-[16%] h-5 w-5 opacity-70" viewBox="0 0 24 24" aria-hidden="true">
-          <polygon points="12,2 22,20 2,20" fill="#38BDF8" />
-        </svg>
-        {/* 右端シェイプ（画像の後ろ） */}
-        <div className="pointer-events-none absolute right-[3%] top-[10%] h-5 w-5 rounded-full bg-sky-400/60" />
-        <svg className="pointer-events-none absolute right-[7%] top-[18%] h-6 w-6 opacity-80" viewBox="0 0 24 24" aria-hidden="true">
-          <polygon points="12,2 22,20 2,20" fill="#FB923C" />
-        </svg>
-        <svg className="pointer-events-none absolute right-[12%] bottom-[20%] h-20 w-20 opacity-20" viewBox="0 0 100 100" aria-hidden="true">
-          <line x1="0" y1="25" x2="75" y2="100" stroke="#0EA5E9" strokeWidth="3.5" />
-          <line x1="12" y1="5" x2="87" y2="80" stroke="#0EA5E9" strokeWidth="3.5" />
-          <line x1="24" y1="0" x2="99" y2="75" stroke="#0EA5E9" strokeWidth="3.5" />
-        </svg>
-        <svg className="pointer-events-none absolute right-[4%] bottom-[30%] h-5 w-5 opacity-80" viewBox="0 0 24 24" aria-hidden="true">
-          <polygon points="12,2 22,20 2,20" fill="#FCD34D" />
-        </svg>
-        {/* 半月シェイプ */}
-        <svg className="pointer-events-none absolute bottom-[18%] left-[22%] h-10 w-10 opacity-60" viewBox="0 0 40 40" aria-hidden="true">
-          <path d="M20,5 A15,15 0 0,1 20,35 A15,15 0 0,0 20,5 Z" fill="#FDBA74" />
-        </svg>
-        <svg className="pointer-events-none absolute right-[15%] top-[12%] h-8 w-8 opacity-60" viewBox="0 0 40 40" aria-hidden="true">
-          <path d="M20,5 A15,15 0 0,1 20,35 A15,15 0 0,0 20,5 Z" fill="#38BDF8" />
-        </svg>
-
-        {/* テキストコンテンツ（左50%内で中央揃え） */}
-        <div className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6">
-          <div className="flex min-h-[400px] items-center py-14 sm:min-h-[460px] sm:py-20">
-            {/* 左50%ゾーン・コンテンツを中央に寄せる */}
-            <div className="flex w-1/2 justify-center">
-              <div className="w-full max-w-sm sm:max-w-md">
-                <p className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-blue-500/10 px-3 py-1 text-xs font-semibold text-blue-700">
-                  マスターズ水泳専門
-                </p>
-                <h1 className="mb-5 text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-4xl md:text-5xl">
-                  水泳の個人指導なら
-                  <br />
-                  <span className="text-blue-600">Rangers</span>
-                </h1>
-                <p className="mb-6 text-sm leading-relaxed text-slate-600 sm:text-base">
-                  元日本代表・プロコーチによる
-                  <br />
-                  マンツーマン指導。
-                  <br />
-                  マスターズスイマーの目標に
-                  <br />
-                  寄り添います。
-                </p>
-                <Link href="/instructors" className="block">
-                  <Button
-                    size="lg"
-                    className="w-full bg-blue-500 py-6 text-base font-bold hover:bg-blue-600 sm:text-lg"
-                  >
-                    まずは無料で体験する
-                  </Button>
-                </Link>
-              </div>
+        <div className="relative mx-auto max-w-5xl">
+          <div className="grid items-center gap-10 lg:grid-cols-2">
+          <div className="max-w-2xl">
+            <span className="mb-4 inline-flex items-center gap-1.5 rounded-full border border-[#005F8C]/40 bg-[#005F8C]/20 px-3 py-1 text-xs font-medium text-[#5BC0EB]">
+              マスターズ水泳チーム専用
+            </span>
+            <h1 className="mb-6 text-4xl font-bold leading-tight tracking-tight text-white sm:text-5xl md:text-6xl">
+              チーム運営を、
+              <br />
+              <span className="text-[#5BC0EB]">もっとスマートに。</span>
+            </h1>
+            <p className="mb-8 text-base leading-relaxed text-slate-300 sm:text-lg">
+              LINE一斉配信・Excel管理・現金集金——
+              <br />
+              マスターズ水泳チームの運営課題をまとめて解決。
+            </p>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Link href="/login">
+                <Button
+                  size="lg"
+                  className="w-full rounded-full bg-[#06C755] px-8 py-4 text-base font-bold text-white hover:bg-[#05b04c] sm:w-auto"
+                  style={{ minHeight: "52px" }}
+                >
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" className="mr-2">
+                    <path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.627-.63h2.386c.349 0 .63.285.63.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.627-.63.349 0 .631.285.631.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.281.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314" />
+                  </svg>
+                  LINEで無料スタート
+                </Button>
+              </Link>
+              <Link href="#features">
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="w-full rounded-full border-white/20 px-8 text-white hover:bg-white/10 sm:w-auto"
+                  style={{ minHeight: "52px" }}
+                >
+                  機能を見る
+                </Button>
+              </Link>
             </div>
           </div>
-        </div>
 
-        {/* 下部ウェーブ（次セクションへの自然な接続） */}
-        <div className="absolute bottom-0 left-0 w-full leading-none">
-          <svg
-            viewBox="0 0 1440 56"
-            preserveAspectRatio="none"
-            className="h-10 w-full sm:h-14"
-            aria-hidden="true"
-          >
-            <path
-              d="M0,28 C240,56 480,0 720,28 C960,56 1200,14 1440,28 L1440,56 L0,56 Z"
-              fill="white"
-            />
-          </svg>
+          {/* Hero photo — desktop right column */}
+          <div className="hidden lg:block">
+            <div className="relative overflow-hidden rounded-2xl shadow-2xl">
+              <Image
+                src="/hero-pool.jpg"
+                alt="マスターズ水泳チームの仲間たち"
+                width={600}
+                height={400}
+                className="w-full object-cover"
+                priority
+              />
+              <div className="absolute inset-0 bg-gradient-to-l from-transparent to-[#1a2332]/30" />
+            </div>
+          </div>
+          </div>
         </div>
       </section>
 
-      {/* ===== RANGERS とは？ ===== */}
-      <section className="py-16 px-4 sm:py-20">
+      {/* ===== 課題提起 ===== */}
+      <section className="bg-[#f2f7fa] px-4 py-16 sm:py-20">
         <div className="mx-auto max-w-5xl">
           <div className="mb-10 text-center">
-            <h2 className="text-2xl font-bold sm:text-3xl">Rangers とは？</h2>
-            <p className="mt-2 text-sm text-muted-foreground">
-              コーチとスイマーをつなぐ、マスターズ水泳専門のマッチングプラットフォーム
-            </p>
+            <h2 className="text-2xl font-bold text-[#1a2332] sm:text-3xl">
+              こんな運営の悩み、ありませんか？
+            </h2>
           </div>
-          <div className="grid gap-6 sm:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-3">
             {[
               {
-                img: "/images/lp/icons/icon-individual-coaching.jpg",
-                title: "個人コーチ",
-                desc: "あなたの課題・目標に合わせた完全マンツーマン指導。スケジュールも自由に設定できます。",
-                href: "/instructors",
-                linkText: "コーチを探す",
+                icon: (
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#E8614D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                  </svg>
+                ),
+                title: "LINE で10回に分けて配信",
+                desc: "練習日程、人数確認、場所変更……毎回LINEグループに送るのが面倒。誰が読んだかも分からない。",
               },
               {
-                img: "/images/lp/icons/icon-group-lesson.jpg",
-                title: "グループレッスン",
-                desc: "仲間と一緒に楽しく上達。少人数制で丁寧な指導を受けながら、モチベーションも維持できます。",
-                href: "/instructors",
-                linkText: "レッスンを見る",
+                icon: (
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#E8614D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" />
+                    <path d="M3 9h18M9 21V9" />
+                  </svg>
+                ),
+                title: "Excel で参加者管理",
+                desc: "誰が来るか、何コース必要か、毎回手作業で集計。ファイルが古いまま使われていることも。",
               },
               {
-                img: "/images/lp/icons/icon-masters.jpg",
-                title: "マスターズ特化",
-                desc: "年齢を重ねた身体に合わせた指導が得意なコーチが多数在籍。競技から趣味まで幅広く対応。",
-                href: "/about",
-                linkText: "詳しく見る",
+                icon: (
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#E8614D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="2" y="5" width="20" height="14" rx="2" />
+                    <line x1="2" y1="10" x2="22" y2="10" />
+                  </svg>
+                ),
+                title: "現金集金が大変",
+                desc: "月謝や会費の払い忘れ、誰が払ったか管理が煩雑。お金の話をするのが気まずい。",
               },
-            ].map(({ img, title, desc, href, linkText }) => (
-              <div key={title} className="rounded-xl border bg-card p-6 transition hover:shadow-md">
-                <div className="mb-4 h-16 w-16 overflow-hidden rounded-xl">
-                  <Image src={img} alt={title} width={64} height={64} className="h-full w-full object-cover" />
+            ].map(({ icon, title, desc }) => (
+              <div key={title} className="rounded-2xl border border-[#E8614D]/20 bg-white p-6">
+                <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-[#E8614D]/10">
+                  {icon}
                 </div>
-                <h3 className="mb-2 text-lg font-bold">{title}</h3>
-                <p className="mb-4 text-sm leading-relaxed text-muted-foreground">{desc}</p>
-                <Link href={href} className="flex items-center gap-1 text-sm font-medium text-blue-600 hover:underline">
-                  {linkText} <ChevronRight className="h-3.5 w-3.5" />
-                </Link>
+                <h3 className="mb-2 font-bold text-[#1a2332]">{title}</h3>
+                <p className="text-sm leading-relaxed text-[#5c6a7a]">{desc}</p>
+              </div>
+            ))}
+          </div>
+          <p className="mt-8 text-center text-base font-medium text-[#1a2332]">
+            Rangers はこれらをまとめて解決します。
+          </p>
+        </div>
+      </section>
+
+      {/* ===== 機能紹介 ===== */}
+      <section id="features" className="bg-white px-4 py-16 sm:py-20">
+        <div className="mx-auto max-w-5xl">
+          <div className="mb-12 text-center">
+            <h2 className="text-2xl font-bold text-[#1a2332] sm:text-3xl">Rangers でできること</h2>
+            <p className="mt-2 text-sm text-[#5c6a7a]">チーム運営に必要な機能をひとつのアプリに</p>
+          </div>
+
+          {/* App mockup visual */}
+          <div className="mb-12 flex justify-center">
+            <div className="relative">
+              <Image
+                src="/app-mockup.jpg"
+                alt="Rangers アプリ画面"
+                width={280}
+                height={373}
+                className="rounded-3xl shadow-2xl"
+              />
+              <div className="absolute -inset-4 -z-10 rounded-3xl bg-gradient-to-br from-[#005F8C]/20 to-transparent blur-xl" />
+            </div>
+          </div>
+
+          <div className="grid gap-8 sm:grid-cols-2">
+            {[
+              {
+                color: "#005F8C",
+                icon: (
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="4" width="18" height="18" rx="2" />
+                    <line x1="16" y1="2" x2="16" y2="6" />
+                    <line x1="8" y1="2" x2="8" y2="6" />
+                    <line x1="3" y1="10" x2="21" y2="10" />
+                  </svg>
+                ),
+                title: "セッション配信・参加登録",
+                desc: "練習日程をアプリで配信。メンバーはタップひとつで参加登録。誰が来るか一目で分かります。",
+                points: ["タグで対象メンバーを絞り込み", "締め切り・最少人数を設定", "開催確定・中止を一括通知"],
+              },
+              {
+                color: "#0f8a4f",
+                icon: (
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                  </svg>
+                ),
+                title: "チーム・メンバー管理",
+                desc: "招待リンクを共有するだけで簡単参加。メンバーのレベル・種目タグで配信対象を選べます。",
+                points: ["招待リンク / QR コードで参加", "メンバーのタグ管理", "コース判定（人数→コース数）自動計算"],
+              },
+              {
+                color: "#7B5EA7",
+                icon: (
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="2" y="5" width="20" height="14" rx="2" />
+                    <line x1="2" y1="10" x2="22" y2="10" />
+                    <circle cx="12" cy="15" r="1.5" fill="white" stroke="none" />
+                  </svg>
+                ),
+                title: "会費・月謝管理",
+                desc: "年会費・月謝の支払い状況を一覧で確認。現金払いの記録もアプリで管理できます。",
+                points: ["全メンバー分を一括生成", "支払い済み / 未払いを記録", "オンライン決済（Stripe）にも対応予定"],
+              },
+              {
+                color: "#E8614D",
+                icon: (
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                  </svg>
+                ),
+                title: "お知らせ・LINE通知",
+                desc: "練習の確定・中止・お知らせをアプリ通知 + LINEでメンバーに届けます。",
+                points: ["アプリ内通知（未読バッジ）", "セッション確定・中止を即通知", "LINE連携（ベータ）"],
+              },
+            ].map(({ color, icon, title, desc, points }) => (
+              <div key={title} className="rounded-2xl border border-[#dce3ea] p-6">
+                <div className="mb-4 flex items-center gap-3">
+                  <div
+                    className="flex h-10 w-10 items-center justify-center rounded-xl"
+                    style={{ backgroundColor: color }}
+                  >
+                    {icon}
+                  </div>
+                  <h3 className="font-bold text-[#1a2332]">{title}</h3>
+                </div>
+                <p className="mb-4 text-sm leading-relaxed text-[#5c6a7a]">{desc}</p>
+                <ul className="space-y-1">
+                  {points.map((p) => (
+                    <li key={p} className="flex items-center gap-2 text-xs text-[#5c6a7a]">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0f8a4f" strokeWidth="2.5">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                      {p}
+                    </li>
+                  ))}
+                </ul>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ===== 人気のご利用シーン ===== */}
-      <section className="bg-blue-50 py-16 px-4 sm:py-20">
-        <div className="mx-auto max-w-5xl">
-          <h2 className="mb-10 text-center text-2xl font-bold sm:text-3xl">人気のご利用シーン</h2>
-          <div className="grid gap-8 sm:grid-cols-2">
-            <div className="overflow-hidden rounded-2xl bg-white shadow-md transition hover:shadow-lg">
-              <div className="relative h-52">
-                <Image
-                  src="/images/lp/usecase-individual.jpg"
-                  alt="マンツーマン指導の様子"
-                  fill
-                  className="object-cover"
-                />
-              </div>
-              <div className="p-5">
-                <span className="mb-2 inline-block rounded-full bg-blue-100 px-3 py-0.5 text-xs font-medium text-blue-700">
-                  マンツーマン指導
-                </span>
-                <h3 className="mb-2 font-bold leading-snug">
-                  「タイムを縮めたい！」に応える個人指導
-                </h3>
-                <p className="mb-4 text-sm leading-relaxed text-muted-foreground">
-                  自分のペースで弱点を徹底克服。コーチとの1対1の対話で、確実なレベルアップを実感できます。
-                </p>
-                <Link href="/instructors" className="flex items-center gap-1 text-sm font-medium text-blue-600 hover:underline">
-                  コーチを探す <ChevronRight className="h-3.5 w-3.5" />
-                </Link>
-              </div>
+      {/* ===== 公開セッション ===== */}
+      {publicSessions.length > 0 && (
+        <section className="bg-[#f2f7fa] px-4 py-16 sm:py-20">
+          <div className="mx-auto max-w-5xl">
+            <div className="mb-8">
+              <h2 className="text-2xl font-bold text-[#1a2332] sm:text-3xl">参加できるマスターズ練習</h2>
+              <p className="mt-1 text-sm text-[#5c6a7a]">
+                チームに参加しなくても、単発でゲスト参加できるセッション
+              </p>
             </div>
-
-            <div className="overflow-hidden rounded-2xl bg-white shadow-md transition hover:shadow-lg">
-              <div className="relative h-52">
-                <Image
-                  src="/images/lp/usecase-group.jpg"
-                  alt="グループレッスンの様子"
-                  fill
-                  className="object-cover"
-                />
-              </div>
-              <div className="p-5">
-                <span className="mb-2 inline-block rounded-full bg-sky-100 px-3 py-0.5 text-xs font-medium text-sky-700">
-                  グループレッスン
-                </span>
-                <h3 className="mb-2 font-bold leading-snug">
-                  仲間と一緒に楽しく続けるグループレッスン
-                </h3>
-                <p className="mb-4 text-sm leading-relaxed text-muted-foreground">
-                  同じ目標を持つ仲間と切磋琢磨。初心者から上級者まで、レベル別のクラスが充実しています。
-                </p>
-                <Link href="/instructors" className="flex items-center gap-1 text-sm font-medium text-blue-600 hover:underline">
-                  レッスンを探す <ChevronRight className="h-3.5 w-3.5" />
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ===== 開催予定グループレッスン ===== */}
-      <section className="py-16 px-4 sm:py-20">
-        <div className="mx-auto max-w-5xl">
-          <div className="mb-8 flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold sm:text-3xl">開催予定のグループレッスン</h2>
-              <p className="mt-1 text-sm text-muted-foreground">直近の開催スケジュール</p>
-            </div>
-            <Link href="/instructors" className="flex items-center gap-1 text-sm text-blue-600 hover:underline">
-              すべて見る <ChevronRight className="h-4 w-4" />
-            </Link>
-          </div>
-
-          {groupLessons.length === 0 ? (
-            <div className="rounded-xl border border-dashed py-12 text-center text-sm text-muted-foreground">
-              現在公開中のグループレッスンはありません
-            </div>
-          ) : (
             <div className="space-y-3">
-              {groupLessons.map((lesson) => {
-                const instructor = lesson.instructor as Pick<Profile, "id" | "name" | "avatar_url" | "rating_avg" | "review_count">
+              {publicSessions.map((session) => {
+                const team = session.team as { id: string; name: string } | null
+                const scheduledAt = new Date(session.scheduled_at as string)
                 return (
-                  <Link key={lesson.id} href={`/instructors/${lesson.instructor_id}`}>
-                    <div className="flex items-center gap-4 rounded-xl border bg-card p-4 transition hover:border-blue-200 hover:shadow-sm">
-                      <div className="hidden shrink-0 sm:flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 text-lg font-bold text-blue-600">
-                        {instructor?.name?.[0] ?? "?"}
+                  <Link key={session.id as string} href="/login">
+                    <div className="flex items-center gap-4 rounded-2xl border border-[#dce3ea] bg-white p-4 transition hover:border-[#005F8C]">
+                      <div className="flex w-14 shrink-0 flex-col items-center rounded-xl bg-[#005F8C]/10 py-2 text-center">
+                        <span className="text-[10px] font-medium text-[#005F8C]">
+                          {scheduledAt.toLocaleDateString("ja-JP", { month: "short" })}
+                        </span>
+                        <span className="text-xl font-bold leading-tight text-[#005F8C]">
+                          {scheduledAt.getDate()}
+                        </span>
+                        <span className="text-[10px] text-[#005F8C]">
+                          {scheduledAt.toLocaleDateString("ja-JP", { weekday: "short" })}
+                        </span>
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className="mb-1 flex flex-wrap items-center gap-1.5">
-                          <span className="rounded bg-blue-500 px-2 py-0.5 text-xs font-medium text-white">
-                            グループ
-                          </span>
-                          {lesson.target_level && (
-                            <span className="rounded bg-sky-100 px-2 py-0.5 text-xs text-sky-700">
-                              {lesson.target_level}
-                            </span>
-                          )}
-                          {lesson.specialty && (
-                            <span className="rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-600">
-                              {lesson.specialty}
-                            </span>
-                          )}
-                        </div>
-                        <p className="truncate font-medium">{lesson.title}</p>
-                        <p className="text-xs text-muted-foreground">{instructor?.name} コーチ</p>
+                        <p className="font-medium text-[#1a2332]">{session.title as string}</p>
+                        <p className="text-xs text-[#5c6a7a]">
+                          {scheduledAt.toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" })}
+                          {session.location ? ` · ${session.location as string}` : ""}
+                          {team ? ` · ${team.name}` : ""}
+                        </p>
                       </div>
                       <div className="shrink-0 text-right">
-                        <div className="mb-1 text-xs text-muted-foreground">
-                          {formatLessonDate(lesson.scheduled_at)}
-                        </div>
-                        <p className="text-sm font-semibold text-blue-600">
-                          ¥{lesson.price.toLocaleString()}
+                        <p className="text-sm font-semibold text-[#005F8C]">
+                          ¥{((session.guest_price as number) || 0).toLocaleString()}
                         </p>
+                        <p className="text-[10px] text-[#8d99a8]">ゲスト参加</p>
                       </div>
                     </div>
                   </Link>
                 )
               })}
             </div>
-          )}
-
-          <div className="mt-6 text-center">
-            <Link href="/instructors">
-              <Button variant="outline" className="border-blue-300 text-blue-600 hover:bg-blue-50">
-                グループレッスンをもっと見る
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* ===== CTA バナー ===== */}
-      <section className="bg-slate-800 py-10 px-4">
-        <div className="mx-auto flex max-w-4xl flex-col items-center gap-6 sm:flex-row sm:justify-between">
-          <div className="flex items-center gap-4 text-center sm:text-left">
-            <div className="h-14 w-14 shrink-0 overflow-hidden rounded-full">
-              <Image src="/images/lp/icons/icon-individual-coaching.jpg" alt="" width={56} height={56} className="h-full w-full object-cover" />
-            </div>
-            <div>
-              <p className="text-xs text-slate-400">コーチ選びに困ったら...</p>
-              <p className="font-bold text-white sm:text-lg">
-                Rangers があなたに合った
-                <br className="sm:hidden" />
-                コーチをご提案します
-              </p>
-            </div>
-          </div>
-          <Link href="/instructors">
-            <Button size="lg" className="whitespace-nowrap bg-blue-500 px-8 hover:bg-blue-400">
-              コーチを探してみる ›
-            </Button>
-          </Link>
-        </div>
-      </section>
-
-      {/* ===== よくある質問 ===== */}
-      <section className="bg-muted/30 py-16 px-4 sm:py-20">
-        <div className="mx-auto max-w-3xl">
-          <h2 className="mb-8 text-center text-2xl font-bold sm:text-3xl">よくある質問</h2>
-          <div className="space-y-2">
-            {[
-              {
-                q: "予約方法について",
-                a: "コーチのプロフィールページから希望日時を選択して予約できます。日程が合わない場合はスケジュールリクエスト機能もご利用いただけます。",
-              },
-              {
-                q: "予約は何日前まで可能ですか？",
-                a: "コーチによって異なります。直前予約に対応しているコーチもいますので、プロフィールページの空き状況をご確認ください。",
-              },
-              {
-                q: "お支払い方法について",
-                a: "クレジットカード（Visa / Mastercard / American Express）がご利用いただけます。代金は予約確定時に決済されます。",
-              },
-              {
-                q: "会員登録は必要ですか？",
-                a: "無料会員登録が必要です。入会金・月会費は一切不要。登録は1〜2分で完了します。",
-              },
-              {
-                q: "ログインできない場合は？",
-                a: "ご登録のメールアドレスで届いたリンクからログインするか、パスワードをお忘れの場合はログイン画面の「パスワードを忘れた方」からリセットできます。",
-              },
-            ].map(({ q, a }) => (
-              <details key={q} className="group rounded-xl border bg-card">
-                <summary className="flex cursor-pointer list-none items-center justify-between p-4 font-medium">
-                  <span className="flex items-center gap-3">
-                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-600">
-                      Q
-                    </span>
-                    {q}
-                  </span>
-                  <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 group-open:rotate-90" />
-                </summary>
-                <div className="border-t px-4 py-3 text-sm leading-relaxed text-muted-foreground">
-                  <span className="mr-2 font-bold text-blue-600">A.</span>
-                  {a}
-                </div>
-              </details>
-            ))}
-          </div>
-          <p className="mt-6 text-center text-sm text-muted-foreground">
-            その他のご質問は{" "}
-            <Link href="/faq" className="text-blue-600 hover:underline">
-              よくある質問ページ
-            </Link>{" "}
-            をご覧ください
-          </p>
-        </div>
-      </section>
-
-      {/* ===== 新着コーチ ===== */}
-      <section className="py-16 px-4 sm:py-20">
-        <div className="mx-auto max-w-5xl">
-          <div className="mb-8 flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold sm:text-3xl">新着コーチ</h2>
-              <p className="mt-1 text-sm text-muted-foreground">新たに登録されたコーチ陣</p>
-            </div>
-            <Link href="/instructors" className="flex items-center gap-1 text-sm text-blue-600 hover:underline">
-              すべて見る <ChevronRight className="h-4 w-4" />
-            </Link>
-          </div>
-
-          {newCoaches.length === 0 ? (
-            <div className="rounded-xl border border-dashed py-12 text-center text-sm text-muted-foreground">
-              現在登録中のコーチはいません
-            </div>
-          ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {newCoaches.map((coach) => (
-                <Link key={coach.id} href={`/instructors/${coach.id}`}>
-                  <div className="group flex items-start gap-3 rounded-xl border bg-card p-4 transition hover:border-blue-200 hover:shadow-sm">
-                    {coach.avatar_url ? (
-                      <Image
-                        src={coach.avatar_url}
-                        alt={coach.name}
-                        width={48}
-                        height={48}
-                        className="h-12 w-12 shrink-0 rounded-full object-cover"
-                      />
-                    ) : (
-                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-blue-100 text-lg font-bold text-blue-600">
-                        {coach.name[0]}
-                      </div>
-                    )}
-                    <div className="min-w-0">
-                      <p className="truncate font-medium group-hover:text-blue-600">
-                        {coach.name} コーチ
-                      </p>
-                      {coach.review_count > 0 && (
-                        <StarRating rating={coach.rating_avg} count={coach.review_count} />
-                      )}
-                      {coach.specialties?.[0] && (
-                        <p className="mt-1 truncate text-xs text-muted-foreground">
-                          {coach.specialties[0]}
-                        </p>
-                      )}
-                      {coach.prefecture && (
-                        <p className="text-xs text-muted-foreground">{coach.prefecture}</p>
-                      )}
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* ===== 新着の口コミ ===== */}
-      {newReviews.length > 0 && (
-        <section className="bg-muted/30 py-16 px-4 sm:py-20">
-          <div className="mx-auto max-w-5xl">
-            <h2 className="mb-8 text-2xl font-bold sm:text-3xl">新着の口コミ</h2>
-            <div className="space-y-3">
-              {newReviews.map((review) => (
-                <div key={review.id} className="rounded-xl border bg-card p-4">
-                  <div className="mb-2 flex items-start justify-between gap-2">
-                    <div>
-                      <StarRating rating={review.rating} count={0} />
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        {review.reviewer?.name ?? "匿名"} さん → {review.instructor?.name ?? ""} コーチ
-                      </p>
-                    </div>
-                    <p className="shrink-0 text-xs text-muted-foreground">
-                      {new Date(review.created_at).toLocaleDateString("ja-JP")}
-                    </p>
-                  </div>
-                  {review.comment && (
-                    <p className="line-clamp-3 text-sm leading-relaxed text-slate-700">
-                      {review.comment}
-                    </p>
-                  )}
-                </div>
-              ))}
+            <div className="mt-6 text-center">
+              <Link href="/login">
+                <Button className="rounded-full bg-[#005F8C] px-8 hover:bg-[#004E73]" style={{ minHeight: "48px" }}>
+                  ログインして参加する
+                </Button>
+              </Link>
             </div>
           </div>
         </section>
       )}
 
-      {/* ===== Rangers が選ばれる理由 ===== */}
-      <section className="py-16 px-4 sm:py-20">
-        <div className="mx-auto max-w-5xl">
-          <h2 className="mb-10 text-center text-2xl font-bold sm:text-3xl">Rangers が選ばれる理由</h2>
+      {/* ===== フロー ===== */}
+      <section className="bg-white px-4 py-16 sm:py-20">
+        <div className="mx-auto max-w-4xl">
+          <div className="mb-12 text-center">
+            <h2 className="text-2xl font-bold text-[#1a2332] sm:text-3xl">3ステップで始められる</h2>
+          </div>
           <div className="grid gap-6 sm:grid-cols-3">
             {[
               {
-                img: "/images/lp/icons/icon-elite-coach.jpg",
-                title: "厳選コーチ",
-                desc: "元日本代表・プロ選手など実績豊富なコーチのみ在籍。指導力を厳格に審査しています。",
+                step: "01",
+                title: "LINEでログイン",
+                desc: "LINEアカウントで即スタート。メール登録不要、パスワード不要。",
               },
               {
-                img: "/images/lp/icons/icon-flexible-schedule.jpg",
-                title: "自由な日程・場所",
-                desc: "好きな時間・好きな場所でレッスン。カレンダー予約または日程リクエストで柔軟に対応。",
+                step: "02",
+                title: "チームを作成",
+                desc: "チーム名を入力するだけで完成。招待リンクをLINEグループにシェア。",
               },
               {
-                img: "/images/lp/icons/icon-safety.jpg",
-                title: "安心・安全",
-                desc: "入会金・月会費0円。クレジットカード決済でお金のトラブルなし。",
+                step: "03",
+                title: "セッションを配信",
+                desc: "練習日程を作成して配信。メンバーはタップで参加登録できます。",
               },
-            ].map(({ img, title, desc }) => (
-              <div key={title} className="rounded-xl border bg-card p-6 text-center">
-                <div className="mx-auto mb-4 h-14 w-14 overflow-hidden rounded-xl">
-                  <Image src={img} alt={title} width={56} height={56} className="h-full w-full object-cover" />
+            ].map(({ step, title, desc }) => (
+              <div key={step} className="relative text-center">
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#005F8C]/10">
+                  <span className="text-2xl font-bold text-[#005F8C]">{step}</span>
                 </div>
-                <h3 className="mb-2 font-bold">{title}</h3>
-                <p className="text-sm leading-relaxed text-muted-foreground">{desc}</p>
+                <h3 className="mb-2 font-bold text-[#1a2332]">{title}</h3>
+                <p className="text-sm leading-relaxed text-[#5c6a7a]">{desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ===== 最終 CTA ===== */}
-      <section className="bg-gradient-to-br from-blue-600 to-blue-800 px-4 py-16 text-white sm:py-20">
+      {/* ===== CTA ===== */}
+      <section className="bg-[#1a2332] px-4 py-16 sm:py-20">
         <div className="mx-auto max-w-2xl text-center">
-          <h2 className="mb-3 text-2xl font-bold sm:text-3xl">
-            あなたにぴったりのコーチを見つけよう
+          <h2 className="mb-3 text-2xl font-bold text-white sm:text-3xl">
+            マスターズ水泳チームの
+            <br />
+            運営をアップデートしよう
           </h2>
-          <p className="mb-8 text-blue-100">入会金・月会費は一切不要。今すぐ無料で始められます。</p>
-          <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-            <Link href="/instructors">
-              <Button size="lg" className="w-full bg-white px-8 text-blue-700 hover:bg-blue-50 sm:w-auto">
-                コーチを探す
-              </Button>
+          <p className="mb-8 text-slate-400">
+            無料でスタート。クレジットカード不要。
+          </p>
+          <Link href="/login">
+            <button
+              className="flex mx-auto items-center justify-center gap-3 rounded-full bg-[#06C755] px-10 py-4 text-base font-bold text-white transition-colors hover:bg-[#05b04c]"
+              style={{ minHeight: "56px" }}
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.627-.63h2.386c.349 0 .63.285.63.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.627-.63.349 0 .631.285.631.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.281.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314" />
+              </svg>
+              LINEで無料スタート
+            </button>
+          </Link>
+          <p className="mt-4 text-xs text-slate-500">
+            デモ用のメールログインは
+            <Link href="/login" className="ml-1 text-slate-400 hover:text-white underline">
+              ログインページ
             </Link>
-            <Link href="/register">
-              <Button
-                size="lg"
-                variant="outline"
-                className="w-full border-white/60 px-8 text-white hover:bg-white/10 sm:w-auto"
-              >
-                無料で始める
-              </Button>
-            </Link>
-          </div>
+            から
+          </p>
         </div>
       </section>
     </>

@@ -4,6 +4,7 @@ import { useState, useTransition } from "react"
 import { CalendarDays } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { sendScheduleRequest } from "@/actions/messages"
+import { useToast } from "@/components/toast"
 
 interface ScheduleRequestDialogProps {
   instructorId: string
@@ -19,12 +20,11 @@ export function ScheduleRequestDialog({
   const [open, setOpen] = useState(false)
   const [message, setMessage] = useState("")
   const [dates, setDates] = useState(["", "", ""])
-  const [result, setResult] = useState<{ error?: string; success?: boolean } | null>(null)
   const [isPending, startTransition] = useTransition()
+  const { showToast } = useToast()
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    setResult(null)
     const fd = new FormData()
     fd.append("instructor_id", instructorId)
     if (lessonId) fd.append("lesson_id", lessonId)
@@ -33,14 +33,13 @@ export function ScheduleRequestDialog({
 
     startTransition(async () => {
       const res = await sendScheduleRequest(fd)
-      setResult(res)
-      if (res.success) {
-        setTimeout(() => {
-          setOpen(false)
-          setMessage("")
-          setDates(["", "", ""])
-          setResult(null)
-        }, 1500)
+      if (res.error) {
+        showToast(res.error, "error")
+      } else if (res.success) {
+        showToast("リクエストを送信しました！", "success")
+        setOpen(false)
+        setMessage("")
+        setDates(["", "", ""])
       }
     })
   }
@@ -100,17 +99,6 @@ export function ScheduleRequestDialog({
                   className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-400"
                 />
               </div>
-
-              {result?.error && (
-                <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                  {result.error}
-                </p>
-              )}
-              {result?.success && (
-                <p className="rounded-lg bg-green-50 px-3 py-2 text-sm text-green-700">
-                  リクエストを送信しました！
-                </p>
-              )}
 
               <div className="flex gap-3">
                 <Button

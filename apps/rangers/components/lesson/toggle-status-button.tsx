@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { toggleLessonStatus } from "@/actions/lessons"
 import { Button } from "@/components/ui/button"
+import { useToast } from "@/components/toast"
 
 interface ToggleStatusButtonProps {
   lessonId: string
@@ -12,14 +13,13 @@ interface ToggleStatusButtonProps {
 export function ToggleStatusButton({ lessonId, currentStatus }: ToggleStatusButtonProps) {
   const [status, setStatus] = useState(currentStatus)
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const { showToast } = useToast()
 
   async function handleToggle() {
     setLoading(true)
-    setError(null)
     const result = await toggleLessonStatus(lessonId, status)
     if (result?.error) {
-      setError(result.error)
+      showToast(result.error, "error")
     } else if (result?.success && result.newStatus) {
       setStatus(result.newStatus)
     }
@@ -30,7 +30,6 @@ export function ToggleStatusButton({ lessonId, currentStatus }: ToggleStatusButt
 
   return (
     <div className="flex flex-col items-end gap-1">
-      {error && <p role="alert" className="text-xs text-destructive">{error}</p>}
       <Button
         variant={isPublished ? "outline" : "default"}
         size="sm"

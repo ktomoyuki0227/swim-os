@@ -48,7 +48,7 @@ export default async function BookingsPage({ searchParams }: BookingsPageProps) 
       )}
 
       {isMock && (
-        <p className="mb-4 rounded-lg border-l-4 border-amber-400 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+        <p className="mb-4 rounded-lg border-l-4 border-[#b8860b] bg-[#fdf6e3] px-4 py-3 text-sm text-[#b8860b]">
           サンプルデータを表示しています。予約すると実際のデータが表示されます。
         </p>
       )}

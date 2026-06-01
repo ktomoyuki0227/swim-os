@@ -152,7 +152,7 @@ export default function AboutPage() {
                       style={{
                         borderTop: "5px solid transparent",
                         borderBottom: "5px solid transparent",
-                        borderLeft: "7px solid #93c5fd",
+                        borderLeft: "7px solid #5BC0EB",
                         animationDelay: `${i * 0.3 + 0.2}s`,
                       }}
                     />
@@ -183,7 +183,7 @@ export default function AboutPage() {
                       style={{
                         borderLeft: "5px solid transparent",
                         borderRight: "5px solid transparent",
-                        borderTop: "7px solid #93c5fd",
+                        borderTop: "7px solid #5BC0EB",
                       }}
                     />
                   </div>

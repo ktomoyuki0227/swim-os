@@ -42,7 +42,7 @@ function StarRating({ rating, count }: { rating: number; count: number }) {
 function InstructorCard({ instructor }: { instructor: Profile }) {
   return (
     <Link href={`/instructors/${instructor.id}`}>
-      <div className="group flex gap-4 rounded-xl border bg-card p-4 transition-all hover:border-blue-200 hover:shadow-lg hover:shadow-blue-500/5">
+      <div className="group flex gap-4 rounded-xl border bg-card p-4 transition-all hover:border-blue-200">
         {/* アバター */}
         <div className="shrink-0">
           {instructor.avatar_url ? (

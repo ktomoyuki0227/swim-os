@@ -9,6 +9,7 @@ import {
 import type { StripeError } from "@stripe/stripe-js"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
+import { useToast } from "@/components/toast"
 
 interface CheckoutFormProps {
   price: number
@@ -38,9 +39,9 @@ function getStripeErrorMessage(error: StripeError): string {
 export function CheckoutForm({ price, onSuccess, onCancel }: CheckoutFormProps) {
   const stripe = useStripe()
   const elements = useElements()
-  const [error, setError] = useState<string | null>(null)
   const [processing, setProcessing] = useState(false)
   const [ready, setReady] = useState(false)
+  const { showToast } = useToast()
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -48,11 +49,10 @@ export function CheckoutForm({ price, onSuccess, onCancel }: CheckoutFormProps) 
     if (!stripe || !elements) return
 
     setProcessing(true)
-    setError(null)
 
     const { error: submitError } = await elements.submit()
     if (submitError) {
-      setError(getStripeErrorMessage(submitError))
+      showToast(getStripeErrorMessage(submitError), "error")
       setProcessing(false)
       return
     }
@@ -66,7 +66,7 @@ export function CheckoutForm({ price, onSuccess, onCancel }: CheckoutFormProps) 
     })
 
     if (confirmError) {
-      setError(getStripeErrorMessage(confirmError))
+      showToast(getStripeErrorMessage(confirmError), "error")
       setProcessing(false)
     } else {
       onSuccess()
@@ -90,12 +90,6 @@ export function CheckoutForm({ price, onSuccess, onCancel }: CheckoutFormProps) 
           onReady={() => setReady(true)}
         />
       </div>
-
-      {error && (
-        <div className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
-          {error}
-        </div>
-      )}
 
       {ready && (
         <div className="flex gap-3">

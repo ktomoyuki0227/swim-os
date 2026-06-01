@@ -281,7 +281,7 @@ export default async function InstructorProfilePage({ params }: InstructorPagePr
               <div className="space-y-3">
                 {lessonList.map((lesson) => (
                   <Link key={lesson.id} href={`/lessons/${lesson.id}`}>
-                    <div className="group rounded-xl border bg-card p-4 transition-all hover:border-blue-200 hover:shadow-md">
+                    <div className="group rounded-xl border bg-card p-4 transition-all hover:border-blue-200">
                       <div className="mb-1 flex items-start justify-between gap-2">
                         <p className="text-sm font-medium leading-snug group-hover:text-blue-600">
                           {lesson.title}

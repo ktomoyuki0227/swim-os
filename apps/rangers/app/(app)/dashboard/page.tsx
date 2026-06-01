@@ -1,23 +1,14 @@
-import type { Metadata } from "next"
-import Image from "next/image"
+export const dynamic = "force-dynamic"
+
 import Link from "next/link"
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
-
-export const metadata: Metadata = { title: "マイページ" }
-
-const roleLabels: Record<string, string> = {
-  swimmer: "スイマー",
-  instructor: "指導員",
-  admin: "管理者",
-}
-
-const menuLinks = [
-  { href: "/bookings", label: "予約履歴（個人指導）" },
-  { href: "/messages", label: "メッセージ" },
-  { href: "/profile", label: "プロフィール編集" },
-  { href: "/lessons", label: "レッスン一覧" },
-]
+import { getMyTeams } from "@/actions/teams"
+import { getTeamSessions } from "@/actions/sessions"
+import { Card, CardContent } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { SessionCalendar } from "@/components/session-calendar"
+import type { CalendarSession } from "@/components/session-calendar"
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -26,279 +17,221 @@ export default async function DashboardPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("*")
+    .select("name, role")
     .eq("id", user.id)
     .single()
 
-  if (profile?.role === "instructor") redirect("/instructor/dashboard")
+  const { data: teams } = await getMyTeams()
+  const myTeams = ((teams || []) as Record<string, unknown>[]).filter((t) => t.my_role !== "admin")
 
-  const { data: allBookings } = await supabase
-    .from("bookings")
-    .select("*, lesson:lessons(*)")
+  // 全セッションを取得（カレンダー用に広めに）
+  const allSessions: (Record<string, unknown> & { team_name: string })[] = []
+  for (const team of myTeams.slice(0, 3)) {
+    const { data: sessions } = await getTeamSessions(team.id as string)
+    if (sessions) {
+      allSessions.push(
+        ...sessions
+          .filter((s: Record<string, unknown>) => s.session_status !== "cancelled")
+          .map((s: Record<string, unknown>) => ({ ...s, team_name: team.name as string }))
+      )
+    }
+  }
+
+  const upcomingSessions = allSessions
+    .filter((s) => new Date(s.scheduled_at as string) > new Date())
+    .sort((a, b) => new Date(a.scheduled_at as string).getTime() - new Date(b.scheduled_at as string).getTime())
+
+  const { data: myRegistrations } = await supabase
+    .from("session_registrations")
+    .select("session_id")
     .eq("swimmer_id", user.id)
-    .order("created_at", { ascending: false })
+    .is("cancelled_at", null)
+    .limit(20)
 
-  const now = new Date().toISOString()
-  const paymentPending = (allBookings ?? []).filter((b) => b.status === "pending")
-  const upcoming = (allBookings ?? []).filter(
-    (b) => b.status === "confirmed" && b.lesson?.scheduled_at > now
-  )
-  const reviewPending = (allBookings ?? []).filter(
-    (b) => b.status === "completed" && !b.review_submitted
-  )
+  const registeredSessionIds = new Set(myRegistrations?.map((r) => r.session_id) || [])
 
-  const { data: unreadMsgs } = await supabase
-    .from("messages")
-    .select("id")
-    .eq("recipient_id", user.id)
-    .eq("is_read", false)
-  const unreadCount = unreadMsgs?.length ?? 0
+  const hour = new Date().getHours()
+  const greeting = hour < 12 ? "おはようございます" : hour < 18 ? "こんにちは" : "こんばんは"
 
-  const hasMission = !profile?.avatar_url
-
-  const initials = (profile?.name ?? "")
-    .split(/\s+/)
-    .map((n: string) => n[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase()
+  const calendarSessions: CalendarSession[] = allSessions.map((s) => ({
+    id: s.id as string,
+    title: s.title as string,
+    scheduled_at: s.scheduled_at as string,
+    team_name: s.team_name,
+    session_type: s.type as string | undefined,
+    href: `/teams/${s.team_id}/sessions/${s.id}`,
+  }))
 
   return (
-    <div className="-mx-4 -mt-6 bg-sky-100 pb-20">
-      {/* ページタイトル */}
-      <div className="px-4 pb-3 pt-8 text-center">
-        <h1 className="text-xl font-bold text-blue-400">マイページ</h1>
+    <div className="space-y-6">
+      {/* Greeting — full width */}
+      <div className="rounded-2xl bg-[#f2f7fa] px-5 py-5">
+        <p className="text-sm text-[#5c6a7a]">{greeting}</p>
+        <h1 className="mt-0.5 text-2xl font-bold text-[#1a2332]">
+          {profile?.name || ""}さん
+        </h1>
+        <p className="mt-1 text-sm text-[#5c6a7a]">
+          チーム {myTeams.length}チーム · 参加予定{" "}
+          {upcomingSessions.filter((s) => registeredSessionIds.has(s.id as string)).length}件
+        </p>
       </div>
 
-      <div className="mx-auto max-w-2xl space-y-3 px-3">
-
-        {/* ユーザーカード */}
-        <div className="rounded-xl bg-white px-6 py-5 text-center shadow-sm">
-          <Link href="/profile" className="inline-block">
-            <div className="mx-auto mb-3 h-20 w-20 overflow-hidden rounded-full ring-2 ring-sky-200 transition-opacity hover:opacity-80">
-              {profile?.avatar_url ? (
-                <Image
-                  src={profile.avatar_url}
-                  alt={profile.name}
-                  width={80}
-                  height={80}
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <Image
-                  src="/images/lp/dashboard-avatar-default.jpg"
-                  alt="プロフィール画像"
-                  width={80}
-                  height={80}
-                  className="h-full w-full object-cover"
-                />
-              )}
-            </div>
-          </Link>
-          <div className="flex items-center justify-center gap-2">
-            <p className="text-lg font-bold">{profile?.name ?? ""} さん</p>
-            <span className="rounded bg-orange-400 px-2 py-0.5 text-xs font-bold text-white">
-              {roleLabels[profile?.role ?? "swimmer"]}
-            </span>
-          </div>
+      {/* 2カラム */}
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-[320px_1fr]">
+        {/* 左：カレンダー */}
+        <div>
+          <h2 className="mb-3 text-base font-semibold text-[#1a2332]">スケジュール</h2>
+          <SessionCalendar sessions={calendarSessions} />
         </div>
 
-        {/* ステータスグリッド 上段 */}
-        <div className="grid grid-cols-2 gap-3">
-          {/* 予約中のレッスン */}
-          <Link
-            href="/bookings"
-            className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm hover:border-blue-200"
-          >
-            <p className="mb-3 text-xs font-medium text-gray-700">予約中のレッスン</p>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1 text-xs text-gray-500">
-                <span className="flex flex-col items-center">
-                  <span className="text-xs text-gray-500">お支払い</span>
-                  <span className="mt-0.5 text-base font-bold text-gray-800">{paymentPending.length}
-                    <span className="text-xs font-normal">件</span>
-                  </span>
-                </span>
-                <span className="mx-1 text-gray-300">›</span>
-                <span className="flex flex-col items-center">
-                  <span className="text-xs text-gray-500">実施前</span>
-                  <span className="mt-0.5 text-base font-bold text-gray-800">{upcoming.length}
-                    <span className="text-xs font-normal">件</span>
-                  </span>
-                </span>
-                <span className="mx-1 text-gray-300">›</span>
-                <span className="flex flex-col items-center">
-                  <span className="text-xs text-gray-500">口コミ待ち</span>
-                  <span className="mt-0.5 text-base font-bold text-gray-800">{reviewPending.length}
-                    <span className="text-xs font-normal">件</span>
-                  </span>
-                </span>
-              </div>
-              <span className="ml-1 shrink-0 text-gray-300">›</span>
-            </div>
-          </Link>
-
-          {/* 未読メッセージ */}
-          <Link
-            href="/messages"
-            className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm hover:border-blue-200"
-          >
-            <p className="mb-3 text-xs font-medium text-gray-700">未読メッセージ</p>
-            <div className="flex items-center justify-between">
-              <span className="text-base font-bold text-gray-800">
-                {unreadCount}
-                <span className="text-xs font-normal">件</span>
-              </span>
-              <span className="text-gray-300">›</span>
-            </div>
-          </Link>
-        </div>
-
-        {/* ミッション（未対応タスク） */}
-        {hasMission && (
-          <Link
-            href="/profile"
-            className="block rounded-xl border border-gray-200 bg-white p-4 shadow-sm hover:border-blue-200"
-          >
-            <p className="mb-3 text-xs font-medium text-gray-700">ミッション</p>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1 text-xs">
-                <span className="flex flex-col items-center">
-                  <span className="text-gray-500">プロフィール写真</span>
-                  <span className="mt-0.5 font-bold text-orange-500">未設定</span>
-                </span>
-                <span className="mx-2 text-gray-300">›</span>
-                <span className="flex flex-col items-center">
-                  <span className="text-gray-500">本人確認</span>
-                  <span className="mt-0.5 font-bold text-orange-500">未対応</span>
-                </span>
-              </div>
-              <span className="shrink-0 text-gray-300">›</span>
-            </div>
-          </Link>
-        )}
-
-        {/* コーチを探す CTA */}
-        <div className="mx-auto max-w-sm rounded-xl border border-gray-200 bg-white px-5 py-5 text-center shadow-sm">
-          <p className="mb-1 text-sm font-bold text-gray-800">コーチを探す</p>
-          <div className="flex items-center justify-between">
-            <div className="flex-1 text-left">
-              <div className="mt-2 flex items-center gap-3 text-xs text-gray-500">
-                <span className="flex flex-col items-center">
-                  <span>コーチ検索中</span>
-                  <span className="mt-0.5 text-base font-bold text-gray-800">
-                    0<span className="text-xs font-normal">件</span>
-                  </span>
-                </span>
-                <span className="text-gray-300">›</span>
-                <span className="flex flex-col items-center">
-                  <span>提案あり</span>
-                  <span className="mt-0.5 text-base font-bold text-gray-800">
-                    0<span className="text-xs font-normal">件</span>
-                  </span>
-                </span>
-              </div>
-              <Link
-                href="/instructors"
-                className="mt-3 block text-center text-xs font-medium text-blue-400 hover:underline"
-              >
-                コーチを探してリクエストする ›
+        {/* 右：セッションリスト + チーム */}
+        <div className="space-y-6">
+          {/* Upcoming sessions */}
+          <div>
+            <div className="mb-3 flex items-center justify-between leading-none">
+              <h2 className="text-base font-semibold text-[#1a2332]">直近のセッション</h2>
+              <Link href="/teams" className="text-sm text-[#005F8C] hover:underline">
+                チーム一覧 →
               </Link>
             </div>
-            <div className="ml-4 h-16 w-16 shrink-0 overflow-hidden rounded-xl">
-              <Image
-                src="/images/lp/dashboard-swimmer-cta.jpg"
-                alt="コーチを探す"
-                width={64}
-                height={64}
-                className="h-full w-full object-cover"
-              />
-            </div>
-          </div>
-        </div>
 
-        {/* 下段 2カラム */}
-        <div className="grid gap-4 sm:grid-cols-[1fr_1.4fr]">
-          {/* マイページメニュー */}
-          <div className="rounded-xl bg-white shadow-sm overflow-hidden">
-            <p className="border-b px-4 py-3 text-xs font-bold text-gray-700">マイページメニュー</p>
-            <ul>
-              {menuLinks.map(({ href, label }, i) => (
-                <li key={href}>
-                  <Link
-                    href={href}
-                    className={`flex items-center justify-between px-4 py-3 text-xs text-gray-700 hover:bg-sky-50 ${
-                      i < menuLinks.length - 1 ? "border-b" : ""
-                    }`}
-                  >
-                    {label}
-                    <span className="text-gray-300">›</span>
-                  </Link>
-                </li>
-              ))}
-              <li>
-                <Link
-                  href="/profile"
-                  className="flex items-center justify-between border-t px-4 py-3 text-xs text-gray-700 hover:bg-sky-50"
-                >
-                  プロフィール編集
-                  <span className="text-gray-300">›</span>
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* お気に入りコーチ / 直近レッスン */}
-          <div className="space-y-3">
-            <div className="rounded-xl bg-white px-4 py-4 shadow-sm">
-              <div className="mb-3 flex items-center justify-between">
-                <p className="text-xs font-bold text-gray-700">お気に入りコーチ</p>
-                <Link href="/instructors" className="text-xs text-blue-400 hover:underline">
-                  もっと見る
-                </Link>
+            {upcomingSessions.length === 0 ? (
+              <Card className="border-[#dce3ea]">
+                <CardContent className="flex flex-col items-center justify-center py-10">
+                  <p className="text-sm text-[#5c6a7a]">予定されているセッションはありません</p>
+                  {myTeams.length === 0 && (
+                    <p className="mt-2 text-xs text-[#8d99a8]">チームに参加すると練習が表示されます</p>
+                  )}
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-3">
+                {upcomingSessions.slice(0, 5).map((session) => {
+                  const isRegistered = registeredSessionIds.has(session.id as string)
+                  return (
+                    <Link
+                      key={session.id as string}
+                      href={`/teams/${session.team_id}/sessions/${session.id}`}
+                    >
+                      <Card className={`border-[#dce3ea] transition-all ${isRegistered ? "hover:border-[#0f8a4f]" : "hover:border-[#005F8C]"}`}>
+                        <CardContent className="flex items-center gap-4 p-4">
+                          <div className={`flex w-14 shrink-0 flex-col items-center rounded-xl py-2 ${isRegistered ? "bg-[#0f8a4f]/10" : "bg-[#005F8C]/10"}`}>
+                            <span className={`text-[10px] font-medium ${isRegistered ? "text-[#0f8a4f]" : "text-[#005F8C]"}`}>
+                              {new Date(session.scheduled_at as string).toLocaleDateString("ja-JP", { month: "short" })}
+                            </span>
+                            <span className={`text-xl font-bold leading-tight ${isRegistered ? "text-[#0f8a4f]" : "text-[#005F8C]"}`}>
+                              {new Date(session.scheduled_at as string).getDate()}
+                            </span>
+                            <span className={`text-[10px] ${isRegistered ? "text-[#0f8a4f]" : "text-[#005F8C]"}`}>
+                              {new Date(session.scheduled_at as string).toLocaleDateString("ja-JP", { weekday: "short" })}
+                            </span>
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate font-medium text-[#1a2332]">{session.title as string}</p>
+                            <p className="text-xs text-[#5c6a7a]">
+                              {new Date(session.scheduled_at as string).toLocaleTimeString("ja-JP", {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                              {session.location ? ` · ${session.location as string}` : ""}
+                            </p>
+                            <p className="text-xs text-[#8d99a8]">{session.team_name}</p>
+                          </div>
+                          {isRegistered ? (
+                            <Badge className="shrink-0 bg-[#eaf7f0] text-[#0f8a4f] border-transparent text-xs">
+                              参加予定
+                            </Badge>
+                          ) : (
+                            <Badge className="shrink-0 bg-[#e8f2f8] text-[#005F8C] border-transparent text-xs">
+                              受付中
+                            </Badge>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </Link>
+                  )
+                })}
               </div>
-              <p className="text-xs text-gray-400">
-                まだお気に入りのコーチはいません。
-                <Link href="/instructors" className="ml-1 text-blue-400 hover:underline">
-                  コーチを探す
-                </Link>
-              </p>
-            </div>
+            )}
+          </div>
 
-            <div className="rounded-xl bg-white px-4 py-4 shadow-sm">
-              <div className="mb-3 flex items-center justify-between">
-                <p className="text-xs font-bold text-gray-700">直近のレッスン</p>
-                <Link href="/bookings" className="text-xs text-blue-400 hover:underline">
-                  もっと見る
-                </Link>
-              </div>
-              {upcoming.length === 0 ? (
-                <p className="text-xs text-gray-400">
-                  予定されているレッスンはありません。
-                  <Link href="/lessons" className="ml-1 text-blue-400 hover:underline">
-                    レッスンを探す
-                  </Link>
-                </p>
-              ) : (
-                <ul className="space-y-2">
-                  {upcoming.slice(0, 2).map((b) => (
-                    <li key={b.id}>
-                      <Link href={`/lessons/${b.lesson?.id}`} className="text-xs text-gray-700 hover:text-blue-500">
-                        <p className="font-medium">{b.lesson?.title}</p>
-                        <p className="text-gray-400">
-                          {new Date(b.lesson?.scheduled_at ?? "").toLocaleDateString("ja-JP", {
-                            month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
-                          })}
-                        </p>
+          {/* 近日の大会 */}
+          {upcomingSessions.filter((s) => s.type === "competition").length > 0 && (
+            <div>
+              <h2 className="mb-3 text-base font-semibold text-[#1a2332]">近日の大会情報</h2>
+              <div className="space-y-2">
+                {upcomingSessions
+                  .filter((s) => s.type === "competition")
+                  .map((session) => {
+                    const isRegistered = registeredSessionIds.has(session.id as string)
+                    return (
+                      <Link
+                        key={session.id as string}
+                        href={`/teams/${session.team_id}/sessions/${session.id}`}
+                      >
+                        <Card className="border-[#dce3ea] transition-all hover:border-[#E8614D]">
+                          <CardContent className="flex items-center gap-3 p-3">
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#E8614D]/10 text-xs font-bold text-[#E8614D]">
+                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <circle cx="12" cy="8" r="6" />
+                                <path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11" />
+                              </svg>
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-sm font-medium text-[#1a2332]">
+                                {session.title as string}
+                              </p>
+                              <p className="text-xs text-[#5c6a7a]">
+                                {new Date(session.scheduled_at as string).toLocaleDateString("ja-JP", {
+                                  month: "long",
+                                  day: "numeric",
+                                  weekday: "short",
+                                })}
+                                {session.location ? ` · ${session.location as string}` : ""}
+                              </p>
+                            </div>
+                            {isRegistered ? (
+                              <Badge className="shrink-0 bg-[#fdecea] text-[#c0392b] border-transparent text-xs">
+                                エントリー済
+                              </Badge>
+                            ) : (
+                              <Badge className="shrink-0 bg-[#edf0f4] text-[#5c6a7a] border-transparent text-xs">
+                                受付中
+                              </Badge>
+                            )}
+                          </CardContent>
+                        </Card>
                       </Link>
-                    </li>
-                  ))}
-                </ul>
-              )}
+                    )
+                  })}
+              </div>
             </div>
-          </div>
-        </div>
+          )}
 
+          {/* 所属チーム */}
+          {myTeams.length > 0 && (
+            <div>
+              <h2 className="mb-3 text-base font-semibold text-[#1a2332]">所属チーム</h2>
+              <div className="space-y-2">
+                {myTeams.map((team: Record<string, unknown>) => (
+                  <Link key={team.id as string} href={`/teams/${team.id}`}>
+                    <Card className="border-[#dce3ea] transition-all hover:border-[#005F8C]">
+                      <CardContent className="flex items-center gap-3 p-3">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#005F8C]/10 text-sm font-bold text-[#005F8C]">
+                          {(team.name as string)?.[0] || "T"}
+                        </div>
+                        <p className="font-medium text-[#1a2332]">{team.name as string}</p>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8d99a8" strokeWidth="2" className="ml-auto">
+                          <polyline points="9 18 15 12 9 6" />
+                        </svg>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )

@@ -5,6 +5,7 @@ import { cancelBooking } from "@/actions/bookings"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { XCircle } from "lucide-react"
+import { useToast } from "@/components/toast"
 
 interface CancelBookingButtonProps {
   bookingId: string
@@ -13,14 +14,14 @@ interface CancelBookingButtonProps {
 export function CancelBookingButton({ bookingId }: CancelBookingButtonProps) {
   const [confirming, setConfirming] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   const [cancelled, setCancelled] = useState(false)
+  const { showToast } = useToast()
 
   async function handleCancel() {
     setLoading(true)
     const result = await cancelBooking(bookingId)
     if (result?.error) {
-      setError(result.error)
+      showToast(result.error, "error")
       setLoading(false)
       setConfirming(false)
     } else {
@@ -52,7 +53,6 @@ export function CancelBookingButton({ bookingId }: CancelBookingButtonProps) {
 
   return (
     <div className="space-y-2">
-      {error && <p role="alert" className="text-xs text-destructive">{error}</p>}
       <div className="flex gap-2">
         <Button
           variant="outline"

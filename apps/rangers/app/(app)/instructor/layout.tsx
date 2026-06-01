@@ -21,8 +21,14 @@ export default async function InstructorLayout({
     .eq("id", user.id)
     .single()
 
-  if (profile?.role !== "instructor") {
-    redirect("/lessons")
+  // profileが存在しない場合はサインアウトしてログインへ（親layoutと同じ挙動）
+  if (!profile) {
+    await supabase.auth.signOut()
+    redirect("/login")
+  }
+
+  if (profile.role !== "instructor") {
+    redirect("/dashboard")
   }
 
   return <>{children}</>

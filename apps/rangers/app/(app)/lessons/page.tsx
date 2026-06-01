@@ -77,7 +77,7 @@ export default async function LessonsPage({ searchParams }: LessonsPageProps) {
     <div>
       <h1 className="mb-6 text-2xl font-bold">レッスンを探す</h1>
       {isMock && (
-        <p className="mb-4 rounded-lg border-l-4 border-amber-400 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+        <p className="mb-4 rounded-lg border-l-4 border-[#b8860b] bg-[#fdf6e3] px-4 py-3 text-sm text-[#b8860b]">
           サンプルデータを表示しています。実際のレッスンはSupabaseにデータを登録すると表示されます。
         </p>
       )}
@@ -107,7 +107,7 @@ export default async function LessonsPage({ searchParams }: LessonsPageProps) {
           <div className="grid gap-4 sm:grid-cols-2">
             {lessons.map((lesson) => (
               <Link key={lesson.id} href={`/lessons/${lesson.id}`}>
-                <Card className="group overflow-hidden transition-all hover:shadow-lg hover:shadow-blue-500/5 hover:border-blue-200">
+                <Card className="group overflow-hidden transition-all hover:border-blue-200">
                   <div className="relative h-44 w-full overflow-hidden">
                     <Image
                       src={getLessonImage(lesson.title)}

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { Star } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { submitReview } from "@/actions/reviews"
+import { useToast } from "@/components/toast"
 
 interface ReviewFormProps {
   bookingId: string
@@ -16,16 +17,15 @@ export function ReviewForm({ bookingId, instructorName }: ReviewFormProps) {
   const [rating, setRating] = useState(0)
   const [hovered, setHovered] = useState(0)
   const [comment, setComment] = useState("")
-  const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
+  const { showToast } = useToast()
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (rating === 0) {
-      setError("評価を選んでください")
+      showToast("評価を選んでください", "error")
       return
     }
-    setError(null)
 
     const fd = new FormData()
     fd.append("booking_id", bookingId)
@@ -35,7 +35,7 @@ export function ReviewForm({ bookingId, instructorName }: ReviewFormProps) {
     startTransition(async () => {
       const res = await submitReview(fd)
       if (res.error) {
-        setError(res.error)
+        showToast(res.error, "error")
       } else {
         router.push("/bookings?reviewed=1")
       }
@@ -93,12 +93,6 @@ export function ReviewForm({ bookingId, instructorName }: ReviewFormProps) {
         />
         <p className="mt-1 text-right text-xs text-muted-foreground">{comment.length}/500</p>
       </div>
-
-      {error && (
-        <p className="rounded-lg bg-destructive/10 px-4 py-2.5 text-sm text-destructive">
-          {error}
-        </p>
-      )}
 
       <div className="flex gap-3">
         <Button

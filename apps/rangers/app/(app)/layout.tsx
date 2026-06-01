@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { Navigation } from "@/components/navigation"
+import { ToastProvider } from "@/components/toast"
 
 export default async function AppLayout({
   children,
@@ -30,9 +31,9 @@ export default async function AppLayout({
   }
 
   return (
-    <>
+    <ToastProvider>
       <Navigation role={profile.role} userName={profile.name} avatarUrl={profile.avatar_url} />
-      <main className="mx-auto max-w-5xl flex-1 px-4 py-6">{children}</main>
-    </>
+      <main className="mx-auto max-w-5xl flex-1 px-4 py-6 pb-24 md:pb-6">{children}</main>
+    </ToastProvider>
   )
 }

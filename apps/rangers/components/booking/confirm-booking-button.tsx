@@ -5,6 +5,7 @@ import { confirmBooking } from "@/actions/bookings"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { CheckCircle2 } from "lucide-react"
+import { useToast } from "@/components/toast"
 
 interface ConfirmBookingButtonProps {
   bookingId: string
@@ -13,14 +14,13 @@ interface ConfirmBookingButtonProps {
 export function ConfirmBookingButton({ bookingId }: ConfirmBookingButtonProps) {
   const [loading, setLoading] = useState(false)
   const [done, setDone] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const { showToast } = useToast()
 
   async function handleConfirm() {
     setLoading(true)
-    setError(null)
     const result = await confirmBooking(bookingId)
     if (result?.error) {
-      setError(result.error)
+      showToast(result.error, "error")
     } else {
       setDone(true)
     }
@@ -38,7 +38,6 @@ export function ConfirmBookingButton({ bookingId }: ConfirmBookingButtonProps) {
 
   return (
     <div className="flex flex-col items-end gap-1">
-      {error && <p role="alert" className="text-xs text-destructive">{error}</p>}
       <Button
         size="sm"
         variant="outline"

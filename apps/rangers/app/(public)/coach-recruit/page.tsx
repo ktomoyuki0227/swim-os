@@ -132,7 +132,7 @@ export default function CoachRecruitPage() {
                       style={{
                         borderTop: "5px solid transparent",
                         borderBottom: "5px solid transparent",
-                        borderLeft: "7px solid #93c5fd",
+                        borderLeft: "7px solid #5BC0EB",
                       }}
                     />
                   </div>
@@ -162,7 +162,7 @@ export default function CoachRecruitPage() {
                       style={{
                         borderLeft: "5px solid transparent",
                         borderRight: "5px solid transparent",
-                        borderTop: "7px solid #93c5fd",
+                        borderTop: "7px solid #5BC0EB",
                       }}
                     />
                   </div>

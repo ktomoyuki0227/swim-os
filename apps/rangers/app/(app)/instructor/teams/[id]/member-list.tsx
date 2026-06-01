@@ -1,0 +1,123 @@
+"use client"
+
+import { useState } from "react"
+import { removeMember, updateMembershipType } from "@/actions/teams"
+import { Card, CardContent } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+
+const TAG_LABELS: Record<string, string> = {
+  level_beginner: "初級",
+  level_intermediate: "中級",
+  level_advanced: "上級",
+  stroke_freestyle: "クロール",
+  stroke_backstroke: "背泳ぎ",
+  stroke_breaststroke: "平泳ぎ",
+  stroke_butterfly: "バタフライ",
+  stroke_medley: "個人メドレー",
+  purpose_health: "健康・趣味",
+  purpose_competitive: "競技",
+}
+
+interface MemberListProps {
+  teamId: string
+  members: Record<string, unknown>[]
+}
+
+export function MemberList({ teamId, members }: MemberListProps) {
+  const [removingId, setRemovingId] = useState<string | null>(null)
+
+  const handleRemove = async (swimmerId: string) => {
+    if (!confirm("このメンバーをチームから削除しますか？")) return
+    setRemovingId(swimmerId)
+    await removeMember(teamId, swimmerId)
+    setRemovingId(null)
+    window.location.reload()
+  }
+
+  if (members.length === 0) {
+    return (
+      <Card className="border-[#dce3ea]">
+        <CardContent className="flex flex-col items-center justify-center py-10">
+          <p className="text-sm text-[#5c6a7a]">まだメンバーがいません</p>
+          <p className="mt-1 text-xs text-[#8d99a8]">招待タブからリンクを共有してください</p>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  return (
+    <div className="space-y-3">
+      {members.map((member) => {
+        const swimmer = member.swimmer as Record<string, unknown> | null
+        const tags = (member.tags as string[]) || []
+        const isAdmin = member.role === "admin"
+        const isPointCard = member.membership_type === "point_card"
+
+        return (
+          <Card key={member.id as string} className="border-[#dce3ea]">
+            <CardContent className="flex items-center gap-3 p-4">
+              {/* Avatar */}
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#005F8C]/10 text-sm font-semibold text-[#005F8C]">
+                {(swimmer?.name as string)?.[0] || "?"}
+              </div>
+
+              {/* Info */}
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <p className="font-medium text-[#1a2332]">
+                    {(swimmer?.name as string) || "不明"}
+                  </p>
+                  {isAdmin && (
+                    <Badge className="bg-[#e8f2f8] text-[#005F8C] border-transparent text-[10px] px-1.5 py-0">
+                      管理者
+                    </Badge>
+                  )}
+                  <Badge
+                    className={
+                      isPointCard
+                        ? "bg-[#fdf6e3] text-[#b8860b] border-transparent text-[10px] px-1.5 py-0"
+                        : "bg-[#eaf7f0] text-[#0f8a4f] border-transparent text-[10px] px-1.5 py-0"
+                    }
+                  >
+                    {isPointCard ? "回数券" : "レギュラー"}
+                  </Badge>
+                </div>
+                {tags.length > 0 && (
+                  <div className="mt-1 flex flex-wrap gap-1">
+                    {tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="rounded-full bg-[#f2f7fa] px-2 py-0.5 text-[10px] text-[#5c6a7a]"
+                      >
+                        {TAG_LABELS[tag] || tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {isPointCard && member.stamp_remaining !== undefined && (
+                  <p className="mt-0.5 text-xs text-[#5c6a7a]">
+                    残り {member.stamp_remaining as number} 回
+                  </p>
+                )}
+              </div>
+
+              {/* Actions */}
+              {!isAdmin && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleRemove(swimmer?.id as string)}
+                  disabled={removingId === (swimmer?.id as string)}
+                  className="shrink-0 text-xs text-[#5c6a7a] hover:text-red-600"
+                >
+                  削除
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        )
+      })}
+    </div>
+  )
+}

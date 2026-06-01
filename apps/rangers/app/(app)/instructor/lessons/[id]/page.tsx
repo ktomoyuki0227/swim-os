@@ -82,7 +82,7 @@ export default async function InstructorLessonDetailPage({
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       {isMock && (
-        <p className="rounded-lg border-l-4 border-amber-400 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+        <p className="rounded-lg border-l-4 border-[#b8860b] bg-[#fdf6e3] px-4 py-3 text-sm text-[#b8860b]">
           これはサンプルデータです。実際のレッスンを作成すると編集・削除できます。
         </p>
       )}

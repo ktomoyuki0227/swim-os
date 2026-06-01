@@ -4,6 +4,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { deleteLesson } from "@/actions/lessons"
 import { Button } from "@/components/ui/button"
+import { useToast } from "@/components/toast"
 
 interface DeleteLessonButtonProps {
   lessonId: string
@@ -12,14 +13,14 @@ interface DeleteLessonButtonProps {
 export function DeleteLessonButton({ lessonId }: DeleteLessonButtonProps) {
   const [confirming, setConfirming] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   const router = useRouter()
+  const { showToast } = useToast()
 
   async function handleDelete() {
     setLoading(true)
     const result = await deleteLesson(lessonId)
     if (result?.error) {
-      setError(result.error)
+      showToast(result.error, "error")
       setLoading(false)
       setConfirming(false)
       return
@@ -30,13 +31,10 @@ export function DeleteLessonButton({ lessonId }: DeleteLessonButtonProps) {
   if (!confirming) {
     return (
       <div>
-        {error && (
-          <p className="mb-2 text-sm text-destructive">{error}</p>
-        )}
         <Button
           variant="destructive"
           className="w-full"
-          onClick={() => { setError(null); setConfirming(true) }}
+          onClick={() => setConfirming(true)}
         >
           レッスンを削除
         </Button>

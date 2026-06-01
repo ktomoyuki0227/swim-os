@@ -151,3 +151,217 @@ export const PREFECTURES = [
 ] as const
 
 export type Prefecture = (typeof PREFECTURES)[number]
+
+// ============================================================
+// マスターズチーム管理
+// ============================================================
+
+export type TeamStatus = "active" | "inactive"
+export type TeamMemberRole = "admin" | "member"
+export type MembershipType = "regular" | "point_card"
+export type SessionType = "practice" | "camp" | "competition" | "event" | "meeting"
+export type SessionStatus = "open" | "confirmed" | "cancelled"
+export type PaymentMethod = "stripe" | "cash" | "point_card"
+export type PaymentStatus = "pending" | "paid" | "failed" | "refunded" | "free"
+export type FeeType = "annual" | "monthly"
+export type FeeStatus = "unpaid" | "paid" | "failed"
+
+export interface Team {
+  id: string
+  coach_id: string
+  name: string
+  description: string | null
+  avatar_url: string | null
+  invite_code: string
+  default_member_price: number
+  default_guest_price: number
+  annual_fee_amount: number | null
+  monthly_fee_amount: number | null
+  cancellation_days: number
+  point_card_count: number
+  point_card_price: number | null
+  status: TeamStatus
+  created_at: string
+}
+
+export interface TeamMember {
+  id: string
+  team_id: string
+  swimmer_id: string
+  role: TeamMemberRole
+  membership_type: MembershipType
+  stamp_remaining: number
+  tags: string[]
+  status: TeamStatus
+  joined_at: string
+}
+
+export interface TeamMemberWithProfile extends TeamMember {
+  swimmer: Pick<Profile, "id" | "name" | "avatar_url">
+}
+
+export interface CourseRule {
+  min: number
+  max?: number
+  courses: number
+  cancel_below?: number
+}
+
+export interface CompetitionField {
+  key: string
+  label: string
+  type: "text" | "select" | "number"
+  required: boolean
+  options?: string[]
+}
+
+export interface PriceView {
+  id: string
+  session_id: string
+  viewer_id: string
+  viewed_at: string
+}
+
+export interface PriceViewWithProfile extends PriceView {
+  viewer: Pick<Profile, "id" | "name" | "avatar_url">
+}
+
+export interface PracticeSession {
+  id: string
+  team_id: string
+  coach_id: string
+  title: string
+  description: string | null
+  content: string | null
+  type: SessionType
+  scheduled_at: string
+  location: string | null
+  member_price: number
+  guest_price: number
+  registration_deadline: string | null
+  min_participants: number | null
+  max_participants: number | null
+  course_rules: CourseRule[] | null
+  target_tags: string[]
+  target_members: string[] | null
+  cancellation_days: number | null
+  allow_point_card: boolean
+  is_external: boolean
+  is_lp_featured: boolean
+  competition_fields: CompetitionField[] | null
+  session_status: SessionStatus
+  status: LessonStatus
+  created_at: string
+}
+
+export interface PracticeSessionWithTeam extends PracticeSession {
+  team: Pick<Team, "id" | "name" | "avatar_url">
+}
+
+export interface SessionRegistration {
+  id: string
+  session_id: string
+  swimmer_id: string
+  is_member: boolean
+  payment_method: PaymentMethod
+  stripe_payment_intent_id: string | null
+  payment_status: PaymentStatus
+  competition_entry: Record<string, unknown> | null
+  registered_at: string
+  cancelled_at: string | null
+}
+
+export interface SessionRegistrationWithProfile extends SessionRegistration {
+  swimmer: Pick<Profile, "id" | "name" | "avatar_url">
+}
+
+export interface MembershipFee {
+  id: string
+  team_id: string
+  swimmer_id: string
+  type: FeeType
+  period: string
+  amount: number
+  payment_method: "stripe" | "cash"
+  stripe_payment_intent_id: string | null
+  status: FeeStatus
+  paid_at: string | null
+  note: string | null
+  created_at: string
+}
+
+export interface MembershipFeeWithProfile extends MembershipFee {
+  swimmer: Pick<Profile, "id" | "name" | "avatar_url">
+}
+
+export interface Notification {
+  id: string
+  user_id: string
+  type: string
+  title: string
+  body: string | null
+  link: string | null
+  is_read: boolean
+  created_at: string
+}
+
+export interface SessionTemplate {
+  id: string
+  team_id: string
+  name: string
+  title: string
+  description: string | null
+  content: string | null
+  type: SessionType
+  location: string | null
+  member_price: number
+  guest_price: number
+  deadline_days: number | null
+  min_participants: number | null
+  max_participants: number | null
+  course_rules: CourseRule[] | null
+  target_tags: string[]
+  allow_point_card: boolean
+  cancellation_days: number | null
+  is_external: boolean
+  created_at: string
+}
+
+export interface Announcement {
+  id: string
+  team_id: string
+  author_id: string
+  title: string
+  body: string | null
+  image_url: string | null
+  link_url: string | null
+  target_tags: string[]
+  created_at: string
+}
+
+export interface AnnouncementWithAuthor extends Announcement {
+  author: Pick<Profile, "id" | "name" | "avatar_url">
+  read_count?: number
+  is_read?: boolean
+}
+
+export interface AnnouncementRead {
+  id: string
+  announcement_id: string
+  user_id: string
+  read_at: string
+}
+
+export interface SystemTag {
+  id: string
+  category: string
+  label: string
+  sort_order: number
+}
+
+/** タグカテゴリーの選択ルール */
+export const TAG_SELECTION_RULES: Record<string, "single" | "multi"> = {
+  level: "single",
+  stroke: "multi",
+  purpose: "multi",
+} as const

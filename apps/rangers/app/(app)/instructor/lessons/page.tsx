@@ -42,7 +42,7 @@ export default async function InstructorLessonsPage() {
       </div>
 
       {isMock && (
-        <p className="mb-4 rounded-lg border-l-4 border-amber-400 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+        <p className="mb-4 rounded-lg border-l-4 border-[#b8860b] bg-[#fdf6e3] px-4 py-3 text-sm text-[#b8860b]">
           サンプルデータを表示しています。レッスンを作成すると実際のデータが表示されます。
         </p>
       )}
@@ -67,7 +67,7 @@ export default async function InstructorLessonsPage() {
               key={lesson.id}
               href={`/instructor/lessons/${lesson.id}`}
             >
-              <Card className="group transition-all hover:border-blue-200 hover:shadow-md hover:shadow-blue-500/5">
+              <Card className="group transition-all hover:border-blue-200">
                 <CardContent className="flex items-center gap-4 py-4">
                   <div className="min-w-0 flex-1 space-y-1.5">
                     <div className="flex flex-wrap items-center gap-2">

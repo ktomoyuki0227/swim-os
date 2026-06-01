@@ -1,22 +1,19 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npx tsc:*)",
+      "Read",
+      "Write",
+      "Edit",
+      "Bash",
+      "Glob",
+      "Grep",
+      "Agent",
       "mcp__mcp-image__generate_image",
-      "Bash(cp \"C:/Users/ktomo/my-company/generated-images/lesson-crawl.jpg\" \"C:/Users/ktomo/my-company/dev-piglet/groove-house/swim.os/apps/rangers/public/images/lessons/crawl.jpg\")",
-      "Bash(cp \"C:/Users/ktomo/my-company/generated-images/lesson-breaststroke.jpg\" \"C:/Users/ktomo/my-company/dev-piglet/groove-house/swim.os/apps/rangers/public/images/lessons/breaststroke.jpg\")",
-      "Bash(cp \"C:/Users/ktomo/my-company/generated-images/lesson-butterfly.jpg\" \"C:/Users/ktomo/my-company/dev-piglet/groove-house/swim.os/apps/rangers/public/images/lessons/butterfly.jpg\")",
-      "Bash(cp \"C:/Users/ktomo/my-company/generated-images/lesson-children.jpg\" \"C:/Users/ktomo/my-company/dev-piglet/groove-house/swim.os/apps/rangers/public/images/lessons/children.jpg\")",
-      "Bash(cp \"C:/Users/ktomo/my-company/generated-images/instructor-tanaka-rei.jpg\" \"C:/Users/ktomo/my-company/dev-piglet/groove-house/swim.os/apps/rangers/public/images/instructors/tanaka-rei.jpg\")",
-      "Bash(cp \"C:/Users/ktomo/my-company/generated-images/instructor-yamamoto-kana.jpg\" \"C:/Users/ktomo/my-company/dev-piglet/groove-house/swim.os/apps/rangers/public/images/instructors/yamamoto-kana.jpg\")",
       "WebFetch(domain:github.com)",
       "mcp__plugin_ecc_playwright__browser_navigate",
       "mcp__plugin_ecc_playwright__browser_take_screenshot",
       "mcp__plugin_ecc_playwright__browser_click",
-      "mcp__plugin_ecc_playwright__browser_snapshot",
-      "Bash(pnpm tsc:*)",
-      "Bash(pnpm build:*)",
-      "Bash(npm run:*)"
+      "mcp__plugin_ecc_playwright__browser_snapshot"
     ]
   }
 }

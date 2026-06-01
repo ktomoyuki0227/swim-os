@@ -7,6 +7,7 @@ import { Elements } from "@stripe/react-stripe-js"
 import { createBooking } from "@/actions/bookings"
 import { Button } from "@/components/ui/button"
 import { CheckoutForm } from "@/components/booking/checkout-form"
+import { useToast } from "@/components/toast"
 
 const stripePromise = loadStripe(
   process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? ""
@@ -29,8 +30,8 @@ export function BookingButton({
 }: BookingButtonProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   const [clientSecret, setClientSecret] = useState<string | null>(null)
+  const { showToast } = useToast()
 
   if (isMock) {
     return (
@@ -58,12 +59,11 @@ export function BookingButton({
 
   async function handleBooking() {
     setLoading(true)
-    setError(null)
 
     const result = await createBooking(lessonId)
 
     if ("error" in result && result.error) {
-      setError(result.error)
+      showToast(result.error, "error")
       setLoading(false)
       return
     }
@@ -108,7 +108,6 @@ export function BookingButton({
 
   return (
     <div>
-      {error && <p className="mb-2 text-sm text-destructive">{error}</p>}
       <Button onClick={handleBooking} disabled={loading} className="w-full">
         {loading
           ? "処理中..."

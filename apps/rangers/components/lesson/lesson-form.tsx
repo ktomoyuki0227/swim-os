@@ -1,11 +1,12 @@
 "use client"
 
-import { useActionState } from "react"
+import { useActionState, useEffect } from "react"
 import { createLesson, updateLesson, type LessonActionState } from "@/actions/lessons"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { useToast } from "@/components/toast"
 import type { Lesson } from "@/types/database"
 
 interface LessonFormProps {
@@ -28,6 +29,11 @@ export function LessonForm({ lesson }: LessonFormProps) {
     : createLesson
 
   const [state, formAction, isPending] = useActionState(action, initialState)
+  const { showToast } = useToast()
+
+  useEffect(() => {
+    if (state.error) showToast(state.error, "error")
+  }, [state.error])
 
   const defaultScheduledAt = lesson
     ? (() => {
@@ -39,15 +45,6 @@ export function LessonForm({ lesson }: LessonFormProps) {
 
   return (
     <form action={formAction} className="space-y-4">
-      {state.error && (
-        <p
-          role="alert"
-          className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive"
-        >
-          {state.error}
-        </p>
-      )}
-
       <div className="space-y-2">
         <Label htmlFor="title">タイトル</Label>
         <Input

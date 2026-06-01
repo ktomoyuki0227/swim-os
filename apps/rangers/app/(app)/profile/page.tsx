@@ -1,6 +1,7 @@
 "use client"
 
 import { useActionState, useEffect, useRef, useState } from "react"
+import { useRouter } from "next/navigation"
 import Image from "next/image"
 import {
   updateProfile,
@@ -9,6 +10,7 @@ import {
   type ProfileActionState,
   type AvatarActionState,
 } from "@/actions/profile"
+import { createClient } from "@/lib/supabase/client"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -16,6 +18,7 @@ import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Mail, ShieldCheck } from "lucide-react"
+import { useToast } from "@/components/toast"
 import { SWIM_SPECIALTIES, TARGET_AGES, PREFECTURES } from "@/types/database"
 import type { Profile } from "@/types/database"
 
@@ -29,6 +32,7 @@ const roleLabels: Record<string, string> = {
 }
 
 export default function ProfilePage() {
+  const router = useRouter()
   const [state, formAction, isPending] = useActionState(updateProfile, initialProfileState)
   const [avatarState, avatarAction, isAvatarPending] = useActionState(uploadAvatar, initialAvatarState)
   const [profile, setProfile] = useState<Profile | null>(null)
@@ -44,6 +48,17 @@ export default function ProfilePage() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const { showToast } = useToast()
+
+  useEffect(() => {
+    if (state.error) showToast(state.error, "error")
+    if (state.success) showToast("プロフィールを更新しました", "success")
+  }, [state.error, state.success])
+
+  useEffect(() => {
+    if (avatarState.error) showToast(avatarState.error, "error")
+    if (avatarState.success) showToast("画像を更新しました", "success")
+  }, [avatarState.error, avatarState.success])
 
   useEffect(() => {
     Promise.all([
@@ -128,12 +143,6 @@ export default function ProfilePage() {
               )}
             </div>
             <form action={avatarAction} className="flex flex-col gap-2">
-              {avatarState.error && (
-                <p role="alert" className="text-sm text-destructive">{avatarState.error}</p>
-              )}
-              {avatarState.success && (
-                <p role="status" className="text-sm text-green-700">画像を更新しました</p>
-              )}
               <Label htmlFor="avatar" className="cursor-pointer rounded-md border px-3 py-1.5 text-sm hover:bg-muted">
                 画像を変更
               </Label>
@@ -183,17 +192,6 @@ export default function ProfilePage() {
       </Card>
 
       <form action={formAction} className="space-y-6">
-        {state.error && (
-          <p role="alert" className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
-            {state.error}
-          </p>
-        )}
-        {state.success && (
-          <p role="status" className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-700">
-            プロフィールを更新しました。
-          </p>
-        )}
-
         <Card>
           <CardHeader>
             <CardTitle className="text-base">基本情報</CardTitle>
@@ -346,6 +344,21 @@ export default function ProfilePage() {
           {isPending ? "保存中..." : "プロフィールを保存"}
         </Button>
       </form>
+
+      <div className="mt-8 border-t pt-6">
+        <Button
+          variant="outline"
+          className="w-full border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
+          style={{ minHeight: "44px" }}
+          onClick={async () => {
+            const supabase = createClient()
+            await supabase.auth.signOut()
+            router.push("/login")
+          }}
+        >
+          ログアウト
+        </Button>
+      </div>
     </div>
   )
 }
