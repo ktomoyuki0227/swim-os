@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { logout } from "@/actions/auth"
@@ -125,10 +126,8 @@ export function Navigation({ role, userName, avatarUrl, unreadCount = 0 }: Navig
       <header className="sticky top-0 z-20 border-b border-[#dce3ea] bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
         <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4">
           {/* Logo */}
-          <Link href={role === "instructor" ? "/instructor/dashboard" : "/dashboard"} className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#005F8C]">
-              <span className="text-sm font-bold text-white">R</span>
-            </div>
+          <Link href={role === "instructor" ? "/instructor/dashboard" : "/dashboard"} className="flex items-center gap-1.5">
+            <Image src="/rangers-logo-背景透過.png" alt="Rangers" width={40} height={40} className="object-contain" />
             <span className="text-base font-bold text-[#1a2332]">Rangers</span>
           </Link>
 

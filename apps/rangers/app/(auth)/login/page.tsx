@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useActionState } from "react"
+import Image from "next/image"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -24,8 +25,8 @@ export default function LoginPage() {
     <div className="w-full max-w-md">
       <Card className="w-full border-[#dce3ea] bg-white shadow-2xl">
         <CardHeader className="text-center pb-2">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#005F8C]">
-            <span className="text-2xl font-bold text-white">R</span>
+          <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center">
+            <Image src="/rangers-logo-背景透過.png" alt="Rangers" width={80} height={80} className="object-contain" />
           </div>
           <CardTitle className="text-2xl font-bold text-[#1a2332]">Rangers</CardTitle>
           <p className="mt-1 text-sm text-[#5c6a7a]">マスターズ水泳チーム管理</p>

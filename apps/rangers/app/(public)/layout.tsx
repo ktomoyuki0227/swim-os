@@ -1,4 +1,5 @@
 import Link from "next/link"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { createClient } from "@/lib/supabase/server"
 
@@ -16,10 +17,8 @@ export default async function PublicLayout({
       <header className="sticky top-0 z-10 border-b border-[#dce3ea] bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
           {/* ロゴ */}
-          <Link href="/" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#005F8C]">
-              <span className="text-sm font-bold text-white">R</span>
-            </div>
+          <Link href="/" className="flex items-center gap-1.5">
+            <Image src="/rangers-logo-背景透過.png" alt="Rangers" width={40} height={40} className="object-contain" />
             <span className="text-base font-bold text-[#1a2332]">Rangers</span>
           </Link>
 
@@ -68,10 +67,8 @@ export default async function PublicLayout({
       {/* フッター */}
       <footer className="border-t border-[#dce3ea] bg-[#1a2332] py-10">
         <div className="mx-auto max-w-5xl px-4">
-          <div className="mb-6 flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#005F8C]">
-              <span className="text-sm font-bold text-white">R</span>
-            </div>
+          <div className="mb-6 flex items-center gap-1.5">
+            <Image src="/rangers-logo-背景透過.png" alt="Rangers" width={40} height={40} className="object-contain" />
             <span className="font-bold text-white">Rangers</span>
           </div>
           <p className="mb-6 text-sm leading-relaxed text-slate-400">
