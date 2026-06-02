@@ -128,8 +128,9 @@ export default async function HomePage() {
               </div>
             ))}
           </div>
-          <p className="mt-8 text-center text-base font-medium text-[#1a2332]">
-            Rangers はこれらをまとめて解決します。
+          <p className="mt-8 flex items-center justify-center gap-2 text-base font-medium text-[#1a2332]">
+            <Image src="/rangers-name-背景透過.png" alt="Rangers" width={100} height={28} className="object-contain" />
+            はこれらをまとめて解決します。
           </p>
         </div>
       </section>
@@ -138,7 +139,10 @@ export default async function HomePage() {
       <section id="features" className="bg-white px-4 py-16 sm:py-20">
         <div className="mx-auto max-w-5xl">
           <div className="mb-12 text-center">
-            <h2 className="text-2xl font-bold text-[#1a2332] sm:text-3xl">Rangers でできること</h2>
+            <h2 className="flex items-center justify-center gap-2 text-2xl font-bold text-[#1a2332] sm:text-3xl">
+              <Image src="/rangers-name-背景透過.png" alt="Rangers" width={120} height={32} className="object-contain" />
+              でできること
+            </h2>
             <p className="mt-2 text-sm text-[#5c6a7a]">チーム運営に必要な機能をひとつのアプリに</p>
           </div>
 
