@@ -20,8 +20,8 @@ export default async function HomePage() {
   return (
     <>
       {/* ===== HERO ===== */}
-      <section className="relative overflow-hidden min-h-[600px] sm:min-h-[680px] flex items-center">
-        {/* Full-bleed video background with Ken Burns zoom */}
+      <section className="relative overflow-hidden min-h-[600px] sm:min-h-[680px] flex items-center bg-[#1a2332]">
+        {/* Full-bleed video background */}
         <video
           autoPlay
           loop
@@ -29,6 +29,7 @@ export default async function HomePage() {
           playsInline
           className="absolute inset-0 h-full w-full object-cover"
           src="/hero-bg.mp4"
+          poster="/hero-bg.jpg"
         />
         {/* Extra vignette to ensure left text remains readable */}
         <div className="absolute inset-0 bg-gradient-to-r from-[#1a2332]/70 via-[#1a2332]/30 to-transparent" />
