@@ -10,7 +10,6 @@ export async function saveAsTemplate(sessionId: string, name: string) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
 
-  // practice_sessions・team_members ともに RLS 自己参照問題があるため adminClient で統一
   const admin = createAdminClient()
 
   const { data: session, error: sessionError } = await admin
@@ -21,7 +20,6 @@ export async function saveAsTemplate(sessionId: string, name: string) {
 
   if (sessionError || !session) return { error: "セッションが見つかりません" }
 
-  // admin権限チェック（adminClient で RLS バイパス）
   const { data: adminMembership } = await admin
     .from("team_members")
     .select("id")
@@ -66,7 +64,9 @@ export async function getTeamTemplates(teamId: string) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
 
-  const { data: adminMembership } = await supabase
+  const admin = createAdminClient()
+
+  const { data: adminMembership } = await admin
     .from("team_members")
     .select("id")
     .eq("team_id", teamId)
@@ -75,7 +75,7 @@ export async function getTeamTemplates(teamId: string) {
     .single()
   if (!adminMembership) return { data: [] }
 
-  const { data, error } = await supabase
+  const { data, error } = await admin
     .from("session_templates")
     .select("*")
     .eq("team_id", teamId)
@@ -90,15 +90,16 @@ export async function getTemplate(templateId: string) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
 
-  const { data, error } = await supabase
+  const admin = createAdminClient()
+
+  const { data, error } = await admin
     .from("session_templates")
     .select("*")
     .eq("id", templateId)
     .single()
-  if (error) return { data: null }
+  if (error || !data) return { data: null }
 
-  // 取得したテンプレートのチームのadminか確認
-  const { data: adminMembership } = await supabase
+  const { data: adminMembership } = await admin
     .from("team_members")
     .select("id")
     .eq("team_id", data.team_id)
@@ -118,18 +119,19 @@ export async function updateTemplate(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
 
-  // 入力値のZod検証（任意カラムへの書き込みを防ぐ）
   const parsed = templateUpdateSchema.safeParse(data)
   if (!parsed.success) return { error: "入力値が不正です" }
 
-  const { data: tmpl } = await supabase
+  const admin = createAdminClient()
+
+  const { data: tmpl } = await admin
     .from("session_templates")
     .select("team_id")
     .eq("id", templateId)
     .single()
   if (!tmpl) return { error: "テンプレートが見つかりません" }
 
-  const { data: adminMembership } = await supabase
+  const { data: adminMembership } = await admin
     .from("team_members")
     .select("id")
     .eq("team_id", tmpl.team_id)
@@ -138,7 +140,7 @@ export async function updateTemplate(
     .single()
   if (!adminMembership) return { error: "権限がありません" }
 
-  const { error } = await supabase
+  const { error } = await admin
     .from("session_templates")
     .update(parsed.data)
     .eq("id", templateId)
@@ -154,14 +156,16 @@ export async function deleteTemplate(templateId: string) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
 
-  const { data: tmpl } = await supabase
+  const admin = createAdminClient()
+
+  const { data: tmpl } = await admin
     .from("session_templates")
     .select("team_id")
     .eq("id", templateId)
     .single()
   if (!tmpl) return { error: "テンプレートが見つかりません" }
 
-  const { data: adminMembership } = await supabase
+  const { data: adminMembership } = await admin
     .from("team_members")
     .select("id")
     .eq("team_id", tmpl.team_id)
@@ -170,7 +174,7 @@ export async function deleteTemplate(templateId: string) {
     .single()
   if (!adminMembership) return { error: "権限がありません" }
 
-  const { error } = await supabase
+  const { error } = await admin
     .from("session_templates")
     .delete()
     .eq("id", templateId)
@@ -189,7 +193,9 @@ export async function createSessionFromTemplate(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
 
-  const { data: template } = await supabase
+  const admin = createAdminClient()
+
+  const { data: template } = await admin
     .from("session_templates")
     .select("*")
     .eq("id", templateId)
@@ -197,8 +203,7 @@ export async function createSessionFromTemplate(
 
   if (!template) return { error: "テンプレートが見つかりません" }
 
-  // admin権限チェック
-  const { data: adminMembership } = await supabase
+  const { data: adminMembership } = await admin
     .from("team_members")
     .select("id")
     .eq("team_id", template.team_id)
@@ -207,7 +212,6 @@ export async function createSessionFromTemplate(
     .single()
   if (!adminMembership) return { error: "権限がありません" }
 
-  // 締め切り日時を計算
   let registrationDeadline: string | null = null
   if (template.deadline_days) {
     const deadline = new Date(scheduledAt)
@@ -215,7 +219,7 @@ export async function createSessionFromTemplate(
     registrationDeadline = deadline.toISOString()
   }
 
-  const { data: session, error } = await supabase
+  const { data: session, error } = await admin
     .from("practice_sessions")
     .insert({
       team_id: template.team_id,
