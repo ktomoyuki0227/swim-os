@@ -9,7 +9,6 @@ export const registerSchema = z.object({
   name: z.string().min(1, "名前を入力してください"),
   email: z.email("有効なメールアドレスを入力してください"),
   password: z.string().min(6, "パスワードは6文字以上で入力してください"),
-  role: z.enum(["swimmer", "instructor"]),
 })
 
 export const lessonSchema = z.object({

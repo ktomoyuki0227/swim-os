@@ -6,10 +6,9 @@ import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { logout } from "@/actions/auth"
-import type { UserRole } from "@/types/database"
 
 interface NavigationProps {
-  role: UserRole
+  hasAdminTeams: boolean
   userName: string
   avatarUrl?: string | null
   unreadCount?: number
@@ -100,10 +99,10 @@ const memberLinks = [
   },
 ]
 
-export function Navigation({ role, userName, avatarUrl, unreadCount = 0 }: NavigationProps) {
+export function Navigation({ hasAdminTeams, userName, avatarUrl, unreadCount = 0 }: NavigationProps) {
   const pathname = usePathname()
-  const [viewMode, setViewMode] = useState<"instructor" | "swimmer">(role === "swimmer" ? "swimmer" : "instructor")
-  const links = viewMode === "instructor" ? adminLinks : memberLinks
+  const isInAdminSection = pathname.startsWith("/instructor")
+  const links = isInAdminSection ? adminLinks : memberLinks
   const [menuOpen, setMenuOpen] = useState(false)
 
   useEffect(() => {
@@ -126,7 +125,7 @@ export function Navigation({ role, userName, avatarUrl, unreadCount = 0 }: Navig
       <header className="sticky top-0 z-20 border-b border-[#dce3ea] bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
         <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4">
           {/* Logo */}
-          <Link href={role === "instructor" ? "/instructor/dashboard" : "/dashboard"} className="flex items-center gap-2">
+          <Link href={isInAdminSection ? "/instructor/dashboard" : "/dashboard"} className="flex items-center gap-2">
             <Image src="/rangers-logo-背景透過.png" alt="Rangers logo" width={40} height={40} className="object-contain" />
             <Image src="/rangers-name-背景透過.png" alt="Rangers" width={110} height={30} className="object-contain" />
           </Link>
@@ -149,32 +148,31 @@ export function Navigation({ role, userName, avatarUrl, unreadCount = 0 }: Navig
             ))}
           </nav>
 
-          {/* Right side: Mode toggle (instructor only) + Bell + Avatar */}
+          {/* Right side: Team management link (if applicable) + Bell + Avatar */}
           <div className="flex items-center gap-2">
-            {/* Admin / Member mode toggle — only visible for instructors */}
-            {role === "instructor" && (
-              <button
-                type="button"
-                onClick={() => setViewMode((v) => v === "instructor" ? "swimmer" : "instructor")}
+            {/* チーム管理へ — メンバー画面にいて管理チームがある場合のみ表示 */}
+            {hasAdminTeams && !isInAdminSection && (
+              <Link
+                href="/instructor/dashboard"
                 className="hidden items-center gap-1.5 rounded-full border border-[#dce3ea] bg-white px-3 py-1.5 text-xs font-medium text-[#5c6a7a] transition-colors hover:border-[#005F8C] hover:text-[#005F8C] md:flex"
-                title={viewMode === "instructor" ? "メンバー画面に切り替え" : "管理者画面に切り替え"}
               >
-                {viewMode === "instructor" ? (
-                  <>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
-                    </svg>
-                    メンバー表示
-                  </>
-                ) : (
-                  <>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" />
-                    </svg>
-                    管理者表示
-                  </>
-                )}
-              </button>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" />
+                </svg>
+                チーム管理
+              </Link>
+            )}
+            {/* チームメンバー表示に戻る — 管理画面にいる場合のみ表示 */}
+            {isInAdminSection && (
+              <Link
+                href="/dashboard"
+                className="hidden items-center gap-1.5 rounded-full border border-[#dce3ea] bg-white px-3 py-1.5 text-xs font-medium text-[#5c6a7a] transition-colors hover:border-[#005F8C] hover:text-[#005F8C] md:flex"
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" />
+                </svg>
+                ホーム
+              </Link>
             )}
 
             {/* Notification bell */}
@@ -254,14 +252,23 @@ export function Navigation({ role, userName, avatarUrl, unreadCount = 0 }: Navig
               ))}
             </nav>
             <div className="mt-3 border-t border-[#dce3ea] pt-3 space-y-1">
-              {role === "instructor" && (
-                <button
-                  type="button"
-                  onClick={() => { setViewMode((v) => v === "instructor" ? "swimmer" : "instructor"); setMenuOpen(false) }}
+              {hasAdminTeams && !isInAdminSection && (
+                <Link
+                  href="/instructor/dashboard"
+                  onClick={() => setMenuOpen(false)}
                   className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-[#005F8C] transition-colors hover:bg-[#f2f7fa]"
                 >
-                  {viewMode === "instructor" ? "メンバー画面に切り替え" : "管理者画面に切り替え"}
-                </button>
+                  チーム管理へ
+                </Link>
+              )}
+              {isInAdminSection && (
+                <Link
+                  href="/dashboard"
+                  onClick={() => setMenuOpen(false)}
+                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-[#005F8C] transition-colors hover:bg-[#f2f7fa]"
+                >
+                  ホームへ戻る
+                </Link>
               )}
               <form action={logout}>
                 <button

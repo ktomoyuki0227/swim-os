@@ -1,6 +1,7 @@
 "use client"
 
 import { useActionState } from "react"
+import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { register, type AuthState } from "@/actions/auth"
 
@@ -45,6 +46,8 @@ function StepProgress({ current }: { current: number }) {
 
 export default function RegisterPage() {
   const [state, formAction, isPending] = useActionState(register, initialState)
+  const searchParams = useSearchParams()
+  const invite = searchParams.get("invite")
 
   return (
     <div className="w-full max-w-md">
@@ -54,6 +57,7 @@ export default function RegisterPage() {
         <h1 className="mb-6 text-center text-xl font-bold text-blue-500">アカウント作成</h1>
 
         <form action={formAction} className="space-y-4">
+          {invite && <input type="hidden" name="invite" value={invite} />}
           {state.error && (
             <p role="alert" className="rounded-lg bg-red-50 px-4 py-2.5 text-sm text-red-600">
               {state.error}
@@ -102,20 +106,6 @@ export default function RegisterPage() {
               required
               className="w-full rounded-lg border bg-white px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-400"
             />
-          </div>
-
-          <div>
-            <p className="mb-2 text-sm font-medium">登録タイプ<span className="ml-0.5 text-red-500">*</span></p>
-            <div className="grid grid-cols-2 gap-3">
-              <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-gray-200 py-3 text-sm font-medium transition-colors hover:border-blue-400 has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50 has-[:checked]:text-blue-700">
-                <input type="radio" name="role" value="swimmer" defaultChecked className="sr-only" />
-                🏊 スイマー
-              </label>
-              <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-gray-200 py-3 text-sm font-medium transition-colors hover:border-blue-400 has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50 has-[:checked]:text-blue-700">
-                <input type="radio" name="role" value="instructor" className="sr-only" />
-                🤿 指導員
-              </label>
-            </div>
           </div>
 
           <div className="space-y-2 pt-1">

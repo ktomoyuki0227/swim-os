@@ -29,17 +29,10 @@ export async function login(
     return { error: "メールアドレスまたはパスワードが正しくありません" }
   }
 
-  // ロールに応じてリダイレクト先を変える
-  const { data: { user } } = await supabase.auth.getUser()
-  if (user) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .single()
-    if (profile?.role === "instructor") {
-      redirect("/instructor/dashboard")
-    }
+  // 招待コードがあればチーム参加ページへ
+  const invite = (formData.get("invite") as string)?.trim()
+  if (invite) {
+    redirect(`/teams/join/${invite}`)
   }
 
   redirect("/dashboard")
@@ -53,7 +46,6 @@ export async function register(
     name: formData.get("name") as string,
     email: formData.get("email") as string,
     password: formData.get("password") as string,
-    role: formData.get("role") as string,
   }
 
   const result = registerSchema.safeParse(raw)
@@ -75,16 +67,19 @@ export async function register(
     return { error: "登録に失敗しました。別のメールアドレスをお試しください" }
   }
 
-  // プロフィールのロールを更新
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
+  // 名前をプロフィールに保存（role は常に 'member' のまま）
+  const { data: { user } } = await supabase.auth.getUser()
   if (user) {
     await supabase
       .from("profiles")
-      .update({ role: result.data.role, name: result.data.name })
+      .update({ name: result.data.name })
       .eq("id", user.id)
+  }
+
+  // 招待コードがあればチーム参加ページへ
+  const invite = (formData.get("invite") as string)?.trim()
+  if (invite) {
+    redirect(`/teams/join/${invite}`)
   }
 
   redirect("/register/sent")

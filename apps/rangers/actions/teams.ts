@@ -48,12 +48,6 @@ export async function createTeam(data: unknown) {
     return { error: "チームの作成に失敗しました" }
   }
 
-  // profiles.role を instructor に更新（チーム作成 = コーチ）
-  await supabase
-    .from("profiles")
-    .update({ role: "instructor" })
-    .eq("id", user.id)
-
   revalidatePath("/instructor/teams")
   return { data: team }
 }
@@ -327,6 +321,19 @@ export async function updateMembershipType(
 
   revalidatePath("/instructor/teams")
   return { success: true }
+}
+
+export async function joinTeamAction(
+  _prev: { error: string | null },
+  formData: FormData
+): Promise<{ error: string | null }> {
+  const invite = (formData.get("invite") as string)?.trim()
+  const membershipType = formData.get("membership_type") as string
+
+  const result = await joinTeamByCode(invite, membershipType, [])
+  if ("error" in result) return { error: result.error ?? "参加に失敗しました" }
+
+  redirect(`/teams/${result.data.id}`)
 }
 
 export async function regenerateInviteCode(teamId: string) {

@@ -7,27 +7,21 @@ export default async function InstructorLayout({
   children: React.ReactNode
 }) {
   const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
     redirect("/login")
   }
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single()
+  // チーム管理者かどうかを team_members で判定（profile.role に依存しない）
+  const { data: adminMemberships } = await supabase
+    .from("team_members")
+    .select("id")
+    .eq("swimmer_id", user.id)
+    .eq("role", "admin")
+    .limit(1)
 
-  // profileが存在しない場合はサインアウトしてログインへ（親layoutと同じ挙動）
-  if (!profile) {
-    await supabase.auth.signOut()
-    redirect("/login")
-  }
-
-  if (profile.role !== "instructor") {
+  if (!adminMemberships || adminMemberships.length === 0) {
     redirect("/dashboard")
   }
 
