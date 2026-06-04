@@ -68,7 +68,7 @@ export default async function HomePage() {
                   <Button
                     size="lg"
                     variant="outline"
-                    className="w-full rounded-full border-2 border-white px-8 text-white backdrop-blur-sm hover:bg-white hover:text-[#005F8C] sm:w-auto"
+                    className="w-full rounded-full border-2 border-white bg-transparent px-8 text-white backdrop-blur-sm hover:bg-white hover:text-[#005F8C] sm:w-auto"
                     style={{ minHeight: "52px" }}
                   >
                     機能を見る
