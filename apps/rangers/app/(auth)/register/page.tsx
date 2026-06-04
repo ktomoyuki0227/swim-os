@@ -1,6 +1,6 @@
 "use client"
 
-import { useActionState } from "react"
+import { useActionState, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { register, type AuthState } from "@/actions/auth"
@@ -44,7 +44,7 @@ function StepProgress({ current }: { current: number }) {
   )
 }
 
-export default function RegisterPage() {
+function RegisterForm() {
   const [state, formAction, isPending] = useActionState(register, initialState)
   const searchParams = useSearchParams()
   const invite = searchParams.get("invite")
@@ -138,5 +138,13 @@ export default function RegisterPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense>
+      <RegisterForm />
+    </Suspense>
   )
 }

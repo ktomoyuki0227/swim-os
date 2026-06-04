@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useActionState } from "react"
+import { useState, useActionState, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import Image from "next/image"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -12,7 +12,7 @@ import type { AuthState } from "@/actions/auth"
 
 const initialState: AuthState = { error: null }
 
-export default function LoginPage() {
+function LoginForm() {
   const [showDevLogin, setShowDevLogin] = useState(false)
   const [showLineNotice, setShowLineNotice] = useState(false)
   const [state, formAction, isPending] = useActionState(login, initialState)
@@ -82,7 +82,7 @@ export default function LoginPage() {
                     id="email"
                     name="email"
                     type="email"
-                    placeholder="instructor@example.com"
+                    placeholder="test1@example.com"
                     className="h-9 border-[#dce3ea] text-sm"
                     required
                   />
@@ -109,10 +109,10 @@ export default function LoginPage() {
                 </Button>
                 {process.env.NODE_ENV !== "production" && (
                   <div className="rounded-lg bg-[#f2f7fa] p-3 text-xs text-[#5c6a7a]">
-                    <p className="font-medium mb-1">テストアカウント（開発環境のみ）</p>
-                    <p>コーチ: instructor@example.com</p>
-                    <p>スイマー: swimmer1@example.com</p>
-                    <p>パスワード: test1234</p>
+                    <p className="font-medium mb-1">テストアカウント（パスワード共通: test1234）</p>
+                    <p>★管理者: test1@example.com</p>
+                    <p>メンバー: test2@example.com</p>
+                    <p>回数券: test3@example.com</p>
                   </div>
                 )}
               </form>
@@ -124,5 +124,13 @@ export default function LoginPage() {
         Rangers · マスターズ水泳チーム管理
       </p>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   )
 }
