@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 import Image from "next/image"
 import Link from "next/link"
-import { createClient } from "@/lib/supabase/server"
+import { createClient, createAdminClient } from "@/lib/supabase/server"
 import { SWIM_SPECIALTIES, PREFECTURES, TARGET_AGES } from "@/types/database"
 import type { Profile } from "@/types/database"
 
@@ -105,11 +105,35 @@ function InstructorCard({ instructor }: { instructor: Profile }) {
 export default async function InstructorsPage({ searchParams }: InstructorsPageProps) {
   const { specialty, prefecture, age, q } = await searchParams
   const supabase = await createClient()
+  const admin = createAdminClient()
 
-  let query = supabase
+  // チームの管理者（team_members.role === 'admin'）のIDを取得
+  const { data: adminMemberships } = await admin
+    .from("team_members")
+    .select("swimmer_id")
+    .eq("role", "admin")
+    .eq("status", "active")
+
+  const coachIds = [...new Set((adminMemberships ?? []).map((m) => m.swimmer_id))]
+
+  if (coachIds.length === 0) {
+    return (
+      <div className="mx-auto max-w-5xl px-4 py-8">
+        <div className="mb-8">
+          <h1 className="mb-2 text-3xl font-bold">コーチを探す</h1>
+          <p className="text-muted-foreground">水泳専門のプロコーチが、あなたの目標に合わせて個別指導します</p>
+        </div>
+        <div className="flex flex-col items-center gap-3 py-16 text-center">
+          <p className="font-medium">条件に合うコーチが見つかりませんでした</p>
+        </div>
+      </div>
+    )
+  }
+
+  let query = admin
     .from("profiles")
     .select("*")
-    .eq("role", "instructor")
+    .in("id", coachIds)
     .order("review_count", { ascending: false })
 
   if (specialty) {

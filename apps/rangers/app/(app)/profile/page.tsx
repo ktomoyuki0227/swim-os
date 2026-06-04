@@ -15,21 +15,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Mail, ShieldCheck } from "lucide-react"
+import { Mail } from "lucide-react"
 import { useToast } from "@/components/toast"
 import { SWIM_SPECIALTIES, TARGET_AGES, PREFECTURES } from "@/types/database"
 import type { Profile } from "@/types/database"
 
 const initialProfileState: ProfileActionState = { error: null, success: false }
 const initialAvatarState: AvatarActionState = { error: null, success: false }
-
-const roleLabels: Record<string, string> = {
-  swimmer: "スイマー",
-  instructor: "指導員",
-  admin: "管理者",
-}
 
 export default function ProfilePage() {
   const router = useRouter()
@@ -101,7 +94,6 @@ export default function ProfilePage() {
     .toUpperCase()
 
   const displayUrl = previewUrl ?? avatarUrl
-  const isInstructor = profile?.role === "instructor"
 
   function toggleSpecialty(s: string) {
     setSpecialties((prev) =>
@@ -176,17 +168,6 @@ export default function ProfilePage() {
               </span>
               {isLoading ? <Skeleton className="h-4 w-40" /> : <span className="text-xs">{email}</span>}
             </div>
-            <div className="flex items-center justify-between">
-              <span className="flex items-center gap-1.5 text-muted-foreground">
-                <ShieldCheck className="h-3.5 w-3.5" />
-                ロール
-              </span>
-              {isLoading ? (
-                <Skeleton className="h-5 w-16" />
-              ) : (
-                <Badge variant="secondary">{roleLabels[profile?.role ?? ""] ?? profile?.role}</Badge>
-              )}
-            </div>
           </div>
         </CardContent>
       </Card>
@@ -214,9 +195,8 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
 
-        {/* 指導員向け追加フィールド */}
-        {isInstructor && (
-          <>
+        {/* コーチプロフィール（任意入力） */}
+        <>
             <Card>
               <CardHeader>
                 <CardTitle className="text-base">コーチプロフィール</CardTitle>
@@ -337,8 +317,7 @@ export default function ProfilePage() {
                 </div>
               </CardContent>
             </Card>
-          </>
-        )}
+        </>
 
         <Button type="submit" className="w-full bg-blue-500 hover:bg-blue-600" disabled={isPending || isLoading}>
           {isPending ? "保存中..." : "プロフィールを保存"}

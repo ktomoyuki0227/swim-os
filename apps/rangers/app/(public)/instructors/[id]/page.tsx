@@ -49,7 +49,7 @@ export default async function InstructorProfilePage({ params }: InstructorPagePr
     { data: instructor },
     { data: { user } },
   ] = await Promise.all([
-    supabase.from("profiles").select("*").eq("id", id).eq("role", "instructor").single(),
+    supabase.from("profiles").select("*").eq("id", id).single(),
     supabase.auth.getUser(),
   ])
 

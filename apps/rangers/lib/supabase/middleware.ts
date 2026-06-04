@@ -66,16 +66,10 @@ export async function updateSession(request: NextRequest) {
     return redirectResponse
   }
 
-  // ログイン済みユーザーが認証ページにアクセスした場合はロールに応じてリダイレクト
+  // ログイン済みユーザーが認証ページにアクセスした場合はダッシュボードへリダイレクト
   if (user && isAuthPage) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .single()
-
     const url = request.nextUrl.clone()
-    url.pathname = profile?.role === "instructor" ? "/instructor/dashboard" : "/dashboard"
+    url.pathname = "/dashboard"
     const redirectResponse = NextResponse.redirect(url)
     supabaseResponse.cookies.getAll().forEach((cookie) => {
       redirectResponse.cookies.set(cookie)

@@ -141,29 +141,6 @@ export async function updatePassword(
   return { error: null, success: true }
 }
 
-export async function updateRole(role: "instructor" | "swimmer"): Promise<{ error?: string }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { error: "未ログインです" }
-
-  // ロールが既に設定済みの場合は変更不可（エスカレーション防止）
-  const { data: existing } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single()
-
-  if (existing?.role) return { error: "ロールは変更できません" }
-
-  const { error } = await supabase
-    .from("profiles")
-    .update({ role })
-    .eq("id", user.id)
-
-  if (error) return { error: "ロールの更新に失敗しました" }
-  return {}
-}
-
 export async function loginWithGoogle(): Promise<void> {
   const supabase = await createClient()
   const { data, error } = await supabase.auth.signInWithOAuth({

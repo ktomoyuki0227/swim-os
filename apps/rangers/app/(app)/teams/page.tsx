@@ -19,7 +19,15 @@ export default async function TeamsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-[#1a2332]">チーム</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-[#1a2332]">チーム</h1>
+        <Link
+          href="/teams/new"
+          className="rounded-full bg-[#005F8C] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#004E73]"
+        >
+          チームを作る
+        </Link>
+      </div>
 
       {!teams || teams.length === 0 ? (
         <div className="space-y-4">
@@ -34,7 +42,13 @@ export default async function TeamsPage() {
                 </svg>
               </div>
               <p className="font-medium text-[#1a2332]">まだチームに参加していません</p>
-              <p className="mt-1 text-sm text-[#5c6a7a]">招待リンクからチームに参加してください</p>
+              <p className="mt-1 text-sm text-[#5c6a7a]">招待リンクからチームに参加するか、チームを作成してください</p>
+              <Link
+                href="/teams/new"
+                className="mt-4 rounded-full bg-[#005F8C] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#004E73]"
+              >
+                チームを作る
+              </Link>
             </CardContent>
           </Card>
         </div>

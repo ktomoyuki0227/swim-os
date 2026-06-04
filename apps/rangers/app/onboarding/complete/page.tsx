@@ -13,7 +13,7 @@ export default async function OnboardingCompletePage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("name, role")
+    .select("name")
     .eq("id", user.id)
     .single()
 
@@ -34,15 +34,15 @@ export default async function OnboardingCompletePage() {
           <p className="mb-8 text-sm text-muted-foreground">
             {profile?.name ?? ""}さんのアカウントが作成されました。
             <br />
-            さっそくコーチを探してレッスンを始めましょう。
+            チームに参加するか、自分でチームを作ってはじめましょう。
           </p>
 
           <div className="mb-8 space-y-3">
             <Link
-              href="/instructors"
+              href="/teams/new"
               className="block w-full rounded-xl bg-blue-500 py-3.5 text-sm font-bold text-white transition-colors hover:bg-blue-600"
             >
-              コーチを探す
+              チームを作る
             </Link>
             <Link
               href="/dashboard"
@@ -55,13 +55,13 @@ export default async function OnboardingCompletePage() {
           <div className="rounded-2xl bg-white p-6 text-left shadow-sm space-y-4">
             <p className="text-sm font-semibold">はじめにやること</p>
             {[
-              { num: "①", title: "プロフィールを完成させる", desc: "名前・写真を登録してコーチに信頼してもらいましょう", href: "/profile" },
-              { num: "②", title: "コーチを探す", desc: "お住まいの地域や得意種目でコーチを検索できます", href: "/instructors" },
-              { num: "③", title: "レッスンを予約する", desc: "気になるコーチに日程リクエストを送りましょう", href: "/instructors" },
+              { num: "1", title: "プロフィールを完成させる", desc: "名前・写真を登録してチームメンバーに顔を覚えてもらいましょう", href: "/profile" },
+              { num: "2", title: "チームを探す", desc: "招待リンクからチームに参加できます", href: "/dashboard" },
+              { num: "3", title: "チームを作る", desc: "自分でチームを作って練習やイベントを管理しましょう", href: "/teams/new" },
             ].map(({ num, title, desc, href }) => (
               <Link key={num} href={href} className="flex items-start gap-3 rounded-xl p-3 transition-colors hover:bg-sky-50">
                 <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-600">
-                  {num.replace("①②③".charAt(0), "").replace("①", "1").replace("②", "2").replace("③", "3")}
+                  {num}
                 </span>
                 <div>
                   <p className="text-sm font-medium">{title}</p>
