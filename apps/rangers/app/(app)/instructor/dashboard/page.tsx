@@ -42,15 +42,16 @@ export default async function InstructorDashboardPage() {
     .filter((s) => new Date(s.scheduled_at as string) > new Date())
     .sort((a, b) => new Date(a.scheduled_at as string).getTime() - new Date(b.scheduled_at as string).getTime())
 
-  // 参加者数
-  const registrationCounts: Record<string, number> = {}
-  for (const session of upcomingSessions.slice(0, 10)) {
-    const { count } = await supabase
-      .from("session_registrations")
-      .select("id", { count: "exact" })
-      .eq("session_id", session.id as string)
-      .is("cancelled_at", null)
-    registrationCounts[session.id as string] = count || 0
+  // 参加者数（バッチ取得）
+  const upcomingIds = upcomingSessions.slice(0, 10).map((s) => s.id as string)
+  const { data: regRows } = await supabase
+    .from("session_registrations")
+    .select("session_id")
+    .in("session_id", upcomingIds)
+    .is("cancelled_at", null)
+  const registrationCounts: Record<string, number> = Object.fromEntries(upcomingIds.map((id) => [id, 0]))
+  for (const row of regRows || []) {
+    registrationCounts[row.session_id] = (registrationCounts[row.session_id] || 0) + 1
   }
 
   // 締め切り間近（3日以内）
