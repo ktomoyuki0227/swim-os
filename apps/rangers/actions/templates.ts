@@ -31,7 +31,7 @@ export async function saveAsTemplate(sessionId: string, name: string) {
     .single()
   if (!adminMembership) return { error: "権限がありません" }
 
-  const { data: template, error } = await supabase
+  const { data: template, error } = await admin
     .from("session_templates")
     .insert({
       team_id: session.team_id,
