@@ -26,7 +26,7 @@ export default async function MessageThreadPage({ params }: MessageThreadPagePro
 
   const { data: partner } = await supabase
     .from("profiles")
-    .select("id, name, avatar_url, role")
+    .select("id, name, avatar_url")
     .eq("id", userId)
     .single()
 
@@ -72,14 +72,12 @@ export default async function MessageThreadPage({ params }: MessageThreadPagePro
         )}
         <div>
           <p className="font-medium">{partner.name}</p>
-          {partner.role === "instructor" && (
-            <Link
+          <Link
               href={`/instructors/${partner.id}`}
               className="text-xs text-blue-600 hover:underline"
             >
               プロフィールを見る
             </Link>
-          )}
         </div>
       </div>
 
