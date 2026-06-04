@@ -14,14 +14,22 @@ const initialState: AuthState = { error: null }
 
 function LoginForm() {
   const [showDevLogin, setShowDevLogin] = useState(false)
-  const [showLineNotice, setShowLineNotice] = useState(false)
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
   const [state, formAction, isPending] = useActionState(login, initialState)
   const searchParams = useSearchParams()
   const invite = searchParams.get("invite")
 
   const handleLineLogin = () => {
-    setShowLineNotice(true)
-    setTimeout(() => setShowLineNotice(false), 3000)
+    // LINEログイン本実装前の検証用：新規ユーザー（チーム未所属）としてデモログイン
+    setEmail("test4@example.com")
+    setPassword("test1234")
+    setShowDevLogin(true)
+  }
+
+  const fillAccount = (e: string) => {
+    setEmail(e)
+    setPassword("test1234")
   }
 
   return (
@@ -47,12 +55,6 @@ function LoginForm() {
             </svg>
             LINEでログイン（次フェーズ実装予定）
           </button>
-
-          {showLineNotice && (
-            <p className="rounded-lg bg-[#f0fdf4] border border-[#bbf7d0] px-3 py-2 text-center text-xs text-[#166534]">
-              LINEログインは次フェーズで実装予定です。デモ用ログインをご利用ください。
-            </p>
-          )}
 
           <p className="text-center text-xs text-[#8d99a8]">
             ログインすることで、利用規約とプライバシーポリシーに同意したものとみなされます。
@@ -83,6 +85,8 @@ function LoginForm() {
                     name="email"
                     type="email"
                     placeholder="test1@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     className="h-9 border-[#dce3ea] text-sm"
                     required
                   />
@@ -94,6 +98,8 @@ function LoginForm() {
                     name="password"
                     type="password"
                     placeholder="test1234"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                     className="h-9 border-[#dce3ea] text-sm"
                     required
                   />
@@ -107,14 +113,35 @@ function LoginForm() {
                 >
                   {isPending ? "ログイン中..." : "メールでログイン"}
                 </Button>
-                {process.env.NODE_ENV !== "production" && (
-                  <div className="rounded-lg bg-[#f2f7fa] p-3 text-xs text-[#5c6a7a]">
-                    <p className="font-medium mb-1">テストアカウント（パスワード共通: test1234）</p>
-                    <p>★管理者: test1@example.com</p>
-                    <p>メンバー: test2@example.com</p>
-                    <p>回数券: test3@example.com</p>
+
+                {/* クイック切り替え */}
+                <div className="rounded-lg bg-[#f2f7fa] p-3 text-xs text-[#5c6a7a] space-y-2">
+                  <p className="font-medium text-[#1a2332]">テストアカウント（パスワード共通: test1234）</p>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {[
+                      { email: "test1@example.com", label: "★管理者", sub: "山田 健太" },
+                      { email: "test2@example.com", label: "レギュラー", sub: "鈴木 太郎" },
+                      { email: "test3@example.com", label: "回数券", sub: "佐藤 花子" },
+                      { email: "test4@example.com", label: "新規ユーザー", sub: "田中 新太郎 ← LINE導線", highlight: true },
+                    ].map((a) => (
+                      <button
+                        key={a.email}
+                        type="button"
+                        onClick={() => fillAccount(a.email)}
+                        className={`rounded-lg border px-2 py-1.5 text-left transition-colors hover:border-[#005F8C] hover:bg-white ${
+                          email === a.email
+                            ? "border-[#005F8C] bg-white"
+                            : a.highlight
+                            ? "border-[#06C755]/40 bg-[#f0fdf4]"
+                            : "border-[#dce3ea]"
+                        }`}
+                      >
+                        <p className={`font-medium ${a.highlight ? "text-[#166534]" : "text-[#1a2332]"}`}>{a.label}</p>
+                        <p className="text-[10px] text-[#8d99a8] leading-tight mt-0.5">{a.sub}</p>
+                      </button>
+                    ))}
                   </div>
-                )}
+                </div>
               </form>
             )}
           </div>
