@@ -117,27 +117,59 @@ function LoginForm() {
                 {/* クイック切り替え */}
                 <div className="rounded-lg bg-[#f2f7fa] p-3 text-xs text-[#5c6a7a] space-y-2">
                   <p className="font-medium text-[#1a2332]">テストアカウント（パスワード共通: test1234）</p>
-                  <div className="grid grid-cols-2 gap-1.5">
+                  <div className="flex flex-col gap-1.5">
                     {[
-                      { email: "test1@example.com", label: "★管理者", sub: "山田 健太" },
-                      { email: "test2@example.com", label: "レギュラー", sub: "鈴木 太郎" },
-                      { email: "test3@example.com", label: "回数券", sub: "佐藤 花子" },
-                      { email: "test4@example.com", label: "新規ユーザー", sub: "田中 新太郎 ← LINE導線", highlight: true },
+                      {
+                        email: "test1@example.com",
+                        label: "山田 健太",
+                        role: "チーム管理者",
+                        desc: "セッション作成・メンバー管理・会費管理・お知らせ投稿",
+                      },
+                      {
+                        email: "test2@example.com",
+                        label: "鈴木 太郎",
+                        role: "レギュラー会員",
+                        desc: "セッション参加（現金）・年会費未払い状態",
+                      },
+                      {
+                        email: "test3@example.com",
+                        label: "佐藤 花子",
+                        role: "回数券会員",
+                        desc: "スタンプ残7回・point_card支払い・年会費支払い済み",
+                      },
+                      {
+                        email: "test4@example.com",
+                        label: "田中 新太郎",
+                        role: "新規ユーザー",
+                        desc: "チーム未所属・LINEログイン後の導線検証用",
+                        highlight: true,
+                      },
                     ].map((a) => (
                       <button
                         key={a.email}
                         type="button"
                         onClick={() => fillAccount(a.email)}
-                        className={`rounded-lg border px-2 py-1.5 text-left transition-colors hover:border-[#005F8C] hover:bg-white ${
+                        className={`rounded-lg border px-3 py-2 text-left transition-colors hover:border-[#005F8C] hover:bg-white ${
                           email === a.email
                             ? "border-[#005F8C] bg-white"
                             : a.highlight
                             ? "border-[#06C755]/40 bg-[#f0fdf4]"
-                            : "border-[#dce3ea]"
+                            : "border-[#dce3ea] bg-white"
                         }`}
                       >
-                        <p className={`font-medium ${a.highlight ? "text-[#166534]" : "text-[#1a2332]"}`}>{a.label}</p>
-                        <p className="text-[10px] text-[#8d99a8] leading-tight mt-0.5">{a.sub}</p>
+                        <div className="flex items-center gap-2">
+                          <p className={`font-semibold ${a.highlight ? "text-[#166534]" : "text-[#1a2332]"}`}>
+                            {a.label}
+                          </p>
+                          <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
+                            a.highlight
+                              ? "bg-[#06C755]/10 text-[#166534]"
+                              : "bg-[#005F8C]/10 text-[#005F8C]"
+                          }`}>
+                            {a.role}
+                          </span>
+                        </div>
+                        <p className="mt-0.5 text-[10px] text-[#8d99a8] leading-tight">{a.desc}</p>
                       </button>
                     ))}
                   </div>
