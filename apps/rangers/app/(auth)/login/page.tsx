@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useActionState } from "react"
+import { useSearchParams } from "next/navigation"
 import Image from "next/image"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -13,12 +14,14 @@ const initialState: AuthState = { error: null }
 
 export default function LoginPage() {
   const [showDevLogin, setShowDevLogin] = useState(false)
+  const [showLineNotice, setShowLineNotice] = useState(false)
   const [state, formAction, isPending] = useActionState(login, initialState)
+  const searchParams = useSearchParams()
+  const invite = searchParams.get("invite")
 
   const handleLineLogin = () => {
-    // TODO: 次フェーズで LINE OAuth 本実装に差し替える
-    // スタブのため認証なしでの遷移は行わない
-    alert("LINEログインは次フェーズで実装予定です。\nデモ用ログインをご利用ください。")
+    setShowLineNotice(true)
+    setTimeout(() => setShowLineNotice(false), 3000)
   }
 
   return (
@@ -45,6 +48,12 @@ export default function LoginPage() {
             LINEでログイン（次フェーズ実装予定）
           </button>
 
+          {showLineNotice && (
+            <p className="rounded-lg bg-[#f0fdf4] border border-[#bbf7d0] px-3 py-2 text-center text-xs text-[#166534]">
+              LINEログインは次フェーズで実装予定です。デモ用ログインをご利用ください。
+            </p>
+          )}
+
           <p className="text-center text-xs text-[#8d99a8]">
             ログインすることで、利用規約とプライバシーポリシーに同意したものとみなされます。
           </p>
@@ -61,6 +70,7 @@ export default function LoginPage() {
 
             {showDevLogin && (
               <form action={formAction} className="mt-4 space-y-3">
+                {invite && <input type="hidden" name="invite" value={invite} />}
                 {state.error && (
                   <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600">
                     {state.error}
