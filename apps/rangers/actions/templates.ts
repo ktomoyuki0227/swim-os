@@ -1,6 +1,6 @@
 "use server"
 
-import { createClient } from "@/lib/supabase/server"
+import { createClient, createAdminClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { templateUpdateSchema } from "@/lib/validations"
@@ -10,16 +10,19 @@ export async function saveAsTemplate(sessionId: string, name: string) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
 
-  const { data: session } = await supabase
+  // practice_sessions・team_members ともに RLS 自己参照問題があるため adminClient で統一
+  const admin = createAdminClient()
+
+  const { data: session, error: sessionError } = await admin
     .from("practice_sessions")
     .select("*")
     .eq("id", sessionId)
     .single()
 
-  if (!session) return { error: "セッションが見つかりません" }
+  if (sessionError || !session) return { error: "セッションが見つかりません" }
 
-  // admin権限チェック
-  const { data: adminMembership } = await supabase
+  // admin権限チェック（adminClient で RLS バイパス）
+  const { data: adminMembership } = await admin
     .from("team_members")
     .select("id")
     .eq("team_id", session.team_id)
