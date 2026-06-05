@@ -28,8 +28,8 @@ DECLARE
 BEGIN
 
 -- プロフィール名を更新（追加メンバー）
-UPDATE profiles SET name = '山田次郎', role = 'swimmer' WHERE id = v_swimmer3_id;
-UPDATE profiles SET name = '加藤みどり', role = 'swimmer' WHERE id = v_swimmer4_id;
+UPDATE profiles SET name = '山田次郎', role = 'member' WHERE id = v_swimmer3_id;
+UPDATE profiles SET name = '加藤みどり', role = 'member' WHERE id = v_swimmer4_id;
 
 -- ============================================================
 -- チーム作成: マウントリバー水泳クラブ（MTR）

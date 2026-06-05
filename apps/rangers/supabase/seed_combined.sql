@@ -12,9 +12,9 @@ DECLARE
   v_lesson4_id    uuid;
 BEGIN
 
-UPDATE profiles SET role = 'instructor', name = '田中コーチ' WHERE id = v_instructor_id;
-UPDATE profiles SET role = 'swimmer',    name = '鈴木太郎'   WHERE id = v_swimmer1_id;
-UPDATE profiles SET role = 'swimmer',    name = '佐藤花子'   WHERE id = v_swimmer2_id;
+UPDATE profiles SET role = 'member', name = '田中コーチ' WHERE id = v_instructor_id;
+UPDATE profiles SET role = 'member',    name = '鈴木太郎'   WHERE id = v_swimmer1_id;
+UPDATE profiles SET role = 'member',    name = '佐藤花子'   WHERE id = v_swimmer2_id;
 
 INSERT INTO lessons (instructor_id, title, description, price, capacity, scheduled_at, duration_minutes, location, status)
 VALUES (v_instructor_id, '初心者向けクロール指導', 'クロールの基本フォームを丁寧に指導します。', 3000, 5, now() + interval '7 days' + interval '10 hours', 60, '東京辰巳国際水泳場', 'published') RETURNING id INTO v_lesson1_id;
