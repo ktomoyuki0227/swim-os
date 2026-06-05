@@ -1,4 +1,4 @@
-export type UserRole = "member" | "admin"
+export type UserRole = "member" | "super_admin"
 
 export type LessonStatus = "draft" | "published" | "cancelled"
 
