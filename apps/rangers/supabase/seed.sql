@@ -105,6 +105,35 @@ INSERT INTO auth.users (
     'authenticated', 'authenticated', now(), now()
   );
 
+-- auth.identities を作成（signInWithPassword に必須）
+INSERT INTO auth.identities (
+  id, user_id, identity_data, provider, provider_id, last_sign_in_at, created_at, updated_at
+) VALUES
+  (
+    '11111111-1111-1111-1111-111111111111',
+    '11111111-1111-1111-1111-111111111111',
+    '{"sub":"11111111-1111-1111-1111-111111111111","email":"test1@example.com"}',
+    'email', 'test1@example.com', now(), now(), now()
+  ),
+  (
+    '22222222-2222-2222-2222-222222222222',
+    '22222222-2222-2222-2222-222222222222',
+    '{"sub":"22222222-2222-2222-2222-222222222222","email":"test2@example.com"}',
+    'email', 'test2@example.com', now(), now(), now()
+  ),
+  (
+    '33333333-3333-3333-3333-333333333333',
+    '33333333-3333-3333-3333-333333333333',
+    '{"sub":"33333333-3333-3333-3333-333333333333","email":"test3@example.com"}',
+    'email', 'test3@example.com', now(), now(), now()
+  ),
+  (
+    '44444444-4444-4444-4444-444444444444',
+    '44444444-4444-4444-4444-444444444444',
+    '{"sub":"44444444-4444-4444-4444-444444444444","email":"test4@example.com"}',
+    'email', 'test4@example.com', now(), now(), now()
+  );
+
 -- プロフィール名を設定（auth trigger で profile が自動生成される場合に備えて UPDATE）
 UPDATE profiles SET name = '山田 健太' WHERE id = '11111111-1111-1111-1111-111111111111';
 UPDATE profiles SET name = '鈴木 太郎' WHERE id = '22222222-2222-2222-2222-222222222222';
