@@ -1,189 +1,112 @@
 # 作業ステータス
-最終更新: 2026-05-16 (SchoolBoost AI 初回実装完了)
+最終更新: 2026-06-04
 
 ---
 
 ## 現在のフェーズ
 
-Rangers → コード実装完了・外部サービス接続済み・デプロイ済み
-SchoolBoost AI → コード実装完了・ビルド通過 / ともくんがSupabase・Vercel設定待ち（PoC締切：5/31）
+| アプリ | フェーズ | 状態 |
+|--------|---------|------|
+| Rangers | Phase 1: 本番化（6/1〜6/30） | 🚧 進行中 |
+| SchoolBoost AI | PoC | ⏸ ともくんの外部サービス設定待ち |
 
 ---
 
-## 担当分担（確定）
+## 担当分担
 
 | アプリ | 担当 |
 |--------|------|
+| Rangers | ともくん |
+| SchoolBoost AI | ともくん |
 | スイムトラッカー | 長畑さん |
-| レンジャーズ | ともくん |
-| スクールブースト AI | ともくん |
 | スーパー支配人 | 長畑さん |
+
+---
+
+## Rangers 現状サマリー
+
+### 実装済み（PoC 完了）
+- 全 39 画面実装済み（LP 7 / 認証 6 / スイマー 16 / 指導員 12 / 公開その他 1 チーム参加）
+- DB: 15 テーブル・RLS 全設定済み
+- 認証: メール/パスワード + Google OAuth
+- レッスンモデル: CRUD・Stripe Elements 決済
+- セッション・チームモデル: フル実装（チーム管理・招待・タグ・アナウンス・スタンプ・会費）
+- メッセージ（DM）・通知・レビュー・セッションテンプレート
+- LP: AI動画ヒーローセクション・ロゴシステム・favicon 完成
+- Vercel デプロイ: swim-os-seven.vercel.app
+
+### 外部サービス状態
+| サービス | 状態 |
+|---------|------|
+| Supabase Auth/DB | ✅ 本番接続済み |
+| Supabase Storage | ✅ avatars バケット作成済み |
+| Stripe テストモード | ✅ 接続済み |
+| Stripe Webhook | 🔲 Secret 未設定（Vercel 環境変数） |
+| Stripe Connect | 🔲 未実装 |
+| LINE OAuth | 🔲 スタブのみ |
+| Resend | 🔲 未導入 |
+
+---
+
+## 直近でやったこと（2026-06-03〜06-04）
+
+- LP ヒーローセクションを AI動画フルブリード背景に変更（hero-bg.mp4）
+- Rangers ロゴ・ネームロゴを全画面に適用（透過背景版）
+- favicon 設定（スイマーロゴ・白背景・105%スケール）
+- 開発プランを全面更新（docs/rangers/development-plan.md）
+  - 39 画面・15 テーブル・13 Server Actions の完全棚卸し
+  - 外部サービス連携状態の明確化
+  - Phase 1〜3 のタスクを現状に合わせて再設計
+- チーム参加フロー実装（`/teams/join/[inviteCode]`）
+  - `app/(public)/teams/join/[inviteCode]/page.tsx` 新規作成（Server Component）
+  - `app/(public)/teams/join/[inviteCode]/join-form.tsx` 新規作成（Client Component）
+  - `actions/teams.ts` に `joinTeamAction()` 追加
+  - `actions/auth.ts` の login / register に invite コード引き継ぎ対応
+  - `app/(auth)/login/page.tsx` / `register/page.tsx` に hidden invite input 追加
+- Stripe Webhook / Stripe Connect / LINE OAuth / Resend を Phase 1 → Phase 2 に移動
+- actions/templates.ts を adminClient に全統一（RLS バイパス）→ テンプレート保存・取得バグ修正
+- デモ用テストデータ（seed.sql）投入済み
+- Supabase Storage avatars バケット作成済み
+- sessions/new をサーバーでテンプレートプリフェッチ → ドロップダウン遅延解消
 
 ---
 
 ## 次にやること
 
-### Rangers UI 改善（完了）
-- [x] mcp-image の動作確認（画像生成テスト）
-- [x] レッスン検索画面：各レッスンカードにイメージ画像を表示
-- [x] 指導員ページ：先生の似顔絵/アバター画像を生成して表示
-- [x] プロフィール画像アップロード機能の実装
-  - ⚠️ Supabase Storage `avatars` バケットの作成が必要（Supabase Dashboard > Storage > New bucket）
-  - Public bucket で作成し、RLSポリシーで自分のみアップロード可能にする
-- [x] ヘッダー修正：ユーザー名テキスト → プロフィール画像（丸アイコン）に変更
+### 優先度 HIGH（6/7 デモ前）
+1. ~~デモ用テストデータ投入（seed.sql 実行）~~ ✅
+2. ~~Supabase Storage `avatars` バケット作成~~ ✅
+3. ~~テストユーザー動作確認（instructor / swimmer1 / swimmer2）~~ ✅
+4. ~~テストチームセッション・カレンダー表示確認~~ ✅
+5. ~~LP ヒーロー動画（本番 URL）再生確認~~ ✅
+6. デモシナリオ最終リハーサル（6/7 当日前）
 
-### SchoolBoost AI（ともくんが手動でやること）
-→ 詳細は `apps/school-boost-ai/docs/setup-browser-tasks.md` を参照
-
-- [ ] Supabase プロジェクト作成（Rangers とは別）
-- [ ] `001_initial_schema.sql` を SQL Editor で実行
-- [ ] admin@hydoor.jp ユーザー作成 + profiles に role='admin' セット
-- [ ] `.env.local` に Supabase URL・anon key を設定
-- [ ] ローカルで `pnpm dev` → PoC フロー（登録→出席→月謝）を確認
-- [ ] Vercel デプロイ（Root Directory: apps/school-boost-ai）
-- [ ] LINE Developers チャネル申請（Phase 2 用・審査に時間かかるので早めに）
-
-### Rangers（完了）
-- [x] Supabase・Stripe・Vercel 接続済み
-- [x] 動作確認完了（レッスン作成 → 予約 → Stripe決済 → 確定）
+### 優先度 MEDIUM（6月中）
+4. キャンセル・返金フロー（ポリシー確定後）
 
 ---
 
 ## 積み残し・ブロッカー
 
-- キャンセルポリシー（Rangers）：長畑さん・長畑さんのお父様・レイカさんと要相談
-- プラットフォーム手数料率（Rangers）：長畑さんと要相談
-- QRコード出席確認の運用方法（SchoolBoost）：要後日確認
-- プッシュ通知 vs LINE通知の方針（SchoolBoost）：長畑さん・長畑さんのお父さん・れいこさん・らいかさんと要相談
+- キャンセルポリシー未確定（長畑さん・長畑さんのお父様・レイカさんと要相談）
+- プラットフォーム手数料率未確定（長畑さんと要相談）
+- lessons / sessions モデルの共存：sessions をメインとして継続（lessons は legacy として Phase 2 以降に整理）← 方針確定済み
+- テストコードなし（Vitest 未導入）
 
 ---
 
-## 環境構築メモ
+## SchoolBoost AI 状態
+
+コード実装・ビルド通過済み。以下の外部サービス設定がともくん側で必要：
+- Supabase プロジェクト作成（Rangers とは別）
+- SQL スキーマ実行（001_initial_schema.sql）
+- Vercel デプロイ（Root Directory: apps/school-boost-ai）
+→ 詳細は `apps/school-boost-ai/docs/setup-browser-tasks.md` 参照
+
+---
+
+## 環境
 
 - リポジトリ: ktomoyuki0227/swim-os（private）
-- モノレポ構成: apps/rangers に Next.js アプリ
-- GitHub CLI: PATH に `C:\Program Files\GitHub CLI` を追加済み（PowerShellプロファイル経由）
-- .env.local.example を apps/rangers/ に配置済み
-
----
-
-## 作業ログ
-
-### 2026-05-16（SchoolBoost AI 初回実装）
-
-**SchoolBoost AI コード実装（完了・ビルド通過）**
-
-- DB スキーマ設計・マイグレーション SQL 作成（001_initial_schema.sql）
-  - テーブル: schools / profiles / members / classes / schedules / enrollments / attendance_records / monthly_fees / grade_levels / grade_histories / announcements / applications
-  - RLS ポリシー・トリガー（updated_at・新規ユーザー自動プロフィール生成）
-  - デモデータ: HYDOOR スクール + 8育成級
-- TypeScript 型定義（types/database.ts）
-- Server Actions（actions/: auth / members / classes / attendance / fees）
-- 管理者向け全ページ実装（14画面）
-- 保護者向けモバイル UI 実装（5画面）
-- shadcn/ui コンポーネント導入（select / dialog / dropdown-menu 等）
-- ビルドエラー修正（parallel route conflict / Zod .issues / Base UI asChild 非対応 / Next.js 16 proxy.ts 移行）
-- ブラウザ手動セットアップガイド作成（docs/setup-browser-tasks.md）
-
----
-
-### 2026-05-16（Rangers UI 改善・バグ修正）
-
-**Rangers コード機能追加（完了）**
-
-- 認証フロー修正: Supabaseメールレート制限エラー調査 → Confirm email OFF で解決
-- 登録後リダイレクト: /register/confirm → /dashboard に変更
-- モックデータ追加: DB空のときサンプルデータを表示（レッスン・予約・ダッシュボード）
-- モックレッスン詳細の404修正
-- 指導員ルートにロールガード追加
-- レッスン一覧にキーワード検索・料金ソート機能追加
-- スイマーの予約キャンセル機能追加
-- 指導員の予約確定機能（pending → confirmed）追加
-- プロフィールページにメール・ロール表示追加
-- Stripe未設定時は決済スキップして予約確定するフォールバック追加
-- 予約ありのレッスン削除ガード追加
-- RLSポリシー修正（指導員が予約ステータスを更新できるように）
-- カスタム404・エラーページ追加
-- ローディングスケルトン追加
-- レッスンの公開・下書き切り替え機能追加
-- 指導員ダッシュボードに今月の売上追加
-- browser-setup-guide.md を現状に合わせて更新
-
-**外部サービス接続（途中）**
-
-- Supabase・Stripe・Vercel・環境変数（STRIPE_WEBHOOK_SECRET以外）: 設定済み
-- Stripe Webhook: 未設定 → 次セッションで再開（「次にやること > 外部サービス接続」参照）
-
----
-
-**Rangers UI 改善（2026-05-16 完了）**
-
-- mcp-image で画像生成（クロール・平泳ぎ・バタフライ・子ども・田中レイ先生・山本カナ先生）
-- レッスン一覧・詳細カードに種別イメージ画像を表示
-- ナビゲーションのユーザー名 → アバターアイコン（画像 or イニシャル）に変更
-- プロフィール画像アップロード UI を実装（Supabase Storage 連携）
-  - ⚠️ Supabase Dashboard で `avatars` バケットの作成が必要（Public）
-- next.config.ts に Supabase Storage リモートパターン追加
-
----
-
-**Rangers コード品質・バグ修正（2026-05-16 完了）**
-
-- `actions/lessons.ts`: parseLessonFormData ヘルパーを updateLesson にも適用（重複除去）
-- `lib/supabase/middleware.ts`: forgot-password・reset-password を isAuthPage に追加（パスワードリセットメールが未ログイン状態で機能しないバグを修正）、`as any` キャスト除去
-- `app/(app)/layout.tsx`: プロフィールなし時にサインアウトしてから /login にリダイレクト（無限ループ防止）
-- `components/lesson/lesson-form.tsx`: defaultScheduledAt をローカルタイムで生成（UTC→JST 9時間ズレを修正）
-- `types/database.ts`: stripe_account_id に将来用途コメントを追加
-- `instructor/dashboard/page.tsx`: Array.isArray 重複を toOne ヘルパーで整理
-
----
-
-### 2026-05-15（2回目）
-
-- Stripe Elements 決済UI実装完了:
-  - @stripe/stripe-js, @stripe/react-stripe-js パッケージ追加
-  - components/booking/checkout-form.tsx: PaymentElement を使った決済フォーム
-  - components/booking/booking-button.tsx: 予約ボタン → Stripe Elements 表示フローに改修
-- トップページ（LP）デザイン強化:
-  - Hero セクション（グラデーション背景 + Wave SVG）
-  - Features セクション（3カード）
-  - How it works セクション（スイマー/指導員別ステップ）
-  - CTA セクション + フッター
-- レスポンシブ対応（モバイルファースト）:
-  - ナビゲーション: ハンバーガーメニュー追加（md 以下で表示）
-  - レッスンフォーム: 2カラム → モバイルで1カラム
-  - 指導員ダッシュボード・レッスン一覧: カードレイアウト改善
-  - 予約履歴: モバイルで縦並びに
-- デモ用テストデータ SQL 作成: supabase/seed.sql
-- 予約成功メッセージ表示追加（bookings ページ ?success=true パラメータ対応）
-- ブラウザ操作ガイド作成: docs/browser-setup-guide.md
-- TypeScript 型チェック + ビルド通過確認
-
-### 2026-05-15（1回目）
-
-- GitHub CLI ログイン完了（gh auth login）
-- GitHub リポジトリ作成（ktomoyuki0227/swim-os、public → private に変更）
-- .gitignore 作成（PDF/PPTX/XLSX を除外）
-- Next.js 16 + Tailwind CSS 4 + shadcn/ui 環境構築完了
-- パッケージ追加: @supabase/supabase-js, @supabase/ssr, stripe, zod
-- Rangers の全ページ・コンポーネント・Server Actions 実装完了:
-  - 型定義: types/database.ts
-  - Supabase クライアント: lib/supabase/（client, server, middleware）
-  - Stripe クライアント: lib/stripe.ts
-  - バリデーション: lib/validations.ts（Zod スキーマ）
-  - 認証: ログイン、新規登録（ロール選択）、Google OAuth コールバック、ミドルウェア
-  - 指導員: ダッシュボード、レッスン管理（CRUD）、予約者一覧
-  - スイマー: レッスン検索・一覧、レッスン詳細、予約フロー、予約履歴
-  - 共通: プロフィール設定、ナビゲーション（ロール別切替）、トップページ
-  - API: Stripe Webhook ルート（payment_intent.succeeded / failed）
-- DB スキーマ SQL 作成（supabase/migrations/）:
-  - 00001_initial_schema.sql: profiles, lessons, bookings + Auth トリガー
-  - 00002_rls_policies.sql: RLS ポリシー
-- TypeScript 型チェック通過（エラーなし）
-
-### 2026-05-13
-
-- ミーティング完了
-- Rangers・SchoolBoost AI の全ドキュメント整備・ブラッシュアップ完了
-- SchoolBoost AI：スクラッチ方針確定、マルチテナント（school_id）設計追加、AI差別化を明記
-- 開発順序を決定：Rangers 先行 → SchoolBoost AI（LINE 審査待ち期間を並行活用）
+- モノレポ: apps/rangers / apps/school-boost-ai
+- デプロイ先: swim-os-seven.vercel.app（Rangers）

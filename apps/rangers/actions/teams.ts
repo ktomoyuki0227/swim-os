@@ -221,7 +221,7 @@ export async function getTeamMembers(teamId: string) {
 
   const { data, error } = await admin
     .from("team_members")
-    .select("*, swimmer:profiles(id, name, avatar_url)")
+    .select("*, swimmer:profiles(id, name, avatar_url, furigana, gender, birthday, address, emergency_contact, emergency_contact_name, emergency_contact_relation, masters_registered, masters_number, jsa_registered, jsa_number)")
     .eq("team_id", teamId)
     .eq("status", "active")
     .order("joined_at", { ascending: true })

@@ -39,6 +39,20 @@ export async function updateProfile(
   const specialties = formData.getAll("specialties") as string[]
   const targetAges = formData.getAll("target_ages") as string[]
 
+  // スイマー向けフィールド
+  const furigana = (formData.get("furigana") as string | null) || null
+  const gender = (formData.get("gender") as string | null) || null
+  const birthday = (formData.get("birthday") as string | null) || null
+  const address = (formData.get("address") as string | null) || null
+  const emergency_contact = (formData.get("emergency_contact") as string | null) || null
+  const emergency_contact_name = (formData.get("emergency_contact_name") as string | null) || null
+  const emergency_contact_relation = (formData.get("emergency_contact_relation") as string | null) || null
+  const swimwear_size = (formData.get("swimwear_size") as string | null) || null
+  const masters_registered = formData.get("masters_registered") === "true"
+  const masters_number = (formData.get("masters_number") as string | null) || null
+  const jsa_registered = formData.get("jsa_registered") === "true"
+  const jsa_number = (formData.get("jsa_number") as string | null) || null
+
   const { error } = await supabase
     .from("profiles")
     .update({
@@ -49,6 +63,18 @@ export async function updateProfile(
       prefecture: prefecture || null,
       specialties: specialties.length > 0 ? specialties : [],
       target_ages: targetAges.length > 0 ? targetAges : [],
+      furigana,
+      gender,
+      birthday,
+      address,
+      emergency_contact,
+      emergency_contact_name,
+      emergency_contact_relation,
+      swimwear_size,
+      masters_registered,
+      masters_number,
+      jsa_registered,
+      jsa_number,
     })
     .eq("id", user.id)
 

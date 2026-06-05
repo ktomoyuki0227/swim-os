@@ -1,4 +1,4 @@
-export type UserRole = "swimmer" | "instructor" | "admin"
+export type UserRole = "member" | "admin"
 
 export type LessonStatus = "draft" | "published" | "cancelled"
 
@@ -23,6 +23,19 @@ export interface Profile {
   review_count: number
   stripe_account_id: string | null
   created_at: string
+  // スイマー向けフィールド（マスターズチーム管理）
+  furigana: string | null
+  gender: "male" | "female" | "other" | null
+  birthday: string | null
+  address: string | null
+  emergency_contact: string | null
+  emergency_contact_name: string | null
+  emergency_contact_relation: string | null
+  swimwear_size: string | null
+  masters_registered: boolean
+  masters_number: string | null
+  jsa_registered: boolean
+  jsa_number: string | null
 }
 
 export interface Lesson {
@@ -249,6 +262,9 @@ export interface PracticeSession {
   is_external: boolean
   is_lp_featured: boolean
   competition_fields: CompetitionField[] | null
+  end_at: string | null
+  meeting_point: string | null
+  gender_filter: "all" | "male" | "female"
   session_status: SessionStatus
   status: LessonStatus
   created_at: string

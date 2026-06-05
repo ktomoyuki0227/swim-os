@@ -96,7 +96,7 @@ export default async function SessionDetailPage({ params }: SessionDetailPagePro
       <Card className="border-[#dce3ea]">
         <CardContent className="divide-y divide-[#dce3ea] p-0">
           <div className="flex items-center justify-between px-4 py-3">
-            <span className="text-sm text-[#5c6a7a]">日時</span>
+            <span className="text-sm text-[#5c6a7a]">{session.type === "camp" ? "開始日時" : "日時"}</span>
             <span className="text-sm font-medium text-[#1a2332]">
               {scheduledDate.toLocaleDateString("ja-JP", {
                 year: "numeric",
@@ -108,10 +108,38 @@ export default async function SessionDetailPage({ params }: SessionDetailPagePro
               {scheduledDate.toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" })}
             </span>
           </div>
+          {session.type === "camp" && session.end_at && (
+            <div className="flex items-center justify-between px-4 py-3">
+              <span className="text-sm text-[#5c6a7a]">終了日時</span>
+              <span className="text-sm font-medium text-[#1a2332]">
+                {new Date(session.end_at).toLocaleDateString("ja-JP", {
+                  month: "long",
+                  day: "numeric",
+                  weekday: "short",
+                })}
+                {" "}
+                {new Date(session.end_at).toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" })}
+              </span>
+            </div>
+          )}
           <div className="flex items-center justify-between px-4 py-3">
             <span className="text-sm text-[#5c6a7a]">場所</span>
             <span className="text-sm font-medium text-[#1a2332]">{session.location || "未設定"}</span>
           </div>
+          {session.meeting_point && (
+            <div className="flex items-center justify-between px-4 py-3">
+              <span className="text-sm text-[#5c6a7a]">待ち合わせ場所</span>
+              <span className="text-sm font-medium text-[#1a2332]">{session.meeting_point}</span>
+            </div>
+          )}
+          {session.gender_filter && session.gender_filter !== "all" && (
+            <div className="flex items-center justify-between px-4 py-3">
+              <span className="text-sm text-[#5c6a7a]">対象性別</span>
+              <span className="text-sm font-medium text-[#1a2332]">
+                {session.gender_filter === "male" ? "男性のみ" : "女性のみ"}
+              </span>
+            </div>
+          )}
           <div className="flex items-center justify-between px-4 py-3">
             <span className="text-sm text-[#5c6a7a]">参加費（メンバー）</span>
             <span className="text-sm font-medium text-[#1a2332]">

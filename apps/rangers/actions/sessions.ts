@@ -36,7 +36,10 @@ export async function createSession(teamId: string, data: unknown) {
       content: parsed.data.content || null,
       type: parsed.data.type,
       scheduled_at: new Date(parsed.data.scheduled_at).toISOString(),
+      end_at: parsed.data.end_at ? new Date(parsed.data.end_at).toISOString() : null,
       location: parsed.data.location,
+      meeting_point: parsed.data.meeting_point || null,
+      gender_filter: parsed.data.gender_filter || "all",
       member_price: parsed.data.member_price,
       guest_price: parsed.data.guest_price,
       registration_deadline: parsed.data.registration_deadline
@@ -382,14 +385,32 @@ export async function registerForSession(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
 
-  // セッション情報を取得
-  const { data: session } = await supabase
+  const adminClient = createAdminClient()
+
+  // セッション情報を取得（adminClientでRLS自己参照をバイパス）
+  const { data: session } = await adminClient
     .from("practice_sessions")
     .select("*")
     .eq("id", sessionId)
     .single()
 
   if (!session) return { error: "セッションが見つかりません" }
+
+  // メンバーシップ確認（adminClientでRLSをバイパス）
+  const { data: membership } = await adminClient
+    .from("team_members")
+    .select("id, membership_type, stamp_remaining")
+    .eq("team_id", session.team_id)
+    .eq("swimmer_id", user.id)
+    .eq("status", "active")
+    .single()
+
+  const isMember = !!membership
+
+  // 非外部セッションはチームメンバーのみ参加可
+  if (!session.is_external && !isMember) {
+    return { error: "このチームのメンバーではありません" }
+  }
 
   // 締め切りチェック
   if (session.registration_deadline && new Date(session.registration_deadline) < new Date()) {
@@ -408,17 +429,6 @@ export async function registerForSession(
       return { error: "定員に達しています" }
     }
   }
-
-  // メンバーか確認
-  const { data: membership } = await supabase
-    .from("team_members")
-    .select("id, membership_type, stamp_remaining")
-    .eq("team_id", session.team_id)
-    .eq("swimmer_id", user.id)
-    .eq("status", "active")
-    .single()
-
-  const isMember = !!membership
 
   // ポイントカード残数チェック
   if (paymentMethod === "point_card") {

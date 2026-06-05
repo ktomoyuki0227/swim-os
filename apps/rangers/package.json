@@ -9,6 +9,8 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@remotion/bundler": "4.0.470",
+    "@remotion/renderer": "4.0.470",
     "@stripe/react-stripe-js": "6.3.0",
     "@stripe/stripe-js": "9.5.0",
     "@supabase/ssr": "0.10.3",
@@ -21,6 +23,7 @@
     "radix-ui": "1.4.3",
     "react": "19.2.4",
     "react-dom": "19.2.4",
+    "remotion": "4.0.470",
     "shadcn": "4.7.0",
     "stripe": "22.1.1",
     "tailwind-merge": "3.6.0",

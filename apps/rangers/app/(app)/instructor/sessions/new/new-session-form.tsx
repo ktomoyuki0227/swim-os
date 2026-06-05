@@ -47,7 +47,10 @@ type FormData = {
   title: string
   type: string
   scheduled_at: string
+  end_at: string
   location: string
+  meeting_point: string
+  gender_filter: "all" | "male" | "female"
   description: string
   member_price: string
   guest_price: string
@@ -64,7 +67,10 @@ const DEFAULT_FORM: FormData = {
   title: "",
   type: "practice",
   scheduled_at: "",
+  end_at: "",
   location: "",
+  meeting_point: "",
+  gender_filter: "all",
   description: "",
   member_price: "1000",
   guest_price: "1500",
@@ -225,6 +231,8 @@ export function NewSessionForm({
       title: data.title ?? prev.title,
       type: data.type ?? prev.type,
       location: data.location ?? prev.location,
+      meeting_point: data.meeting_point ?? prev.meeting_point,
+      gender_filter: data.gender_filter ?? prev.gender_filter,
       description: data.description ?? prev.description,
       member_price: data.member_price !== undefined ? String(data.member_price) : prev.member_price,
       guest_price: data.guest_price !== undefined ? String(data.guest_price) : prev.guest_price,
@@ -302,7 +310,10 @@ export function NewSessionForm({
         content: form.content || undefined,
         type: form.type as "practice" | "camp" | "competition" | "event" | "meeting",
         scheduled_at: form.scheduled_at,
+        end_at: form.type === "camp" && form.end_at ? form.end_at : undefined,
         location: form.location,
+        meeting_point: form.meeting_point || undefined,
+        gender_filter: form.gender_filter,
         member_price: parseInt(form.member_price) || 0,
         guest_price: parseInt(form.guest_price) || 0,
         registration_deadline: form.registration_deadline || undefined,
@@ -425,7 +436,25 @@ export function NewSessionForm({
                 </select>
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="scheduled_at">日時 <span className="text-[#E8614D]">*</span></Label>
+                <Label htmlFor="gender_filter">対象性別</Label>
+                <select
+                  id="gender_filter"
+                  value={form.gender_filter}
+                  onChange={(e) => set("gender_filter", e.target.value as "all" | "male" | "female")}
+                  className="h-10 w-full rounded-lg border border-[#dce3ea] bg-white px-3 text-sm text-[#1a2332] focus:outline-none focus:ring-2 focus:ring-[#005F8C]/30"
+                >
+                  <option value="all">全員</option>
+                  <option value="male">男性のみ</option>
+                  <option value="female">女性のみ</option>
+                </select>
+              </div>
+            </div>
+
+            <div className={`grid gap-4 ${form.type === "camp" ? "sm:grid-cols-2" : ""}`}>
+              <div className="space-y-1.5">
+                <Label htmlFor="scheduled_at">
+                  {form.type === "camp" ? "開始日時" : "日時"} <span className="text-[#E8614D]">*</span>
+                </Label>
                 <Input
                   id="scheduled_at"
                   type="datetime-local"
@@ -434,6 +463,18 @@ export function NewSessionForm({
                   className="border-[#dce3ea]"
                 />
               </div>
+              {form.type === "camp" && (
+                <div className="space-y-1.5">
+                  <Label htmlFor="end_at">終了日時</Label>
+                  <Input
+                    id="end_at"
+                    type="datetime-local"
+                    value={form.end_at}
+                    onChange={(e) => set("end_at", e.target.value)}
+                    className="border-[#dce3ea]"
+                  />
+                </div>
+              )}
             </div>
 
             <div className="space-y-1.5">
@@ -443,6 +484,18 @@ export function NewSessionForm({
                 value={form.location}
                 onChange={(e) => set("location", e.target.value)}
                 placeholder="例: ○○市民プール"
+                maxLength={200}
+                className="border-[#dce3ea]"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="meeting_point">待ち合わせ場所</Label>
+              <Input
+                id="meeting_point"
+                value={form.meeting_point}
+                onChange={(e) => set("meeting_point", e.target.value)}
+                placeholder="例: 正面玄関前"
                 maxLength={200}
                 className="border-[#dce3ea]"
               />
@@ -844,13 +897,31 @@ export function NewSessionForm({
                   <span className="text-[#1a2332]">{({"practice": "練習", "camp": "合宿", "competition": "試合", "event": "イベント", "meeting": "ミーティング"} as Record<string, string>)[form.type] || form.type}</span>
                 </div>
                 <div className="flex gap-2">
-                  <span className="w-24 shrink-0 text-[#8d99a8]">日時</span>
+                  <span className="w-24 shrink-0 text-[#8d99a8]">{form.type === "camp" ? "開始日時" : "日時"}</span>
                   <span className="text-[#1a2332]">{form.scheduled_at ? new Date(form.scheduled_at).toLocaleString("ja-JP") : "—"}</span>
                 </div>
+                {form.type === "camp" && form.end_at && (
+                  <div className="flex gap-2">
+                    <span className="w-24 shrink-0 text-[#8d99a8]">終了日時</span>
+                    <span className="text-[#1a2332]">{new Date(form.end_at).toLocaleString("ja-JP")}</span>
+                  </div>
+                )}
                 <div className="flex gap-2">
                   <span className="w-24 shrink-0 text-[#8d99a8]">場所</span>
                   <span className="text-[#1a2332]">{form.location}</span>
                 </div>
+                {form.meeting_point && (
+                  <div className="flex gap-2">
+                    <span className="w-24 shrink-0 text-[#8d99a8]">待ち合わせ</span>
+                    <span className="text-[#1a2332]">{form.meeting_point}</span>
+                  </div>
+                )}
+                {form.gender_filter !== "all" && (
+                  <div className="flex gap-2">
+                    <span className="w-24 shrink-0 text-[#8d99a8]">対象性別</span>
+                    <span className="text-[#1a2332]">{form.gender_filter === "male" ? "男性のみ" : "女性のみ"}</span>
+                  </div>
+                )}
                 {form.description && (
                   <div className="flex gap-2">
                     <span className="w-24 shrink-0 text-[#8d99a8]">説明</span>

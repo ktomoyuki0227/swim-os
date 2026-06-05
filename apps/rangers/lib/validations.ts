@@ -26,6 +26,18 @@ export const lessonSchema = z.object({
 
 export const profileSchema = z.object({
   name: z.string().min(1, "名前を入力してください"),
+  furigana: z.string().optional(),
+  gender: z.enum(["male", "female", "other"]).optional(),
+  birthday: z.string().optional(),
+  address: z.string().optional(),
+  emergency_contact: z.string().optional(),
+  emergency_contact_name: z.string().optional(),
+  emergency_contact_relation: z.string().optional(),
+  swimwear_size: z.string().optional(),
+  masters_registered: z.boolean().optional(),
+  masters_number: z.string().optional(),
+  jsa_registered: z.boolean().optional(),
+  jsa_number: z.string().optional(),
 })
 
 export type LoginInput = z.infer<typeof loginSchema>
@@ -55,7 +67,10 @@ export const sessionSchema = z.object({
   content: z.string().max(5000, "5000文字以内").optional(),
   type: z.enum(["practice", "camp", "competition", "event", "meeting"]).default("practice"),
   scheduled_at: z.string().min(1, "日時を選択してください"),
+  end_at: z.string().optional(),
   location: z.string().min(1, "場所を入力してください").max(200, "200文字以内"),
+  meeting_point: z.string().max(200, "200文字以内").optional(),
+  gender_filter: z.enum(["all", "male", "female"]).default("all"),
   member_price: z.number().int().min(0).default(0),
   guest_price: z.number().int().min(0).default(0),
   registration_deadline: z.string().optional(),
@@ -102,7 +117,10 @@ export const sessionUpdateSchema = z.object({
   content: z.string().max(5000).optional(),
   type: z.enum(["practice", "camp", "competition", "event", "meeting"]).optional(),
   scheduled_at: z.string().optional(),
+  end_at: z.string().optional(),
   location: z.string().min(1).max(200).optional(),
+  meeting_point: z.string().max(200).optional(),
+  gender_filter: z.enum(["all", "male", "female"]).optional(),
   member_price: z.number().int().min(0).optional(),
   guest_price: z.number().int().min(0).optional(),
   registration_deadline: z.string().optional(),
