@@ -1,11 +1,9 @@
 "use client"
 
-import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { logout } from "@/actions/auth"
 
 interface NavigationProps {
   hasAdminTeams: boolean
@@ -103,12 +101,6 @@ export function Navigation({ hasAdminTeams, userName, avatarUrl, unreadCount = 0
   const pathname = usePathname()
   const isInAdminSection = pathname.startsWith("/instructor")
   const links = isInAdminSection ? adminLinks : memberLinks
-  const [menuOpen, setMenuOpen] = useState(false)
-
-  useEffect(() => {
-    setMenuOpen(false)
-  }, [pathname])
-
   const initials = userName
     .split(/\s+/)
     .map((n) => n[0])
@@ -206,81 +198,9 @@ export function Navigation({ hasAdminTeams, userName, avatarUrl, unreadCount = 0
               )}
             </Link>
 
-            {/* Mobile hamburger */}
-            <button
-              type="button"
-              className="flex h-9 w-9 items-center justify-center rounded-lg text-[#5c6a7a] hover:bg-[#f2f7fa] md:hidden"
-              onClick={() => setMenuOpen((v) => !v)}
-              aria-label={menuOpen ? "メニューを閉じる" : "メニューを開く"}
-            >
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-                {menuOpen ? (
-                  <>
-                    <line x1="4" y1="4" x2="16" y2="16" />
-                    <line x1="16" y1="4" x2="4" y2="16" />
-                  </>
-                ) : (
-                  <>
-                    <line x1="3" y1="5" x2="17" y2="5" />
-                    <line x1="3" y1="10" x2="17" y2="10" />
-                    <line x1="3" y1="15" x2="17" y2="15" />
-                  </>
-                )}
-              </svg>
-            </button>
           </div>
         </div>
 
-        {/* Mobile dropdown menu */}
-        {menuOpen && (
-          <div className="border-t border-[#dce3ea] bg-white px-4 pb-4 pt-2 md:hidden">
-            <nav className="flex flex-col gap-1">
-              {links.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-                    isActive(link.href)
-                      ? "bg-[#005F8C]/10 text-[#005F8C]"
-                      : "text-[#5c6a7a] hover:bg-[#f2f7fa] hover:text-[#1a2332]"
-                  )}
-                >
-                  {link.icon}
-                  {link.label}
-                </Link>
-              ))}
-            </nav>
-            <div className="mt-3 border-t border-[#dce3ea] pt-3 space-y-1">
-              {hasAdminTeams && !isInAdminSection && (
-                <Link
-                  href="/instructor/dashboard"
-                  onClick={() => setMenuOpen(false)}
-                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-[#005F8C] transition-colors hover:bg-[#f2f7fa]"
-                >
-                  チーム管理へ
-                </Link>
-              )}
-              {isInAdminSection && (
-                <Link
-                  href="/dashboard"
-                  onClick={() => setMenuOpen(false)}
-                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-[#005F8C] transition-colors hover:bg-[#f2f7fa]"
-                >
-                  ホームへ戻る
-                </Link>
-              )}
-              <form action={logout}>
-                <button
-                  type="submit"
-                  className="w-full rounded-lg px-3 py-2.5 text-left text-sm text-[#5c6a7a] transition-colors hover:bg-[#f2f7fa] hover:text-[#1a2332]"
-                >
-                  ログアウト
-                </button>
-              </form>
-            </div>
-          </div>
-        )}
       </header>
 
       {/* Mobile bottom tab bar */}
