@@ -83,7 +83,7 @@ export function MemberList({ teamId, members }: MemberListProps) {
                     {isPointCard ? "回数券" : "レギュラー"}
                   </Badge>
                 </div>
-                {swimmer?.furigana && (
+                {!!swimmer?.furigana && (
                   <p className="mt-0.5 text-xs text-[#8d99a8]">{swimmer.furigana as string}</p>
                 )}
                 {tags.length > 0 && (
@@ -105,20 +105,20 @@ export function MemberList({ teamId, members }: MemberListProps) {
                 )}
                 {/* スイマー詳細情報 */}
                 <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-[#8d99a8]">
-                  {swimmer?.gender && (
+                  {!!swimmer?.gender && (
                     <span>
                       {swimmer.gender === "male" ? "男性" : swimmer.gender === "female" ? "女性" : "その他"}
                     </span>
                   )}
-                  {swimmer?.address && (
+                  {!!swimmer?.address && (
                     <span>{swimmer.address as string}</span>
                   )}
-                  {swimmer?.masters_registered && (
+                  {!!swimmer?.masters_registered && (
                     <span>
                       マスターズ登録済{swimmer.masters_number ? `（${swimmer.masters_number as string}）` : ""}
                     </span>
                   )}
-                  {swimmer?.jsa_registered && (
+                  {!!swimmer?.jsa_registered && (
                     <span>
                       JSA登録済{swimmer.jsa_number ? `（${swimmer.jsa_number as string}）` : ""}
                     </span>
