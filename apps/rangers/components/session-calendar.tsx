@@ -10,6 +10,7 @@ export interface CalendarSession {
   team_name?: string
   session_type?: string
   href: string
+  color?: string
 }
 
 interface Props {
@@ -41,7 +42,6 @@ export function SessionCalendar({ sessions }: Props) {
   const days = generateDays(year, month)
   const todayKey = toDateKey(today)
 
-  // 日付 → セッション配列のマップ
   const sessionMap: Record<string, CalendarSession[]> = {}
   for (const s of sessions) {
     const key = toDateKey(new Date(s.scheduled_at))
@@ -86,7 +86,7 @@ export function SessionCalendar({ sessions }: Props) {
         {WEEKDAYS.map((d, i) => (
           <div
             key={d}
-            className={`py-2 text-center text-[11px] font-medium ${
+            className={`py-1.5 text-center text-[11px] font-medium ${
               i === 5 ? "text-[#005F8C]" : i === 6 ? "text-[#c0392b]" : "text-[#8d99a8]"
             }`}
           >
@@ -96,31 +96,63 @@ export function SessionCalendar({ sessions }: Props) {
       </div>
 
       {/* 日付グリッド */}
-      <div className="grid grid-cols-7">
+      <div className="grid grid-cols-7 divide-x divide-y divide-[#f2f7fa]">
         {days.map((day, i) => {
-          if (!day) return <div key={`blank-${i}`} className="aspect-square" />
+          if (!day) return <div key={`blank-${i}`} className="aspect-square bg-[#fafcfd]" />
           const key = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`
-          const hasSessions = !!sessionMap[key]
+          const daySessions = sessionMap[key] || []
           const isToday = key === todayKey
           const isSelected = key === selectedKey
-          const weekday = i % 7 // 0=月 5=土 6=日
+          const weekday = i % 7
 
           return (
             <button
               key={key}
               onClick={() => setSelectedKey(key === selectedKey ? null : key)}
-              className={`relative flex flex-col items-center justify-center aspect-square gap-0.5 text-sm transition-colors
-                ${isSelected ? "bg-[#005F8C] text-white" : isToday ? "bg-[#f2f7fa]" : "hover:bg-[#f7fafc]"}
-                ${!isSelected && weekday === 5 ? "text-[#005F8C]" : ""}
-                ${!isSelected && weekday === 6 ? "text-[#c0392b]" : ""}
-                ${!isSelected && weekday < 5 ? "text-[#1a2332]" : ""}
+              className={`relative flex flex-col items-center p-0.5 transition-colors
+                ${isSelected ? "bg-[#005F8C]" : isToday ? "bg-[#f0f6fa]" : "bg-white hover:bg-[#f7fafc]"}
               `}
+              style={{ aspectRatio: "1" }}
             >
-              <span className={`text-xs font-medium leading-none ${isToday && !isSelected ? "font-bold" : ""}`}>
+              {/* 日付 */}
+              <span
+                className={`mt-0.5 text-[11px] font-medium leading-none
+                  ${isSelected ? "text-white" : isToday ? "font-bold text-[#005F8C]" : weekday === 5 ? "text-[#005F8C]" : weekday === 6 ? "text-[#c0392b]" : "text-[#1a2332]"}
+                `}
+              >
                 {day}
               </span>
-              {hasSessions && (
-                <span className={`h-1 w-1 rounded-full ${isSelected ? "bg-white/70" : "bg-[#005F8C]"}`} />
+
+              {/* 予定テキストピル */}
+              {daySessions.length > 0 && (
+                <div className="mt-0.5 w-full space-y-[1px] overflow-hidden">
+                  {daySessions.slice(0, 2).map((s) => (
+                    <div
+                      key={s.id}
+                      className="w-full truncate rounded-[2px] px-[2px] text-left"
+                      style={{
+                        backgroundColor: isSelected
+                          ? "rgba(255,255,255,0.22)"
+                          : `${s.color || "#005F8C"}22`,
+                        color: isSelected
+                          ? "rgba(255,255,255,0.9)"
+                          : (s.color || "#005F8C"),
+                        fontSize: "8px",
+                        lineHeight: "11px",
+                      }}
+                    >
+                      {s.title}
+                    </div>
+                  ))}
+                  {daySessions.length > 2 && (
+                    <p
+                      className={`text-center leading-none ${isSelected ? "text-white/50" : "text-[#8d99a8]"}`}
+                      style={{ fontSize: "7px" }}
+                    >
+                      +{daySessions.length - 2}
+                    </p>
+                  )}
+                </div>
               )}
             </button>
           )
@@ -128,11 +160,11 @@ export function SessionCalendar({ sessions }: Props) {
       </div>
 
       {/* 選択日のセッション */}
-      <div className="border-t border-[#dce3ea] min-h-[60px]">
-        {selectedKey && (
+      {selectedKey && (
+        <div className="border-t border-[#dce3ea] min-h-[52px]">
           <div className="p-3 space-y-1">
             {selectedSessions.length === 0 ? (
-              <p className="text-xs text-center text-[#8d99a8] py-2">セッションなし</p>
+              <p className="text-xs text-center text-[#8d99a8] py-1">セッションなし</p>
             ) : (
               selectedSessions.map((s) => (
                 <Link
@@ -140,7 +172,12 @@ export function SessionCalendar({ sessions }: Props) {
                   href={s.href}
                   className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-[#f2f7fa] transition-colors"
                 >
-                  <span className={`h-2 w-2 shrink-0 rounded-full ${s.session_type === "competition" ? "bg-[#E8614D]" : "bg-[#005F8C]"}`} />
+                  <span
+                    className="h-2 w-2 shrink-0 rounded-full"
+                    style={{
+                      backgroundColor: s.color || (s.session_type === "competition" ? "#E8614D" : "#005F8C"),
+                    }}
+                  />
                   <div className="min-w-0">
                     <p className="truncate text-xs font-medium text-[#1a2332]">{s.title}</p>
                     <p className="text-[10px] text-[#8d99a8]">
@@ -152,8 +189,8 @@ export function SessionCalendar({ sessions }: Props) {
               ))
             )}
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   )
 }

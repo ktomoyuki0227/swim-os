@@ -5,27 +5,30 @@ import { useRef } from "react"
 
 interface Props {
   defaultValue?: string
+  tab?: string
 }
 
-export function SearchBar({ defaultValue = "" }: Props) {
+export function SearchBar({ defaultValue = "", tab = "sessions" }: Props) {
   const router = useRouter()
   const inputRef = useRef<HTMLInputElement>(null)
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    const value = inputRef.current?.value || ""
-    const url = value ? `/search?location=${encodeURIComponent(value)}` : "/search"
-    router.push(url)
+    const q = inputRef.current?.value.trim() || ""
+    const params = new URLSearchParams({ tab })
+    if (q) params.set("q", q)
+    router.push(`/search?${params.toString()}`)
   }
+
+  const placeholder = tab === "teams" ? "チーム名で検索..." : "場所やキーワードで検索..."
 
   return (
     <form onSubmit={handleSubmit} className="flex gap-2">
       <input
         ref={inputRef}
         type="text"
-        name="location"
         defaultValue={defaultValue}
-        placeholder="場所で検索..."
+        placeholder={placeholder}
         className="flex-1 rounded-full border border-[#dce3ea] bg-white px-4 py-2.5 text-sm text-[#1a2332] focus:outline-none focus:ring-2 focus:ring-[#005F8C]/30"
       />
       <button

@@ -336,6 +336,25 @@ export async function joinTeamAction(
   redirect(`/teams/${result.data.id}`)
 }
 
+export async function getPublicTeams(options?: { q?: string }) {
+  const admin = createAdminClient()
+
+  let query = admin
+    .from("teams")
+    .select("id, name, description, avatar_url, coach_id")
+    .eq("status", "active")
+    .order("created_at", { ascending: false })
+    .limit(20)
+
+  if (options?.q) {
+    query = query.ilike("name", `%${options.q}%`)
+  }
+
+  const { data, error } = await query
+  if (error) return { data: [] }
+  return { data: data || [] }
+}
+
 export async function regenerateInviteCode(teamId: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
