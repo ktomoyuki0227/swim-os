@@ -78,7 +78,7 @@ export function SessionTabs({ registeredUpcoming, allUpcoming, pastSessions }: P
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-3">
+        <div className="flex flex-col gap-3">
           {sessions.slice(0, 10).map((session) => (
             <Link key={session.id} href={`/teams/${session.team_id}/sessions/${session.id}`}>
               <Card className="border-[#dce3ea] transition-all hover:border-[#005F8C]">

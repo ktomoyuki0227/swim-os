@@ -148,7 +148,7 @@ export default async function InstructorDashboardPage() {
                 </CardContent>
               </Card>
             ) : (
-              <div className="space-y-3">
+              <div className="flex flex-col gap-3">
                 {upcomingSessions.slice(0, 5).map((session) => {
                   const count = registrationCounts[session.id as string] || 0
                   return (
@@ -204,7 +204,7 @@ export default async function InstructorDashboardPage() {
                   すべて表示 →
                 </Link>
               </div>
-              <div className="space-y-2">
+              <div className="flex flex-col gap-2">
                 {adminTeams.slice(0, 3).map((team: Record<string, unknown>) => (
                   <Link key={team.id as string} href={`/instructor/teams/${team.id}`}>
                     <Card className="border-[#dce3ea] transition-all hover:border-[#005F8C]">

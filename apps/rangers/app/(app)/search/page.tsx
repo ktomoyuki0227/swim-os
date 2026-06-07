@@ -156,7 +156,7 @@ async function TeamResults({ q }: { q: string }) {
   }
 
   return (
-    <div className="space-y-3">
+    <div className="flex flex-col gap-3">
       <p className="text-sm text-[#5c6a7a]">{teams.length}件のチーム</p>
       {teams.map((team: Record<string, unknown>) => (
         <Link key={team.id as string} href={`/teams/${team.id}`}>

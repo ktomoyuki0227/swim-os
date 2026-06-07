@@ -53,7 +53,7 @@ export default async function TeamsPage() {
           </Card>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="flex flex-col gap-3">
           {teams.map((team: Record<string, unknown>) => {
             const isAdmin = team.my_role === "admin"
             return (

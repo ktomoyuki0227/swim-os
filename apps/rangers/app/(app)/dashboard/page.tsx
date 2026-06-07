@@ -236,15 +236,15 @@ export default async function DashboardPage() {
           )}
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          {allTeams.slice(0, 4).map((team) => {
+        <div className="flex gap-3 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {allTeams.slice(0, 8).map((team) => {
             const isAdmin = team.my_role === "admin"
             const color = teamColors[team.id as string]
             const href = isAdmin ? `/instructor/teams/${team.id}` : `/teams/${team.id}`
             const avatarUrl = team.avatar_url as string | null
 
             return (
-              <Link key={team.id as string} href={href}>
+              <Link key={team.id as string} href={href} className="block shrink-0 w-40">
                 <div
                   className="flex h-[72px] overflow-hidden rounded-xl border bg-white transition-all hover:shadow-sm"
                   style={{ borderColor: `${color}40` }}
@@ -284,7 +284,7 @@ export default async function DashboardPage() {
 
           {/* 1チームのみのとき: 「チームを探す」プレースホルダー */}
           {allTeams.length === 1 && (
-            <Link href="/search?tab=teams">
+            <Link href="/search?tab=teams" className="block shrink-0 w-40">
               <div className="flex h-[72px] items-center justify-center rounded-xl border border-dashed border-[#dce3ea] bg-[#f7fafc] transition-colors hover:bg-[#eef3f7]">
                 <div className="flex flex-col items-center gap-1">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8d99a8" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">

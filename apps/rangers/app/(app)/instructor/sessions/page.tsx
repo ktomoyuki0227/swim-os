@@ -82,7 +82,7 @@ export default async function SessionsPage() {
                 </CardContent>
               </Card>
             ) : (
-              <div className="space-y-3">
+              <div className="flex flex-col gap-3">
                 {upcoming.map((session) => {
                   const status = sessionStatusLabel[session.session_status as string] ?? sessionStatusLabel.open
                   return (

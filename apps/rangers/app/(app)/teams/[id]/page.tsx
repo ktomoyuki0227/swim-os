@@ -73,7 +73,7 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
       </div>
 
       {tab === "sessions" && (
-        <div className="space-y-3">
+        <div className="flex flex-col gap-3">
           {sessions.length === 0 ? (
             <Card className="border-[#dce3ea]">
               <CardContent className="py-10 text-center text-sm text-[#5c6a7a]">

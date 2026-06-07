@@ -155,7 +155,7 @@ export default async function TeamDetailPage({ params, searchParams }: TeamDetai
               </CardContent>
             </Card>
           ) : (
-            <div className="space-y-3">
+            <div className="flex flex-col gap-3">
               {sessions.map((session: Record<string, unknown>) => (
                 <Link key={session.id as string} href={`/instructor/sessions/${session.id}`}>
                   <Card className="border-[#dce3ea] transition-all hover:border-[#005F8C]">
