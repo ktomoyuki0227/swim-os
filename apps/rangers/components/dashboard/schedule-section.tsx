@@ -120,7 +120,7 @@ export function ScheduleSection({ sessions, teams }: Props) {
 
       {/* チームフィルターチップ — 2チーム以上のとき表示 */}
       {teams.length > 1 && (
-        <div className="mb-3 flex gap-2 overflow-x-auto pb-0.5">
+        <div className="mb-3 flex gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {teams.map((team) => {
             const checked = selectedTeamIds.has(team.id)
             return (
@@ -153,11 +153,12 @@ export function ScheduleSection({ sessions, teams }: Props) {
         {sorted.length === 0 ? (
           <p className="py-6 text-center text-sm text-[#5c6a7a]">{emptyMessage}</p>
         ) : (
-          <div className="space-y-3">
+          <div className="flex flex-col gap-2">
             {sorted.slice(0, 10).map((session) => (
               <Link
                 key={session.id}
                 href={`/teams/${session.team_id}/sessions/${session.id}`}
+                className="block"
               >
                 <Card className="border-[#dce3ea] transition-all hover:border-[#005F8C]">
                   <CardContent className="flex items-center gap-4 p-4">
