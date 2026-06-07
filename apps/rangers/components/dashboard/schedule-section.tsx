@@ -42,7 +42,9 @@ const SESSION_TYPE_LABELS: Record<string, string> = {
 
 export function ScheduleSection({ sessions, teams }: Props) {
   const [tab, setTab] = useState<Tab>("all")
-  const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null)
+  const [selectedTeamIds, setSelectedTeamIds] = useState<Set<string>>(
+    () => new Set(teams.map((t) => t.id))
+  )
 
   const now = new Date()
 
@@ -54,9 +56,19 @@ export function ScheduleSection({ sessions, teams }: Props) {
     return true
   })
 
-  const filtered = selectedTeamId
-    ? tabFiltered.filter((s) => s.team_id === selectedTeamId)
-    : tabFiltered
+  const filtered = tabFiltered.filter((s) => selectedTeamIds.has(s.team_id))
+
+  function toggleTeam(teamId: string) {
+    setSelectedTeamIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(teamId)) {
+        next.delete(teamId)
+      } else {
+        next.add(teamId)
+      }
+      return next
+    })
+  }
 
   const sorted = [...filtered].sort((a, b) => {
     if (tab === "past") {
@@ -87,7 +99,7 @@ export function ScheduleSection({ sessions, teams }: Props) {
     "セッションはありません"
 
   return (
-    <section>
+    <section className="min-w-0 max-w-full">
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-base font-semibold text-[#1a2332]">スケジュール</h2>
       </div>
@@ -109,30 +121,27 @@ export function ScheduleSection({ sessions, teams }: Props) {
       {/* チームフィルターチップ — 2チーム以上のとき表示 */}
       {teams.length > 1 && (
         <div className="mb-3 flex gap-2 overflow-x-auto pb-0.5">
-          <button
-            onClick={() => setSelectedTeamId(null)}
-            className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-colors
-              ${selectedTeamId === null
-                ? "bg-[#1a2332] text-white"
-                : "border border-[#dce3ea] bg-white text-[#5c6a7a] hover:border-[#005F8C]"
-              }`}
-          >
-            すべて
-          </button>
-          {teams.map((team) => (
-            <button
-              key={team.id}
-              onClick={() => setSelectedTeamId(selectedTeamId === team.id ? null : team.id)}
-              className="shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-colors"
-              style={
-                selectedTeamId === team.id
-                  ? { backgroundColor: team.color, color: "#fff" }
-                  : { border: `1px solid ${team.color}50`, backgroundColor: `${team.color}12`, color: team.color }
-              }
-            >
-              {team.name}
-            </button>
-          ))}
+          {teams.map((team) => {
+            const checked = selectedTeamIds.has(team.id)
+            return (
+              <button
+                key={team.id}
+                onClick={() => toggleTeam(team.id)}
+                className="shrink-0 flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium transition-colors"
+                style={
+                  checked
+                    ? { border: `1px solid ${team.color}`, backgroundColor: team.color, color: "#fff" }
+                    : { border: `1px solid ${team.color}50`, backgroundColor: `${team.color}08`, color: team.color }
+                }
+              >
+                <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="1" y="1" width="8" height="8" rx="1.5" strokeWidth="1.5" />
+                  {checked && <polyline points="2,5.5 4,7.5 8,3" strokeWidth="2" />}
+                </svg>
+                {team.name}
+              </button>
+            )
+          })}
         </div>
       )}
 
@@ -170,14 +179,14 @@ export function ScheduleSection({ sessions, teams }: Props) {
                     {/* 情報 */}
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-medium text-[#1a2332]">{session.title}</p>
-                      <p className="text-xs text-[#5c6a7a]">
+                      <p className="truncate text-xs text-[#5c6a7a]">
                         {new Date(session.scheduled_at).toLocaleTimeString("ja-JP", {
                           hour: "2-digit",
                           minute: "2-digit",
                         })}
                         {session.location ? ` · ${session.location}` : ""}
                       </p>
-                      <p className="text-xs text-[#8d99a8]">{session.team_name}</p>
+                      <p className="truncate text-xs text-[#8d99a8]">{session.team_name}</p>
                     </div>
                     {/* バッジ */}
                     {tab !== "past" && (

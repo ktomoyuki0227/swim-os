@@ -33,7 +33,7 @@ export default async function AppLayout({
   return (
     <ToastProvider>
       <Navigation hasAdminTeams={hasAdminTeams} userName={profile.name} avatarUrl={profile.avatar_url} />
-      <main className="mx-auto max-w-5xl flex-1 px-4 py-6 pb-24 md:pb-6">{children}</main>
+      <main className="mx-auto w-full max-w-5xl flex-1 overflow-x-hidden px-4 py-6 pb-24 md:pb-6">{children}</main>
     </ToastProvider>
   )
 }

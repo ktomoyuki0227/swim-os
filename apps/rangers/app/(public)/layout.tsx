@@ -12,7 +12,7 @@ export default async function PublicLayout({
   const { data: { user } } = await supabase.auth.getUser()
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen w-full flex-col overflow-x-hidden">
       {/* ヘッダー */}
       <header className="sticky top-0 z-10 border-b border-[#dce3ea] bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">

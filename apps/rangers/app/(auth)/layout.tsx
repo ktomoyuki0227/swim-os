@@ -7,7 +7,7 @@ export default function AuthLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className="min-h-screen bg-[#f2f7fa]">
+    <div className="min-h-screen w-full overflow-x-hidden bg-[#f2f7fa]">
       <header className="sticky top-0 z-10 border-b border-[#dce3ea] bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
         <div className="mx-auto flex h-16 max-w-6xl items-center px-4">
           <Link href="/" className="flex items-center gap-2">
