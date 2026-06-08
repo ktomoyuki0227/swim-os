@@ -467,7 +467,9 @@ export async function cancelRegistration(sessionId: string) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
 
-  const { data: registration } = await supabase
+  const adminClient = createAdminClient()
+
+  const { data: registration } = await adminClient
     .from("session_registrations")
     .select("*, session:practice_sessions(*)")
     .eq("session_id", sessionId)

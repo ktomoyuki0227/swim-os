@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic"
 
 import Link from "next/link"
 import { notFound } from "next/navigation"
+import { createClient } from "@/lib/supabase/server"
 import { getTeam } from "@/actions/teams"
 import { getTeamSessions } from "@/actions/sessions"
 import { getTeamAnnouncements } from "@/actions/announcements"
@@ -17,6 +18,9 @@ interface TeamPageProps {
 export default async function TeamPage({ params, searchParams }: TeamPageProps) {
   const { id } = await params
   const { tab = "sessions" } = await searchParams
+
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
 
   const [teamResult, sessionsResult, announcementsResult] = await Promise.all([
     getTeam(id),
@@ -34,6 +38,19 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
     .sort((a, b) => new Date(a.scheduled_at as string).getTime() - new Date(b.scheduled_at as string).getTime())
   const announcements = (announcementsResult.data || []) as Record<string, unknown>[]
   const unreadCount = announcements.filter((a) => !a.is_read).length
+
+  // 自分の参加済みセッションIDを取得
+  let registeredSessionIds = new Set<string>()
+  if (user && sessions.length > 0) {
+    const sessionIds = sessions.map((s) => s.id as string)
+    const { data: regs } = await supabase
+      .from("session_registrations")
+      .select("session_id")
+      .eq("swimmer_id", user.id)
+      .in("session_id", sessionIds)
+      .is("cancelled_at", null)
+    registeredSessionIds = new Set((regs || []).map((r) => r.session_id))
+  }
 
   const tabs = [
     { id: "sessions", label: `セッション (${sessions.length})` },
@@ -111,12 +128,18 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
                     </div>
                     <Badge
                       className={
-                        session.session_status === "confirmed"
+                        registeredSessionIds.has(session.id as string)
+                          ? "bg-[#eaf7f0] text-[#0f8a4f] border-transparent"
+                          : session.session_status === "confirmed"
                           ? "bg-[#eaf7f0] text-[#0f8a4f] border-transparent"
                           : "bg-[#e8f2f8] text-[#005F8C] border-transparent"
                       }
                     >
-                      {session.session_status === "confirmed" ? "確定" : "受付中"}
+                      {registeredSessionIds.has(session.id as string)
+                        ? "参加予定"
+                        : session.session_status === "confirmed"
+                        ? "確定"
+                        : "受付中"}
                     </Badge>
                   </CardContent>
                 </Card>
