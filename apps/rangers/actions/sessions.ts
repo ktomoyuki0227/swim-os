@@ -443,19 +443,44 @@ export async function registerForSession(
     }
   }
 
-  // 参加登録（この時点では決済しない）
-  const { error } = await supabase.from("session_registrations").insert({
-    session_id: sessionId,
-    swimmer_id: user.id,
-    is_member: isMember,
-    payment_method: paymentMethod,
-    payment_status: "pending",
-    competition_entry: competitionEntry || null,
-  })
+  // キャンセル済みの既存レコードを確認（再登録ケース）
+  const { data: cancelledReg } = await adminClient
+    .from("session_registrations")
+    .select("id")
+    .eq("session_id", sessionId)
+    .eq("swimmer_id", user.id)
+    .not("cancelled_at", "is", null)
+    .maybeSingle()
 
-  if (error) {
-    if (error.code === "23505") return { error: "既に参加登録済みです" }
-    return { error: "参加登録に失敗しました" }
+  if (cancelledReg) {
+    // 既存レコードを再利用（cancelled_at をリセット）
+    const { error } = await adminClient
+      .from("session_registrations")
+      .update({
+        cancelled_at: null,
+        payment_method: paymentMethod,
+        payment_status: "pending",
+        is_member: isMember,
+        competition_entry: competitionEntry || null,
+      })
+      .eq("id", cancelledReg.id)
+
+    if (error) return { error: "参加登録に失敗しました" }
+  } else {
+    // 新規登録
+    const { error } = await supabase.from("session_registrations").insert({
+      session_id: sessionId,
+      swimmer_id: user.id,
+      is_member: isMember,
+      payment_method: paymentMethod,
+      payment_status: "pending",
+      competition_entry: competitionEntry || null,
+    })
+
+    if (error) {
+      if (error.code === "23505") return { error: "既に参加登録済みです" }
+      return { error: "参加登録に失敗しました" }
+    }
   }
 
   revalidatePath(`/teams`)

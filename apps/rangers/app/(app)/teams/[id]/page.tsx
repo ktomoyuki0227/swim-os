@@ -126,21 +126,25 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
                         ¥{(session.member_price as number || 0).toLocaleString()}
                       </p>
                     </div>
-                    <Badge
-                      className={
-                        registeredSessionIds.has(session.id as string)
-                          ? "bg-[#eaf7f0] text-[#0f8a4f] border-transparent"
-                          : session.session_status === "confirmed"
-                          ? "bg-[#eaf7f0] text-[#0f8a4f] border-transparent"
-                          : "bg-[#e8f2f8] text-[#005F8C] border-transparent"
-                      }
-                    >
-                      {registeredSessionIds.has(session.id as string)
-                        ? "参加予定"
-                        : session.session_status === "confirmed"
-                        ? "確定"
-                        : "受付中"}
-                    </Badge>
+                    {/* 募集状況 + 参加状況の2バッジ */}
+                    <div className="flex shrink-0 flex-col items-end gap-1">
+                      {/* 募集状況バッジ */}
+                      {(() => {
+                        const isDeadlinePassed = session.registration_deadline &&
+                          new Date(session.registration_deadline as string) < new Date()
+                        if (session.session_status === "confirmed") {
+                          return <Badge className="bg-[#eaf7f0] text-[#0f8a4f] border-transparent text-[10px]">開催確定</Badge>
+                        }
+                        if (isDeadlinePassed) {
+                          return <Badge className="bg-[#edf0f4] text-[#5c6a7a] border-transparent text-[10px]">締切済</Badge>
+                        }
+                        return <Badge className="bg-[#e8f2f8] text-[#005F8C] border-transparent text-[10px]">受付中</Badge>
+                      })()}
+                      {/* 参加状況バッジ（登録済みのみ表示） */}
+                      {registeredSessionIds.has(session.id as string) && (
+                        <Badge className="bg-[#eaf7f0] text-[#0f8a4f] border-transparent text-[10px]">参加予定</Badge>
+                      )}
+                    </div>
                   </CardContent>
                 </Card>
               </Link>
