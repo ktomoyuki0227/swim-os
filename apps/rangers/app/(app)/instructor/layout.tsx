@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation"
-import { createClient } from "@/lib/supabase/server"
+import { createClient, createAdminClient } from "@/lib/supabase/server"
 
 export default async function InstructorLayout({
   children,
@@ -13,8 +13,9 @@ export default async function InstructorLayout({
     redirect("/login")
   }
 
-  // チーム管理者かどうかを team_members で判定（profile.role に依存しない）
-  const { data: adminMemberships } = await supabase
+  // adminClient でRLSをバイパスしてチーム管理者かどうかを判定
+  const adminClient = createAdminClient()
+  const { data: adminMemberships } = await adminClient
     .from("team_members")
     .select("id")
     .eq("swimmer_id", user.id)

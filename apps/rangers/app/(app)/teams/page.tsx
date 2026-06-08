@@ -63,8 +63,12 @@ export default async function TeamsPage() {
               >
                 <Card className="border-[#dce3ea] transition-all hover:border-[#005F8C]">
                   <CardContent className="flex items-center gap-4 p-4">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#005F8C]/10 text-lg font-bold text-[#005F8C]">
-                      {(team.name as string)?.[0] || "T"}
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-[#005F8C]/10 text-lg font-bold text-[#005F8C]">
+                      {(team.avatar_url as string | null) ? (
+                        <img src={team.avatar_url as string} alt={team.name as string} className="h-full w-full object-cover" />
+                      ) : (
+                        (team.name as string)?.[0] || "T"
+                      )}
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
