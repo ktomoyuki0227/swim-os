@@ -74,27 +74,25 @@ export default function NewTeamPage() {
 
       {/* ステップインジケーター */}
       <div className="flex items-center gap-2">
-        {([1, 2] as const).map((s, i) => (
-          <>
-            <div
-              key={s}
-              className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold transition-colors ${
-                step >= s
-                  ? "bg-[#005F8C] text-white"
-                  : "bg-[#edf0f4] text-[#5c6a7a]"
-              }`}
-            >
-              {s}
-            </div>
-            {i === 0 && (
-              <div
-                className={`h-0.5 flex-1 transition-colors ${
-                  step === 2 ? "bg-[#005F8C]" : "bg-[#dce3ea]"
-                }`}
-              />
-            )}
-          </>
-        ))}
+        <div
+          className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold transition-colors ${
+            "bg-[#005F8C] text-white"
+          }`}
+        >
+          1
+        </div>
+        <div
+          className={`h-0.5 flex-1 transition-colors ${
+            step === 2 ? "bg-[#005F8C]" : "bg-[#dce3ea]"
+          }`}
+        />
+        <div
+          className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold transition-colors ${
+            step === 2 ? "bg-[#005F8C] text-white" : "bg-[#edf0f4] text-[#5c6a7a]"
+          }`}
+        >
+          2
+        </div>
       </div>
 
       {/* Step 1: 基本情報 */}
