@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic"
 
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { getTeam, getTeamMembers } from "@/actions/teams"
+import { getTeam, getTeamMembers, getTeamFeeStats } from "@/actions/teams"
 import { getTeamSessions } from "@/actions/sessions"
 import { getTeamAnnouncements } from "@/actions/announcements"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -21,11 +21,12 @@ export default async function TeamDetailPage({ params, searchParams }: TeamDetai
   const { id } = await params
   const { tab = "members" } = await searchParams
 
-  const [teamResult, membersResult, sessionsResult, announcementsResult] = await Promise.all([
+  const [teamResult, membersResult, sessionsResult, announcementsResult, feeStatsResult] = await Promise.all([
     getTeam(id),
     getTeamMembers(id),
     getTeamSessions(id),
     getTeamAnnouncements(id),
+    getTeamFeeStats(id),
   ])
 
   if (teamResult.error || !teamResult.data) {
@@ -43,6 +44,12 @@ export default async function TeamDetailPage({ params, searchParams }: TeamDetai
     body: string | null
     created_at: string
   }>
+
+  const feeStats = feeStatsResult.data ?? { paid: 0, failed: 0, unpaid: 0, total: 0 }
+  const hasAnnualFee = feeStats.total > 0
+  const paidPct = hasAnnualFee ? (feeStats.paid / feeStats.total) * 100 : 0
+  const failedPct = hasAnnualFee ? (feeStats.failed / feeStats.total) * 100 : 0
+  const unpaidPct = hasAnnualFee ? (feeStats.unpaid / feeStats.total) * 100 : 0
 
   const tabs = [
     { id: "members", label: `メンバー (${members.length})` },
@@ -89,10 +96,29 @@ export default async function TeamDetailPage({ params, searchParams }: TeamDetai
         </Card>
         <Card className="border-[#dce3ea]">
           <CardContent className="px-3 py-2.5 text-center">
-            <p className="truncate text-xl font-bold text-[#005F8C]">
-              {team.annual_fee_amount ? `¥${team.annual_fee_amount.toLocaleString()}` : "-"}
-            </p>
-            <p className="text-xs text-[#5c6a7a]">年会費</p>
+            <div className="relative mx-auto flex items-center justify-center" style={{ width: 44, height: 44 }}>
+              <svg width="44" height="44" viewBox="0 0 36 36">
+                <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#edf0f4" strokeWidth="4" />
+                {paidPct > 0 && (
+                  <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#0f8a4f" strokeWidth="4"
+                    strokeDasharray={`${paidPct} 100`} strokeDashoffset="25" />
+                )}
+                {failedPct > 0 && (
+                  <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#d97706" strokeWidth="4"
+                    strokeDasharray={`${failedPct} 100`} strokeDashoffset={25 - paidPct} />
+                )}
+                {unpaidPct > 0 && (
+                  <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#dc2626" strokeWidth="4"
+                    strokeDasharray={`${unpaidPct} 100`} strokeDashoffset={25 - paidPct - failedPct} />
+                )}
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-[8px] font-bold leading-none text-[#1a2332]">
+                  {hasAnnualFee ? `${feeStats.paid}/${feeStats.total}` : "-"}
+                </span>
+              </div>
+            </div>
+            <p className="text-xs text-[#5c6a7a]">支払い状況</p>
           </CardContent>
         </Card>
       </div>

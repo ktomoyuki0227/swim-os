@@ -384,3 +384,32 @@ export async function regenerateInviteCode(teamId: string) {
   revalidatePath(`/instructor/teams/${teamId}`)
   return { success: true }
 }
+
+export async function getTeamFeeStats(teamId: string) {
+  const admin = createAdminClient()
+  const currentYear = new Date().getFullYear().toString()
+
+  const { count: totalCount } = await admin
+    .from("team_members")
+    .select("id", { count: "exact", head: true })
+    .eq("team_id", teamId)
+    .eq("status", "active")
+    .eq("membership_type", "regular")
+
+  const total = totalCount ?? 0
+  if (total === 0) return { data: { paid: 0, failed: 0, unpaid: 0, total: 0 } }
+
+  const { data: fees } = await admin
+    .from("membership_fees")
+    .select("status")
+    .eq("team_id", teamId)
+    .eq("type", "annual")
+    .eq("period", currentYear)
+
+  const feeList = fees || []
+  const paid = feeList.filter((f) => f.status === "paid").length
+  const failed = feeList.filter((f) => f.status === "failed").length
+  const unpaid = total - paid - failed
+
+  return { data: { paid, failed, unpaid, total } }
+}
