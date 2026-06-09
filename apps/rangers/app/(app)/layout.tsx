@@ -17,10 +17,7 @@ export default async function AppLayout({
     redirect("/login")
   }
 
-  const [{ data: profile }, { data: adminMemberships }] = await Promise.all([
-    supabase.from("profiles").select("name, avatar_url").eq("id", user.id).single(),
-    supabase.from("team_members").select("id").eq("swimmer_id", user.id).eq("role", "admin").limit(1),
-  ])
+  const { data: profile } = await supabase.from("profiles").select("name, avatar_url").eq("id", user.id).single()
 
   if (!profile) {
     // プロフィールなし = 不完全なアカウント状態。サインアウトしてから /login に戻す
@@ -28,11 +25,9 @@ export default async function AppLayout({
     redirect("/login")
   }
 
-  const hasAdminTeams = (adminMemberships?.length ?? 0) > 0
-
   return (
     <ToastProvider>
-      <Navigation hasAdminTeams={hasAdminTeams} userName={profile.name} avatarUrl={profile.avatar_url} />
+      <Navigation userName={profile.name} avatarUrl={profile.avatar_url} />
       <main className="mx-auto w-full max-w-5xl flex-1 overflow-x-hidden px-4 py-6 pb-24 md:pb-6">{children}</main>
     </ToastProvider>
   )

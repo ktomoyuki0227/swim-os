@@ -6,63 +6,12 @@ import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 
 interface NavigationProps {
-  hasAdminTeams: boolean
   userName: string
   avatarUrl?: string | null
   unreadCount?: number
 }
 
-const adminLinks = [
-  {
-    href: "/instructor/dashboard",
-    label: "ダッシュボード",
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="3" y="3" width="7" height="7" rx="1" />
-        <rect x="14" y="3" width="7" height="7" rx="1" />
-        <rect x="3" y="14" width="7" height="7" rx="1" />
-        <rect x="14" y="14" width="7" height="7" rx="1" />
-      </svg>
-    ),
-  },
-  {
-    href: "/instructor/sessions",
-    label: "セッション",
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="3" y="4" width="18" height="18" rx="2" />
-        <line x1="16" y1="2" x2="16" y2="6" />
-        <line x1="8" y1="2" x2="8" y2="6" />
-        <line x1="3" y1="10" x2="21" y2="10" />
-      </svg>
-    ),
-  },
-  {
-    href: "/instructor/teams",
-    label: "チーム",
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-        <circle cx="9" cy="7" r="4" />
-        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-      </svg>
-    ),
-  },
-  {
-    href: "/instructor/fees",
-    label: "会費",
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="2" y="5" width="20" height="14" rx="2" />
-        <line x1="2" y1="10" x2="22" y2="10" />
-        <circle cx="12" cy="15" r="1.5" fill="currentColor" stroke="none" />
-      </svg>
-    ),
-  },
-]
-
-const memberLinks = [
+const navLinks = [
   {
     href: "/dashboard",
     label: "ホーム",
@@ -95,12 +44,21 @@ const memberLinks = [
       </svg>
     ),
   },
+  {
+    href: "/payments",
+    label: "お支払い",
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="2" y="5" width="20" height="14" rx="2" />
+        <line x1="2" y1="10" x2="22" y2="10" />
+        <circle cx="12" cy="15" r="1.5" fill="currentColor" stroke="none" />
+      </svg>
+    ),
+  },
 ]
 
-export function Navigation({ hasAdminTeams, userName, avatarUrl, unreadCount = 0 }: NavigationProps) {
+export function Navigation({ userName, avatarUrl, unreadCount = 0 }: NavigationProps) {
   const pathname = usePathname()
-  const isInAdminSection = pathname.startsWith("/instructor")
-  const links = isInAdminSection ? adminLinks : memberLinks
   const initials = userName
     .split(/\s+/)
     .map((n) => n[0])
@@ -117,14 +75,14 @@ export function Navigation({ hasAdminTeams, userName, avatarUrl, unreadCount = 0
       <header className="sticky top-0 z-20 border-b border-[#dce3ea] bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
         <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4">
           {/* Logo */}
-          <Link href={isInAdminSection ? "/instructor/dashboard" : "/dashboard"} className="flex items-center gap-2">
+          <Link href="/dashboard" className="flex items-center gap-2">
             <Image src="/rangers-logo-背景透過.png" alt="Rangers logo" width={40} height={40} className="object-contain" />
             <Image src="/rangers-name-背景透過.png" alt="Rangers" width={110} height={30} className="object-contain" />
           </Link>
 
           {/* Desktop nav links */}
           <nav className="hidden items-center gap-1 md:flex">
-            {links.map((link) => (
+            {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
@@ -140,33 +98,8 @@ export function Navigation({ hasAdminTeams, userName, avatarUrl, unreadCount = 0
             ))}
           </nav>
 
-          {/* Right side: Team management link (if applicable) + Bell + Avatar */}
+          {/* Right side: Bell + Avatar */}
           <div className="flex items-center gap-2">
-            {/* チーム管理へ — メンバー画面にいて管理チームがある場合のみ表示 */}
-            {hasAdminTeams && !isInAdminSection && (
-              <Link
-                href="/instructor/dashboard"
-                className="hidden items-center gap-1.5 rounded-full border border-[#dce3ea] bg-white px-3 py-1.5 text-xs font-medium text-[#5c6a7a] transition-colors hover:border-[#005F8C] hover:text-[#005F8C] md:flex"
-              >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" />
-                </svg>
-                チーム管理
-              </Link>
-            )}
-            {/* チームメンバー表示に戻る — 管理画面にいる場合のみ表示 */}
-            {isInAdminSection && (
-              <Link
-                href="/dashboard"
-                className="hidden items-center gap-1.5 rounded-full border border-[#dce3ea] bg-white px-3 py-1.5 text-xs font-medium text-[#5c6a7a] transition-colors hover:border-[#005F8C] hover:text-[#005F8C] md:flex"
-              >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" />
-                </svg>
-                ホーム
-              </Link>
-            )}
-
             {/* Notification bell */}
             <Link
               href="/notifications"
@@ -197,16 +130,14 @@ export function Navigation({ hasAdminTeams, userName, avatarUrl, unreadCount = 0
                 initials
               )}
             </Link>
-
           </div>
         </div>
-
       </header>
 
       {/* Mobile bottom tab bar */}
       <nav className="fixed bottom-0 left-0 right-0 z-20 border-t border-[#dce3ea] bg-white md:hidden">
         <div className="flex">
-          {links.map((link) => (
+          {navLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
