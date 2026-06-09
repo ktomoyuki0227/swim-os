@@ -57,14 +57,6 @@ export default async function TeamDetailPage({ params, searchParams }: TeamDetai
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <div className="mb-1 flex items-center gap-3">
-            <Link href="/instructor/teams" className="text-sm text-[#5c6a7a] hover:text-[#1a2332]">
-              ← チーム一覧
-            </Link>
-            <Link href="/instructor/teams/new" className="text-sm text-[#005F8C] hover:text-[#004E73]">
-              + チームを追加
-            </Link>
-          </div>
           <h1 className="text-2xl font-bold text-[#1a2332]">{team.name}</h1>
           {team.description && (
             <p className="mt-1 text-sm text-[#5c6a7a]">{team.description}</p>
@@ -82,22 +74,22 @@ export default async function TeamDetailPage({ params, searchParams }: TeamDetai
       </div>
 
       {/* Stats row */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-2">
         <Card className="border-[#dce3ea]">
-          <CardContent className="p-4 text-center">
-            <p className="text-2xl font-bold text-[#005F8C]">{members.length}</p>
+          <CardContent className="px-3 py-2.5 text-center">
+            <p className="text-xl font-bold text-[#005F8C]">{members.length}</p>
             <p className="text-xs text-[#5c6a7a]">メンバー</p>
           </CardContent>
         </Card>
         <Card className="border-[#dce3ea]">
-          <CardContent className="p-4 text-center">
-            <p className="text-2xl font-bold text-[#005F8C]">{sessions.length}</p>
+          <CardContent className="px-3 py-2.5 text-center">
+            <p className="text-xl font-bold text-[#005F8C]">{sessions.length}</p>
             <p className="text-xs text-[#5c6a7a]">予定セッション</p>
           </CardContent>
         </Card>
         <Card className="border-[#dce3ea]">
-          <CardContent className="p-4 text-center">
-            <p className="text-2xl font-bold text-[#005F8C]">
+          <CardContent className="px-3 py-2.5 text-center">
+            <p className="truncate text-xl font-bold text-[#005F8C]">
               {team.annual_fee_amount ? `¥${team.annual_fee_amount.toLocaleString()}` : "-"}
             </p>
             <p className="text-xs text-[#5c6a7a]">年会費</p>
