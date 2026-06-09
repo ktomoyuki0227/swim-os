@@ -83,39 +83,45 @@ export default async function TeamDetailPage({ params, searchParams }: TeamDetai
       {/* Stats row */}
       <div className="grid grid-cols-3 gap-2">
         <Card className="border-[#dce3ea]">
-          <CardContent className="px-3 py-2.5 text-center">
-            <p className="text-xl font-bold text-[#005F8C]">{members.length}</p>
+          <CardContent className="flex h-full flex-col items-center px-3 pb-2 pt-3">
+            <div className="flex flex-1 items-center justify-center">
+              <p className="text-xl font-bold text-[#005F8C]">{members.length}</p>
+            </div>
             <p className="text-xs text-[#5c6a7a]">メンバー</p>
           </CardContent>
         </Card>
         <Card className="border-[#dce3ea]">
-          <CardContent className="px-3 py-2.5 text-center">
-            <p className="text-xl font-bold text-[#005F8C]">{sessions.length}</p>
+          <CardContent className="flex h-full flex-col items-center px-3 pb-2 pt-3">
+            <div className="flex flex-1 items-center justify-center">
+              <p className="text-xl font-bold text-[#005F8C]">{sessions.length}</p>
+            </div>
             <p className="text-xs text-[#5c6a7a]">予定セッション</p>
           </CardContent>
         </Card>
         <Card className="border-[#dce3ea]">
-          <CardContent className="px-3 py-2.5 text-center">
-            <div className="relative mx-auto flex items-center justify-center" style={{ width: 44, height: 44 }}>
-              <svg width="44" height="44" viewBox="0 0 36 36">
-                <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#edf0f4" strokeWidth="4" />
-                {paidPct > 0 && (
-                  <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#0f8a4f" strokeWidth="4"
-                    strokeDasharray={`${paidPct} 100`} strokeDashoffset="25" />
-                )}
-                {failedPct > 0 && (
-                  <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#d97706" strokeWidth="4"
-                    strokeDasharray={`${failedPct} 100`} strokeDashoffset={25 - paidPct} />
-                )}
-                {unpaidPct > 0 && (
-                  <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#dc2626" strokeWidth="4"
-                    strokeDasharray={`${unpaidPct} 100`} strokeDashoffset={25 - paidPct - failedPct} />
-                )}
-              </svg>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-[8px] font-bold leading-none text-[#1a2332]">
-                  {hasAnnualFee ? `${feeStats.paid}/${feeStats.total}` : "-"}
-                </span>
+          <CardContent className="flex h-full flex-col items-center px-3 pb-2 pt-3">
+            <div className="flex flex-1 items-center justify-center">
+              <div className="relative flex items-center justify-center" style={{ width: 44, height: 44 }}>
+                <svg width="44" height="44" viewBox="0 0 36 36">
+                  <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#edf0f4" strokeWidth="4" />
+                  {paidPct > 0 && (
+                    <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#0f8a4f" strokeWidth="4"
+                      strokeDasharray={`${paidPct} 100`} strokeDashoffset="25" />
+                  )}
+                  {failedPct > 0 && (
+                    <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#d97706" strokeWidth="4"
+                      strokeDasharray={`${failedPct} 100`} strokeDashoffset={25 - paidPct} />
+                  )}
+                  {unpaidPct > 0 && (
+                    <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#dc2626" strokeWidth="4"
+                      strokeDasharray={`${unpaidPct} 100`} strokeDashoffset={25 - paidPct - failedPct} />
+                  )}
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-[8px] font-bold leading-none text-[#1a2332]">
+                    {hasAnnualFee ? `${feeStats.paid}/${feeStats.total}` : "-"}
+                  </span>
+                </div>
               </div>
             </div>
             <p className="text-xs text-[#5c6a7a]">支払い状況</p>
