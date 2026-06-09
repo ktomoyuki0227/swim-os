@@ -389,27 +389,55 @@ export async function getTeamFeeStats(teamId: string) {
   const admin = createAdminClient()
   const currentYear = new Date().getFullYear().toString()
 
-  const { count: totalCount } = await admin
+  // 全アクティブメンバーを取得
+  const { data: members } = await admin
     .from("team_members")
-    .select("id", { count: "exact", head: true })
+    .select("swimmer_id, membership_type")
     .eq("team_id", teamId)
     .eq("status", "active")
-    .eq("membership_type", "regular")
 
-  const total = totalCount ?? 0
-  if (total === 0) return { data: { paid: 0, failed: 0, unpaid: 0, total: 0 } }
+  if (!members || members.length === 0) {
+    return { data: { paid: 0, subscriptionUnpaid: 0, stampUnpaid: 0, total: 0 } }
+  }
 
-  const { data: fees } = await admin
-    .from("membership_fees")
-    .select("status")
-    .eq("team_id", teamId)
-    .eq("type", "annual")
-    .eq("period", currentYear)
+  const total = members.length
+  const regularIds = members.filter((m) => m.membership_type === "regular").map((m) => m.swimmer_id)
+  const pointCardIds = members.filter((m) => m.membership_type === "point_card").map((m) => m.swimmer_id)
 
-  const feeList = fees || []
-  const paid = feeList.filter((f) => f.status === "paid").length
-  const failed = feeList.filter((f) => f.status === "failed").length
-  const unpaid = total - paid - failed
+  // 継続課金メンバー（regular）: 今年の年会費ステータスを確認
+  let subscriptionPaid = 0
+  let subscriptionUnpaid = 0
+  if (regularIds.length > 0) {
+    const { data: fees } = await admin
+      .from("membership_fees")
+      .select("swimmer_id, status")
+      .eq("team_id", teamId)
+      .eq("type", "annual")
+      .eq("period", currentYear)
+      .in("swimmer_id", regularIds)
 
-  return { data: { paid, failed, unpaid, total } }
+    const feeMap = new Map((fees || []).map((f) => [f.swimmer_id, f.status]))
+    subscriptionPaid = regularIds.filter((id) => feeMap.get(id) === "paid").length
+    subscriptionUnpaid = regularIds.length - subscriptionPaid
+  }
+
+  // 回数券メンバー（point_card）: 未払い・失敗の購入記録があるか確認
+  let stampPaid = 0
+  let stampUnpaid = 0
+  if (pointCardIds.length > 0) {
+    const { data: unpaidStamps } = await admin
+      .from("stamp_purchases")
+      .select("swimmer_id")
+      .eq("team_id", teamId)
+      .in("status", ["unpaid", "failed"])
+      .in("swimmer_id", pointCardIds)
+
+    const stampUnpaidIds = new Set((unpaidStamps || []).map((s) => s.swimmer_id))
+    stampUnpaid = stampUnpaidIds.size
+    stampPaid = pointCardIds.length - stampUnpaid
+  }
+
+  const paid = subscriptionPaid + stampPaid
+
+  return { data: { paid, subscriptionUnpaid, stampUnpaid, total } }
 }

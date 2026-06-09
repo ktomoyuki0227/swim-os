@@ -45,11 +45,11 @@ export default async function TeamDetailPage({ params, searchParams }: TeamDetai
     created_at: string
   }>
 
-  const feeStats = feeStatsResult.data ?? { paid: 0, failed: 0, unpaid: 0, total: 0 }
-  const hasAnnualFee = feeStats.total > 0
-  const paidPct = hasAnnualFee ? (feeStats.paid / feeStats.total) * 100 : 0
-  const failedPct = hasAnnualFee ? (feeStats.failed / feeStats.total) * 100 : 0
-  const unpaidPct = hasAnnualFee ? (feeStats.unpaid / feeStats.total) * 100 : 0
+  const feeStats = feeStatsResult.data ?? { paid: 0, subscriptionUnpaid: 0, stampUnpaid: 0, total: 0 }
+  const hasFeeStats = feeStats.total > 0
+  const paidPct = hasFeeStats ? (feeStats.paid / feeStats.total) * 100 : 0
+  const subUnpaidPct = hasFeeStats ? (feeStats.subscriptionUnpaid / feeStats.total) * 100 : 0
+  const stampUnpaidPct = hasFeeStats ? (feeStats.stampUnpaid / feeStats.total) * 100 : 0
 
   const tabs = [
     { id: "members", label: `メンバー (${members.length})` },
@@ -83,48 +83,48 @@ export default async function TeamDetailPage({ params, searchParams }: TeamDetai
       {/* Stats row */}
       <div className="grid grid-cols-3 gap-2">
         <Card className="border-[#dce3ea]">
-          <CardContent className="flex h-full flex-col items-center px-3 pb-2 pt-3">
+          <CardContent className="flex h-full flex-col items-center px-3 pb-1.5 pt-2">
             <div className="flex flex-1 items-center justify-center">
-              <p className="text-xl font-bold text-[#005F8C]">{members.length}</p>
+              <p className="text-lg font-bold text-[#005F8C]">{members.length}</p>
             </div>
-            <p className="text-xs text-[#5c6a7a]">メンバー</p>
+            <p className="text-[11px] text-[#5c6a7a]">メンバー</p>
           </CardContent>
         </Card>
         <Card className="border-[#dce3ea]">
-          <CardContent className="flex h-full flex-col items-center px-3 pb-2 pt-3">
+          <CardContent className="flex h-full flex-col items-center px-3 pb-1.5 pt-2">
             <div className="flex flex-1 items-center justify-center">
-              <p className="text-xl font-bold text-[#005F8C]">{sessions.length}</p>
+              <p className="text-lg font-bold text-[#005F8C]">{sessions.length}</p>
             </div>
-            <p className="text-xs text-[#5c6a7a]">予定セッション</p>
+            <p className="text-[11px] text-[#5c6a7a]">予定セッション</p>
           </CardContent>
         </Card>
         <Card className="border-[#dce3ea]">
-          <CardContent className="flex h-full flex-col items-center px-3 pb-2 pt-3">
+          <CardContent className="flex h-full flex-col items-center px-3 pb-1.5 pt-2">
             <div className="flex flex-1 items-center justify-center">
-              <div className="relative flex items-center justify-center" style={{ width: 44, height: 44 }}>
-                <svg width="44" height="44" viewBox="0 0 36 36">
+              <div className="relative flex items-center justify-center" style={{ width: 36, height: 36 }}>
+                <svg width="36" height="36" viewBox="0 0 36 36">
                   <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#edf0f4" strokeWidth="4" />
                   {paidPct > 0 && (
                     <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#0f8a4f" strokeWidth="4"
                       strokeDasharray={`${paidPct} 100`} strokeDashoffset="25" />
                   )}
-                  {failedPct > 0 && (
-                    <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#d97706" strokeWidth="4"
-                      strokeDasharray={`${failedPct} 100`} strokeDashoffset={25 - paidPct} />
-                  )}
-                  {unpaidPct > 0 && (
+                  {subUnpaidPct > 0 && (
                     <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#dc2626" strokeWidth="4"
-                      strokeDasharray={`${unpaidPct} 100`} strokeDashoffset={25 - paidPct - failedPct} />
+                      strokeDasharray={`${subUnpaidPct} 100`} strokeDashoffset={25 - paidPct} />
+                  )}
+                  {stampUnpaidPct > 0 && (
+                    <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#d97706" strokeWidth="4"
+                      strokeDasharray={`${stampUnpaidPct} 100`} strokeDashoffset={25 - paidPct - subUnpaidPct} />
                   )}
                 </svg>
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-[8px] font-bold leading-none text-[#1a2332]">
-                    {hasAnnualFee ? `${feeStats.paid}/${feeStats.total}` : "-"}
+                  <span className="text-[7px] font-bold leading-none text-[#1a2332]">
+                    {hasFeeStats ? `${feeStats.paid}/${feeStats.total}` : "-"}
                   </span>
                 </div>
               </div>
             </div>
-            <p className="text-xs text-[#5c6a7a]">支払い状況</p>
+            <p className="text-[11px] text-[#5c6a7a]">支払い状況</p>
           </CardContent>
         </Card>
       </div>
