@@ -117,16 +117,20 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+/* スクロールバーをすべての要素で非表示（全ブラウザ対応） */
+* {
+  scrollbar-width: none; /* Firefox */
+}
+*::-webkit-scrollbar {
+  display: none; /* Chrome / Safari / Edge */
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
   body {
     @apply bg-background text-foreground;
-    scrollbar-width: none; /* Firefox */
-  }
-  body::-webkit-scrollbar {
-    display: none; /* Chrome / Safari */
   }
   html {
     @apply font-sans;
