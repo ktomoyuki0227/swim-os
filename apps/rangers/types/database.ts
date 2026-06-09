@@ -178,6 +178,8 @@ export type PaymentMethod = "stripe" | "cash" | "point_card"
 export type PaymentStatus = "pending" | "paid" | "failed" | "refunded" | "free"
 export type FeeType = "annual" | "monthly"
 export type FeeStatus = "unpaid" | "paid" | "failed"
+export type StampPaymentStatus = "paid" | "unpaid" | "failed"
+export type StampPaymentMethod = "cash" | "stripe"
 
 export interface Team {
   id: string
@@ -307,6 +309,24 @@ export interface MembershipFee {
 }
 
 export interface MembershipFeeWithProfile extends MembershipFee {
+  swimmer: Pick<Profile, "id" | "name" | "avatar_url">
+}
+
+export interface StampPurchase {
+  id: string
+  team_id: string
+  swimmer_id: string
+  card_count: number
+  stamp_count: number
+  amount: number
+  note: string | null
+  status: StampPaymentStatus
+  payment_method: StampPaymentMethod
+  purchased_at: string
+  created_at: string
+}
+
+export interface StampPurchaseWithProfile extends StampPurchase {
   swimmer: Pick<Profile, "id" | "name" | "avatar_url">
 }
 
