@@ -330,7 +330,7 @@ export function NewSessionForm({
         showToast(result.error, "error")
       } else if (result.data) {
         showToast("セッションを作成しました", "success")
-        router.push(`/instructor/sessions/${result.data.id}`)
+        router.push(`/sessions/${result.data.id}`)
       }
     })
   }
@@ -345,7 +345,7 @@ export function NewSessionForm({
     <div className={`mx-auto space-y-6 ${step === 3 ? "max-w-3xl" : "max-w-xl"} transition-all`}>
       {/* ヘッダー */}
       <div>
-        <Link href="/instructor/sessions" className="text-sm text-[#5c6a7a] hover:text-[#1a2332]">
+        <Link href="/sessions" className="text-sm text-[#5c6a7a] hover:text-[#1a2332]">
           ← セッション管理
         </Link>
         <h1 className="mt-2 text-2xl font-bold text-[#1a2332]">セッションを作成</h1>
@@ -1011,7 +1011,7 @@ export function NewSessionForm({
       {/* ナビゲーションボタン */}
       <div className="flex gap-3">
         {step === 0 ? (
-          <Link href="/instructor/sessions" className="flex-1">
+          <Link href="/sessions" className="flex-1">
             <Button type="button" variant="outline" className="w-full rounded-full border-[#dce3ea] text-[#5c6a7a]" style={{ minHeight: "48px" }}>
               キャンセル
             </Button>

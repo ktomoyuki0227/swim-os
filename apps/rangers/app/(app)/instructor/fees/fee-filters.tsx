@@ -40,7 +40,7 @@ export function FeeFilters({ teams, selectedTeamId, selectedType, selectedPeriod
           {(["annual", "monthly", "stamp_card"] as const).map((type) => (
             <a
               key={type}
-              href={`/instructor/fees?team=${selectedTeamId}&type=${type}${
+              href={`/fees?team=${selectedTeamId}&type=${type}${
                 type !== "stamp_card"
                   ? `&period=${type === "annual" ? now.getFullYear().toString() : `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`}`
                   : ""
@@ -68,7 +68,7 @@ export function FeeFilters({ teams, selectedTeamId, selectedType, selectedPeriod
             defaultValue={selectedPeriod}
             onBlur={(e) => {
               if (e.target.value) {
-                window.location.href = `/instructor/fees?team=${selectedTeamId}&type=${selectedType}&period=${e.target.value}`
+                window.location.href = `/fees?team=${selectedTeamId}&type=${selectedType}&period=${e.target.value}`
               }
             }}
             className="h-9 rounded-lg border border-[#dce3ea] px-3 text-sm text-[#1a2332] focus:outline-none"

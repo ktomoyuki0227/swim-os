@@ -57,7 +57,7 @@ export function EditTeamForm({ team }: EditTeamFormProps) {
       } else {
         showToast("チーム情報を更新しました", "success")
         setTimeout(() => {
-          router.push(`/instructor/teams/${team.id}?tab=settings`)
+          router.push(`/teams/${team.id}?tab=settings`)
         }, 800)
       }
     })
@@ -66,7 +66,7 @@ export function EditTeamForm({ team }: EditTeamFormProps) {
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div className="flex items-center gap-3">
-        <Link href={`/instructor/teams/${team.id}?tab=settings`} className="text-sm text-[#5c6a7a] hover:text-[#1a2332]">
+        <Link href={`/teams/${team.id}?tab=settings`} className="text-sm text-[#5c6a7a] hover:text-[#1a2332]">
           ← 設定に戻る
         </Link>
       </div>
@@ -245,7 +245,7 @@ export function EditTeamForm({ team }: EditTeamFormProps) {
         </Card>
 
         <div className="flex gap-3">
-          <Link href={`/instructor/teams/${team.id}?tab=settings`} className="flex-1">
+          <Link href={`/teams/${team.id}?tab=settings`} className="flex-1">
             <Button
               type="button"
               variant="outline"

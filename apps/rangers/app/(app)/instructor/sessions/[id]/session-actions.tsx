@@ -68,7 +68,7 @@ export function SessionActions({
       setIsDeleting(false)
     } else {
       showToast("セッションを削除しました", "success")
-      router.push("/instructor/sessions")
+      router.push("/sessions")
     }
   }
 
