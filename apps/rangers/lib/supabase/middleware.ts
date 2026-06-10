@@ -42,18 +42,6 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname.startsWith("/forgot-password") ||
     request.nextUrl.pathname.startsWith("/reset-password")
 
-  // リフレッシュトークンが無効など認証エラーが発生した場合は
-  // 古い sb- Cookie をすべて削除してから /login へリダイレクト
-  // ただし認証ページ・公開ページにいる場合はループを避けるためスキップ
-  if (authError && !isAuthPage) {
-    const loginUrl = new URL("/login", request.url)
-    const redirectResponse = NextResponse.redirect(loginUrl)
-    request.cookies.getAll()
-      .filter((c) => c.name.startsWith("sb-"))
-      .forEach((c) => redirectResponse.cookies.delete(c.name))
-    return redirectResponse
-  }
-
   const isApiRoute = request.nextUrl.pathname.startsWith("/api")
 
   // ログインなしで閲覧できる公開ページ
@@ -67,6 +55,18 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname.startsWith("/register/sent") ||
     request.nextUrl.pathname.startsWith("/onboarding/complete") ||
     request.nextUrl.pathname.startsWith("/teams/join")
+
+  // リフレッシュトークンが無効など認証エラーが発生した場合は
+  // 古い sb- Cookie をすべて削除してから /login へリダイレクト
+  // ただし認証ページ・公開ページにいる場合はループを避けるためスキップ
+  if (authError && !isAuthPage && !isPublicPage) {
+    const loginUrl = new URL("/login", request.url)
+    const redirectResponse = NextResponse.redirect(loginUrl)
+    request.cookies.getAll()
+      .filter((c) => c.name.startsWith("sb-"))
+      .forEach((c) => redirectResponse.cookies.delete(c.name))
+    return redirectResponse
+  }
 
   if (!user && !isAuthPage && !isApiRoute && !isPublicPage) {
     const url = request.nextUrl.clone()
