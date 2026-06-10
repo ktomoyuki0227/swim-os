@@ -1,15 +1,10 @@
-import { notFound } from "next/navigation"
-import { getTeam } from "@/actions/teams"
-import { EditTeamForm } from "./edit-team-form"
+import { redirect } from "next/navigation"
 
-interface EditTeamPageProps {
+interface Props {
   params: Promise<{ id: string }>
 }
 
-export default async function EditTeamPage({ params }: EditTeamPageProps) {
+export default async function InstructorTeamEditRedirect({ params }: Props) {
   const { id } = await params
-  const result = await getTeam(id)
-  if (result.error || !result.data) notFound()
-
-  return <EditTeamForm team={result.data} />
+  redirect(`/teams/${id}/edit`)
 }

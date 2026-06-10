@@ -90,7 +90,7 @@ export default async function DashboardPage() {
             </Link>
 
             {/* チームを作る */}
-            <Link href="/instructor/teams/new">
+            <Link href="/teams/new">
               <div className="flex h-full flex-col gap-3 rounded-xl border border-[#dce3ea] bg-white p-4 transition-all hover:border-[#0f8a4f] hover:shadow-sm">
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#0f8a4f]/10">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0f8a4f" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -240,7 +240,7 @@ export default async function DashboardPage() {
           {allTeams.slice(0, 8).map((team) => {
             const isAdmin = team.my_role === "admin"
             const color = teamColors[team.id as string]
-            const href = isAdmin ? `/instructor/teams/${team.id}` : `/teams/${team.id}`
+            const href = `/teams/${team.id}`
             const avatarUrl = team.avatar_url as string | null
 
             return (

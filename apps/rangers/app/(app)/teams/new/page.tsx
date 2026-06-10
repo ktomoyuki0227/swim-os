@@ -57,7 +57,7 @@ export default function NewTeamPage() {
       if (result.error) {
         showToast(result.error, "error")
       } else if (result.data) {
-        router.push(`/instructor/teams/${result.data.id}`)
+        router.push(`/teams/${result.data.id}`)
       }
     })
   }

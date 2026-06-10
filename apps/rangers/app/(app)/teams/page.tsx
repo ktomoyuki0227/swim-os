@@ -11,10 +11,7 @@ export default async function TeamsPage() {
 
   if (teams && teams.length === 1) {
     const team = teams[0] as Record<string, unknown>
-    const dest = team.my_role === "admin"
-      ? `/instructor/teams/${team.id as string}`
-      : `/teams/${team.id as string}`
-    redirect(dest)
+    redirect(`/teams/${team.id as string}`)
   }
 
   return (
@@ -59,7 +56,7 @@ export default async function TeamsPage() {
             return (
               <Link
                 key={team.id as string}
-                href={isAdmin ? `/instructor/teams/${team.id}` : `/teams/${team.id}`}
+                href={`/teams/${team.id}`}
               >
                 <Card className="border-[#dce3ea] transition-all hover:border-[#005F8C]">
                   <CardContent className="flex items-center gap-4 p-4">
