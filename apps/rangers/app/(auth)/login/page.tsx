@@ -3,6 +3,7 @@
 import { useState, useActionState, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import Image from "next/image"
+import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -58,6 +59,13 @@ function LoginForm() {
 
           <p className="text-center text-xs text-[#8d99a8]">
             ログインすることで、利用規約とプライバシーポリシーに同意したものとみなされます。
+          </p>
+
+          <p className="text-center text-sm text-[#5c6a7a]">
+            アカウントをお持ちでない方は{" "}
+            <Link href="/register" className="font-medium text-[#005F8C] hover:underline">
+              新規登録
+            </Link>
           </p>
 
           {/* デモ用ログイン（開発・テスト用） */}

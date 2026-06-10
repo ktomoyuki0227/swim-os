@@ -89,7 +89,7 @@ export default async function HomePage() {
                     無料会員登録
                   </Button>
                 </Link>
-                <Link href="/coach-recruit">
+                <Link href="/login">
                   <Button
                     size="lg"
                     variant="outline"
@@ -506,7 +506,7 @@ export default async function HomePage() {
                 無料会員登録
               </Button>
             </Link>
-            <Link href="/coach-recruit">
+            <Link href="/login">
               <Button
                 size="lg"
                 variant="outline"

@@ -71,7 +71,7 @@ export default function CoachRecruitPage() {
             個別レッスン予約プラットフォームです。
             チームの会員さんにさらに深く寄り添う指導の場を提供します。
           </p>
-          <Link href="/register">
+          <Link href="/login">
             <Button size="lg" className="bg-blue-500 px-10 hover:bg-blue-600">
               コーチとして登録する
             </Button>
@@ -205,7 +205,7 @@ export default function CoachRecruitPage() {
           <p className="mb-8 text-blue-100">
             登録・審査は無料です。審査通過後にレッスンを公開できます。
           </p>
-          <Link href="/register">
+          <Link href="/login">
             <Button
               size="lg"
               variant="outline"
