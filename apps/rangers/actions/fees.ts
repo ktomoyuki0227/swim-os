@@ -108,7 +108,7 @@ export async function updateFeeStatus(
 
   if (error) return { error: "支払い状況の更新に失敗しました" }
 
-  revalidatePath("/instructor/fees")
+  revalidatePath("/fees")
   return { success: true }
 }
 
@@ -161,7 +161,7 @@ export async function bulkCreateFees(
 
   if (error) return { error: "会費の一括生成に失敗しました" }
 
-  revalidatePath("/instructor/fees")
+  revalidatePath("/fees")
   return { success: true, count: fees.length }
 }
 

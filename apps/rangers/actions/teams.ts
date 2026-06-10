@@ -48,7 +48,7 @@ export async function createTeam(data: unknown) {
     return { error: "チームの作成に失敗しました" }
   }
 
-  revalidatePath("/instructor/teams")
+  revalidatePath("/teams")
   return { data: team }
 }
 
@@ -76,7 +76,7 @@ export async function updateTeam(teamId: string, data: unknown) {
 
   if (error) return { error: "チーム情報の更新に失敗しました" }
 
-  revalidatePath(`/instructor/teams/${teamId}`)
+  revalidatePath(`/teams/${teamId}`)
   return { success: true }
 }
 
@@ -258,7 +258,7 @@ export async function updateMemberTags(teamMemberId: string, tags: string[]) {
 
   if (error) return { error: "タグの更新に失敗しました" }
 
-  revalidatePath("/instructor/teams")
+  revalidatePath("/teams")
   return { success: true }
 }
 
@@ -284,7 +284,7 @@ export async function removeMember(teamId: string, swimmerId: string) {
 
   if (error) return { error: "メンバーの削除に失敗しました" }
 
-  revalidatePath(`/instructor/teams/${teamId}`)
+  revalidatePath(`/teams/${teamId}`)
   return { success: true }
 }
 
@@ -319,7 +319,7 @@ export async function updateMembershipType(
 
   if (error) return { error: "会員種別の変更に失敗しました" }
 
-  revalidatePath("/instructor/teams")
+  revalidatePath("/teams")
   return { success: true }
 }
 
@@ -381,7 +381,7 @@ export async function regenerateInviteCode(teamId: string) {
 
   if (updateError) return { error: "招待コードの更新に失敗しました" }
 
-  revalidatePath(`/instructor/teams/${teamId}`)
+  revalidatePath(`/teams/${teamId}`)
   return { success: true }
 }
 

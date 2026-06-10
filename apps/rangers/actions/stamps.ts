@@ -104,6 +104,6 @@ export async function addStampPurchase(
     .eq("team_id", teamId)
     .eq("swimmer_id", swimmerId)
 
-  revalidatePath("/instructor/fees")
+  revalidatePath("/fees")
   return { success: true }
 }

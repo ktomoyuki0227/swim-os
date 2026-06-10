@@ -39,7 +39,7 @@ export async function createAnnouncement(teamId: string, data: unknown) {
 
   if (error) return { error: "お知らせの作成に失敗しました" }
 
-  revalidatePath("/instructor/teams")
+  revalidatePath("/teams")
   return { data: announcement }
 }
 

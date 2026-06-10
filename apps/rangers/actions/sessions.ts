@@ -63,7 +63,7 @@ export async function createSession(teamId: string, data: unknown) {
   // セッション作成のお知らせを自動生成
   await createSessionAnnouncement(teamId, session, "created")
 
-  revalidatePath("/instructor/sessions")
+  revalidatePath("/sessions")
   return { data: session }
 }
 
@@ -98,7 +98,7 @@ export async function updateSession(sessionId: string, data: unknown) {
 
   if (error) return { error: "セッションの更新に失敗しました" }
 
-  revalidatePath("/instructor/sessions")
+  revalidatePath("/sessions")
   return { success: true }
 }
 
@@ -143,7 +143,7 @@ export async function deleteSession(sessionId: string) {
 
   if (error) return { error: "セッションの削除に失敗しました" }
 
-  revalidatePath("/instructor/sessions")
+  revalidatePath("/sessions")
   return { success: true }
 }
 
@@ -224,7 +224,7 @@ export async function confirmSession(sessionId: string) {
   // お知らせを配信
   await createSessionAnnouncement(session.team_id, session, "confirmed")
 
-  revalidatePath("/instructor/sessions")
+  revalidatePath("/sessions")
   return { success: true }
 }
 
@@ -304,7 +304,7 @@ export async function cancelSession(sessionId: string) {
   // お知らせを配信
   await createSessionAnnouncement(session.team_id, session, "cancelled")
 
-  revalidatePath("/instructor/sessions")
+  revalidatePath("/sessions")
   return { success: true }
 }
 
@@ -605,7 +605,7 @@ export async function retryPayment(registrationId: string) {
       .eq("id", registrationId)
   }
 
-  revalidatePath("/instructor/sessions")
+  revalidatePath("/sessions")
   return { success: true }
 }
 

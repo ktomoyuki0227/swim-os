@@ -55,7 +55,7 @@ export async function saveAsTemplate(sessionId: string, name: string) {
 
   if (error) return { error: "テンプレートの保存に失敗しました" }
 
-  revalidatePath("/instructor/sessions")
+  revalidatePath("/sessions")
   return { data: template }
 }
 
@@ -147,7 +147,7 @@ export async function updateTemplate(
 
   if (error) return { error: "テンプレートの更新に失敗しました" }
 
-  revalidatePath("/instructor/sessions")
+  revalidatePath("/sessions")
   return { success: true }
 }
 
@@ -181,7 +181,7 @@ export async function deleteTemplate(templateId: string) {
 
   if (error) return { error: "テンプレートの削除に失敗しました" }
 
-  revalidatePath("/instructor/sessions")
+  revalidatePath("/sessions")
   return { success: true }
 }
 
@@ -246,6 +246,6 @@ export async function createSessionFromTemplate(
 
   if (error) return { error: "セッションの作成に失敗しました" }
 
-  revalidatePath("/instructor/sessions")
+  revalidatePath("/sessions")
   return { data: session }
 }
