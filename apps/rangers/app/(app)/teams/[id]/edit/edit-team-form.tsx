@@ -1,9 +1,10 @@
 "use client"
 
-import { useTransition } from "react"
+import { useState, useTransition, useRef } from "react"
 import { useRouter } from "next/navigation"
+import Image from "next/image"
 import Link from "next/link"
-import { updateTeam } from "@/actions/teams"
+import { updateTeam, uploadTeamImage } from "@/actions/teams"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -15,6 +16,11 @@ interface Team {
   id: string
   name: string
   description: string | null
+  avatar_url: string | null
+  cover_image_url: string | null
+  is_recruiting: boolean
+  status: string | null
+  activity_area: string | null
   default_member_price: number | null
   default_guest_price: number | null
   annual_fee_amount: number | null
@@ -33,24 +39,92 @@ export function EditTeamForm({ team }: EditTeamFormProps) {
   const [isPending, startTransition] = useTransition()
   const { showToast } = useToast()
 
+  const [isRecruiting, setIsRecruiting] = useState(team.is_recruiting)
+  const [isActive, setIsActive] = useState((team.status ?? "active") === "active")
+
+  // Image state
+  const [coverPreview, setCoverPreview] = useState<string | null>(team.cover_image_url)
+  const [iconPreview, setIconPreview] = useState<string | null>(team.avatar_url)
+  const [coverFile, setCoverFile] = useState<File | null>(null)
+  const [iconFile, setIconFile] = useState<File | null>(null)
+  const [imageUploading, setImageUploading] = useState(false)
+
+  const coverInputRef = useRef<HTMLInputElement>(null)
+  const iconInputRef = useRef<HTMLInputElement>(null)
+
+  const handleFileSelect = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    type: "cover" | "icon"
+  ) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const preview = URL.createObjectURL(file)
+    if (type === "cover") {
+      setCoverFile(file)
+      setCoverPreview(preview)
+    } else {
+      setIconFile(file)
+      setIconPreview(preview)
+    }
+  }
+
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const form = e.currentTarget
     const data = new FormData(form)
 
-    const payload = {
-      name: data.get("name") as string,
-      description: (data.get("description") as string) || undefined,
-      default_member_price: parseInt(data.get("default_member_price") as string) || 0,
-      default_guest_price: parseInt(data.get("default_guest_price") as string) || 0,
-      annual_fee_amount: parseInt(data.get("annual_fee_amount") as string) || undefined,
-      monthly_fee_amount: parseInt(data.get("monthly_fee_amount") as string) || undefined,
-      cancellation_days: parseInt(data.get("cancellation_days") as string) || 3,
-      point_card_count: parseInt(data.get("point_card_count") as string) || 10,
-      point_card_price: parseInt(data.get("point_card_price") as string) || undefined,
-    }
-
     startTransition(async () => {
+      let newCoverUrl: string | undefined
+      let newIconUrl: string | undefined
+
+      // Upload any newly-selected images first
+      setImageUploading(true)
+      try {
+        if (coverFile) {
+          const fd = new FormData()
+          fd.append("file", coverFile)
+          fd.append("type", "cover")
+          const result = await uploadTeamImage(fd)
+          if (result.error) {
+            showToast(result.error, "error")
+            return
+          }
+          newCoverUrl = result.url
+        }
+
+        if (iconFile) {
+          const fd = new FormData()
+          fd.append("file", iconFile)
+          fd.append("type", "icon")
+          const result = await uploadTeamImage(fd)
+          if (result.error) {
+            showToast(result.error, "error")
+            return
+          }
+          newIconUrl = result.url
+        }
+      } finally {
+        setImageUploading(false)
+      }
+
+      const payload: Record<string, unknown> = {
+        name: data.get("name") as string,
+        description: (data.get("description") as string) || undefined,
+        activity_area: (data.get("activity_area") as string) || undefined,
+        is_recruiting: isRecruiting,
+        status: isActive ? "active" : "inactive",
+        default_member_price: parseInt(data.get("default_member_price") as string) || 0,
+        default_guest_price: parseInt(data.get("default_guest_price") as string) || 0,
+        annual_fee_amount: parseInt(data.get("annual_fee_amount") as string) || undefined,
+        monthly_fee_amount: parseInt(data.get("monthly_fee_amount") as string) || undefined,
+        cancellation_days: parseInt(data.get("cancellation_days") as string) || 3,
+        point_card_count: parseInt(data.get("point_card_count") as string) || 10,
+        point_card_price: parseInt(data.get("point_card_price") as string) || undefined,
+      }
+
+      if (newCoverUrl) payload.cover_image_url = newCoverUrl
+      if (newIconUrl) payload.avatar_url = newIconUrl
+
       const result = await updateTeam(team.id, payload)
       if (result.error) {
         showToast(result.error, "error")
@@ -102,6 +176,150 @@ export function EditTeamForm({ team }: EditTeamFormProps) {
                 rows={3}
                 maxLength={2000}
                 className="resize-none border-[#dce3ea]"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="activity_area">
+                活動エリア
+                <span className="ml-1 text-xs font-normal text-[#8d99a8]">（任意）</span>
+              </Label>
+              <Input
+                id="activity_area"
+                name="activity_area"
+                defaultValue={team.activity_area ?? ""}
+                placeholder="例: 東京都渋谷区"
+                maxLength={100}
+                className="border-[#dce3ea]"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>メンバー募集</Label>
+              <div className="flex items-center gap-3 rounded-xl border border-[#dce3ea] p-3">
+                <button
+                  type="button"
+                  onClick={() => setIsRecruiting((v) => !v)}
+                  className={`relative h-6 w-10 rounded-full transition-colors ${
+                    isRecruiting ? "bg-[#005F8C]" : "bg-[#dce3ea]"
+                  }`}
+                  style={{ minHeight: "24px" }}
+                >
+                  <span
+                    className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
+                      isRecruiting ? "translate-x-4" : "translate-x-0"
+                    }`}
+                  />
+                </button>
+                <span className="text-sm font-medium text-[#1a2332]">
+                  {isRecruiting ? "メンバー募集中" : "募集停止中"}
+                </span>
+                <span className="ml-auto text-xs text-[#8d99a8]">公開ページに表示されます</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* 画像設定 */}
+        <Card className="border-[#dce3ea]">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base font-semibold text-[#1a2332]">画像設定</CardTitle>
+            <p className="text-xs text-[#5c6a7a]">変更したい画像のみ選択してください。</p>
+          </CardHeader>
+          <CardContent className="space-y-5">
+            {/* カバー画像 */}
+            <div className="space-y-2">
+              <Label>チームイメージ画像（ヒーロー）</Label>
+              <div
+                className="relative w-full overflow-hidden rounded-xl border border-dashed border-[#dce3ea] bg-[#f5f8fa] cursor-pointer hover:border-[#005F8C]/50 transition-colors"
+                style={{ aspectRatio: "16/5" }}
+                onClick={() => coverInputRef.current?.click()}
+              >
+                {coverPreview ? (
+                  <Image
+                    src={coverPreview}
+                    alt="カバー画像"
+                    fill
+                    className="object-cover"
+                  />
+                ) : (
+                  <div className="flex h-full w-full flex-col items-center justify-center gap-1">
+                    <span className="text-2xl">🖼</span>
+                    <p className="text-xs text-[#8d99a8]">クリックして画像を選択</p>
+                    <p className="text-[10px] text-[#b0bac6]">JPEG / PNG / WebP・5MB以下</p>
+                  </div>
+                )}
+              </div>
+              <input
+                ref={coverInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={(e) => handleFileSelect(e, "cover")}
+              />
+              {coverPreview && (
+                <button
+                  type="button"
+                  className="text-xs text-[#8d99a8] hover:text-[#5c6a7a]"
+                  onClick={() => {
+                    setCoverFile(null)
+                    setCoverPreview(null)
+                  }}
+                >
+                  × 削除
+                </button>
+              )}
+            </div>
+
+            {/* チームアイコン */}
+            <div className="space-y-2">
+              <Label>チームアイコン（丸アイコン）</Label>
+              <div className="flex items-center gap-4">
+                <div
+                  className="relative h-20 w-20 shrink-0 cursor-pointer overflow-hidden rounded-full border border-dashed border-[#dce3ea] bg-[#f5f8fa] hover:border-[#005F8C]/50 transition-colors"
+                  onClick={() => iconInputRef.current?.click()}
+                >
+                  {iconPreview ? (
+                    <Image
+                      src={iconPreview}
+                      alt="アイコン"
+                      fill
+                      className="object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full flex-col items-center justify-center">
+                      <span className="text-2xl">🏊</span>
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1">
+                  <button
+                    type="button"
+                    onClick={() => iconInputRef.current?.click()}
+                    className="rounded-lg border border-[#dce3ea] px-3 py-2 text-sm text-[#5c6a7a] hover:border-[#005F8C]/50 transition-colors"
+                    style={{ minHeight: "44px" }}
+                  >
+                    画像を選択
+                  </button>
+                  <p className="mt-1 text-[10px] text-[#b0bac6]">JPEG / PNG / WebP・5MB以下</p>
+                  {iconPreview && (
+                    <button
+                      type="button"
+                      className="mt-1 text-xs text-[#8d99a8] hover:text-[#5c6a7a]"
+                      onClick={() => {
+                        setIconFile(null)
+                        setIconPreview(null)
+                      }}
+                    >
+                      × 削除
+                    </button>
+                  )}
+                </div>
+              </div>
+              <input
+                ref={iconInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={(e) => handleFileSelect(e, "icon")}
               />
             </div>
           </CardContent>
@@ -244,6 +462,38 @@ export function EditTeamForm({ team }: EditTeamFormProps) {
           </CardContent>
         </Card>
 
+        {/* チームのステータス */}
+        <Card className="border-[#dce3ea]">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base font-semibold text-[#1a2332]">チームのステータス</CardTitle>
+            <p className="text-xs text-[#5c6a7a]">非アクティブにすると公開ページから非表示になります。</p>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-3 rounded-xl border border-[#dce3ea] p-3">
+              <button
+                type="button"
+                onClick={() => setIsActive((v) => !v)}
+                className={`relative h-6 w-10 rounded-full transition-colors ${
+                  isActive ? "bg-[#005F8C]" : "bg-[#dce3ea]"
+                }`}
+                style={{ minHeight: "24px" }}
+              >
+                <span
+                  className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
+                    isActive ? "translate-x-4" : "translate-x-0"
+                  }`}
+                />
+              </button>
+              <span className="text-sm font-medium text-[#1a2332]">
+                {isActive ? "アクティブ" : "非アクティブ"}
+              </span>
+              <span className="ml-auto text-xs text-[#8d99a8]">
+                {isActive ? "公開中" : "非公開"}
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+
         <div className="flex gap-3">
           <Link href={`/teams/${team.id}?tab=settings`} className="flex-1">
             <Button
@@ -257,11 +507,11 @@ export function EditTeamForm({ team }: EditTeamFormProps) {
           </Link>
           <Button
             type="submit"
-            disabled={isPending}
+            disabled={isPending || imageUploading}
             className="flex-1 rounded-full bg-[#005F8C] hover:bg-[#004E73]"
             style={{ minHeight: "48px" }}
           >
-            {isPending ? "保存中..." : "変更を保存"}
+            {isPending || imageUploading ? "保存中..." : "変更を保存"}
           </Button>
         </div>
       </form>
