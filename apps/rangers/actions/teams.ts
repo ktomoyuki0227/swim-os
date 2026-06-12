@@ -6,6 +6,34 @@ import { redirect } from "next/navigation"
 import { teamSchema, teamUpdateSchema } from "@/lib/validations"
 import type { MembershipType } from "@/types/database"
 
+export async function uploadTeamImage(
+  formData: FormData
+): Promise<{ url?: string; error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "ログインが必要です" }
+
+  const file = formData.get("file") as File | null
+  if (!file || file.size === 0) return { error: "ファイルを選択してください" }
+
+  const allowedTypes = ["image/jpeg", "image/png", "image/webp"]
+  if (!allowedTypes.includes(file.type)) return { error: "JPEG・PNG・WebP形式のみアップロードできます" }
+  if (file.size > 5 * 1024 * 1024) return { error: "ファイルサイズは5MB以下にしてください" }
+
+  const type = (formData.get("type") as string) || "cover" // "cover" | "icon"
+  const ext = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg"
+  const filePath = `${user.id}/${type}-${Date.now()}.${ext}`
+
+  const { error: uploadError } = await supabase.storage
+    .from("teams")
+    .upload(filePath, file, { upsert: true })
+
+  if (uploadError) return { error: "画像のアップロードに失敗しました" }
+
+  const { data: urlData } = supabase.storage.from("teams").getPublicUrl(filePath)
+  return { url: `${urlData.publicUrl}?t=${Date.now()}` }
+}
+
 export async function createTeam(data: unknown) {
   const parsed = teamSchema.safeParse(data)
   if (!parsed.success) return { error: "入力値が不正です" }
@@ -20,6 +48,10 @@ export async function createTeam(data: unknown) {
       coach_id: user.id,
       name: parsed.data.name,
       description: parsed.data.description || null,
+      avatar_url: parsed.data.avatar_url || null,
+      cover_image_url: parsed.data.cover_image_url || null,
+      is_recruiting: parsed.data.is_recruiting ?? true,
+      activity_area: parsed.data.activity_area || null,
       default_member_price: parsed.data.default_member_price,
       default_guest_price: parsed.data.default_guest_price,
       annual_fee_amount: parsed.data.annual_fee_amount || null,
@@ -60,14 +92,14 @@ export async function updateTeam(teamId: string, data: unknown) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
 
-  const { data: adminMembership } = await supabase
+  const { data: adminMembership, error: adminError } = await supabase
     .from("team_members")
     .select("id")
     .eq("team_id", teamId)
     .eq("swimmer_id", user.id)
     .eq("role", "admin")
     .single()
-  if (!adminMembership) return { error: "権限がありません" }
+  if (adminError || !adminMembership) return { error: "権限がありません" }
 
   const { error } = await supabase
     .from("teams")
@@ -191,7 +223,7 @@ export async function joinTeamByCode(
     role: "member",
     membership_type: membershipType,
     tags,
-    stamp_remaining: membershipType === "point_card" ? 0 : 0,
+    stamp_remaining: 0,
   })
 
   if (joinError) return { error: "チームへの参加に失敗しました" }
@@ -336,8 +368,19 @@ export async function joinTeamAction(
   redirect(`/teams/${result.data.id}`)
 }
 
-export async function getPublicTeams(options?: { q?: string }) {
+export async function getPublicTeams(options?: { q?: string; excludeUserId?: string }) {
   const admin = createAdminClient()
+
+  // ログインユーザーが所属しているチームIDを取得して除外
+  let excludeIds: string[] = []
+  if (options?.excludeUserId) {
+    const { data: memberships } = await admin
+      .from("team_members")
+      .select("team_id")
+      .eq("swimmer_id", options.excludeUserId)
+      .eq("status", "active")
+    excludeIds = (memberships ?? []).map((m) => m.team_id as string)
+  }
 
   let query = admin
     .from("teams")
@@ -348,6 +391,10 @@ export async function getPublicTeams(options?: { q?: string }) {
 
   if (options?.q) {
     query = query.ilike("name", `%${options.q}%`)
+  }
+
+  if (excludeIds.length > 0) {
+    query = query.not("id", "in", `(${excludeIds.join(",")})`)
   }
 
   const { data, error } = await query
@@ -440,4 +487,59 @@ export async function getTeamFeeStats(teamId: string) {
   const paid = subscriptionPaid + stampPaid
 
   return { data: { paid, subscriptionUnpaid, stampUnpaid, total } }
+}
+
+// 認証不要・公開向けチーム詳細取得
+export async function getPublicTeam(teamId: string) {
+  const admin = createAdminClient()
+
+  const { data: team, error } = await admin
+    .from("teams")
+    .select("id, name, description, avatar_url, cover_image_url, is_recruiting, activity_area, status, invite_code")
+    .eq("id", teamId)
+    .eq("status", "active")
+    .single()
+
+  if (error || !team) return { error: "チームが見つかりません" }
+
+  // 管理者プロフィール
+  const { data: adminMember } = await admin
+    .from("team_members")
+    .select("swimmer:profiles(id, name, avatar_url, bio, career, achievements, prefecture)")
+    .eq("team_id", teamId)
+    .eq("role", "admin")
+    .eq("status", "active")
+    .single()
+
+  // メンバー数
+  const { count: memberCount } = await admin
+    .from("team_members")
+    .select("id", { count: "exact", head: true })
+    .eq("team_id", teamId)
+    .eq("status", "active")
+
+  // 直近の公開セッション
+  const { data: sessions } = await admin
+    .from("practice_sessions")
+    .select("id, title, scheduled_at, location, member_price, guest_price, type")
+    .eq("team_id", teamId)
+    .eq("status", "published")
+    .gt("scheduled_at", new Date().toISOString())
+    .order("scheduled_at", { ascending: true })
+    .limit(5)
+
+  // Supabase の外部キー結合は配列で返る場合があるため正規化
+  const rawSwimmer = adminMember?.swimmer as unknown
+  const coach: Record<string, unknown> | null = Array.isArray(rawSwimmer)
+    ? ((rawSwimmer[0] as Record<string, unknown>) ?? null)
+    : ((rawSwimmer as Record<string, unknown>) ?? null)
+
+  return {
+    data: {
+      team,
+      coach,
+      memberCount: memberCount ?? 0,
+      sessions: sessions ?? [],
+    },
+  }
 }
