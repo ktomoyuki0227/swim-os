@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { createClient, createAdminClient } from "@/lib/supabase/server"
-import { getTeam, getTeamMembers, getTeamFeeStats } from "@/actions/teams"
+import { getTeam, getTeamMembers, getTeamFeeStats, getPublicTeam } from "@/actions/teams"
 import { getTeamSessions } from "@/actions/sessions"
 import { getTeamAnnouncements } from "@/actions/announcements"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -13,6 +13,7 @@ import { InviteSection } from "./invite-section"
 import { MemberList } from "./member-list"
 import { AnnouncementsSection } from "./announcements-section"
 import { MarkReadButton } from "./mark-read-button"
+import { PublicTeamView } from "./public-team-view"
 
 interface TeamPageProps {
   params: Promise<{ id: string }>
@@ -31,13 +32,21 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
     .from("team_members")
     .select("role")
     .eq("team_id", id)
-    .eq("swimmer_id", user?.id ?? "")
+    .eq("swimmer_id", user!.id)
     .eq("status", "active")
     .single()
 
   const isAdmin = myMembership?.role === "admin"
+  const isMember = !!myMembership
   const defaultTab = isAdmin ? "members" : "sessions"
   const { tab = defaultTab } = await searchParams
+
+  // ─── 非メンバービュー（ログイン済みだがチーム外）────────────────────
+  if (!isMember) {
+    const publicResult = await getPublicTeam(id)
+    if (publicResult.error || !publicResult.data) notFound()
+    return <PublicTeamView data={publicResult.data} />
+  }
 
   if (isAdmin) {
     // ─── 管理者ビュー ─────────────────────────────────────────
@@ -316,12 +325,12 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
 
   // 自分の参加済みセッションIDを取得
   let registeredSessionIds = new Set<string>()
-  if (user && sessions.length > 0) {
+  if (sessions.length > 0) {
     const sessionIds = sessions.map((s) => s.id as string)
     const { data: regs } = await supabase
       .from("session_registrations")
       .select("session_id")
-      .eq("swimmer_id", user.id)
+      .eq("swimmer_id", user!.id)
       .in("session_id", sessionIds)
       .is("cancelled_at", null)
     registeredSessionIds = new Set((regs || []).map((r) => r.session_id))
