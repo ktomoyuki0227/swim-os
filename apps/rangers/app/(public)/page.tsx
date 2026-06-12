@@ -40,7 +40,7 @@ export default async function HomePage() {
   // ===== 新着イベント・合宿 =====
   const { data: eventsRaw } = await admin
     .from("practice_sessions")
-    .select("id, title, scheduled_at, location, session_type, guest_price, team:teams(id, name)")
+    .select("id, title, type, scheduled_at, location, guest_price, team:teams(id, name)")
     .eq("is_external", true)
     .eq("session_status", "open")
     .gte("scheduled_at", new Date().toISOString())
@@ -294,7 +294,7 @@ export default async function HomePage() {
             </div>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {teams.map((team) => (
-                <Link key={team.id} href="/login">
+                <Link key={team.id} href={`/teams/${team.id}`}>
                   <div className="group flex gap-4 rounded-2xl border border-[#dce3ea] bg-white p-5 transition hover:border-[#005F8C] hover:shadow-sm">
                     <div className="shrink-0">
                       {team.avatar_url ? (
@@ -420,7 +420,7 @@ export default async function HomePage() {
                   practice: "練習",
                   meeting: "ミーティング",
                 }
-                const typeLabel = typeLabels[session.session_type as string] ?? "イベント"
+                const typeLabel = typeLabels[session.type as string] ?? "イベント"
                 const typeColors: Record<string, string> = {
                   camp: "#7B5EA7",
                   competition: "#E8614D",
@@ -428,7 +428,7 @@ export default async function HomePage() {
                   practice: "#005F8C",
                   meeting: "#5c6a7a",
                 }
-                const typeColor = typeColors[session.session_type as string] ?? "#005F8C"
+                const typeColor = typeColors[session.type as string] ?? "#005F8C"
 
                 return (
                   <Link key={session.id as string} href="/login">
