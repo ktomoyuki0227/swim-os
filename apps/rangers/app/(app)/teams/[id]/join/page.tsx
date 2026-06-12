@@ -1,0 +1,106 @@
+export const dynamic = "force-dynamic"
+
+import Image from "next/image"
+import Link from "next/link"
+import { notFound, redirect } from "next/navigation"
+import { createClient, createAdminClient } from "@/lib/supabase/server"
+import { JoinForm } from "./join-form"
+
+interface PageProps {
+  params: Promise<{ id: string }>
+}
+
+export default async function TeamJoinPage({ params }: PageProps) {
+  const { id } = await params
+
+  const admin = createAdminClient()
+  const { data: team } = await admin
+    .from("teams")
+    .select("id, name, description, avatar_url, point_card_count, invite_code")
+    .eq("id", id)
+    .eq("status", "active")
+    .single()
+
+  if (!team) notFound()
+
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (user) {
+    const { data: existing } = await admin
+      .from("team_members")
+      .select("id")
+      .eq("team_id", team.id)
+      .eq("swimmer_id", user.id)
+      .single()
+
+    if (existing) {
+      redirect(`/teams/${team.id}`)
+    }
+  }
+
+  return (
+    <div className="mx-auto max-w-md py-4">
+      {/* チームカード */}
+      <div className="mb-6 rounded-2xl border border-[#dce3ea] bg-white p-6 shadow-sm">
+        <div className="mb-4 flex items-center gap-4">
+          <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-full border border-[#dce3ea] bg-[#e8f2f8]">
+            {team.avatar_url ? (
+              <Image src={team.avatar_url} alt={team.name} fill className="object-cover" />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center text-2xl">🏊</div>
+            )}
+          </div>
+          <div>
+            <p className="mb-0.5 text-xs font-semibold uppercase tracking-wide text-[#005F8C]">
+              入会申請
+            </p>
+            <h1 className="text-xl font-bold text-[#1a2332]">{team.name}</h1>
+          </div>
+        </div>
+        {team.description && (
+          <p className="text-sm leading-relaxed text-[#5c6a7a]">{team.description}</p>
+        )}
+      </div>
+
+      {user ? (
+        <JoinForm
+          inviteCode={team.invite_code}
+          teamName={team.name}
+          pointCardCount={team.point_card_count ?? 0}
+        />
+      ) : (
+        <div className="space-y-3">
+          <Link
+            href={`/register?invite=${team.invite_code}`}
+            className="flex items-center justify-center rounded-full bg-[#005F8C] px-6 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-[#004E73]"
+            style={{ minHeight: "48px" }}
+          >
+            アカウントを作成してチームに参加
+          </Link>
+          <Link
+            href={`/login?invite=${team.invite_code}`}
+            className="flex items-center justify-center rounded-full border border-[#dce3ea] bg-white px-6 py-3.5 text-sm font-semibold text-[#1a2332] transition-colors hover:border-[#005F8C]"
+            style={{ minHeight: "48px" }}
+          >
+            ログインして参加
+          </Link>
+          <p className="text-center text-xs text-[#8d99a8]">
+            アカウント登録・ログイン後、自動的にチーム参加画面に戻ります
+          </p>
+        </div>
+      )}
+
+      <div className="mt-6 text-center">
+        <Link
+          href={`/teams/${team.id}`}
+          className="text-sm text-[#5c6a7a] hover:text-[#1a2332]"
+        >
+          ← チームページに戻る
+        </Link>
+      </div>
+    </div>
+  )
+}
