@@ -16,7 +16,7 @@ export default function AuthLayout({
           </Link>
         </div>
       </header>
-      <div className="flex min-h-[calc(100vh-64px)] items-start justify-center px-4 py-10">
+      <div className="flex flex-col items-center min-h-[calc(100vh-64px)] px-4 py-6">
         {children}
       </div>
     </div>

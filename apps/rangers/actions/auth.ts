@@ -42,6 +42,10 @@ export async function register(
   _prevState: AuthState,
   formData: FormData
 ): Promise<AuthState> {
+  if (formData.get("termsAgreed") !== "on") {
+    return { error: "利用規約とプライバシーポリシーへの同意が必要です" }
+  }
+
   const raw = {
     name: formData.get("name") as string,
     email: formData.get("email") as string,
@@ -76,13 +80,14 @@ export async function register(
       .eq("id", user.id)
   }
 
-  // 招待コードがあればチーム参加ページへ
+  // 招待コードがある場合もオンボーディングを先に完了させる
+  // 完了後に next パラメータ経由でチーム参加ページへ遷移
   const invite = (formData.get("invite") as string)?.trim()
   if (invite) {
-    redirect(`/teams/join/${invite}`)
+    redirect(`/onboarding?next=${encodeURIComponent(`/teams/join/${invite}`)}`)
   }
 
-  redirect("/register/sent")
+  redirect("/onboarding")
 }
 
 export async function logout() {

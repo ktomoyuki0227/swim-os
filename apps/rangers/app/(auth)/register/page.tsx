@@ -1,45 +1,56 @@
 "use client"
 
-import { useActionState, Suspense } from "react"
+import { useActionState, Suspense, Fragment } from "react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { register, type AuthState } from "@/actions/auth"
 
 const initialState: AuthState = { error: null }
 
-const steps = ["アカウント作成", "メール確認", "利用開始"]
+const ALL_STEPS = [
+  { num: 1, label: "アカウント作成" },
+  { num: 2, label: "基本情報①" },
+  { num: 3, label: "基本情報②" },
+  { num: 4, label: "緊急連絡先" },
+  { num: 5, label: "競技登録" },
+  { num: 6, label: "プロフィール" },
+  { num: 7, label: "お支払い" },
+]
 
 function StepProgress({ current }: { current: number }) {
   return (
-    <div className="mb-8 flex items-center justify-center gap-1">
-      {steps.map((label, i) => {
-        const num = i + 1
-        const done = num < current
-        const active = num === current
-        return (
-          <div key={label} className="flex items-center">
-            <div className="flex flex-col items-center gap-1">
-              <div
-                className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold transition-colors ${
-                  done
-                    ? "bg-blue-400 text-white"
-                    : active
-                    ? "bg-blue-500 text-white"
-                    : "border-2 border-gray-300 text-gray-400"
-                }`}
-              >
-                {done ? "✓" : num}
-              </div>
-              <span className={`text-xs ${active ? "font-medium text-blue-600" : "text-gray-400"}`}>
-                {label}
-              </span>
+    <div className="mb-4 flex items-center">
+      {ALL_STEPS.map(({ num, label }, i) => (
+        <Fragment key={num}>
+          <div className="flex flex-col items-center">
+            <div
+              className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold transition-colors ${
+                num < current
+                  ? "bg-[#005F8C]/20 text-[#005F8C]"
+                  : num === current
+                  ? "bg-[#005F8C] text-white shadow-md"
+                  : "bg-[#dce3ea] text-[#8d99a8]"
+              }`}
+            >
+              {num < current ? "✓" : num}
             </div>
-            {i < steps.length - 1 && (
-              <div className={`mb-5 mx-1 h-px w-8 ${done ? "bg-blue-400" : "bg-gray-300"}`} />
-            )}
+            <p
+              className={`mt-1 hidden text-[10px] sm:block ${
+                num === current ? "font-medium text-[#005F8C]" : "text-[#8d99a8]"
+              }`}
+            >
+              {label}
+            </p>
           </div>
-        )
-      })}
+          {i < ALL_STEPS.length - 1 && (
+            <div
+              className={`mx-1 h-[2px] flex-1 transition-colors ${
+                num < current ? "bg-[#005F8C]/30" : "bg-[#dce3ea]"
+              }`}
+            />
+          )}
+        </Fragment>
+      ))}
     </div>
   )
 }
@@ -50,7 +61,7 @@ function RegisterForm() {
   const invite = searchParams.get("invite")
 
   return (
-    <div className="w-full max-w-md">
+    <div className="mx-auto w-full max-w-md">
       <StepProgress current={1} />
 
       <div className="rounded-2xl bg-white px-8 py-8 shadow-sm">
@@ -110,7 +121,7 @@ function RegisterForm() {
 
           <div className="space-y-2 pt-1">
             <label className="flex cursor-pointer items-start gap-2 text-sm">
-              <input type="checkbox" required className="mt-0.5 accent-blue-500" />
+              <input type="checkbox" name="termsAgreed" value="on" required className="mt-0.5 accent-blue-500" />
               <span className="text-muted-foreground">
                 <Link href="/terms" className="text-blue-600 hover:underline">利用規約</Link>
                 と
