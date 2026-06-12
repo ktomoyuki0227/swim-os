@@ -17,12 +17,20 @@ export default async function AppLayout({
     redirect("/login")
   }
 
-  const { data: profile } = await supabase.from("profiles").select("name, avatar_url").eq("id", user.id).single()
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("name, avatar_url, onboarding_completed_at")
+    .eq("id", user.id)
+    .single()
 
   if (!profile) {
     // プロフィールなし = 不完全なアカウント状態。サインアウトしてから /login に戻す
     await supabase.auth.signOut()
     redirect("/login")
+  }
+
+  if (!profile.onboarding_completed_at) {
+    redirect("/onboarding")
   }
 
   return (

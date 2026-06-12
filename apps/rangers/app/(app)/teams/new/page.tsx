@@ -1,9 +1,10 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useState, useTransition, useRef } from "react"
 import { useRouter } from "next/navigation"
+import Image from "next/image"
 import Link from "next/link"
-import { createTeam } from "@/actions/teams"
+import { createTeam, uploadTeamImage } from "@/actions/teams"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -14,6 +15,15 @@ import { useToast } from "@/components/toast"
 interface Step1Data {
   name: string
   description: string
+  activity_area: string
+  is_recruiting: boolean
+}
+
+interface Step2Data {
+  coverFile: File | null
+  iconFile: File | null
+  coverPreview: string | null
+  iconPreview: string | null
 }
 
 export default function NewTeamPage() {
@@ -21,8 +31,31 @@ export default function NewTeamPage() {
   const [isPending, startTransition] = useTransition()
   const { showToast } = useToast()
 
-  const [step, setStep] = useState<1 | 2>(1)
-  const [step1, setStep1] = useState<Step1Data>({ name: "", description: "" })
+  const [step, setStep] = useState<1 | 2 | 3>(1)
+
+  // Step 1 state
+  const [step1, setStep1] = useState<Step1Data>({
+    name: "",
+    description: "",
+    activity_area: "",
+    is_recruiting: true,
+  })
+
+  // Step 2 state
+  const [step2, setStep2] = useState<Step2Data>({
+    coverFile: null,
+    iconFile: null,
+    coverPreview: null,
+    iconPreview: null,
+  })
+  const [uploading, setUploading] = useState(false)
+
+  // Uploaded URLs (set after upload)
+  const [coverImageUrl, setCoverImageUrl] = useState<string | null>(null)
+  const [iconImageUrl, setIconImageUrl] = useState<string | null>(null)
+
+  const coverInputRef = useRef<HTMLInputElement>(null)
+  const iconInputRef = useRef<HTMLInputElement>(null)
 
   const handleStep1Next = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -31,11 +64,65 @@ export default function NewTeamPage() {
     setStep1({
       name: data.get("name") as string,
       description: (data.get("description") as string) || "",
+      activity_area: (data.get("activity_area") as string) || "",
+      is_recruiting: step1.is_recruiting,
     })
     setStep(2)
   }
 
-  const handleStep2Submit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleFileSelect = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    type: "cover" | "icon"
+  ) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const preview = URL.createObjectURL(file)
+    if (type === "cover") {
+      setStep2((prev) => ({ ...prev, coverFile: file, coverPreview: preview }))
+    } else {
+      setStep2((prev) => ({ ...prev, iconFile: file, iconPreview: preview }))
+    }
+  }
+
+  const handleStep2Next = async () => {
+    setUploading(true)
+    try {
+      let newCoverUrl: string | null = null
+      let newIconUrl: string | null = null
+
+      if (step2.coverFile) {
+        const fd = new FormData()
+        fd.append("file", step2.coverFile)
+        fd.append("type", "cover")
+        const result = await uploadTeamImage(fd)
+        if (result.error) {
+          showToast(result.error, "error")
+          return
+        }
+        newCoverUrl = result.url ?? null
+      }
+
+      if (step2.iconFile) {
+        const fd = new FormData()
+        fd.append("file", step2.iconFile)
+        fd.append("type", "icon")
+        const result = await uploadTeamImage(fd)
+        if (result.error) {
+          showToast(result.error, "error")
+          return
+        }
+        newIconUrl = result.url ?? null
+      }
+
+      setCoverImageUrl(newCoverUrl)
+      setIconImageUrl(newIconUrl)
+      setStep(3)
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const handleStep3Submit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const form = e.currentTarget
     const data = new FormData(form)
@@ -43,6 +130,10 @@ export default function NewTeamPage() {
     const payload = {
       name: step1.name,
       description: step1.description || undefined,
+      activity_area: step1.activity_area || undefined,
+      is_recruiting: step1.is_recruiting,
+      cover_image_url: coverImageUrl || undefined,
+      avatar_url: iconImageUrl || undefined,
       default_member_price: parseInt(data.get("default_member_price") as string) || 0,
       default_guest_price: parseInt(data.get("default_guest_price") as string) || 0,
       annual_fee_amount: parseInt(data.get("annual_fee_amount") as string) || undefined,
@@ -72,22 +163,29 @@ export default function NewTeamPage() {
       </div>
 
       {/* ステップインジケーター */}
-      <div className="flex items-center gap-2 px-16">
-        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#005F8C] text-xs font-semibold text-white">
-          1
-        </div>
-        <div
-          className={`h-0.5 flex-1 transition-colors ${
-            step === 2 ? "bg-[#005F8C]" : "bg-[#dce3ea]"
-          }`}
-        />
-        <div
-          className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold transition-colors ${
-            step === 2 ? "bg-[#005F8C] text-white" : "bg-[#edf0f4] text-[#5c6a7a]"
-          }`}
-        >
-          2
-        </div>
+      <div className="flex items-center gap-2 px-12">
+        {([1, 2, 3] as const).map((n, i) => (
+          <div key={n} className="flex flex-1 items-center gap-2">
+            <div
+              className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-colors ${
+                step > n
+                  ? "bg-[#005F8C]/20 text-[#005F8C]"
+                  : step === n
+                  ? "bg-[#005F8C] text-white"
+                  : "bg-[#edf0f4] text-[#5c6a7a]"
+              }`}
+            >
+              {step > n ? "✓" : n}
+            </div>
+            {i < 2 && (
+              <div
+                className={`h-0.5 flex-1 transition-colors ${
+                  step > n ? "bg-[#005F8C]/40" : "bg-[#dce3ea]"
+                }`}
+              />
+            )}
+          </div>
+        ))}
       </div>
 
       {/* Step 1: 基本情報 */}
@@ -125,6 +223,45 @@ export default function NewTeamPage() {
                   className="resize-none border-[#dce3ea]"
                 />
               </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="activity_area">
+                  活動エリア
+                  <span className="ml-1 text-xs font-normal text-[#8d99a8]">（任意）</span>
+                </Label>
+                <Input
+                  id="activity_area"
+                  name="activity_area"
+                  placeholder="例: 東京都渋谷区"
+                  defaultValue={step1.activity_area}
+                  maxLength={100}
+                  className="border-[#dce3ea]"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>メンバー募集</Label>
+                <div className="flex items-center gap-3 rounded-xl border border-[#dce3ea] p-3">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setStep1((prev) => ({ ...prev, is_recruiting: !prev.is_recruiting }))
+                    }
+                    className={`relative h-6 w-10 rounded-full transition-colors ${
+                      step1.is_recruiting ? "bg-[#005F8C]" : "bg-[#dce3ea]"
+                    }`}
+                    style={{ minHeight: "24px" }}
+                  >
+                    <span
+                      className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
+                        step1.is_recruiting ? "translate-x-4" : "translate-x-0"
+                      }`}
+                    />
+                  </button>
+                  <span className="text-sm font-medium text-[#1a2332]">
+                    {step1.is_recruiting ? "メンバー募集中" : "募集停止中"}
+                  </span>
+                  <span className="ml-auto text-xs text-[#8d99a8]">公開ページに表示されます</span>
+                </div>
+              </div>
             </CardContent>
           </Card>
 
@@ -138,9 +275,140 @@ export default function NewTeamPage() {
         </form>
       )}
 
-      {/* Step 2: 料金・ポリシー設定 */}
+      {/* Step 2: 画像設定 */}
       {step === 2 && (
-        <form onSubmit={handleStep2Submit} className="space-y-4">
+        <div className="space-y-4">
+          <Card className="border-[#dce3ea]">
+            <CardContent className="space-y-5 pt-5">
+              <div>
+                <p className="text-sm font-semibold text-[#1a2332]">画像設定</p>
+                <p className="mt-0.5 text-xs text-[#5c6a7a]">両方任意です。後から変更できます。</p>
+              </div>
+
+              {/* カバー画像 */}
+              <div className="space-y-2">
+                <Label>チームイメージ画像（ヒーロー）</Label>
+                <div
+                  className="relative w-full overflow-hidden rounded-xl border border-dashed border-[#dce3ea] bg-[#f5f8fa] cursor-pointer hover:border-[#005F8C]/50 transition-colors"
+                  style={{ aspectRatio: "16/5" }}
+                  onClick={() => coverInputRef.current?.click()}
+                >
+                  {step2.coverPreview ? (
+                    <Image
+                      src={step2.coverPreview}
+                      alt="カバー画像プレビュー"
+                      fill
+                      className="object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full flex-col items-center justify-center gap-1">
+                      <span className="text-2xl">🖼</span>
+                      <p className="text-xs text-[#8d99a8]">クリックして画像を選択</p>
+                      <p className="text-[10px] text-[#b0bac6]">JPEG / PNG / WebP・5MB以下</p>
+                    </div>
+                  )}
+                </div>
+                <input
+                  ref={coverInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  onChange={(e) => handleFileSelect(e, "cover")}
+                />
+                {step2.coverPreview && (
+                  <button
+                    type="button"
+                    className="text-xs text-[#8d99a8] hover:text-[#5c6a7a]"
+                    onClick={() => {
+                      setStep2((prev) => ({ ...prev, coverFile: null, coverPreview: null }))
+                    }}
+                  >
+                    × 削除
+                  </button>
+                )}
+              </div>
+
+              {/* チームアイコン */}
+              <div className="space-y-2">
+                <Label>チームアイコン（丸アイコン）</Label>
+                <div className="flex items-center gap-4">
+                  <div
+                    className="relative h-20 w-20 shrink-0 cursor-pointer overflow-hidden rounded-full border border-dashed border-[#dce3ea] bg-[#f5f8fa] hover:border-[#005F8C]/50 transition-colors"
+                    onClick={() => iconInputRef.current?.click()}
+                  >
+                    {step2.iconPreview ? (
+                      <Image
+                        src={step2.iconPreview}
+                        alt="アイコンプレビュー"
+                        fill
+                        className="object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full flex-col items-center justify-center">
+                        <span className="text-2xl">🏊</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <button
+                      type="button"
+                      onClick={() => iconInputRef.current?.click()}
+                      className="rounded-lg border border-[#dce3ea] px-3 py-2 text-sm text-[#5c6a7a] hover:border-[#005F8C]/50 transition-colors"
+                      style={{ minHeight: "44px" }}
+                    >
+                      画像を選択
+                    </button>
+                    <p className="mt-1 text-[10px] text-[#b0bac6]">JPEG / PNG / WebP・5MB以下</p>
+                    {step2.iconPreview && (
+                      <button
+                        type="button"
+                        className="mt-1 text-xs text-[#8d99a8] hover:text-[#5c6a7a]"
+                        onClick={() => {
+                          setStep2((prev) => ({ ...prev, iconFile: null, iconPreview: null }))
+                        }}
+                      >
+                        × 削除
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <input
+                  ref={iconInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  onChange={(e) => handleFileSelect(e, "icon")}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="flex gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setStep(1)}
+              className="flex-1 rounded-full border-[#dce3ea] text-[#5c6a7a]"
+              style={{ minHeight: "48px" }}
+            >
+              ← 戻る
+            </Button>
+            <Button
+              type="button"
+              disabled={uploading}
+              onClick={handleStep2Next}
+              className="flex-1 rounded-full bg-[#005F8C] hover:bg-[#004E73] disabled:opacity-40"
+              style={{ minHeight: "48px" }}
+            >
+              {uploading ? "アップロード中..." : "次へ →"}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Step 3: 料金・ポリシー設定 */}
+      {step === 3 && (
+        <form onSubmit={handleStep3Submit} className="space-y-4">
           {/* チーム名の確認表示 */}
           <div className="rounded-xl bg-[#f2f7fa] px-4 py-3">
             <p className="text-xs text-[#5c6a7a]">チーム名</p>
@@ -283,7 +551,7 @@ export default function NewTeamPage() {
             <Button
               type="button"
               variant="outline"
-              onClick={() => setStep(1)}
+              onClick={() => setStep(2)}
               className="flex-1 rounded-full border-[#dce3ea] text-[#5c6a7a]"
               style={{ minHeight: "48px" }}
             >
