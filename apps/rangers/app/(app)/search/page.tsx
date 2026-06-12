@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { createClient } from "@/lib/supabase/server"
 import { getPublicSessions } from "@/actions/sessions"
 import { getPublicTeams } from "@/actions/teams"
 import { Card, CardContent } from "@/components/ui/card"
@@ -22,6 +23,9 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   const tab = params.tab === "teams" ? "teams" : "sessions"
   // q を優先、旧来の location パラメータにも対応
   const q = params.q || params.location || ""
+
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
 
   // タブ切り替えリンク（現在の q を引き継ぐ）
   const makeTabHref = (t: string) => {
@@ -61,7 +65,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
       {tab === "sessions" ? (
         <SessionResults q={q} />
       ) : (
-        <TeamResults q={q} />
+        <TeamResults q={q} userId={user?.id} />
       )}
     </div>
   )
@@ -69,7 +73,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
 async function SessionResults({ q }: { q: string }) {
   const { data: sessions } = await getPublicSessions({
-    location: q || undefined,
+    q: q || undefined,
     from: new Date().toISOString(),
   })
 
@@ -136,8 +140,8 @@ async function SessionResults({ q }: { q: string }) {
   )
 }
 
-async function TeamResults({ q }: { q: string }) {
-  const { data: teams } = await getPublicTeams({ q: q || undefined })
+async function TeamResults({ q, userId }: { q: string; userId?: string }) {
+  const { data: teams } = await getPublicTeams({ q: q || undefined, excludeUserId: userId })
 
   if (!teams || teams.length === 0) {
     return (
