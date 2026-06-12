@@ -31,11 +31,11 @@ export async function updateProfile(
     return { error: result.error.issues.map((i) => i.message).join("・"), success: false }
   }
 
-  // 指導員向け追加フィールド
-  const bio = (formData.get("bio") as string | null) ?? null
-  const career = (formData.get("career") as string | null) ?? null
-  const achievements = (formData.get("achievements") as string | null) ?? null
-  const prefecture = (formData.get("prefecture") as string | null) ?? null
+  // 公開プロフィールフィールド
+  const bio = (formData.get("bio") as string | null) || null
+  const career = (formData.get("career") as string | null) || null
+  const achievements = (formData.get("achievements") as string | null) || null
+  const prefecture = (formData.get("prefecture") as string | null) || null
   const specialties = formData.getAll("specialties") as string[]
   const targetAges = formData.getAll("target_ages") as string[]
 
@@ -43,6 +43,7 @@ export async function updateProfile(
   const furigana = (formData.get("furigana") as string | null) || null
   const gender = (formData.get("gender") as string | null) || null
   const birthday = (formData.get("birthday") as string | null) || null
+  const phone = (formData.get("phone") as string | null) || null
   const address = (formData.get("address") as string | null) || null
   const emergency_contact = (formData.get("emergency_contact") as string | null) || null
   const emergency_contact_name = (formData.get("emergency_contact_name") as string | null) || null
@@ -66,6 +67,7 @@ export async function updateProfile(
       furigana,
       gender,
       birthday,
+      phone,
       address,
       emergency_contact,
       emergency_contact_name,
@@ -146,7 +148,6 @@ export async function uploadAvatar(
   }
 
   revalidatePath("/profile")
-  revalidatePath("/")
   return { error: null, success: true, avatarUrl }
 }
 
@@ -164,7 +165,7 @@ export async function getProfile() {
     .from("profiles")
     .select("*")
     .eq("id", user.id)
-    .single()
+    .maybeSingle()
 
   return data
 }

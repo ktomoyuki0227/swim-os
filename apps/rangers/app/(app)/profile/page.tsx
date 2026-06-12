@@ -57,6 +57,7 @@ export default function ProfilePage() {
   const [email, setEmail] = useState("")
   const [isLoading, setIsLoading] = useState(true)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const previewObjectUrlRef = useRef<string | null>(null)
   const { showToast } = useToast()
 
   // 基本情報
@@ -64,6 +65,7 @@ export default function ProfilePage() {
   const [furigana, setFurigana] = useState("")
   const [gender, setGender] = useState("")
   const [birthday, setBirthday] = useState("")
+  const [phone, setPhone] = useState("")
   const [address, setAddress] = useState("")
   const [swimwearSize, setSwimwearSize] = useState("")
 
@@ -112,6 +114,7 @@ export default function ProfilePage() {
         setFurigana(prof.furigana ?? "")
         setGender(prof.gender ?? "")
         setBirthday(prof.birthday ?? "")
+        setPhone(prof.phone ?? "")
         setAddress(prof.address ?? "")
         setSwimwearSize(prof.swimwear_size ?? "")
         setEmergencyContact(prof.emergency_contact ?? "")
@@ -136,10 +139,21 @@ export default function ProfilePage() {
   useEffect(() => {
     if (avatarState.success && avatarState.avatarUrl) {
       setAvatarUrl(avatarState.avatarUrl)
+      if (previewObjectUrlRef.current) {
+        URL.revokeObjectURL(previewObjectUrlRef.current)
+        previewObjectUrlRef.current = null
+      }
       setPreviewUrl(null)
       if (fileInputRef.current) fileInputRef.current.value = ""
     }
   }, [avatarState])
+
+  // コンポーネントアンマウント時に未解放のオブジェクトURLを解放
+  useEffect(() => {
+    return () => {
+      if (previewObjectUrlRef.current) URL.revokeObjectURL(previewObjectUrlRef.current)
+    }
+  }, [])
 
   const initials = name
     .split(/\s+/)
@@ -190,7 +204,12 @@ export default function ProfilePage() {
                 className="hidden"
                 onChange={(e) => {
                   const file = e.target.files?.[0]
-                  if (file) setPreviewUrl(URL.createObjectURL(file))
+                  if (file) {
+                    if (previewObjectUrlRef.current) URL.revokeObjectURL(previewObjectUrlRef.current)
+                    const url = URL.createObjectURL(file)
+                    previewObjectUrlRef.current = url
+                    setPreviewUrl(url)
+                  }
                 }}
               />
               {previewUrl && (
@@ -284,6 +303,21 @@ export default function ProfilePage() {
                   className="border-[#dce3ea]"
                 />
               </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="phone" className="text-sm text-[#5c6a7a]">電話番号</Label>
+              {isLoading ? <Skeleton className="h-10 w-full" /> : (
+                <Input
+                  id="phone"
+                  name="phone"
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="例: 09012345678"
+                  className="border-[#dce3ea]"
+                />
+              )}
             </div>
 
             <div className="space-y-1.5">
@@ -406,11 +440,10 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
 
-        {/* コーチプロフィール */}
+        {/* 公開プロフィール */}
         <Card className="border-[#dce3ea]">
           <CardHeader className="pb-2">
-            <CardTitle className="text-base text-[#1a2332]">コーチプロフィール</CardTitle>
-            <p className="text-xs text-[#8d99a8]">インストラクターとして活動する場合に入力してください</p>
+            <CardTitle className="text-base text-[#1a2332]">公開プロフィール</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-1.5">
