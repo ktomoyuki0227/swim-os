@@ -36,6 +36,9 @@ export interface Profile {
   masters_number: string | null
   jsa_registered: boolean
   jsa_number: string | null
+  phone: string | null
+  onboarding_completed_at: string | null
+  stripe_payment_method_id: string | null
 }
 
 export interface Lesson {
@@ -187,6 +190,9 @@ export interface Team {
   name: string
   description: string | null
   avatar_url: string | null
+  cover_image_url: string | null
+  is_recruiting: boolean
+  activity_area: string | null
   invite_code: string
   default_member_price: number
   default_guest_price: number
