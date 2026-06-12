@@ -1,0 +1,881 @@
+"use client"
+
+import { useState, useEffect, useTransition, Fragment } from "react"
+import { useRouter } from "next/navigation"
+import { loadStripe } from "@stripe/stripe-js"
+import {
+  Elements,
+  CardNumberElement,
+  CardExpiryElement,
+  CardCvcElement,
+  useStripe,
+  useElements,
+} from "@stripe/react-stripe-js"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { completeOnboarding, type OnboardingData } from "@/actions/onboarding"
+import { uploadAvatar } from "@/actions/profile"
+import { PREFECTURES } from "@/types/database"
+
+const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+  ? loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
+  : null
+
+// Stripe テストモード時のみ表示するテストカード一覧
+const IS_TEST_MODE = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY?.startsWith("pk_test_") ?? false
+
+const TEST_CARDS = [
+  { number: "4242 4242 4242 4242", result: "成功", variant: "success" as const },
+  { number: "4000 0000 0000 9995", result: "残高不足エラー", variant: "warning" as const },
+  { number: "4000 0000 0000 0002", result: "拒否", variant: "error" as const },
+]
+
+// 登録〜オンボーディングの全体進捗（登録ページと共通）
+const ALL_STEPS = [
+  { num: 1, label: "アカウント作成" },
+  { num: 2, label: "基本情報①" },
+  { num: 3, label: "基本情報②" },
+  { num: 4, label: "緊急連絡先" },
+  { num: 5, label: "競技登録" },
+  { num: 6, label: "プロフィール" },
+  { num: 7, label: "お支払い" },
+]
+
+// ウィザード内部のステップ定義（wizardStep 1〜6 = ALL_STEPS 2〜7）
+const WIZARD_STEPS = [
+  { num: 1, label: "基本情報(1)", desc: "フリガナ・生年月日・性別を教えてください" },
+  { num: 2, label: "基本情報(2)", desc: "住所と電話番号を入力してください" },
+  { num: 3, label: "緊急連絡先", desc: "万が一の際の緊急連絡先を登録してください" },
+  { num: 4, label: "競技登録", desc: "マスターズ水泳・JSAの登録情報を入力してください" },
+  { num: 5, label: "公開プロフィール", desc: "公開ページに表示する情報を登録してください（すべて任意・後から変更可）" },
+  { num: 6, label: "お支払い", desc: "チームの年会費・月謝・練習費などのお支払い方法を登録してください" },
+]
+
+interface FormState {
+  furigana: string
+  birthYear: string
+  birthMonth: string
+  birthDay: string
+  gender: "male" | "female" | "other" | ""
+  phone: string
+  address: string
+  emergency_contact_name: string
+  emergency_contact_relation: string
+  emergency_contact: string
+  masters_registered: boolean
+  masters_number: string
+  jsa_registered: boolean
+  jsa_number: string
+  bio: string
+  career: string
+  achievements: string
+  prefecture: string
+}
+
+const stripeInputStyle = {
+  base: {
+    fontSize: "15px",
+    color: "#1a2332",
+    fontFamily: "system-ui, sans-serif",
+    "::placeholder": { color: "#8d99a8" },
+  },
+  invalid: { color: "#dc2626" },
+}
+
+// ── Stripe card setup form (must be inside <Elements>) ──────────────────────
+function CardSetupForm({
+  clientSecret,
+  onSuccess,
+}: {
+  clientSecret: string
+  onSuccess: (paymentMethodId: string) => void
+}) {
+  const stripe = useStripe()
+  const elements = useElements()
+  const [formError, setFormError] = useState<string | null>(null)
+  const [submitting, setSubmitting] = useState(false)
+  const [cardComplete, setCardComplete] = useState({
+    number: false,
+    expiry: false,
+    cvc: false,
+  })
+  const [showTestCards, setShowTestCards] = useState(false)
+  const [copiedCard, setCopiedCard] = useState<string | null>(null)
+
+  const copyTestCard = (number: string) => {
+    navigator.clipboard.writeText(number.replace(/\s/g, "")).catch(() => {})
+    setCopiedCard(number)
+    setTimeout(() => setCopiedCard(null), 2000)
+  }
+
+  const allComplete = cardComplete.number && cardComplete.expiry && cardComplete.cvc
+
+  const handleSubmit = async () => {
+    if (!stripe || !elements) return
+    setSubmitting(true)
+    setFormError(null)
+
+    const cardNumberElement = elements.getElement(CardNumberElement)
+    if (!cardNumberElement) {
+      setFormError("カード情報を入力してください")
+      setSubmitting(false)
+      return
+    }
+
+    const { setupIntent, error } = await stripe.confirmCardSetup(clientSecret, {
+      payment_method: { card: cardNumberElement },
+    })
+
+    if (error) {
+      setFormError(error.message ?? "カード情報の確認に失敗しました")
+      setSubmitting(false)
+      return
+    }
+
+    if (setupIntent?.payment_method) {
+      const pmId =
+        typeof setupIntent.payment_method === "string"
+          ? setupIntent.payment_method
+          : setupIntent.payment_method.id
+      onSuccess(pmId)
+    } else {
+      setFormError("お支払い方法の取得に失敗しました。もう一度お試しください。")
+    }
+    setSubmitting(false)
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="space-y-3">
+        <div className="space-y-1">
+          <label className="text-xs font-medium text-[#5c6a7a]">カード番号</label>
+          <div className="rounded-lg border border-[#dce3ea] bg-white px-3 py-3">
+            <CardNumberElement
+              options={{ style: stripeInputStyle }}
+              onChange={(e) => setCardComplete((prev) => ({ ...prev, number: e.complete }))}
+            />
+          </div>
+        </div>
+        <div className="flex gap-3">
+          <div className="flex-1 space-y-1">
+            <label className="text-xs font-medium text-[#5c6a7a]">有効期限</label>
+            <div className="rounded-lg border border-[#dce3ea] bg-white px-3 py-3">
+              <CardExpiryElement
+                options={{ style: stripeInputStyle }}
+                onChange={(e) => setCardComplete((prev) => ({ ...prev, expiry: e.complete }))}
+              />
+            </div>
+          </div>
+          <div className="flex-1 space-y-1">
+            <label className="text-xs font-medium text-[#5c6a7a]">セキュリティコード</label>
+            <div className="rounded-lg border border-[#dce3ea] bg-white px-3 py-3">
+              <CardCvcElement
+                options={{ style: stripeInputStyle }}
+                onChange={(e) => setCardComplete((prev) => ({ ...prev, cvc: e.complete }))}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+      {formError && (
+        <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600">
+          {formError}
+        </p>
+      )}
+
+      {/* テストカード（Stripe テストモード時のみ表示） */}
+      {IS_TEST_MODE && (
+        <div className="border-t border-[#dce3ea] pt-3">
+          <button
+            type="button"
+            onClick={() => setShowTestCards((v) => !v)}
+            className="w-full text-center text-xs text-[#8d99a8] hover:text-[#5c6a7a] transition-colors"
+          >
+            {showTestCards ? "▲ 閉じる" : "▼ テストカード（開発用）"}
+          </button>
+
+          {showTestCards && (
+            <div className="mt-3 rounded-lg bg-[#f2f7fa] p-3 space-y-2">
+              <p className="text-xs font-medium text-[#1a2332]">テストカード番号</p>
+              <p className="text-[10px] text-[#8d99a8]">
+                有効期限: 12/34　　CVC: 任意の3桁（例: 123）
+              </p>
+              <div className="flex flex-col gap-1.5">
+                {TEST_CARDS.map((card) => (
+                  <button
+                    key={card.number}
+                    type="button"
+                    onClick={() => copyTestCard(card.number)}
+                    className={`rounded-lg border px-3 py-2 text-left transition-colors hover:border-[#005F8C] hover:bg-white ${
+                      copiedCard === card.number
+                        ? "border-[#005F8C] bg-white"
+                        : "border-[#dce3ea] bg-white"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-mono text-xs font-semibold text-[#1a2332]">
+                        {card.number}
+                      </span>
+                      {copiedCard === card.number ? (
+                        <span className="shrink-0 text-[10px] font-medium text-[#005F8C]">
+                          ✓ コピー済み
+                        </span>
+                      ) : (
+                        <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
+                          card.variant === "success"
+                            ? "bg-green-100 text-green-700"
+                            : card.variant === "warning"
+                            ? "bg-orange-100 text-orange-700"
+                            : "bg-red-100 text-red-700"
+                        }`}>
+                          {card.result}
+                        </span>
+                      )}
+                    </div>
+                  </button>
+                ))}
+              </div>
+              <p className="text-[10px] text-[#8d99a8]">
+                クリックするとカード番号をクリップボードにコピーします
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
+      <Button
+        onClick={handleSubmit}
+        disabled={!stripe || submitting || !allComplete}
+        className="w-full rounded-full bg-[#005F8C] text-white hover:bg-[#004a6b] disabled:opacity-40"
+        style={{ minHeight: "44px" }}
+      >
+        {submitting ? "確認中..." : "お支払い方法を登録して完了"}
+      </Button>
+    </div>
+  )
+}
+
+// ── Stripe step wrapper (fetches SetupIntent, renders Elements) ─────────────
+function StripeStep({
+  onSuccess,
+}: {
+  onSuccess: (paymentMethodId: string) => void
+}) {
+  const [clientSecret, setClientSecret] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [fetchError, setFetchError] = useState(false)
+
+  const fetchIntent = () => {
+    setLoading(true)
+    setFetchError(false)
+    fetch("/api/stripe/setup-intent", { method: "POST" })
+      .then((res) => {
+        if (!res.ok) throw new Error("server error")
+        return res.json()
+      })
+      .then((data: { clientSecret?: string }) => {
+        if (data.clientSecret) {
+          setClientSecret(data.clientSecret)
+        } else {
+          setFetchError(true)
+        }
+      })
+      .catch(() => setFetchError(true))
+      .finally(() => setLoading(false))
+  }
+
+  useEffect(() => {
+    if (!stripePromise) {
+      setFetchError(true)
+      setLoading(false)
+      return
+    }
+    fetchIntent()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-10">
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#005F8C] border-t-transparent" />
+      </div>
+    )
+  }
+
+  if (fetchError || !stripePromise || !clientSecret) {
+    return (
+      <div className="space-y-4">
+        <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+          お支払い情報の読み込みに失敗しました。再度お試しください。
+        </p>
+        <Button
+          onClick={fetchIntent}
+          className="w-full rounded-full bg-[#005F8C] text-white hover:bg-[#004a6b]"
+          style={{ minHeight: "44px" }}
+        >
+          再試行
+        </Button>
+      </div>
+    )
+  }
+
+  return (
+    <Elements
+      stripe={stripePromise}
+      options={{
+        clientSecret,
+        locale: "ja",
+        appearance: {
+          theme: "stripe",
+          variables: {
+            colorPrimary: "#005F8C",
+            fontFamily: "system-ui, sans-serif",
+          },
+        },
+      }}
+    >
+      <CardSetupForm clientSecret={clientSecret} onSuccess={onSuccess} />
+    </Elements>
+  )
+}
+
+// ── Main wizard ─────────────────────────────────────────────────────────────
+export default function OnboardingPage() {
+  const router = useRouter()
+  const [step, setStep] = useState(1)
+  const [isPending, startTransition] = useTransition()
+
+  const [avatarFile, setAvatarFile] = useState<File | null>(null)
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
+
+  const [form, setForm] = useState<FormState>({
+    furigana: "",
+    birthYear: "",
+    birthMonth: "",
+    birthDay: "",
+    gender: "",
+    phone: "",
+    address: "",
+    emergency_contact_name: "",
+    emergency_contact_relation: "",
+    emergency_contact: "",
+    masters_registered: false,
+    masters_number: "",
+    jsa_registered: false,
+    jsa_number: "",
+    bio: "",
+    career: "",
+    achievements: "",
+    prefecture: "",
+  })
+  const [saveError, setSaveError] = useState<string | null>(null)
+
+  const isValidPhone = (val: string) =>
+    /^\d{11}$/.test(val.replace(/[-\s]/g, ""))
+
+  const canProceed = (): boolean => {
+    switch (step) {
+      case 1:
+        return !!form.furigana.trim() && !!form.birthYear && !!form.birthMonth && !!form.birthDay && !!form.gender
+      case 2:
+        return !!form.address.trim() && isValidPhone(form.phone)
+      case 3:
+        return (
+          !!form.emergency_contact_name.trim() &&
+          !!form.emergency_contact_relation.trim() &&
+          isValidPhone(form.emergency_contact)
+        )
+      case 4:
+        if (form.masters_registered && !form.masters_number.trim()) return false
+        if (form.jsa_registered && !form.jsa_number.trim()) return false
+        return true
+      case 5:
+        return true
+      default:
+        return true
+    }
+  }
+
+  const set = (field: keyof FormState, value: string | boolean) =>
+    setForm((prev) => ({ ...prev, [field]: value }))
+
+  const handleComplete = (stripePaymentMethodId?: string) => {
+    setSaveError(null)
+    startTransition(async () => {
+      // アバターが選択されていれば先にアップロード（失敗しても続行）
+      if (avatarFile) {
+        const fd = new FormData()
+        fd.append("avatar", avatarFile)
+        await uploadAvatar({ error: null, success: false }, fd)
+      }
+
+      const birthday =
+        form.birthYear && form.birthMonth && form.birthDay
+          ? `${form.birthYear}-${form.birthMonth.padStart(2, "0")}-${form.birthDay.padStart(2, "0")}`
+          : undefined
+
+      const data: OnboardingData = {
+        furigana: form.furigana || undefined,
+        birthday,
+        gender: (form.gender as OnboardingData["gender"]) || undefined,
+        phone: form.phone || undefined,
+        address: form.address || undefined,
+        emergency_contact_name: form.emergency_contact_name || undefined,
+        emergency_contact_relation: form.emergency_contact_relation || undefined,
+        emergency_contact: form.emergency_contact || undefined,
+        masters_registered: form.masters_registered,
+        masters_number: form.masters_number || undefined,
+        jsa_registered: form.jsa_registered,
+        jsa_number: form.jsa_number || undefined,
+        bio: form.bio || undefined,
+        career: form.career || undefined,
+        achievements: form.achievements || undefined,
+        prefecture: form.prefecture || undefined,
+        stripe_payment_method_id: stripePaymentMethodId,
+      }
+      const result = await completeOnboarding(data)
+      if (!result.error) {
+        // next パラメータがあれば遷移（open redirect 対策: 同一オリジンのパスのみ許可）
+        const params = new URLSearchParams(window.location.search)
+        const next = params.get("next")
+        const destination = next && next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard"
+        router.push(destination)
+      } else {
+        setSaveError("保存に失敗しました。もう一度お試しください。")
+      }
+    })
+  }
+
+  const currentStep = WIZARD_STEPS[step - 1]
+  // ウィザードのstep(1〜6)は全体進捗の2〜7に対応
+  const progressStep = step + 1
+
+  return (
+    <div className="mx-auto w-full max-w-lg">
+      {/* ── Progress indicator（登録ページと共通の6ステップ） ── */}
+      <div className="mb-4 flex items-center">
+        {ALL_STEPS.map(({ num, label }, i) => (
+          <Fragment key={num}>
+            <div className="flex flex-col items-center">
+              <div
+                className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold transition-colors ${
+                  num < progressStep
+                    ? "bg-[#005F8C]/20 text-[#005F8C]"
+                    : num === progressStep
+                    ? "bg-[#005F8C] text-white shadow-md"
+                    : "bg-[#dce3ea] text-[#8d99a8]"
+                }`}
+              >
+                {num < progressStep ? "✓" : num}
+              </div>
+              <p
+                className={`mt-1 hidden text-[10px] sm:block ${
+                  num === progressStep ? "font-medium text-[#005F8C]" : "text-[#8d99a8]"
+                }`}
+              >
+                {label}
+              </p>
+            </div>
+            {i < ALL_STEPS.length - 1 && (
+              <div
+                className={`mx-1 h-[2px] flex-1 transition-colors ${
+                  num < progressStep ? "bg-[#005F8C]/30" : "bg-[#dce3ea]"
+                }`}
+              />
+            )}
+          </Fragment>
+        ))}
+      </div>
+
+      {/* ── Form card ── */}
+      <Card className="border-[#dce3ea] bg-white shadow-lg">
+        <CardHeader className="pb-2">
+          <p className="text-xs font-semibold uppercase tracking-widest text-[#005F8C]">
+            STEP {progressStep} / {ALL_STEPS.length}
+          </p>
+          <h2 className="text-xl font-bold text-[#1a2332]">{currentStep.label}</h2>
+          <p className="text-sm text-[#8d99a8]">{currentStep.desc}</p>
+        </CardHeader>
+
+        <CardContent className="space-y-5 pt-2">
+          {/* ── Step 1: 基本情報(1) ── */}
+          {step === 1 && (
+            <>
+              <div className="space-y-1.5">
+                <Label className="text-sm text-[#5c6a7a]">
+                  フリガナ<span className="ml-0.5 text-red-500">*</span>
+                </Label>
+                <Input
+                  placeholder="ヤマダ ハナコ"
+                  value={form.furigana}
+                  onChange={(e) => set("furigana", e.target.value)}
+                  className="border-[#dce3ea]"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-sm text-[#5c6a7a]">
+                  生年月日<span className="ml-0.5 text-red-500">*</span>
+                </Label>
+                <div className="flex gap-2">
+                  <select
+                    value={form.birthYear}
+                    onChange={(e) => set("birthYear", e.target.value)}
+                    className="flex-1 rounded-lg border border-[#dce3ea] bg-white px-2 py-2.5 text-sm text-[#1a2332] focus:outline-none focus:ring-2 focus:ring-[#005F8C]/40"
+                  >
+                    <option value="">年</option>
+                    {Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - 4 - i).map((y) => (
+                      <option key={y} value={String(y)}>{y}年</option>
+                    ))}
+                  </select>
+                  <select
+                    value={form.birthMonth}
+                    onChange={(e) => set("birthMonth", e.target.value)}
+                    className="w-24 rounded-lg border border-[#dce3ea] bg-white px-2 py-2.5 text-sm text-[#1a2332] focus:outline-none focus:ring-2 focus:ring-[#005F8C]/40"
+                  >
+                    <option value="">月</option>
+                    {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+                      <option key={m} value={String(m)}>{m}月</option>
+                    ))}
+                  </select>
+                  <select
+                    value={form.birthDay}
+                    onChange={(e) => set("birthDay", e.target.value)}
+                    className="w-24 rounded-lg border border-[#dce3ea] bg-white px-2 py-2.5 text-sm text-[#1a2332] focus:outline-none focus:ring-2 focus:ring-[#005F8C]/40"
+                  >
+                    <option value="">日</option>
+                    {Array.from(
+                      { length: form.birthYear && form.birthMonth
+                        ? new Date(Number(form.birthYear), Number(form.birthMonth), 0).getDate()
+                        : 31
+                      },
+                      (_, i) => i + 1
+                    ).map((d) => (
+                      <option key={d} value={String(d)}>{d}日</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm text-[#5c6a7a]">
+                  性別<span className="ml-0.5 text-red-500">*</span>
+                </Label>
+                <div className="flex gap-3">
+                  {(["male", "female", "other"] as const).map((g) => (
+                    <button
+                      key={g}
+                      type="button"
+                      onClick={() => set("gender", g)}
+                      className={`flex-1 rounded-lg border py-2.5 text-sm font-medium transition-colors ${
+                        form.gender === g
+                          ? "border-[#005F8C] bg-[#005F8C]/5 text-[#005F8C]"
+                          : "border-[#dce3ea] text-[#5c6a7a] hover:border-[#005F8C]/40"
+                      }`}
+                    >
+                      {g === "male" ? "男性" : g === "female" ? "女性" : "その他"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* ── Step 2: 基本情報(2) ── */}
+          {step === 2 && (
+            <>
+              <div className="space-y-1.5">
+                <Label className="text-sm text-[#5c6a7a]">
+                  住所<span className="ml-0.5 text-red-500">*</span>
+                </Label>
+                <Textarea
+                  placeholder="東京都渋谷区〇〇 1-2-3"
+                  value={form.address}
+                  onChange={(e) => set("address", e.target.value)}
+                  className="border-[#dce3ea]"
+                  rows={3}
+                />
+                <p className="text-xs text-[#8d99a8]">
+                  チームからの郵便物等に使用される場合があります
+                </p>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-sm text-[#5c6a7a]">
+                  電話番号<span className="ml-0.5 text-red-500">*</span>
+                </Label>
+                <Input
+                  type="tel"
+                  placeholder="09012345678"
+                  value={form.phone}
+                  onChange={(e) => set("phone", e.target.value)}
+                  className="border-[#dce3ea]"
+                />
+                <p className="text-xs text-[#8d99a8]">ハイフンなし11桁で入力してください</p>
+              </div>
+            </>
+          )}
+
+          {/* ── Step 3: 緊急連絡先 ── */}
+          {step === 3 && (
+            <>
+              <div className="space-y-1.5">
+                <Label className="text-sm text-[#5c6a7a]">
+                  緊急連絡先 氏名<span className="ml-0.5 text-red-500">*</span>
+                </Label>
+                <Input
+                  placeholder="山田 一郎"
+                  value={form.emergency_contact_name}
+                  onChange={(e) => set("emergency_contact_name", e.target.value)}
+                  className="border-[#dce3ea]"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-sm text-[#5c6a7a]">
+                  続柄<span className="ml-0.5 text-red-500">*</span>
+                </Label>
+                <Input
+                  placeholder="配偶者・親・兄弟など"
+                  value={form.emergency_contact_relation}
+                  onChange={(e) => set("emergency_contact_relation", e.target.value)}
+                  className="border-[#dce3ea]"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-sm text-[#5c6a7a]">
+                  電話番号<span className="ml-0.5 text-red-500">*</span>
+                </Label>
+                <Input
+                  type="tel"
+                  placeholder="09012345678"
+                  value={form.emergency_contact}
+                  onChange={(e) => set("emergency_contact", e.target.value)}
+                  className="border-[#dce3ea]"
+                />
+                <p className="text-xs text-[#8d99a8]">ハイフンなし11桁で入力してください</p>
+              </div>
+            </>
+          )}
+
+          {/* ── Step 4: 競技登録 ── */}
+          {step === 4 && (
+            <>
+              <div className="rounded-xl border border-[#dce3ea] p-4 space-y-3">
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => set("masters_registered", !form.masters_registered)}
+                    className={`relative h-6 w-10 rounded-full transition-colors ${
+                      form.masters_registered ? "bg-[#005F8C]" : "bg-[#dce3ea]"
+                    }`}
+                  >
+                    <span
+                      className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
+                        form.masters_registered ? "translate-x-4" : "translate-x-0"
+                      }`}
+                    />
+                  </button>
+                  <span className="text-sm font-medium text-[#1a2332]">
+                    マスターズ水泳に登録済み
+                  </span>
+                </div>
+                {form.masters_registered && (
+                  <div className="space-y-1.5">
+                    <Label className="text-sm text-[#5c6a7a]">
+                      マスターズ登録番号<span className="ml-0.5 text-red-500">*</span>
+                    </Label>
+                    <Input
+                      placeholder="登録番号を入力"
+                      value={form.masters_number}
+                      onChange={(e) => set("masters_number", e.target.value)}
+                      className="border-[#dce3ea]"
+                    />
+                  </div>
+                )}
+              </div>
+              <div className="rounded-xl border border-[#dce3ea] p-4 space-y-3">
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => set("jsa_registered", !form.jsa_registered)}
+                    className={`relative h-6 w-10 rounded-full transition-colors ${
+                      form.jsa_registered ? "bg-[#005F8C]" : "bg-[#dce3ea]"
+                    }`}
+                  >
+                    <span
+                      className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
+                        form.jsa_registered ? "translate-x-4" : "translate-x-0"
+                      }`}
+                    />
+                  </button>
+                  <span className="text-sm font-medium text-[#1a2332]">
+                    日本水泳連盟（JSA）に登録済み
+                  </span>
+                </div>
+                {form.jsa_registered && (
+                  <div className="space-y-1.5">
+                    <Label className="text-sm text-[#5c6a7a]">
+                      JSA登録番号<span className="ml-0.5 text-red-500">*</span>
+                    </Label>
+                    <Input
+                      placeholder="登録番号を入力"
+                      value={form.jsa_number}
+                      onChange={(e) => set("jsa_number", e.target.value)}
+                      className="border-[#dce3ea]"
+                    />
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+
+          {/* ── Step 5: 公開プロフィール ── */}
+          {step === 5 && (
+            <>
+              <div className="rounded-lg bg-[#f2f7fa] px-3 py-2.5 text-xs text-[#5c6a7a]">
+                チームの公開ページに表示されます。すべて任意で、後からプロフィールページでも変更できます。入力しない場合はそのまま「次へ」を押してください。
+              </div>
+
+              {/* アバター（任意） */}
+              <div className="flex flex-col items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => document.getElementById("avatar-upload-input")?.click()}
+                  className="relative h-24 w-24 overflow-hidden rounded-full border-2 border-dashed border-[#dce3ea] bg-[#f5f8fa] transition-colors hover:border-[#005F8C]"
+                >
+                  {avatarPreview ? (
+                    <img src={avatarPreview} alt="アバタープレビュー" className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="flex h-full w-full flex-col items-center justify-center gap-1 text-[#8d99a8]">
+                      <span className="text-2xl">📷</span>
+                      <span className="text-[9px] leading-tight">タップして追加</span>
+                    </div>
+                  )}
+                </button>
+                <input
+                  id="avatar-upload-input"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (!file) return
+                    setAvatarFile(file)
+                    const reader = new FileReader()
+                    reader.onloadend = () => setAvatarPreview(reader.result as string)
+                    reader.readAsDataURL(file)
+                  }}
+                />
+                <div className="flex items-center gap-2 text-xs text-[#8d99a8]">
+                  <span>プロフィール写真（任意）</span>
+                  {avatarPreview && (
+                    <button
+                      type="button"
+                      onClick={() => { setAvatarFile(null); setAvatarPreview(null) }}
+                      className="text-red-400 hover:text-red-600"
+                    >
+                      × 削除
+                    </button>
+                  )}
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-sm text-[#5c6a7a]">
+                  自己紹介<span className="ml-1 text-xs text-[#8d99a8]">任意</span>
+                </Label>
+                <Textarea
+                  placeholder="例: 20年以上のコーチ経験を持ち、マスターズ水泳を通じた健康づくりをサポートしています。"
+                  value={form.bio}
+                  onChange={(e) => set("bio", e.target.value)}
+                  className="border-[#dce3ea]"
+                  rows={3}
+                  maxLength={500}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-sm text-[#5c6a7a]">
+                  経歴<span className="ml-1 text-xs text-[#8d99a8]">任意</span>
+                </Label>
+                <Input
+                  placeholder="例: 東京大学体育会水泳部 / 〇〇スイミングクラブ指導員"
+                  value={form.career}
+                  onChange={(e) => set("career", e.target.value)}
+                  className="border-[#dce3ea]"
+                  maxLength={200}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-sm text-[#5c6a7a]">
+                  実績<span className="ml-1 text-xs text-[#8d99a8]">任意</span>
+                </Label>
+                <Textarea
+                  placeholder="例: 50m自由形元日本記録保持者（xx秒）/ 日本マスターズ水泳選手権優勝"
+                  value={form.achievements}
+                  onChange={(e) => set("achievements", e.target.value)}
+                  className="border-[#dce3ea]"
+                  rows={2}
+                  maxLength={300}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-sm text-[#5c6a7a]">
+                  活動エリア<span className="ml-1 text-xs text-[#8d99a8]">任意</span>
+                </Label>
+                <select
+                  value={form.prefecture}
+                  onChange={(e) => set("prefecture", e.target.value)}
+                  className="w-full rounded-lg border border-[#dce3ea] bg-white px-3 py-2.5 text-sm text-[#1a2332] focus:outline-none focus:ring-2 focus:ring-[#005F8C]/40"
+                >
+                  <option value="">都道府県を選択</option>
+                  {PREFECTURES.map((p) => (
+                    <option key={p} value={p}>{p}</option>
+                  ))}
+                </select>
+              </div>
+            </>
+          )}
+
+          {/* ── Step 6: Stripe ── */}
+          {step === 6 && (
+            <StripeStep
+              onSuccess={(pmId) => handleComplete(pmId)}
+            />
+          )}
+
+          {/* ── Navigation (steps 1–5) ── */}
+          {step < 6 && (
+            <div className={`flex gap-3 pt-2 ${step === 1 ? "" : ""}`}>
+              {step > 1 && (
+                <Button
+                  variant="outline"
+                  onClick={() => setStep((s) => s - 1)}
+                  className="flex-1 rounded-full border-[#dce3ea] text-[#5c6a7a]"
+                  style={{ minHeight: "44px" }}
+                >
+                  前へ
+                </Button>
+              )}
+              <Button
+                onClick={() => setStep((s) => s + 1)}
+                className="flex-1 rounded-full bg-[#005F8C] text-white hover:bg-[#004a6b] disabled:opacity-40"
+                style={{ minHeight: "44px" }}
+                disabled={isPending || !canProceed()}
+              >
+                次へ
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {saveError && (
+        <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-600">
+          {saveError}
+        </p>
+      )}
+      <p className="mt-4 text-center text-xs text-[#8d99a8]">
+        入力した情報はいつでもプロフィールページから変更できます
+      </p>
+    </div>
+  )
+}

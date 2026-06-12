@@ -1,0 +1,62 @@
+"use server"
+
+import { createClient } from "@/lib/supabase/server"
+
+export interface OnboardingData {
+  furigana?: string
+  birthday?: string
+  gender?: "male" | "female" | "other"
+  phone?: string
+  address?: string
+  emergency_contact_name?: string
+  emergency_contact_relation?: string
+  emergency_contact?: string
+  masters_registered?: boolean
+  masters_number?: string
+  jsa_registered?: boolean
+  jsa_number?: string
+  stripe_payment_method_id?: string
+  career?: string
+  bio?: string
+  achievements?: string
+  prefecture?: string
+}
+
+export async function completeOnboarding(
+  data: OnboardingData
+): Promise<{ error: string | null }> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) return { error: "ログインが必要です" }
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({
+      furigana: data.furigana || null,
+      birthday: data.birthday || null,
+      gender: data.gender || null,
+      phone: data.phone || null,
+      address: data.address || null,
+      emergency_contact_name: data.emergency_contact_name || null,
+      emergency_contact_relation: data.emergency_contact_relation || null,
+      emergency_contact: data.emergency_contact || null,
+      masters_registered: data.masters_registered ?? false,
+      masters_number: data.masters_number || null,
+      jsa_registered: data.jsa_registered ?? false,
+      jsa_number: data.jsa_number || null,
+      stripe_payment_method_id: data.stripe_payment_method_id || null,
+      career: data.career || null,
+      bio: data.bio || null,
+      achievements: data.achievements || null,
+      prefecture: data.prefecture || null,
+      onboarding_completed_at: new Date().toISOString(),
+    })
+    .eq("id", user.id)
+
+  if (error) return { error: "保存に失敗しました" }
+
+  return { error: null }
+}
