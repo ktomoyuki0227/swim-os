@@ -323,6 +323,7 @@ export async function getTeamSessions(teamId: string) {
 
 export async function getPublicSessions(filters?: {
   tags?: string[]
+  q?: string
   location?: string
   from?: string
   to?: string
@@ -342,6 +343,9 @@ export async function getPublicSessions(filters?: {
   }
   if (filters?.to) {
     query = query.lte("scheduled_at", filters.to)
+  }
+  if (filters?.q) {
+    query = query.ilike("title", `%${filters.q}%`)
   }
   if (filters?.location) {
     query = query.ilike("location", `%${filters.location}%`)
@@ -513,10 +517,13 @@ export async function cancelRegistration(sessionId: string) {
       // Stripe 返金処理
     } else if (registration.payment_method === "point_card") {
       // ポイント戻し（アトミックなSQL式で競合を防ぐ）
-      await supabase.rpc("increment_stamp", {
+      const { error: stampErr } = await supabase.rpc("increment_stamp", {
         p_session_id: sessionId,
         p_swimmer_id: user.id,
       })
+      if (stampErr) {
+        return { error: "スタンプの返却に失敗しました。管理者にお問い合わせください" }
+      }
     }
   }
 
