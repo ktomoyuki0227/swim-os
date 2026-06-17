@@ -194,6 +194,10 @@ export interface Team {
   is_recruiting: boolean
   activity_area: string | null
   invite_code: string
+  has_session_fee: boolean
+  has_annual_fee: boolean
+  has_monthly_fee: boolean
+  has_point_card: boolean
   default_member_price: number
   default_guest_price: number
   annual_fee_amount: number | null

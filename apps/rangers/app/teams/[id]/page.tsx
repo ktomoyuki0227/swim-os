@@ -316,19 +316,49 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
                     <CardTitle className="text-base text-[#1a2332]">チーム設定</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-[#5c6a7a]">デフォルト参加費（メンバー）</span>
-                      <span className="font-medium text-[#1a2332]">
-                        ¥{(team.default_member_price || 0).toLocaleString()}
-                      </span>
+                    {/* 有効な料金体系バッジ */}
+                    <div className="flex flex-wrap gap-1.5 pb-1">
+                      {team.has_session_fee && (
+                        <span className="rounded-full bg-[#e8f2f8] px-2.5 py-0.5 text-xs text-[#005F8C]">参加費</span>
+                      )}
+                      {team.has_annual_fee && (
+                        <span className="rounded-full bg-[#e8f2f8] px-2.5 py-0.5 text-xs text-[#005F8C]">年会費</span>
+                      )}
+                      {team.has_monthly_fee && (
+                        <span className="rounded-full bg-[#e8f2f8] px-2.5 py-0.5 text-xs text-[#005F8C]">月謝</span>
+                      )}
+                      {team.has_point_card && (
+                        <span className="rounded-full bg-[#e8f2f8] px-2.5 py-0.5 text-xs text-[#005F8C]">回数券</span>
+                      )}
+                      {!team.has_session_fee && !team.has_annual_fee && !team.has_monthly_fee && !team.has_point_card && (
+                        <span className="text-xs text-[#8d99a8]">料金体系なし</span>
+                      )}
                     </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-[#5c6a7a]">デフォルト参加費（ゲスト）</span>
-                      <span className="font-medium text-[#1a2332]">
-                        ¥{(team.default_guest_price || 0).toLocaleString()}
-                      </span>
-                    </div>
-                    {team.monthly_fee_amount && (
+                    {team.has_session_fee && (
+                      <>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-[#5c6a7a]">デフォルト参加費（メンバー）</span>
+                          <span className="font-medium text-[#1a2332]">
+                            ¥{(team.default_member_price || 0).toLocaleString()}
+                          </span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-[#5c6a7a]">デフォルト参加費（ゲスト）</span>
+                          <span className="font-medium text-[#1a2332]">
+                            ¥{(team.default_guest_price || 0).toLocaleString()}
+                          </span>
+                        </div>
+                      </>
+                    )}
+                    {team.has_annual_fee && team.annual_fee_amount && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-[#5c6a7a]">年会費</span>
+                        <span className="font-medium text-[#1a2332]">
+                          ¥{team.annual_fee_amount.toLocaleString()}
+                        </span>
+                      </div>
+                    )}
+                    {team.has_monthly_fee && team.monthly_fee_amount && (
                       <div className="flex justify-between text-sm">
                         <span className="text-[#5c6a7a]">月謝</span>
                         <span className="font-medium text-[#1a2332]">
@@ -336,12 +366,14 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
                         </span>
                       </div>
                     )}
-                    <div className="flex justify-between text-sm">
-                      <span className="text-[#5c6a7a]">キャンセル期限</span>
-                      <span className="font-medium text-[#1a2332]">
-                        {team.cancellation_days}日前まで
-                      </span>
-                    </div>
+                    {team.has_session_fee && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-[#5c6a7a]">キャンセル期限</span>
+                        <span className="font-medium text-[#1a2332]">
+                          {team.cancellation_days}日前まで
+                        </span>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
                 <Link href={`/teams/${id}/edit`}>

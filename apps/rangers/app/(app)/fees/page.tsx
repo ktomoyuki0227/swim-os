@@ -54,6 +54,31 @@ export default async function FeesPage({ searchParams }: FeesPageProps) {
   const hasAnyFeeType =
     teamFeeFlags.has_annual_fee || teamFeeFlags.has_monthly_fee || teamFeeFlags.has_point_card
 
+  // URL直打ちで無効なタブが指定された場合、有効な最初のタブにリダイレクト
+  if (hasAnyFeeType) {
+    const isCurrentTypeEnabled =
+      (selectedType === "annual" && teamFeeFlags.has_annual_fee) ||
+      (selectedType === "monthly" && teamFeeFlags.has_monthly_fee) ||
+      (selectedType === "stamp_card" && teamFeeFlags.has_point_card)
+
+    if (!isCurrentTypeEnabled) {
+      const firstValidType = teamFeeFlags.has_annual_fee
+        ? "annual"
+        : teamFeeFlags.has_monthly_fee
+        ? "monthly"
+        : "stamp_card"
+      const now = new Date()
+      const period =
+        firstValidType === "annual"
+          ? now.getFullYear().toString()
+          : firstValidType === "monthly"
+          ? `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`
+          : ""
+      const periodParam = period ? `&period=${period}` : ""
+      redirect(`/fees?team=${selectedTeamId}&type=${firstValidType}${periodParam}`)
+    }
+  }
+
   // 回数券タブ
   if (selectedType === "stamp_card") {
     const { data: teamInfo } = await admin
