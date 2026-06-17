@@ -1,5 +1,5 @@
 # 作業ステータス
-最終更新: 2026-06-18
+最終更新: 2026-06-20
 
 ---
 
@@ -48,9 +48,28 @@
 
 ---
 
-## 直近でやったこと（2026-06-18）
+## 直近でやったこと（2026-06-20）
 
-### チーム料金体系選択制 実装完了 ✅（P1-B）（3bb112c, 0687d95）
+### プロフィールページ全面刷新 ✅（P1-D、commit: 43ad290）
+
+- 常時編集フォームから「表示モード + セクション別編集」UIへ完全書き直し
+- セクション構成: 基本情報 / スイマー情報（新設・公開） / 緊急連絡先 / 登録情報 / コーチ・指導員プロフィール
+- ヘッダーのアバターをクリックでドロップダウンメニュー表示（プロフィールリンク＋ログアウト）
+- スイマー情報セクション: 活動地域（都道府県マルチセレクト）・種目・活動目的・参加スタイルの4タグカテゴリ
+- DB Migration 00027: `prefectures[]`, `swimming_goals[]`, `participation_styles[]` カラム追加・本番適用済み
+- Profile 型に新フィールド追加、`SWIMMING_GOALS` / `PARTICIPATION_STYLES` 定数追加
+- コードレビューで発見した5点を修正:
+  - `prefecture` デッドステート削除（保存経路のない孤立ステートを除去）
+  - `gender` キャストをランタイムバリデーションに変更（型安全性向上）
+  - `saveSection` の `data`/`patch` 二重定義を解消（`data` を直接 profile state に spread）
+  - アバタートーストの初回マウント誤発火対策（`isFirstAvatarEffect` useRef フラグ追加）
+  - 指導対象年齢の表示を `TagRow` コンポーネントに統一
+
+---
+
+## 直近でやったこと（2026-06-19）
+
+### チーム料金体系選択制 実装完了 + 多重レビュー修正 ✅（P1-B）
 
 - `teams` テーブルに has_session_fee / has_annual_fee / has_monthly_fee / has_point_card フラグ追加（Migration 00026）
 - 本番 DB に直接適用済み（supabase db query --linked）
@@ -60,10 +79,15 @@
 - チーム作成フォーム Step 3: チェックボックス制に刷新（チェックした体系のみ入力欄が展開）
 - チーム編集フォーム: 同様にチェックボックス対応（既存フラグを初期値として読み込む）
 - 会費管理ページ: 有効なタブのみ表示 / 全フラグ false のチームは「料金体系なし」空状態を表示
-- レビューで発見した3点を追加修正:
+- 多重レビューで発見した計7点を修正:
   - `types/database.ts` の Team interface に4フラグを追加
   - `app/teams/[id]/page.tsx` settings タブで料金体系フラグを条件付き表示に変更（バッジ追加）
   - `fees/page.tsx` で URL直打ちで無効タブ指定時に有効タブへリダイレクト
+  - `fees/page.tsx` の重複 `const now = new Date()` 削除
+  - `edit-team-form.tsx` の `hasPointCard=false` 時に `point_card_count: 10` を送信して DB 上書きするバグ修正（`undefined` に変更）
+  - `new/page.tsx` / `edit-team-form.tsx` の `parseInt("0") || undefined = undefined` バグ修正（金額0が保存できない問題）→ `Number.isNaN` チェックに変更
+  - `edit-team-form.tsx` のローカル Team interface の型を `database.ts` と統一（`boolean | null` → `boolean`、`number | null` → `number` for NOT NULL フィールド）
+  - `fees/page.tsx` stamp_card ブランチの条件を `!hasAnyFeeType` → `!teamFeeFlags.has_point_card` に変更（意味的に正確な条件へ）
 
 ### ライカシンクロ削除 ✅（確認済み）
 
@@ -102,13 +126,14 @@
 
 ### P1（近日中）
 
-1. **プロフィール拡張の完成**（P1-D） ← 次のタスク
-   - `profiles` テーブルに追加カラム適用（migration）
-   - プロフィール編集ページのフォーム UI 追加
+1. **登録フロー改善（オンボーディング分岐）**（P1-A）
+   - 登録完了後「どう使いますか？」選択画面
+   - スイマー / チーム作る / パーソナルコーチ の3分岐
 
-2. **登録フロー改善（オンボーディング分岐）**（P1-A）
+2. **セッション作成フォーム拡張**（P1-E）
+   - 合宿の複数期間指定 / 待ち合わせ場所 / 性別絞り込み
 
-3. **セッション作成フォーム拡張**（P1-E）
+3. **会費・回数券の改善**（P1-F）
 
 ---
 
