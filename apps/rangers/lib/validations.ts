@@ -1,4 +1,5 @@
 import { z } from "zod/v4"
+import { SWIM_SPECIALTIES, PREFECTURES, SWIMMING_GOALS, PARTICIPATION_STYLES, TARGET_AGES } from "@/types/database"
 
 export const loginSchema = z.object({
   email: z.email("有効なメールアドレスを入力してください"),
@@ -202,6 +203,34 @@ export const templateUpdateSchema = z.object({
 })
 
 export type TemplateUpdateInput = z.infer<typeof templateUpdateSchema>
+
+// プロフィール部分更新用スキーマ（updateProfilePartial で使用）
+export const profilePartialSchema = z.object({
+  name: z.string().min(1, "名前は必須です").max(100, "名前は100文字以内").optional(),
+  furigana: z.string().max(100).nullable().optional(),
+  gender: z.enum(["male", "female", "other"]).nullable().optional(),
+  birthday: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "生年月日はYYYY-MM-DD形式で入力してください").refine((v) => !isNaN(Date.parse(v)), "有効な日付を入力してください").nullable().optional(),
+  phone: z.string().max(20).nullable().optional(),
+  address: z.string().max(200).nullable().optional(),
+  swimwear_size: z.string().max(10).nullable().optional(),
+  emergency_contact: z.string().max(20).nullable().optional(),
+  emergency_contact_name: z.string().max(100).nullable().optional(),
+  emergency_contact_relation: z.string().max(50).nullable().optional(),
+  masters_registered: z.boolean().optional(),
+  masters_number: z.string().max(50).nullable().optional(),
+  jsa_registered: z.boolean().optional(),
+  jsa_number: z.string().max(50).nullable().optional(),
+  bio: z.string().max(1000).nullable().optional(),
+  career: z.string().max(1000).nullable().optional(),
+  achievements: z.string().max(1000).nullable().optional(),
+  specialties: z.array(z.string().refine((v) => (SWIM_SPECIALTIES as readonly string[]).includes(v), "無効な種目です")).optional(),
+  target_ages: z.array(z.string().refine((v) => (TARGET_AGES as readonly string[]).includes(v), "無効な対象年齢です")).optional(),
+  prefectures: z.array(z.string().refine((v) => (PREFECTURES as readonly string[]).includes(v), "無効な都道府県です")).optional(),
+  swimming_goals: z.array(z.string().refine((v) => (SWIMMING_GOALS as readonly string[]).includes(v), "無効な活動目的です")).optional(),
+  participation_styles: z.array(z.string().refine((v) => (PARTICIPATION_STYLES as readonly string[]).includes(v), "無効な参加スタイルです")).optional(),
+}).strict()
+
+export type ProfilePartialInput = z.infer<typeof profilePartialSchema>
 
 export type TeamInput = z.infer<typeof teamSchema>
 export type TeamUpdateInput = z.infer<typeof teamUpdateSchema>

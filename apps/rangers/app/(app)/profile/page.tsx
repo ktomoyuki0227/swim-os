@@ -8,6 +8,7 @@ import {
   getProfile,
   type AvatarActionState,
 } from "@/actions/profile"
+import type { ProfilePartialInput } from "@/lib/validations"
 import { createClient } from "@/lib/supabase/client"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -136,11 +137,23 @@ function PrefectureMultiSelect({
   onChange: (next: string[]) => void
 }) {
   const [open, setOpen] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
   const toggle = (p: string) =>
     onChange(selected.includes(p) ? selected.filter((x) => x !== p) : [...selected, p])
 
+  useEffect(() => {
+    if (!open) return
+    const handleClick = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClick)
+    return () => document.removeEventListener("mousedown", handleClick)
+  }, [open])
+
   return (
-    <div className="space-y-1.5">
+    <div ref={containerRef} className="space-y-1.5">
       <Label className="text-sm text-[#5c6a7a]">活動地域</Label>
       <button
         type="button"
@@ -249,7 +262,6 @@ export default function ProfilePage() {
   const [editingSection, setEditingSection] = useState<EditingSection>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const previewObjectUrlRef = useRef<string | null>(null)
-  const isFirstAvatarEffect = useRef(true)
   const { showToast } = useToast()
 
   // 基本情報
@@ -289,7 +301,7 @@ export default function ProfilePage() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
 
   useEffect(() => {
-    if (isFirstAvatarEffect.current) { isFirstAvatarEffect.current = false; return }
+    if (!avatarState.error && !avatarState.success) return
     if (avatarState.error) showToast(avatarState.error, "error")
     if (avatarState.success) showToast("画像を更新しました", "success")
   }, [avatarState.error, avatarState.success, showToast])
@@ -324,8 +336,10 @@ export default function ProfilePage() {
         setAvatarUrl(prof.avatar_url)
       }
       if (data.user?.email) setEmail(data.user.email)
+    }).catch(() => {
+      showToast("プロフィールの読み込みに失敗しました", "error")
     }).finally(() => setIsLoading(false))
-  }, [])
+  }, [showToast])
 
   useEffect(() => {
     if (avatarState.success && avatarState.avatarUrl) {
@@ -337,7 +351,7 @@ export default function ProfilePage() {
       setPreviewUrl(null)
       if (fileInputRef.current) fileInputRef.current.value = ""
     }
-  }, [avatarState])
+  }, [avatarState.success, avatarState.avatarUrl])
 
   useEffect(() => {
     return () => {
@@ -388,13 +402,18 @@ export default function ProfilePage() {
 
   // ── セクション別保存 ──────────────────────────────────────────────
 
-  const saveSection = (data: Parameters<typeof updateProfilePartial>[0]) => {
+  const saveSection = (data: ProfilePartialInput) => {
     startTransition(async () => {
-      const result = await updateProfilePartial(data)
-      if (result.error) { showToast(result.error, "error"); return }
-      if (profile) setProfile({ ...profile, ...(data as Partial<Profile>) })
-      showToast("保存しました", "success")
-      setEditingSection(null)
+      try {
+        const result = await updateProfilePartial(data)
+        if (result.error) { showToast(result.error, "error"); return }
+        // ProfilePartialInput はすべて Profile のサブセットなので安全にマージできる
+        if (profile) setProfile({ ...profile, ...(data as Partial<Profile>) })
+        showToast("保存しました", "success")
+        setEditingSection(null)
+      } catch {
+        showToast("保存中にエラーが発生しました", "error")
+      }
     })
   }
 
@@ -603,7 +622,7 @@ export default function ProfilePage() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="space-y-3">{[...Array(2)].map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}</div>
+            <div className="space-y-3">{[...Array(4)].map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}</div>
           ) : editingSection === "swimmer" ? (
             <div className="space-y-5">
               <PrefectureMultiSelect selected={prefectures} onChange={setPrefectures} />
@@ -777,21 +796,7 @@ export default function ProfilePage() {
                 <Label htmlFor="achievements" className="text-sm text-[#5c6a7a]">実績</Label>
                 <textarea id="achievements" value={achievements} onChange={(e) => setAchievements(e.target.value)} rows={3} placeholder="例: 全日本マスターズ優勝、指導選手の入賞" className="w-full resize-none rounded-lg border border-[#dce3ea] bg-white px-3 py-2 text-sm text-[#1a2332] placeholder:text-[#8d99a8] focus:outline-none focus:ring-2 focus:ring-[#005F8C]/30" />
               </div>
-              <div className="space-y-2">
-                <Label className="text-sm text-[#5c6a7a]">指導対象年齢</Label>
-                <div className="flex flex-wrap gap-2">
-                  {TARGET_AGES.map((a) => (
-                    <button
-                      key={a}
-                      type="button"
-                      onClick={() => setTargetAges((prev) => prev.includes(a) ? prev.filter((x) => x !== a) : [...prev, a])}
-                      className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${targetAges.includes(a) ? "border-transparent bg-[#005F8C] text-white" : "border-[#dce3ea] text-[#5c6a7a] hover:border-[#005F8C] hover:text-[#005F8C]"}`}
-                    >
-                      {a}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <TagGroup label="指導対象年齢" items={TARGET_AGES} selected={targetAges} onChange={setTargetAges} />
               <EditActions onCancel={cancelEdit} onSave={savePublic} isPending={isPending} />
             </div>
           ) : (
@@ -804,23 +809,6 @@ export default function ProfilePage() {
           )}
         </CardContent>
       </Card>
-
-      {/* LOGOUT_BUTTON_REMOVED: ログアウトをヘッダードロップダウンに移動。
-          元に戻すには以下のコメントを外す。
-      <div className="border-t border-[#dce3ea] pb-10 pt-6">
-        <Button
-          variant="outline"
-          className="w-full rounded-full border-[#E8614D]/40 text-[#E8614D] hover:bg-[#E8614D]/5"
-          style={{ minHeight: "44px" }}
-          onClick={async () => {
-            await createClient().auth.signOut()
-            router.push("/login")
-          }}
-        >
-          ログアウト
-        </Button>
-      </div>
-      */}
 
       <div className="pb-10" />
     </div>
