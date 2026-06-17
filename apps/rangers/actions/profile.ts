@@ -1,6 +1,6 @@
 "use server"
 
-import { createClient } from "@/lib/supabase/server"
+import { createClient, createAdminClient } from "@/lib/supabase/server"
 import { profilePartialSchema } from "@/lib/validations"
 import { revalidatePath } from "next/cache"
 
@@ -20,44 +20,35 @@ export async function uploadAvatar(
   _prevState: AvatarActionState,
   formData: FormData
 ): Promise<AvatarActionState> {
+  // 認証チェックはユーザークライアントで行う
   const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    return { error: "ログインが必要です", success: false }
-  }
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "ログインが必要です", success: false }
 
   const file = formData.get("avatar") as File | null
-  if (!file || file.size === 0) {
-    return { error: "ファイルを選択してください", success: false }
-  }
+  if (!file || file.size === 0) return { error: "ファイルを選択してください", success: false }
 
   const allowedTypes = ["image/jpeg", "image/png", "image/webp"]
   if (!allowedTypes.includes(file.type)) {
     return { error: "JPEG・PNG・WebP形式のみアップロードできます", success: false }
   }
-
   if (file.size > 2 * 1024 * 1024) {
     return { error: "ファイルサイズは2MB以下にしてください", success: false }
   }
 
-  const ext = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg"
+  const extMap: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" }
+  const ext = extMap[file.type] ?? "jpg"
   const filePath = `${user.id}/avatar.${ext}`
 
-  const { error: uploadError } = await supabase.storage
+  // Storage への書き込みは adminClient を使用（RLS バイパス）
+  const admin = createAdminClient()
+  const { error: uploadError } = await admin.storage
     .from("avatars")
     .upload(filePath, file, { upsert: true })
 
-  if (uploadError) {
-    return { error: "画像のアップロードに失敗しました", success: false }
-  }
+  if (uploadError) return { error: "画像のアップロードに失敗しました", success: false }
 
-  const { data: urlData } = supabase.storage
-    .from("avatars")
-    .getPublicUrl(filePath)
-
+  const { data: urlData } = admin.storage.from("avatars").getPublicUrl(filePath)
   const avatarUrl = `${urlData.publicUrl}?t=${Date.now()}`
 
   const { error: updateError } = await supabase
@@ -65,12 +56,26 @@ export async function uploadAvatar(
     .update({ avatar_url: avatarUrl })
     .eq("id", user.id)
 
-  if (updateError) {
-    return { error: "プロフィールの更新に失敗しました", success: false }
-  }
+  if (updateError) return { error: "プロフィールの更新に失敗しました", success: false }
 
   revalidatePath("/profile")
   return { error: null, success: true, avatarUrl }
+}
+
+export async function deleteAvatar(): Promise<ProfileActionState> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "ログインが必要です", success: false }
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({ avatar_url: null })
+    .eq("id", user.id)
+
+  if (error) return { error: "写真の削除に失敗しました", success: false }
+
+  revalidatePath("/profile")
+  return { error: null, success: true }
 }
 
 // セクション単位での部分更新（profile/page.tsx のセクション別編集から呼び出す）

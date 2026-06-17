@@ -1,12 +1,12 @@
 "use client"
 
-import { useActionState, useEffect, useRef, useState, useTransition } from "react"
+import { useEffect, useRef, useState, useTransition } from "react"
 import Image from "next/image"
 import {
   uploadAvatar,
+  deleteAvatar,
   updateProfilePartial,
   getProfile,
-  type AvatarActionState,
 } from "@/actions/profile"
 import type { ProfilePartialInput } from "@/lib/validations"
 import { createClient } from "@/lib/supabase/client"
@@ -18,8 +18,6 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { useToast } from "@/components/toast"
 import { SWIM_SPECIALTIES, TARGET_AGES, PREFECTURES, SWIMMING_GOALS, PARTICIPATION_STYLES } from "@/types/database"
 import type { Profile } from "@/types/database"
-
-const initialAvatarState: AvatarActionState = { error: null, success: false }
 
 type EditingSection = "basic" | "swimmer" | "emergency" | "registration" | "public" | null
 
@@ -254,13 +252,16 @@ function EditActions({
 // ── メインコンポーネント ──────────────────────────────────────────
 
 export default function ProfilePage() {
-  const [avatarState, avatarAction, isAvatarPending] = useActionState(uploadAvatar, initialAvatarState)
   const [isPending, startTransition] = useTransition()
+  const [isAvatarPending, startAvatarTransition] = useTransition()
   const [profile, setProfile] = useState<Profile | null>(null)
   const [email, setEmail] = useState("")
   const [isLoading, setIsLoading] = useState(true)
   const [editingSection, setEditingSection] = useState<EditingSection>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [avatarMenuOpen, setAvatarMenuOpen] = useState(false)
+  const avatarMenuRef = useRef<HTMLDivElement>(null)
+  const libraryInputRef = useRef<HTMLInputElement>(null)
+  const cameraInputRef = useRef<HTMLInputElement>(null)
   const previewObjectUrlRef = useRef<string | null>(null)
   const { showToast } = useToast()
 
@@ -300,11 +301,17 @@ export default function ProfilePage() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
 
+  // アバターメニューの外側クリックで閉じる
   useEffect(() => {
-    if (!avatarState.error && !avatarState.success) return
-    if (avatarState.error) showToast(avatarState.error, "error")
-    if (avatarState.success) showToast("画像を更新しました", "success")
-  }, [avatarState.error, avatarState.success, showToast])
+    if (!avatarMenuOpen) return
+    const handleClick = (e: MouseEvent) => {
+      if (avatarMenuRef.current && !avatarMenuRef.current.contains(e.target as Node)) {
+        setAvatarMenuOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClick)
+    return () => document.removeEventListener("mousedown", handleClick)
+  }, [avatarMenuOpen])
 
   useEffect(() => {
     Promise.all([getProfile(), createClient().auth.getUser()]).then(([p, { data }]) => {
@@ -342,22 +349,73 @@ export default function ProfilePage() {
   }, [showToast])
 
   useEffect(() => {
-    if (avatarState.success && avatarState.avatarUrl) {
-      setAvatarUrl(avatarState.avatarUrl)
-      if (previewObjectUrlRef.current) {
-        URL.revokeObjectURL(previewObjectUrlRef.current)
-        previewObjectUrlRef.current = null
-      }
-      setPreviewUrl(null)
-      if (fileInputRef.current) fileInputRef.current.value = ""
-    }
-  }, [avatarState.success, avatarState.avatarUrl])
-
-  useEffect(() => {
     return () => {
       if (previewObjectUrlRef.current) URL.revokeObjectURL(previewObjectUrlRef.current)
     }
   }, [])
+
+  // ── キャンセル時に変更を破棄 ─────────────────────────────────────
+
+  // ── アバター操作 ──────────────────────────────────────────────────
+
+  const clearPreview = () => {
+    if (previewObjectUrlRef.current) {
+      URL.revokeObjectURL(previewObjectUrlRef.current)
+      previewObjectUrlRef.current = null
+    }
+    setPreviewUrl(null)
+    if (libraryInputRef.current) libraryInputRef.current.value = ""
+    if (cameraInputRef.current) cameraInputRef.current.value = ""
+  }
+
+  const handleAvatarFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setAvatarMenuOpen(false)
+
+    // プレビュー表示（アップロード中）
+    if (previewObjectUrlRef.current) URL.revokeObjectURL(previewObjectUrlRef.current)
+    const url = URL.createObjectURL(file)
+    previewObjectUrlRef.current = url
+    setPreviewUrl(url)
+
+    const formData = new FormData()
+    formData.set("avatar", file)
+    startAvatarTransition(async () => {
+      try {
+        const result = await uploadAvatar({ error: null, success: false }, formData)
+        clearPreview()
+        if (result.error) {
+          showToast(result.error, "error")
+        } else if (result.avatarUrl) {
+          setAvatarUrl(result.avatarUrl)
+          if (profile) setProfile({ ...profile, avatar_url: result.avatarUrl })
+          showToast("画像を更新しました", "success")
+        }
+      } catch {
+        clearPreview()
+        showToast("画像のアップロードに失敗しました", "error")
+      }
+    })
+  }
+
+  const handleDeleteAvatar = () => {
+    setAvatarMenuOpen(false)
+    startAvatarTransition(async () => {
+      try {
+        const result = await deleteAvatar()
+        if (result.error) {
+          showToast(result.error, "error")
+        } else {
+          setAvatarUrl(null)
+          if (profile) setProfile({ ...profile, avatar_url: null })
+          showToast("写真を削除しました", "success")
+        }
+      } catch {
+        showToast("削除に失敗しました", "error")
+      }
+    })
+  }
 
   // ── キャンセル時に変更を破棄 ─────────────────────────────────────
 
@@ -467,52 +525,118 @@ export default function ProfilePage() {
     <div className="mx-auto max-w-xl space-y-4">
       <h1 className="text-2xl font-bold text-[#1a2332]">プロフィール</h1>
 
-      {/* アバター・メール・完成度 */}
+      {/* アバター・完成度 */}
       <Card className="border-[#dce3ea]">
-        <CardContent className="pt-5 space-y-4">
-          <div className="flex items-center gap-5">
-            <div className="relative h-20 w-20 shrink-0">
-              {isLoading ? (
-                <Skeleton className="h-20 w-20 rounded-full" />
-              ) : displayUrl ? (
-                <Image src={displayUrl} alt={name} fill className="rounded-full object-cover ring-2 ring-[#dce3ea]" />
-              ) : (
-                <span className="flex h-20 w-20 items-center justify-center rounded-full bg-[#005F8C]/10 text-2xl font-semibold text-[#005F8C] ring-2 ring-[#dce3ea]">
-                  {initials || "?"}
-                </span>
-              )}
-            </div>
-            <form action={avatarAction} className="flex flex-col gap-2">
-              <Label
-                htmlFor="avatar"
-                className="cursor-pointer rounded-full border border-[#dce3ea] px-4 py-1.5 text-sm text-[#5c6a7a] hover:border-[#005F8C] hover:text-[#005F8C] transition-colors"
+        <CardContent className="pt-6 space-y-4">
+          {/* アバター（中央揃え） */}
+          <div className="flex justify-center">
+            <div ref={avatarMenuRef} className="relative">
+              {/* アバター本体（タップで開く） */}
+              <button
+                type="button"
+                onClick={() => !isAvatarPending && setAvatarMenuOpen((v) => !v)}
+                className="relative h-24 w-24 cursor-pointer rounded-full ring-2 ring-[#dce3ea] focus:outline-none focus-visible:ring-[#005F8C]"
+                aria-label="プロフィール写真を変更"
+                disabled={isLoading}
               >
-                画像を変更
-              </Label>
+                {isLoading ? (
+                  <Skeleton className="h-24 w-24 rounded-full" />
+                ) : displayUrl ? (
+                  <Image src={displayUrl} alt={name} fill className="rounded-full object-cover" />
+                ) : (
+                  <span className="flex h-24 w-24 items-center justify-center rounded-full bg-[#005F8C]/10 text-2xl font-semibold text-[#005F8C]">
+                    {initials || "?"}
+                  </span>
+                )}
+                {/* アップロード中オーバーレイ */}
+                {isAvatarPending && (
+                  <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40">
+                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  </div>
+                )}
+              </button>
+
+              {/* カメラアイコン（右下） */}
+              {!isLoading && (
+                <button
+                  type="button"
+                  onClick={() => !isAvatarPending && setAvatarMenuOpen((v) => !v)}
+                  className="absolute bottom-0 right-0 flex h-7 w-7 items-center justify-center rounded-full bg-[#005F8C] text-white shadow ring-2 ring-white hover:bg-[#004E73] transition-colors"
+                  aria-label="プロフィール写真を変更"
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                    <circle cx="12" cy="13" r="4"/>
+                  </svg>
+                </button>
+              )}
+
+              {/* 非表示ファイル入力（フォトライブラリ） */}
               <input
-                ref={fileInputRef}
-                id="avatar"
-                name="avatar"
+                ref={libraryInputRef}
                 type="file"
                 accept="image/jpeg,image/png,image/webp"
                 className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0]
-                  if (file) {
-                    if (previewObjectUrlRef.current) URL.revokeObjectURL(previewObjectUrlRef.current)
-                    const url = URL.createObjectURL(file)
-                    previewObjectUrlRef.current = url
-                    setPreviewUrl(url)
-                  }
-                }}
+                onChange={handleAvatarFileSelected}
               />
-              {previewUrl && (
-                <Button type="submit" size="sm" disabled={isAvatarPending} className="rounded-full bg-[#005F8C] hover:bg-[#004E73] text-xs">
-                  {isAvatarPending ? "保存中..." : "この画像を保存"}
-                </Button>
+              {/* 非表示ファイル入力（カメラ） */}
+              <input
+                ref={cameraInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                capture="environment"
+                className="hidden"
+                onChange={handleAvatarFileSelected}
+              />
+
+              {/* オプションメニュー */}
+              {avatarMenuOpen && (
+                <div className="absolute left-1/2 top-full z-20 mt-2 w-44 -translate-x-1/2 overflow-hidden rounded-xl border border-[#dce3ea] bg-white shadow-lg">
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-3 px-4 py-3 text-sm text-[#1a2332] hover:bg-[#f2f7fa] transition-colors"
+                    onClick={() => { setAvatarMenuOpen(false); libraryInputRef.current?.click() }}
+                  >
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                      <circle cx="8.5" cy="8.5" r="1.5"/>
+                      <polyline points="21 15 16 10 5 21"/>
+                    </svg>
+                    フォトライブラリ
+                  </button>
+                  <div className="border-t border-[#f2f7fa]" />
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-3 px-4 py-3 text-sm text-[#1a2332] hover:bg-[#f2f7fa] transition-colors"
+                    onClick={() => { setAvatarMenuOpen(false); cameraInputRef.current?.click() }}
+                  >
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                      <circle cx="12" cy="13" r="4"/>
+                    </svg>
+                    カメラ
+                  </button>
+                  {(avatarUrl || previewUrl) && (
+                    <>
+                      <div className="border-t border-[#f2f7fa]" />
+                      <button
+                        type="button"
+                        className="flex w-full items-center gap-3 px-4 py-3 text-sm text-[#E8614D] hover:bg-[#fff5f4] transition-colors"
+                        onClick={handleDeleteAvatar}
+                      >
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="3 6 5 6 21 6"/>
+                          <path d="M19 6l-1 14H6L5 6"/>
+                          <path d="M10 11v6M14 11v6"/>
+                          <path d="M9 6V4h6v2"/>
+                        </svg>
+                        写真を削除
+                      </button>
+                    </>
+                  )}
+                </div>
               )}
-              <p className="text-xs text-[#8d99a8]">JPEG・PNG・WebP / 2MB以下</p>
-            </form>
+            </div>
           </div>
 
           {/* 完成度 */}
