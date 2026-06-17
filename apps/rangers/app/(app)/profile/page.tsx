@@ -1,13 +1,11 @@
 "use client"
 
-import { useActionState, useEffect, useRef, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useActionState, useEffect, useRef, useState, useTransition } from "react"
 import Image from "next/image"
 import {
-  updateProfile,
   uploadAvatar,
+  updateProfilePartial,
   getProfile,
-  type ProfileActionState,
   type AvatarActionState,
 } from "@/actions/profile"
 import { createClient } from "@/lib/supabase/client"
@@ -17,19 +15,27 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useToast } from "@/components/toast"
-import { SWIM_SPECIALTIES, TARGET_AGES, PREFECTURES } from "@/types/database"
+import { SWIM_SPECIALTIES, TARGET_AGES, PREFECTURES, SWIMMING_GOALS, PARTICIPATION_STYLES } from "@/types/database"
 import type { Profile } from "@/types/database"
 
-const initialProfileState: ProfileActionState = { error: null, success: false }
 const initialAvatarState: AvatarActionState = { error: null, success: false }
 
-function Toggle({
-  checked,
-  onChange,
-}: {
-  checked: boolean
-  onChange: (v: boolean) => void
-}) {
+type EditingSection = "basic" | "swimmer" | "emergency" | "registration" | "public" | null
+
+// ── 表示用ヘルパー ────────────────────────────────────────────────
+
+function ProfileRow({ label, value, muted }: { label: string; value: string | null | undefined; muted?: boolean }) {
+  return (
+    <div className="flex items-start justify-between gap-4 border-b border-[#f2f7fa] py-2.5 last:border-0">
+      <span className="min-w-[7rem] shrink-0 text-xs text-[#8d99a8]">{label}</span>
+      <span className={value && !muted ? "text-right text-sm text-[#1a2332]" : "text-right text-sm text-[#c0c8d0]"}>
+        {value || "未設定"}
+      </span>
+    </div>
+  )
+}
+
+function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
   return (
     <button
       type="button"
@@ -49,15 +55,201 @@ function Toggle({
   )
 }
 
+function PrivacyBadge({ type }: { type: "private" | "public" }) {
+  if (type === "private") {
+    return (
+      <span className="flex items-center gap-1 text-[11px] text-[#8d99a8]">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+          <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+        </svg>
+        管理者のみ
+      </span>
+    )
+  }
+  return (
+    <span className="flex items-center gap-1 text-[11px] text-[#005F8C]">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="10" />
+        <line x1="2" y1="12" x2="22" y2="12" />
+        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+      </svg>
+      一般公開
+    </span>
+  )
+}
+
+function TagGroup({
+  label,
+  items,
+  selected,
+  onChange,
+}: {
+  label: string
+  items: readonly string[]
+  selected: string[]
+  onChange: (next: string[]) => void
+}) {
+  const toggle = (item: string) =>
+    onChange(selected.includes(item) ? selected.filter((x) => x !== item) : [...selected, item])
+  return (
+    <div className="space-y-2">
+      <Label className="text-sm text-[#5c6a7a]">{label}</Label>
+      <div className="flex flex-wrap gap-2">
+        {items.map((item) => (
+          <button
+            key={item}
+            type="button"
+            onClick={() => toggle(item)}
+            className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${selected.includes(item) ? "border-transparent bg-[#005F8C] text-white" : "border-[#dce3ea] text-[#5c6a7a] hover:border-[#005F8C] hover:text-[#005F8C]"}`}
+          >
+            {item}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function TagRow({ label, items }: { label: string; items: string[] }) {
+  return (
+    <div className="border-b border-[#f2f7fa] py-2.5 last:border-0">
+      <span className="mb-1.5 block text-xs text-[#8d99a8]">{label}</span>
+      {items.length > 0 ? (
+        <div className="flex flex-wrap gap-1.5">
+          {items.map((item) => (
+            <span key={item} className="rounded-full bg-[#005F8C]/10 px-2.5 py-0.5 text-xs text-[#005F8C]">{item}</span>
+          ))}
+        </div>
+      ) : (
+        <span className="text-sm text-[#c0c8d0]">未設定</span>
+      )}
+    </div>
+  )
+}
+
+function PrefectureMultiSelect({
+  selected,
+  onChange,
+}: {
+  selected: string[]
+  onChange: (next: string[]) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const toggle = (p: string) =>
+    onChange(selected.includes(p) ? selected.filter((x) => x !== p) : [...selected, p])
+
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-sm text-[#5c6a7a]">活動地域</Label>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex h-10 w-full items-center justify-between rounded-lg border border-[#dce3ea] bg-white px-3 text-sm text-[#1a2332] hover:border-[#005F8C]/50 focus:outline-none focus:ring-2 focus:ring-[#005F8C]/30"
+      >
+        <span className={selected.length === 0 ? "text-[#8d99a8]" : ""}>
+          {selected.length === 0 ? "選択してください（複数可）" : `${selected.length}地域を選択中`}
+        </span>
+        <svg
+          width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+          className={`shrink-0 text-[#8d99a8] transition-transform ${open ? "rotate-180" : ""}`}
+        >
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </button>
+      {selected.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {selected.map((p) => (
+            <span key={p} className="flex items-center gap-1 rounded-full bg-[#005F8C]/10 px-2.5 py-0.5 text-xs text-[#005F8C]">
+              {p}
+              <button type="button" onClick={() => toggle(p)} className="leading-none hover:text-[#E8614D]">×</button>
+            </span>
+          ))}
+        </div>
+      )}
+      {open && (
+        <div className="rounded-xl border border-[#dce3ea] bg-white p-3">
+          <div className="grid grid-cols-3 gap-x-2 gap-y-1 sm:grid-cols-4">
+            {PREFECTURES.map((p) => (
+              <label key={p} className="flex cursor-pointer items-center gap-1.5 rounded-lg px-1 py-1 text-xs hover:bg-[#f2f7fa]">
+                <input
+                  type="checkbox"
+                  checked={selected.includes(p)}
+                  onChange={() => toggle(p)}
+                  className="h-3.5 w-3.5 rounded accent-[#005F8C]"
+                />
+                {p}
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function PencilButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex h-7 w-7 items-center justify-center rounded-lg text-[#8d99a8] transition-colors hover:bg-[#f2f7fa] hover:text-[#005F8C]"
+      aria-label="編集"
+    >
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+      </svg>
+    </button>
+  )
+}
+
+function EditActions({
+  onCancel,
+  onSave,
+  isPending,
+}: {
+  onCancel: () => void
+  onSave: () => void
+  isPending: boolean
+}) {
+  return (
+    <div className="flex gap-2 pt-5">
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        className="flex-1 rounded-full border-[#dce3ea] text-[#5c6a7a]"
+        onClick={onCancel}
+        disabled={isPending}
+      >
+        キャンセル
+      </Button>
+      <Button
+        type="button"
+        size="sm"
+        className="flex-1 rounded-full bg-[#005F8C] hover:bg-[#004E73] text-white"
+        onClick={onSave}
+        disabled={isPending}
+      >
+        {isPending ? "保存中..." : "保存する"}
+      </Button>
+    </div>
+  )
+}
+
+// ── メインコンポーネント ──────────────────────────────────────────
+
 export default function ProfilePage() {
-  const router = useRouter()
-  const [state, formAction, isPending] = useActionState(updateProfile, initialProfileState)
   const [avatarState, avatarAction, isAvatarPending] = useActionState(uploadAvatar, initialAvatarState)
+  const [isPending, startTransition] = useTransition()
   const [profile, setProfile] = useState<Profile | null>(null)
   const [email, setEmail] = useState("")
   const [isLoading, setIsLoading] = useState(true)
+  const [editingSection, setEditingSection] = useState<EditingSection>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const previewObjectUrlRef = useRef<string | null>(null)
+  const isFirstAvatarEffect = useRef(true)
   const { showToast } = useToast()
 
   // 基本情報
@@ -67,25 +259,29 @@ export default function ProfilePage() {
   const [birthday, setBirthday] = useState("")
   const [phone, setPhone] = useState("")
   const [address, setAddress] = useState("")
-  const [swimwearSize, setSwimwearSize] = useState("")
 
   // 緊急連絡先
   const [emergencyContact, setEmergencyContact] = useState("")
   const [emergencyContactName, setEmergencyContactName] = useState("")
   const [emergencyContactRelation, setEmergencyContactRelation] = useState("")
 
-  // 登録情報
+  // 登録情報（水着サイズをここに移動）
   const [mastersRegistered, setMastersRegistered] = useState(false)
   const [mastersNumber, setMastersNumber] = useState("")
   const [jsaRegistered, setJsaRegistered] = useState(false)
   const [jsaNumber, setJsaNumber] = useState("")
+  const [swimwearSize, setSwimwearSize] = useState("")
 
-  // コーチプロフィール
+  // スイマー情報
+  const [prefectures, setPrefectures] = useState<string[]>([])
+  const [specialties, setSpecialties] = useState<string[]>([])
+  const [swimmingGoals, setSwimmingGoals] = useState<string[]>([])
+  const [participationStyles, setParticipationStyles] = useState<string[]>([])
+
+  // コーチ・指導員プロフィール
   const [bio, setBio] = useState("")
   const [career, setCareer] = useState("")
   const [achievements, setAchievements] = useState("")
-  const [prefecture, setPrefecture] = useState("")
-  const [specialties, setSpecialties] = useState<string[]>([])
   const [targetAges, setTargetAges] = useState<string[]>([])
 
   // アバター
@@ -93,20 +289,13 @@ export default function ProfilePage() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
 
   useEffect(() => {
-    if (state.error) showToast(state.error, "error")
-    if (state.success) showToast("プロフィールを更新しました", "success")
-  }, [state.error, state.success])
-
-  useEffect(() => {
+    if (isFirstAvatarEffect.current) { isFirstAvatarEffect.current = false; return }
     if (avatarState.error) showToast(avatarState.error, "error")
     if (avatarState.success) showToast("画像を更新しました", "success")
-  }, [avatarState.error, avatarState.success])
+  }, [avatarState.error, avatarState.success, showToast])
 
   useEffect(() => {
-    Promise.all([
-      getProfile(),
-      createClient().auth.getUser(),
-    ]).then(([p, { data }]) => {
+    Promise.all([getProfile(), createClient().auth.getUser()]).then(([p, { data }]) => {
       if (p) {
         const prof = p as Profile
         setProfile(prof)
@@ -116,7 +305,6 @@ export default function ProfilePage() {
         setBirthday(prof.birthday ?? "")
         setPhone(prof.phone ?? "")
         setAddress(prof.address ?? "")
-        setSwimwearSize(prof.swimwear_size ?? "")
         setEmergencyContact(prof.emergency_contact ?? "")
         setEmergencyContactName(prof.emergency_contact_name ?? "")
         setEmergencyContactRelation(prof.emergency_contact_relation ?? "")
@@ -124,11 +312,14 @@ export default function ProfilePage() {
         setMastersNumber(prof.masters_number ?? "")
         setJsaRegistered(prof.jsa_registered ?? false)
         setJsaNumber(prof.jsa_number ?? "")
+        setSwimwearSize(prof.swimwear_size ?? "")
+        setPrefectures(prof.prefectures ?? [])
+        setSpecialties(prof.specialties ?? [])
+        setSwimmingGoals(prof.swimming_goals ?? [])
+        setParticipationStyles(prof.participation_styles ?? [])
         setBio(prof.bio ?? "")
         setCareer(prof.career ?? "")
         setAchievements(prof.achievements ?? "")
-        setPrefecture(prof.prefecture ?? "")
-        setSpecialties(prof.specialties ?? [])
         setTargetAges(prof.target_ages ?? [])
         setAvatarUrl(prof.avatar_url)
       }
@@ -148,27 +339,116 @@ export default function ProfilePage() {
     }
   }, [avatarState])
 
-  // コンポーネントアンマウント時に未解放のオブジェクトURLを解放
   useEffect(() => {
     return () => {
       if (previewObjectUrlRef.current) URL.revokeObjectURL(previewObjectUrlRef.current)
     }
   }, [])
 
-  const initials = name
-    .split(/\s+/)
-    .map((n) => n[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase()
+  // ── キャンセル時に変更を破棄 ─────────────────────────────────────
 
+  const cancelEdit = () => {
+    if (!profile) { setEditingSection(null); return }
+    switch (editingSection) {
+      case "basic":
+        setName(profile.name ?? "")
+        setFurigana(profile.furigana ?? "")
+        setGender(profile.gender ?? "")
+        setBirthday(profile.birthday ?? "")
+        setPhone(profile.phone ?? "")
+        setAddress(profile.address ?? "")
+        break
+      case "emergency":
+        setEmergencyContact(profile.emergency_contact ?? "")
+        setEmergencyContactName(profile.emergency_contact_name ?? "")
+        setEmergencyContactRelation(profile.emergency_contact_relation ?? "")
+        break
+      case "registration":
+        setMastersRegistered(profile.masters_registered ?? false)
+        setMastersNumber(profile.masters_number ?? "")
+        setJsaRegistered(profile.jsa_registered ?? false)
+        setJsaNumber(profile.jsa_number ?? "")
+        setSwimwearSize(profile.swimwear_size ?? "")
+        break
+      case "swimmer":
+        setPrefectures(profile.prefectures ?? [])
+        setSpecialties(profile.specialties ?? [])
+        setSwimmingGoals(profile.swimming_goals ?? [])
+        setParticipationStyles(profile.participation_styles ?? [])
+        break
+      case "public":
+        setBio(profile.bio ?? "")
+        setCareer(profile.career ?? "")
+        setAchievements(profile.achievements ?? "")
+        setTargetAges(profile.target_ages ?? [])
+        break
+    }
+    setEditingSection(null)
+  }
+
+  // ── セクション別保存 ──────────────────────────────────────────────
+
+  const saveSection = (data: Parameters<typeof updateProfilePartial>[0]) => {
+    startTransition(async () => {
+      const result = await updateProfilePartial(data)
+      if (result.error) { showToast(result.error, "error"); return }
+      if (profile) setProfile({ ...profile, ...(data as Partial<Profile>) })
+      showToast("保存しました", "success")
+      setEditingSection(null)
+    })
+  }
+
+  const saveBasic = () => {
+    if (!name.trim()) { showToast("名前は必須です", "error"); return }
+    const genderValue = (["male", "female", "other"] as const).includes(gender as "male" | "female" | "other")
+      ? (gender as "male" | "female" | "other")
+      : null
+    saveSection({ name: name.trim(), furigana: furigana || null, gender: genderValue, birthday: birthday || null, phone: phone || null, address: address || null })
+  }
+
+  const saveEmergency = () => {
+    saveSection({ emergency_contact: emergencyContact || null, emergency_contact_name: emergencyContactName || null, emergency_contact_relation: emergencyContactRelation || null })
+  }
+
+  const saveRegistration = () => {
+    saveSection({ masters_registered: mastersRegistered, masters_number: mastersNumber || null, jsa_registered: jsaRegistered, jsa_number: jsaNumber || null, swimwear_size: swimwearSize || null })
+  }
+
+  const saveSwimmer = () => {
+    saveSection({ prefectures, specialties, swimming_goals: swimmingGoals, participation_styles: participationStyles })
+  }
+
+  const savePublic = () => {
+    saveSection({ bio: bio || null, career: career || null, achievements: achievements || null, target_ages: targetAges })
+  }
+
+  // ── プロフィール完成度 ────────────────────────────────────────────
+
+  const completenessFields = [
+    !!furigana, !!gender, !!birthday, !!phone, !!address,
+    !!emergencyContact,
+    !!swimwearSize,
+    !!bio,
+    prefectures.length > 0,
+    specialties.length > 0,
+    targetAges.length > 0,
+  ]
+  const completeness = Math.round(completenessFields.filter(Boolean).length / completenessFields.length * 100)
+
+  // ── 表示用変換 ────────────────────────────────────────────────────
+
+  const initials = name.split(/\s+/).map((n) => n[0]).join("").slice(0, 2).toUpperCase()
   const displayUrl = previewUrl ?? avatarUrl
+  const genderLabel = gender === "male" ? "男性" : gender === "female" ? "女性" : gender === "other" ? "その他" : null
+  const birthdayLabel = birthday ? birthday.replace(/-/g, "/") : null
+
+  // ── JSX ──────────────────────────────────────────────────────────
 
   return (
-    <div className="mx-auto max-w-xl space-y-6">
-      <h1 className="text-2xl font-bold text-[#1a2332]">プロフィール設定</h1>
+    <div className="mx-auto max-w-xl space-y-4">
+      <h1 className="text-2xl font-bold text-[#1a2332]">プロフィール</h1>
 
-      {/* アバター・メール */}
+      {/* アバター・メール・完成度 */}
       <Card className="border-[#dce3ea]">
         <CardContent className="pt-5 space-y-4">
           <div className="flex items-center gap-5">
@@ -176,12 +456,7 @@ export default function ProfilePage() {
               {isLoading ? (
                 <Skeleton className="h-20 w-20 rounded-full" />
               ) : displayUrl ? (
-                <Image
-                  src={displayUrl}
-                  alt={name}
-                  fill
-                  className="rounded-full object-cover ring-2 ring-[#dce3ea]"
-                />
+                <Image src={displayUrl} alt={name} fill className="rounded-full object-cover ring-2 ring-[#dce3ea]" />
               ) : (
                 <span className="flex h-20 w-20 items-center justify-center rounded-full bg-[#005F8C]/10 text-2xl font-semibold text-[#005F8C] ring-2 ring-[#dce3ea]">
                   {initials || "?"}
@@ -213,12 +488,7 @@ export default function ProfilePage() {
                 }}
               />
               {previewUrl && (
-                <Button
-                  type="submit"
-                  size="sm"
-                  disabled={isAvatarPending}
-                  className="rounded-full bg-[#005F8C] hover:bg-[#004E73] text-xs"
-                >
+                <Button type="submit" size="sm" disabled={isAvatarPending} className="rounded-full bg-[#005F8C] hover:bg-[#004E73] text-xs">
                   {isAvatarPending ? "保存中..." : "この画像を保存"}
                 </Button>
               )}
@@ -226,362 +496,317 @@ export default function ProfilePage() {
             </form>
           </div>
 
-          <div className="rounded-xl bg-[#f7fafc] px-4 py-3 text-sm">
-            <span className="text-[#8d99a8]">メールアドレス</span>
-            {isLoading ? (
-              <Skeleton className="mt-1 h-4 w-48" />
-            ) : (
-              <p className="mt-0.5 font-medium text-[#1a2332]">{email}</p>
-            )}
-          </div>
+          {/* 完成度 */}
+          {!isLoading && (
+            <div className="rounded-xl bg-[#f7fafc] px-4 py-3">
+              <div className="mb-1.5 flex items-center justify-between">
+                <span className="text-xs text-[#5c6a7a]">プロフィール完成度</span>
+                <span className="text-xs font-semibold text-[#005F8C]">{completeness}%</span>
+              </div>
+              <div className="h-2 rounded-full bg-[#dce3ea]">
+                <div className="h-2 rounded-full bg-[#005F8C] transition-all duration-500" style={{ width: `${completeness}%` }} />
+              </div>
+              {completeness < 100 && (
+                <p className="mt-1.5 text-[11px] text-[#8d99a8]">
+                  情報を充実させるとチーム管理者がメンバーを把握しやすくなります
+                </p>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      <form action={formAction} className="space-y-6">
-
-        {/* 基本情報 */}
-        <Card className="border-[#dce3ea]">
-          <CardHeader className="pb-2">
+      {/* 基本情報 */}
+      <Card className={`border-[#dce3ea] transition-shadow ${editingSection === "basic" ? "ring-2 ring-[#005F8C]/20" : ""}`}>
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between">
             <CardTitle className="text-base text-[#1a2332]">基本情報</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label htmlFor="name" className="text-sm text-[#5c6a7a]">
-                  名前 <span className="text-[#E8614D]">*</span>
-                </Label>
-                {isLoading ? <Skeleton className="h-10 w-full" /> : (
-                  <Input
-                    id="name"
-                    name="name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
-                    className="border-[#dce3ea]"
-                  />
-                )}
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="furigana" className="text-sm text-[#5c6a7a]">フリガナ</Label>
-                {isLoading ? <Skeleton className="h-10 w-full" /> : (
-                  <Input
-                    id="furigana"
-                    name="furigana"
-                    value={furigana}
-                    onChange={(e) => setFurigana(e.target.value)}
-                    placeholder="ヤマダ ケンタ"
-                    className="border-[#dce3ea]"
-                  />
-                )}
-              </div>
+            <div className="flex items-center gap-2">
+              <PrivacyBadge type="private" />
+              {editingSection === null && !isLoading && <PencilButton onClick={() => setEditingSection("basic")} />}
+              {editingSection === "basic" && <span className="text-xs font-medium text-[#005F8C]">編集中</span>}
             </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label htmlFor="gender" className="text-sm text-[#5c6a7a]">性別</Label>
-                <select
-                  id="gender"
-                  name="gender"
-                  value={gender}
-                  onChange={(e) => setGender(e.target.value)}
-                  className="h-10 w-full rounded-lg border border-[#dce3ea] bg-white px-3 text-sm text-[#1a2332] focus:outline-none focus:ring-2 focus:ring-[#005F8C]/30"
-                >
-                  <option value="">選択してください</option>
-                  <option value="male">男性</option>
-                  <option value="female">女性</option>
-                  <option value="other">その他</option>
-                </select>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="space-y-3">{[...Array(5)].map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}</div>
+          ) : editingSection === "basic" ? (
+            <div className="space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label htmlFor="name" className="text-sm text-[#5c6a7a]">名前 <span className="text-[#E8614D]">*</span></Label>
+                  <Input id="name" value={name} onChange={(e) => setName(e.target.value)} className="border-[#dce3ea]" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="furigana" className="text-sm text-[#5c6a7a]">フリガナ</Label>
+                  <Input id="furigana" value={furigana} onChange={(e) => setFurigana(e.target.value)} placeholder="ヤマダ ケンタ" className="border-[#dce3ea]" />
+                </div>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label htmlFor="gender" className="text-sm text-[#5c6a7a]">性別</Label>
+                  <select id="gender" value={gender} onChange={(e) => setGender(e.target.value)} className="h-10 w-full rounded-lg border border-[#dce3ea] bg-white px-3 text-sm text-[#1a2332] focus:outline-none focus:ring-2 focus:ring-[#005F8C]/30">
+                    <option value="">選択</option>
+                    <option value="male">男性</option>
+                    <option value="female">女性</option>
+                    <option value="other">その他</option>
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="birthday" className="text-sm text-[#5c6a7a]">生年月日</Label>
+                  <Input id="birthday" type="date" value={birthday} onChange={(e) => setBirthday(e.target.value)} className="border-[#dce3ea]" />
+                </div>
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="birthday" className="text-sm text-[#5c6a7a]">生年月日</Label>
-                <Input
-                  id="birthday"
-                  name="birthday"
-                  type="date"
-                  value={birthday}
-                  onChange={(e) => setBirthday(e.target.value)}
-                  className="border-[#dce3ea]"
-                />
+                <Label className="text-sm text-[#5c6a7a]">メールアドレス</Label>
+                <div className="flex h-10 items-center rounded-lg bg-[#f7fafc] px-3 text-sm text-[#8d99a8]">
+                  {email}
+                </div>
+                <p className="text-[11px] text-[#8d99a8]">メールアドレスはアカウント設定から変更できます</p>
               </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="phone" className="text-sm text-[#5c6a7a]">電話番号</Label>
+                <Input id="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="09012345678" className="border-[#dce3ea]" />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="address" className="text-sm text-[#5c6a7a]">住所</Label>
+                <Input id="address" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="例: 東京都渋谷区..." className="border-[#dce3ea]" />
+              </div>
+              <EditActions onCancel={cancelEdit} onSave={saveBasic} isPending={isPending} />
             </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="phone" className="text-sm text-[#5c6a7a]">電話番号</Label>
-              {isLoading ? <Skeleton className="h-10 w-full" /> : (
-                <Input
-                  id="phone"
-                  name="phone"
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="例: 09012345678"
-                  className="border-[#dce3ea]"
-                />
-              )}
+          ) : (
+            <div>
+              <ProfileRow label="名前" value={name || null} />
+              <ProfileRow label="フリガナ" value={furigana || null} />
+              <ProfileRow label="性別" value={genderLabel} />
+              <ProfileRow label="生年月日" value={birthdayLabel} />
+              <ProfileRow label="メールアドレス" value={email || null} />
+              <ProfileRow label="電話番号" value={phone || null} />
+              <ProfileRow label="住所" value={address || null} />
             </div>
+          )}
+        </CardContent>
+      </Card>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="address" className="text-sm text-[#5c6a7a]">住所</Label>
-              <Input
-                id="address"
-                name="address"
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                placeholder="例: 東京都渋谷区..."
-                className="border-[#dce3ea]"
+      {/* スイマー情報 */}
+      <Card className={`border-[#dce3ea] transition-shadow ${editingSection === "swimmer" ? "ring-2 ring-[#005F8C]/20" : ""}`}>
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between gap-2">
+            <CardTitle className="text-base text-[#1a2332]">スイマー情報</CardTitle>
+            <div className="flex shrink-0 items-center gap-2">
+              <PrivacyBadge type="public" />
+              {editingSection === null && !isLoading && <PencilButton onClick={() => setEditingSection("swimmer")} />}
+              {editingSection === "swimmer" && <span className="text-xs font-medium text-[#005F8C]">編集中</span>}
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="space-y-3">{[...Array(2)].map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}</div>
+          ) : editingSection === "swimmer" ? (
+            <div className="space-y-5">
+              <PrefectureMultiSelect selected={prefectures} onChange={setPrefectures} />
+              <TagGroup
+                label="種目・泳法"
+                items={SWIM_SPECIALTIES}
+                selected={specialties}
+                onChange={setSpecialties}
               />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="swimwear_size" className="text-sm text-[#5c6a7a]">水着サイズ</Label>
-              <Input
-                id="swimwear_size"
-                name="swimwear_size"
-                value={swimwearSize}
-                onChange={(e) => setSwimwearSize(e.target.value)}
-                placeholder="例: S・M・L・XL"
-                className="border-[#dce3ea]"
+              <TagGroup
+                label="活動目的"
+                items={SWIMMING_GOALS}
+                selected={swimmingGoals}
+                onChange={setSwimmingGoals}
               />
+              <TagGroup
+                label="参加スタイル"
+                items={PARTICIPATION_STYLES}
+                selected={participationStyles}
+                onChange={setParticipationStyles}
+              />
+              <EditActions onCancel={cancelEdit} onSave={saveSwimmer} isPending={isPending} />
             </div>
-          </CardContent>
-        </Card>
+          ) : (
+            <div className="space-y-1">
+              <TagRow label="活動地域" items={prefectures} />
+              <TagRow label="種目・泳法" items={specialties} />
+              <TagRow label="活動目的" items={swimmingGoals} />
+              <TagRow label="参加スタイル" items={participationStyles} />
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-        {/* 緊急連絡先 */}
-        <Card className="border-[#dce3ea]">
-          <CardHeader className="pb-2">
+      {/* 緊急連絡先 */}
+      <Card className={`border-[#dce3ea] transition-shadow ${editingSection === "emergency" ? "ring-2 ring-[#005F8C]/20" : ""}`}>
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between">
             <CardTitle className="text-base text-[#1a2332]">緊急連絡先</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="emergency_contact" className="text-sm text-[#5c6a7a]">電話番号</Label>
-              <Input
-                id="emergency_contact"
-                name="emergency_contact"
-                value={emergencyContact}
-                onChange={(e) => setEmergencyContact(e.target.value)}
-                placeholder="例: 090-0000-0000"
-                className="border-[#dce3ea]"
-              />
+            <div className="flex items-center gap-2">
+              <PrivacyBadge type="private" />
+              {editingSection === null && !isLoading && <PencilButton onClick={() => setEditingSection("emergency")} />}
+              {editingSection === "emergency" && <span className="text-xs font-medium text-[#005F8C]">編集中</span>}
             </div>
-            <div className="grid gap-3 sm:grid-cols-2">
+          </div>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="space-y-3">{[...Array(3)].map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}</div>
+          ) : editingSection === "emergency" ? (
+            <div className="space-y-4">
               <div className="space-y-1.5">
-                <Label htmlFor="emergency_contact_name" className="text-sm text-[#5c6a7a]">氏名</Label>
-                <Input
-                  id="emergency_contact_name"
-                  name="emergency_contact_name"
-                  value={emergencyContactName}
-                  onChange={(e) => setEmergencyContactName(e.target.value)}
-                  placeholder="例: 山田花子"
-                  className="border-[#dce3ea]"
-                />
+                <Label htmlFor="emergency_contact" className="text-sm text-[#5c6a7a]">電話番号</Label>
+                <Input id="emergency_contact" value={emergencyContact} onChange={(e) => setEmergencyContact(e.target.value)} placeholder="090-0000-0000" className="border-[#dce3ea]" />
               </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="emergency_contact_relation" className="text-sm text-[#5c6a7a]">続柄</Label>
-                <Input
-                  id="emergency_contact_relation"
-                  name="emergency_contact_relation"
-                  value={emergencyContactRelation}
-                  onChange={(e) => setEmergencyContactRelation(e.target.value)}
-                  placeholder="例: 母・配偶者"
-                  className="border-[#dce3ea]"
-                />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label htmlFor="emergency_contact_name" className="text-sm text-[#5c6a7a]">氏名</Label>
+                  <Input id="emergency_contact_name" value={emergencyContactName} onChange={(e) => setEmergencyContactName(e.target.value)} placeholder="山田花子" className="border-[#dce3ea]" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="emergency_contact_relation" className="text-sm text-[#5c6a7a]">続柄</Label>
+                  <Input id="emergency_contact_relation" value={emergencyContactRelation} onChange={(e) => setEmergencyContactRelation(e.target.value)} placeholder="母・配偶者" className="border-[#dce3ea]" />
+                </div>
               </div>
+              <EditActions onCancel={cancelEdit} onSave={saveEmergency} isPending={isPending} />
             </div>
-          </CardContent>
-        </Card>
+          ) : (
+            <div>
+              <ProfileRow label="電話番号" value={emergencyContact || null} />
+              <ProfileRow label="氏名" value={emergencyContactName || null} />
+              <ProfileRow label="続柄" value={emergencyContactRelation || null} />
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-        {/* 登録情報 */}
-        <Card className="border-[#dce3ea]">
-          <CardHeader className="pb-2">
+      {/* 登録情報（水着サイズを含む） */}
+      <Card className={`border-[#dce3ea] transition-shadow ${editingSection === "registration" ? "ring-2 ring-[#005F8C]/20" : ""}`}>
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between">
             <CardTitle className="text-base text-[#1a2332]">登録情報</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-5">
-            {/* マスターズ */}
-            <div className="space-y-3">
-              <label className="flex cursor-pointer items-center gap-3">
-                <input type="hidden" name="masters_registered" value={mastersRegistered ? "true" : "false"} />
-                <Toggle checked={mastersRegistered} onChange={setMastersRegistered} />
-                <span className="text-sm font-medium text-[#1a2332]">マスターズ登録あり</span>
-              </label>
-              <div className="space-y-1.5 pl-14">
-                <Label htmlFor="masters_number" className="text-sm text-[#5c6a7a]">登録番号</Label>
-                <Input
-                  id="masters_number"
-                  name="masters_number"
-                  value={mastersNumber}
-                  onChange={(e) => setMastersNumber(e.target.value)}
-                  placeholder="登録番号を入力"
-                  className="border-[#dce3ea]"
-                />
-              </div>
+            <div className="flex items-center gap-2">
+              <PrivacyBadge type="private" />
+              {editingSection === null && !isLoading && <PencilButton onClick={() => setEditingSection("registration")} />}
+              {editingSection === "registration" && <span className="text-xs font-medium text-[#005F8C]">編集中</span>}
             </div>
-
-            <div className="border-t border-[#dce3ea]" />
-
-            {/* JSA */}
-            <div className="space-y-3">
-              <label className="flex cursor-pointer items-center gap-3">
-                <input type="hidden" name="jsa_registered" value={jsaRegistered ? "true" : "false"} />
-                <Toggle checked={jsaRegistered} onChange={setJsaRegistered} />
-                <span className="text-sm font-medium text-[#1a2332]">日本水泳連盟登録あり</span>
-              </label>
-              <div className="space-y-1.5 pl-14">
-                <Label htmlFor="jsa_number" className="text-sm text-[#5c6a7a]">登録番号</Label>
-                <Input
-                  id="jsa_number"
-                  name="jsa_number"
-                  value={jsaNumber}
-                  onChange={(e) => setJsaNumber(e.target.value)}
-                  placeholder="登録番号を入力"
-                  className="border-[#dce3ea]"
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* 公開プロフィール */}
-        <Card className="border-[#dce3ea]">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base text-[#1a2332]">公開プロフィール</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="bio" className="text-sm text-[#5c6a7a]">自己紹介</Label>
-              <textarea
-                id="bio"
-                name="bio"
-                value={bio}
-                onChange={(e) => setBio(e.target.value)}
-                rows={3}
-                placeholder="指導スタイルや強みを教えてください"
-                className="w-full resize-none rounded-lg border border-[#dce3ea] bg-white px-3 py-2 text-sm text-[#1a2332] placeholder:text-[#8d99a8] focus:outline-none focus:ring-2 focus:ring-[#005F8C]/30"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="career" className="text-sm text-[#5c6a7a]">経歴</Label>
-              <textarea
-                id="career"
-                name="career"
-                value={career}
-                onChange={(e) => setCareer(e.target.value)}
-                rows={3}
-                placeholder="例: ○○大学体育会水泳部、日本選手権出場、指導歴10年"
-                className="w-full resize-none rounded-lg border border-[#dce3ea] bg-white px-3 py-2 text-sm text-[#1a2332] placeholder:text-[#8d99a8] focus:outline-none focus:ring-2 focus:ring-[#005F8C]/30"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="achievements" className="text-sm text-[#5c6a7a]">実績</Label>
-              <textarea
-                id="achievements"
-                name="achievements"
-                value={achievements}
-                onChange={(e) => setAchievements(e.target.value)}
-                rows={3}
-                placeholder="例: 国体出場、全日本マスターズ優勝、指導した選手の入賞"
-                className="w-full resize-none rounded-lg border border-[#dce3ea] bg-white px-3 py-2 text-sm text-[#1a2332] placeholder:text-[#8d99a8] focus:outline-none focus:ring-2 focus:ring-[#005F8C]/30"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="prefecture" className="text-sm text-[#5c6a7a]">活動地域（都道府県）</Label>
-              <select
-                id="prefecture"
-                name="prefecture"
-                value={prefecture}
-                onChange={(e) => setPrefecture(e.target.value)}
-                className="h-10 w-full rounded-lg border border-[#dce3ea] bg-white px-3 text-sm text-[#1a2332] focus:outline-none focus:ring-2 focus:ring-[#005F8C]/30"
-              >
-                <option value="">選択してください</option>
-                {PREFECTURES.map((p) => (
-                  <option key={p} value={p}>{p}</option>
-                ))}
-              </select>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* 得意種目 */}
-        <Card className="border-[#dce3ea]">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base text-[#1a2332]">得意種目</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-2">
-              {SWIM_SPECIALTIES.map((s) => (
-                <label key={s} className="cursor-pointer">
-                  <input
-                    type="checkbox"
-                    name="specialties"
-                    value={s}
-                    checked={specialties.includes(s)}
-                    onChange={() =>
-                      setSpecialties((prev) =>
-                        prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]
-                      )
-                    }
-                    className="sr-only"
-                  />
-                  <span
-                    className={`inline-block rounded-full px-3 py-1.5 text-sm transition-colors ${
-                      specialties.includes(s)
-                        ? "bg-[#005F8C] text-white"
-                        : "border border-[#dce3ea] text-[#5c6a7a] hover:border-[#005F8C] hover:text-[#005F8C]"
-                    }`}
-                  >
-                    {s}
-                  </span>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="space-y-3">{[...Array(4)].map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}</div>
+          ) : editingSection === "registration" ? (
+            <div className="space-y-5">
+              {/* マスターズ */}
+              <div className="space-y-3">
+                <label className="flex cursor-pointer items-center gap-3">
+                  <Toggle checked={mastersRegistered} onChange={setMastersRegistered} />
+                  <span className="text-sm font-medium text-[#1a2332]">マスターズ登録あり</span>
                 </label>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* 指導対象 */}
-        <Card className="border-[#dce3ea]">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base text-[#1a2332]">指導対象年齢</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-2">
-              {TARGET_AGES.map((a) => (
-                <label key={a} className="cursor-pointer">
-                  <input
-                    type="checkbox"
-                    name="target_ages"
-                    value={a}
-                    checked={targetAges.includes(a)}
-                    onChange={() =>
-                      setTargetAges((prev) =>
-                        prev.includes(a) ? prev.filter((x) => x !== a) : [...prev, a]
-                      )
-                    }
-                    className="sr-only"
-                  />
-                  <span
-                    className={`inline-block rounded-full px-3 py-1.5 text-sm transition-colors ${
-                      targetAges.includes(a)
-                        ? "bg-[#005F8C] text-white"
-                        : "border border-[#dce3ea] text-[#5c6a7a] hover:border-[#005F8C] hover:text-[#005F8C]"
-                    }`}
-                  >
-                    {a}
-                  </span>
+                {mastersRegistered && (
+                  <div className="space-y-1.5 pl-14">
+                    <Label htmlFor="masters_number" className="text-sm text-[#5c6a7a]">登録番号</Label>
+                    <Input id="masters_number" value={mastersNumber} onChange={(e) => setMastersNumber(e.target.value)} placeholder="登録番号" className="border-[#dce3ea]" />
+                  </div>
+                )}
+              </div>
+              <div className="border-t border-[#dce3ea]" />
+              {/* JSA */}
+              <div className="space-y-3">
+                <label className="flex cursor-pointer items-center gap-3">
+                  <Toggle checked={jsaRegistered} onChange={setJsaRegistered} />
+                  <span className="text-sm font-medium text-[#1a2332]">日本水泳連盟登録あり</span>
                 </label>
-              ))}
+                {jsaRegistered && (
+                  <div className="space-y-1.5 pl-14">
+                    <Label htmlFor="jsa_number" className="text-sm text-[#5c6a7a]">登録番号</Label>
+                    <Input id="jsa_number" value={jsaNumber} onChange={(e) => setJsaNumber(e.target.value)} placeholder="登録番号" className="border-[#dce3ea]" />
+                  </div>
+                )}
+              </div>
+              <div className="border-t border-[#dce3ea]" />
+              {/* 水着サイズ */}
+              <div className="space-y-1.5">
+                <Label htmlFor="swimwear_size" className="text-sm text-[#5c6a7a]">水着サイズ</Label>
+                <Input id="swimwear_size" value={swimwearSize} onChange={(e) => setSwimwearSize(e.target.value)} placeholder="例: S・M・L・XL" className="border-[#dce3ea]" />
+              </div>
+              <EditActions onCancel={cancelEdit} onSave={saveRegistration} isPending={isPending} />
             </div>
-          </CardContent>
-        </Card>
+          ) : (
+            <div>
+              <ProfileRow label="マスターズ" value={mastersRegistered ? "登録あり" : "未登録"} muted={!mastersRegistered} />
+              {mastersRegistered && <ProfileRow label="登録番号" value={mastersNumber || null} />}
+              <ProfileRow label="日本水泳連盟" value={jsaRegistered ? "登録あり" : "未登録"} muted={!jsaRegistered} />
+              {jsaRegistered && <ProfileRow label="登録番号" value={jsaNumber || null} />}
+              <ProfileRow label="水着サイズ" value={swimwearSize || null} />
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-        <Button
-          type="submit"
-          className="w-full rounded-full bg-[#005F8C] hover:bg-[#004E73] text-white"
-          style={{ minHeight: "48px" }}
-          disabled={isPending || isLoading}
-        >
-          {isPending ? "保存中..." : "プロフィールを保存"}
-        </Button>
-      </form>
+      {/* コーチ・指導員プロフィール */}
+      <Card className={`border-[#dce3ea] transition-shadow ${editingSection === "public" ? "ring-2 ring-[#005F8C]/20" : ""}`}>
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between gap-2">
+            <div className="min-w-0">
+              <CardTitle className="text-base text-[#1a2332]">コーチ・指導員プロフィール</CardTitle>
+              <p className="mt-0.5 text-[11px] text-[#8d99a8]">任意・コーチ登録がある方向け</p>
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
+              <PrivacyBadge type="public" />
+              {editingSection === null && !isLoading && <PencilButton onClick={() => setEditingSection("public")} />}
+              {editingSection === "public" && <span className="text-xs font-medium text-[#005F8C]">編集中</span>}
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="space-y-3">{[...Array(4)].map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}</div>
+          ) : editingSection === "public" ? (
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="bio" className="text-sm text-[#5c6a7a]">自己紹介</Label>
+                <textarea id="bio" value={bio} onChange={(e) => setBio(e.target.value)} rows={3} placeholder="指導スタイルや強みを教えてください" className="w-full resize-none rounded-lg border border-[#dce3ea] bg-white px-3 py-2 text-sm text-[#1a2332] placeholder:text-[#8d99a8] focus:outline-none focus:ring-2 focus:ring-[#005F8C]/30" />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="career" className="text-sm text-[#5c6a7a]">経歴</Label>
+                <textarea id="career" value={career} onChange={(e) => setCareer(e.target.value)} rows={3} placeholder="例: ○○大学水泳部、指導歴10年" className="w-full resize-none rounded-lg border border-[#dce3ea] bg-white px-3 py-2 text-sm text-[#1a2332] placeholder:text-[#8d99a8] focus:outline-none focus:ring-2 focus:ring-[#005F8C]/30" />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="achievements" className="text-sm text-[#5c6a7a]">実績</Label>
+                <textarea id="achievements" value={achievements} onChange={(e) => setAchievements(e.target.value)} rows={3} placeholder="例: 全日本マスターズ優勝、指導選手の入賞" className="w-full resize-none rounded-lg border border-[#dce3ea] bg-white px-3 py-2 text-sm text-[#1a2332] placeholder:text-[#8d99a8] focus:outline-none focus:ring-2 focus:ring-[#005F8C]/30" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm text-[#5c6a7a]">指導対象年齢</Label>
+                <div className="flex flex-wrap gap-2">
+                  {TARGET_AGES.map((a) => (
+                    <button
+                      key={a}
+                      type="button"
+                      onClick={() => setTargetAges((prev) => prev.includes(a) ? prev.filter((x) => x !== a) : [...prev, a])}
+                      className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${targetAges.includes(a) ? "border-transparent bg-[#005F8C] text-white" : "border-[#dce3ea] text-[#5c6a7a] hover:border-[#005F8C] hover:text-[#005F8C]"}`}
+                    >
+                      {a}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <EditActions onCancel={cancelEdit} onSave={savePublic} isPending={isPending} />
+            </div>
+          ) : (
+            <div>
+              <ProfileRow label="自己紹介" value={bio || null} />
+              <ProfileRow label="経歴" value={career || null} />
+              <ProfileRow label="実績" value={achievements || null} />
+              <TagRow label="指導対象年齢" items={targetAges} />
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
+      {/* LOGOUT_BUTTON_REMOVED: ログアウトをヘッダードロップダウンに移動。
+          元に戻すには以下のコメントを外す。
       <div className="border-t border-[#dce3ea] pb-10 pt-6">
         <Button
           variant="outline"
@@ -595,6 +820,9 @@ export default function ProfilePage() {
           ログアウト
         </Button>
       </div>
+      */}
+
+      <div className="pb-10" />
     </div>
   )
 }

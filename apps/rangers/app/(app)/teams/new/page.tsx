@@ -133,6 +133,10 @@ export default function NewTeamPage() {
     const form = e.currentTarget
     const data = new FormData(form)
 
+    const annualFeeVal = parseInt(data.get("annual_fee_amount") as string)
+    const monthlyFeeVal = parseInt(data.get("monthly_fee_amount") as string)
+    const pointCardPriceVal = parseInt(data.get("point_card_price") as string)
+
     const payload = {
       name: step1.name,
       description: step1.description || undefined,
@@ -146,11 +150,11 @@ export default function NewTeamPage() {
       has_point_card: hasPointCard,
       default_member_price: hasSessionFee ? (parseInt(data.get("default_member_price") as string) || 0) : 0,
       default_guest_price: hasSessionFee ? (parseInt(data.get("default_guest_price") as string) || 0) : 0,
-      annual_fee_amount: hasAnnualFee ? (parseInt(data.get("annual_fee_amount") as string) || undefined) : undefined,
-      monthly_fee_amount: hasMonthlyFee ? (parseInt(data.get("monthly_fee_amount") as string) || undefined) : undefined,
+      annual_fee_amount: hasAnnualFee ? (Number.isNaN(annualFeeVal) ? undefined : annualFeeVal) : undefined,
+      monthly_fee_amount: hasMonthlyFee ? (Number.isNaN(monthlyFeeVal) ? undefined : monthlyFeeVal) : undefined,
       cancellation_days: parseInt(data.get("cancellation_days") as string) || 3,
-      point_card_count: hasPointCard ? (parseInt(data.get("point_card_count") as string) || 10) : 10,
-      point_card_price: hasPointCard ? (parseInt(data.get("point_card_price") as string) || undefined) : undefined,
+      point_card_count: hasPointCard ? (parseInt(data.get("point_card_count") as string) || 10) : undefined,
+      point_card_price: hasPointCard ? (Number.isNaN(pointCardPriceVal) ? undefined : pointCardPriceVal) : undefined,
     }
 
     startTransition(async () => {

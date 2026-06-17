@@ -151,6 +151,54 @@ export async function uploadAvatar(
   return { error: null, success: true, avatarUrl }
 }
 
+// セクション単位での部分更新（profile/page.tsx のセクション別編集から呼び出す）
+export async function updateProfilePartial(
+  data: Partial<{
+    name: string
+    furigana: string | null
+    gender: string | null
+    birthday: string | null
+    phone: string | null
+    address: string | null
+    swimwear_size: string | null
+    emergency_contact: string | null
+    emergency_contact_name: string | null
+    emergency_contact_relation: string | null
+    masters_registered: boolean
+    masters_number: string | null
+    jsa_registered: boolean
+    jsa_number: string | null
+    bio: string | null
+    career: string | null
+    achievements: string | null
+    prefecture: string | null
+    specialties: string[]
+    target_ages: string[]
+    prefectures: string[]
+    swimming_goals: string[]
+    participation_styles: string[]
+  }>
+): Promise<ProfileActionState> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) return { error: "ログインが必要です", success: false }
+
+  if (data.name !== undefined && !data.name?.trim()) {
+    return { error: "名前は必須です", success: false }
+  }
+
+  const { error } = await supabase
+    .from("profiles")
+    .update(data)
+    .eq("id", user.id)
+
+  if (error) return { error: "プロフィールの更新に失敗しました", success: false }
+
+  revalidatePath("/profile")
+  return { error: null, success: true }
+}
+
 export async function getProfile() {
   const supabase = await createClient()
   const {

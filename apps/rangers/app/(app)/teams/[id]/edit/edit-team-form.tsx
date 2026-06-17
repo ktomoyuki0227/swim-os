@@ -21,16 +21,16 @@ interface Team {
   is_recruiting: boolean
   status: string | null
   activity_area: string | null
-  has_session_fee: boolean | null
-  has_annual_fee: boolean | null
-  has_monthly_fee: boolean | null
-  has_point_card: boolean | null
-  default_member_price: number | null
-  default_guest_price: number | null
+  has_session_fee: boolean
+  has_annual_fee: boolean
+  has_monthly_fee: boolean
+  has_point_card: boolean
+  default_member_price: number
+  default_guest_price: number
   annual_fee_amount: number | null
   monthly_fee_amount: number | null
-  cancellation_days: number | null
-  point_card_count: number | null
+  cancellation_days: number
+  point_card_count: number
   point_card_price: number | null
 }
 
@@ -45,10 +45,10 @@ export function EditTeamForm({ team }: EditTeamFormProps) {
 
   const [isRecruiting, setIsRecruiting] = useState(team.is_recruiting)
   const [isActive, setIsActive] = useState((team.status ?? "active") === "active")
-  const [hasSessionFee, setHasSessionFee] = useState(team.has_session_fee ?? true)
-  const [hasAnnualFee, setHasAnnualFee] = useState(team.has_annual_fee ?? false)
-  const [hasMonthlyFee, setHasMonthlyFee] = useState(team.has_monthly_fee ?? false)
-  const [hasPointCard, setHasPointCard] = useState(team.has_point_card ?? false)
+  const [hasSessionFee, setHasSessionFee] = useState(team.has_session_fee)
+  const [hasAnnualFee, setHasAnnualFee] = useState(team.has_annual_fee)
+  const [hasMonthlyFee, setHasMonthlyFee] = useState(team.has_monthly_fee)
+  const [hasPointCard, setHasPointCard] = useState(team.has_point_card)
 
   // Image state
   const [coverPreview, setCoverPreview] = useState<string | null>(team.cover_image_url)
@@ -115,6 +115,10 @@ export function EditTeamForm({ team }: EditTeamFormProps) {
         setImageUploading(false)
       }
 
+      const annualFeeVal = parseInt(data.get("annual_fee_amount") as string)
+      const monthlyFeeVal = parseInt(data.get("monthly_fee_amount") as string)
+      const pointCardPriceVal = parseInt(data.get("point_card_price") as string)
+
       const payload: Record<string, unknown> = {
         name: data.get("name") as string,
         description: (data.get("description") as string) || undefined,
@@ -127,11 +131,11 @@ export function EditTeamForm({ team }: EditTeamFormProps) {
         has_point_card: hasPointCard,
         default_member_price: hasSessionFee ? (parseInt(data.get("default_member_price") as string) || 0) : 0,
         default_guest_price: hasSessionFee ? (parseInt(data.get("default_guest_price") as string) || 0) : 0,
-        annual_fee_amount: hasAnnualFee ? (parseInt(data.get("annual_fee_amount") as string) || undefined) : undefined,
-        monthly_fee_amount: hasMonthlyFee ? (parseInt(data.get("monthly_fee_amount") as string) || undefined) : undefined,
+        annual_fee_amount: hasAnnualFee ? (Number.isNaN(annualFeeVal) ? undefined : annualFeeVal) : undefined,
+        monthly_fee_amount: hasMonthlyFee ? (Number.isNaN(monthlyFeeVal) ? undefined : monthlyFeeVal) : undefined,
         cancellation_days: parseInt(data.get("cancellation_days") as string) || 3,
-        point_card_count: hasPointCard ? (parseInt(data.get("point_card_count") as string) || 10) : 10,
-        point_card_price: hasPointCard ? (parseInt(data.get("point_card_price") as string) || undefined) : undefined,
+        point_card_count: hasPointCard ? (parseInt(data.get("point_card_count") as string) || team.point_card_count || 10) : undefined,
+        point_card_price: hasPointCard ? (Number.isNaN(pointCardPriceVal) ? undefined : pointCardPriceVal) : undefined,
       }
 
       if (newCoverUrl) payload.cover_image_url = newCoverUrl

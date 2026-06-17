@@ -2,8 +2,10 @@
 
 import Link from "next/link"
 import Image from "next/image"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
+import { useState, useRef, useEffect } from "react"
 import { cn } from "@/lib/utils"
+import { createClient } from "@/lib/supabase/client"
 
 interface NavigationProps {
   userName: string
@@ -59,6 +61,31 @@ const navLinks = [
 
 export function Navigation({ userName, avatarUrl, unreadCount = 0 }: NavigationProps) {
   const pathname = usePathname()
+  const router = useRouter()
+
+  // ── LOGOUT_LOCATION_CHANGE_START ──────────────────────────────────────────
+  // ログアウトをヘッダーのアバタードロップダウンに移動。
+  // 元に戻すには: ここから LOGOUT_LOCATION_CHANGE_END まで削除し、
+  // profile/page.tsx の「/* LOGOUT_BUTTON_REMOVED」コメントブロックを復元。
+  const [menuOpen, setMenuOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", handleOutsideClick)
+    return () => document.removeEventListener("mousedown", handleOutsideClick)
+  }, [])
+
+  const handleLogout = async () => {
+    await createClient().auth.signOut()
+    router.push("/login")
+  }
+  // ── LOGOUT_LOCATION_CHANGE_END ────────────────────────────────────────────
+
   const initials = userName
     .split(/\s+/)
     .map((n) => n[0])
@@ -117,19 +144,52 @@ export function Navigation({ userName, avatarUrl, unreadCount = 0 }: NavigationP
               )}
             </Link>
 
-            {/* Avatar */}
-            <Link
-              href="/profile"
-              className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-[#005F8C]/10 text-xs font-semibold text-[#005F8C] ring-1 ring-[#dce3ea] transition-opacity hover:opacity-80"
-              aria-label={`${userName}のプロフィール`}
-            >
-              {avatarUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={avatarUrl} alt={userName} className="h-full w-full object-cover" />
-              ) : (
-                initials
+            {/* ── LOGOUT_LOCATION_CHANGE_START ── Avatar dropdown */}
+            <div className="relative" ref={menuRef}>
+              <button
+                type="button"
+                onClick={() => setMenuOpen((v) => !v)}
+                className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-[#005F8C]/10 text-xs font-semibold text-[#005F8C] ring-1 ring-[#dce3ea] transition-opacity hover:opacity-80"
+                aria-label={`${userName}のメニュー`}
+              >
+                {avatarUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={avatarUrl} alt={userName} className="h-full w-full object-cover" />
+                ) : (
+                  initials
+                )}
+              </button>
+
+              {menuOpen && (
+                <div className="absolute right-0 top-11 z-30 w-44 overflow-hidden rounded-xl border border-[#dce3ea] bg-white shadow-lg">
+                  <Link
+                    href="/profile"
+                    onClick={() => setMenuOpen(false)}
+                    className="flex items-center gap-2.5 px-4 py-3 text-sm text-[#1a2332] hover:bg-[#f2f7fa]"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                      <circle cx="12" cy="7" r="4" />
+                    </svg>
+                    プロフィール
+                  </Link>
+                  <div className="border-t border-[#f2f7fa]" />
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="flex w-full items-center gap-2.5 px-4 py-3 text-sm text-[#E8614D] hover:bg-[#fff5f4]"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                      <polyline points="16 17 21 12 16 7" />
+                      <line x1="21" y1="12" x2="9" y2="12" />
+                    </svg>
+                    ログアウト
+                  </button>
+                </div>
               )}
-            </Link>
+            </div>
+            {/* ── LOGOUT_LOCATION_CHANGE_END ── */}
           </div>
         </div>
       </header>

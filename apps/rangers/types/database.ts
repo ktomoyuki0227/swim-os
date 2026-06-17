@@ -39,6 +39,10 @@ export interface Profile {
   phone: string | null
   onboarding_completed_at: string | null
   stripe_payment_method_id: string | null
+  // スイマー情報（複数選択）
+  prefectures: string[]
+  swimming_goals: string[]
+  participation_styles: string[]
 }
 
 export interface Lesson {
@@ -133,6 +137,32 @@ export const SWIM_SPECIALTIES = [
 ] as const
 
 export type SwimSpecialty = (typeof SWIM_SPECIALTIES)[number]
+
+/** 活動目的マスター */
+export const SWIMMING_GOALS = [
+  "競技・タイム向上",
+  "健康維持",
+  "ダイエット・体型管理",
+  "楽しみ・趣味",
+  "水泳再開（ブランクあり）",
+  "リハビリ・体力回復",
+  "マスターズ大会出場",
+  "子どもへの指導",
+] as const
+
+export type SwimmingGoal = (typeof SWIMMING_GOALS)[number]
+
+/** 参加スタイルマスター */
+export const PARTICIPATION_STYLES = [
+  "チーム練習",
+  "パーソナルレッスン",
+  "合宿・遠征",
+  "大会・記録会",
+  "自主練",
+  "オープンウォーター",
+] as const
+
+export type ParticipationStyle = (typeof PARTICIPATION_STYLES)[number]
 
 /** 対象年齢マスター */
 export const TARGET_AGES = [

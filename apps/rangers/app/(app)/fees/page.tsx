@@ -67,7 +67,6 @@ export default async function FeesPage({ searchParams }: FeesPageProps) {
         : teamFeeFlags.has_monthly_fee
         ? "monthly"
         : "stamp_card"
-      const now = new Date()
       const period =
         firstValidType === "annual"
           ? now.getFullYear().toString()
@@ -113,7 +112,7 @@ export default async function FeesPage({ searchParams }: FeesPageProps) {
               />
             </Card>
 
-            {!hasAnyFeeType ? (
+            {!teamFeeFlags.has_point_card ? (
               <NoFeeTypeMessage teamId={selectedTeamId} />
             ) : (
               <div className="space-y-3">
