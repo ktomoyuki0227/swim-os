@@ -50,21 +50,22 @@
 
 ## 直近でやったこと（2026-06-17）
 
-### チーム公開ページ（ログイン不要）実装完了
+### チーム公開ページ（ログイン不要）実装完了 ✅
 
-- **`app/teams/[id]/page.tsx` 新設** ✅（2707fc6, c913f15, fcf0a55）
+- **`app/teams/[id]/page.tsx` 新設**（2707fc6, c913f15, fcf0a55）
   - ルートグループ外に配置 → `(app)/layout.tsx` の認証ガードを受けない
-  - 4状態を1ページで処理:
-    - 非ログイン → PublicHeader + PublicTeamView + PublicFooter
-    - ログイン・非メンバー → Navigationナビ + PublicTeamView（floating CTA付き）
-    - ログイン・メンバー → Navigationナビ + メンバーダッシュボード
-    - ログイン・管理者 → Navigationナビ + 管理者ダッシュボード
-  - middleware の UUID regex（isPublicPage）は変更不要
-  - ビルド確認済み、push 済み
+  - 4状態を1ページで処理（非ログイン / ログイン非メンバー / メンバー / 管理者）
+  - LP・検索ページからのリンクも確認済み
 
-- **共有コンポーネント整備** ✅
-  - `components/teams/public-team-view.tsx` — `hasBottomNav` prop を追加
-  - `components/layout/public-header.tsx` / `public-footer.tsx` — `(public)` レイアウトから抽出
+- **共有コンポーネント整備**
+  - `components/teams/public-team-view.tsx` — `hasBottomNav` prop 追加
+  - `components/layout/public-header.tsx` / `public-footer.tsx` — 抽出・共通化
+
+### アバター画像バグ修正 ✅（6244377, a70e421）
+
+- テストアカウント3名（山田健太・鈴木太郎・佐藤花子）のアバター画像が本番で表示されない不具合を修正
+  - 原因①: `public/avatars/*.jpg` が git 未追加でVercel未デプロイ → コミット追加
+  - 原因②: `MemberList` コンポーネントがイニシャルしか表示しない実装だった → `avatar_url` がある場合は画像表示、ない場合はイニシャルフォールバックに修正
 
 ### 以前のタスク（2026-06-12）
 
