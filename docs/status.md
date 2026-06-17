@@ -1,5 +1,5 @@
 # 作業ステータス
-最終更新: 2026-06-04
+最終更新: 2026-06-17
 
 ---
 
@@ -48,49 +48,58 @@
 
 ---
 
-## 直近でやったこと（2026-06-03〜06-04）
+## 直近でやったこと（2026-06-17）
 
-- LP ヒーローセクションを AI動画フルブリード背景に変更（hero-bg.mp4）
-- Rangers ロゴ・ネームロゴを全画面に適用（透過背景版）
-- favicon 設定（スイマーロゴ・白背景・105%スケール）
-- 開発プランを全面更新（docs/rangers/development-plan.md）
-  - 39 画面・15 テーブル・13 Server Actions の完全棚卸し
-  - 外部サービス連携状態の明確化
-  - Phase 1〜3 のタスクを現状に合わせて再設計
-- チーム参加フロー実装（`/teams/join/[inviteCode]`）
-  - `app/(public)/teams/join/[inviteCode]/page.tsx` 新規作成（Server Component）
-  - `app/(public)/teams/join/[inviteCode]/join-form.tsx` 新規作成（Client Component）
-  - `actions/teams.ts` に `joinTeamAction()` 追加
-  - `actions/auth.ts` の login / register に invite コード引き継ぎ対応
-  - `app/(auth)/login/page.tsx` / `register/page.tsx` に hidden invite input 追加
-- Stripe Webhook / Stripe Connect / LINE OAuth / Resend を Phase 1 → Phase 2 に移動
-- actions/templates.ts を adminClient に全統一（RLS バイパス）→ テンプレート保存・取得バグ修正
-- デモ用テストデータ（seed.sql）投入済み
-- Supabase Storage avatars バケット作成済み
-- sessions/new をサーバーでテンプレートプリフェッチ → ドロップダウン遅延解消
+### チーム公開ページ（ログイン不要）実装完了
+
+- **`app/teams/[id]/page.tsx` 新設** ✅（2707fc6, c913f15, fcf0a55）
+  - ルートグループ外に配置 → `(app)/layout.tsx` の認証ガードを受けない
+  - 4状態を1ページで処理:
+    - 非ログイン → PublicHeader + PublicTeamView + PublicFooter
+    - ログイン・非メンバー → Navigationナビ + PublicTeamView（floating CTA付き）
+    - ログイン・メンバー → Navigationナビ + メンバーダッシュボード
+    - ログイン・管理者 → Navigationナビ + 管理者ダッシュボード
+  - middleware の UUID regex（isPublicPage）は変更不要
+  - ビルド確認済み、push 済み
+
+- **共有コンポーネント整備** ✅
+  - `components/teams/public-team-view.tsx` — `hasBottomNav` prop を追加
+  - `components/layout/public-header.tsx` / `public-footer.tsx` — `(public)` レイアウトから抽出
+
+### 以前のタスク（2026-06-12）
+
+- **LP 全面刷新** ✅（ced697c）
+- **オンボーディングフロー実装** ✅（2e02d9d）
+- **登録フロー簡素化** ✅（81f467d）
+- **プロフィール詳細フィールド追加** ✅（2042b6a）
+- **Stripe Setup Intent API ルート追加** ✅（3ff25f7）
+- **DB マイグレーション** ✅（15627bb）
 
 ---
 
 ## 次にやること
 
-### 優先度 HIGH（6/7 デモ前）
-1. ~~デモ用テストデータ投入（seed.sql 実行）~~ ✅
-2. ~~Supabase Storage `avatars` バケット作成~~ ✅
-3. ~~テストユーザー動作確認（instructor / swimmer1 / swimmer2）~~ ✅
-4. ~~テストチームセッション・カレンダー表示確認~~ ✅
-5. ~~LP ヒーロー動画（本番 URL）再生確認~~ ✅
-6. デモシナリオ最終リハーサル（6/7 当日前）
+### 🔴 高優先（今週中）
 
-### 優先度 MEDIUM（6月中）
-4. キャンセル・返金フロー（ポリシー確定後）
+1. **ライカシンクロの削除**（Supabase Dashboard から直接 DELETE）
+
+### P1（近日中）
+
+2. **チーム料金体系選択制**（P1-B）
+   - `teams` テーブルに has_annual_fee / has_monthly_fee / has_point_card / has_session_fee フラグ追加
+   - チーム作成・編集フォームに料金体系チェックボックス追加
+
+3. **プロフィール拡張の完成**（P1-D）— DB マイグレーション適用
 
 ---
 
 ## 積み残し・ブロッカー
 
+- ライカシンクロ削除未実施（Supabase Dashboard で手動削除が必要）
+- チーム乱用防止の方針（Hydoor と要相談: 制限 or 申請制 or 課金）
+- 課金開始タイミング（Hydoor と要相談）
 - キャンセルポリシー未確定（長畑さん・長畑さんのお父様・レイカさんと要相談）
-- プラットフォーム手数料率未確定（長畑さんと要相談）
-- lessons / sessions モデルの共存：sessions をメインとして継続（lessons は legacy として Phase 2 以降に整理）← 方針確定済み
+- Stripe Webhook Secret 未設定（Vercel 環境変数）
 - テストコードなし（Vitest 未導入）
 
 ---
