@@ -54,12 +54,19 @@ export function MemberList({ teamId, members }: MemberListProps) {
         const isAdmin = member.role === "admin"
         const isPointCard = member.membership_type === "point_card"
 
+        const avatarUrl = swimmer?.avatar_url as string | null | undefined
+
         return (
           <Card key={member.id as string} className="border-[#dce3ea]">
             <CardContent className="flex items-center gap-3 p-4">
               {/* Avatar */}
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#005F8C]/10 text-sm font-semibold text-[#005F8C]">
-                {(swimmer?.name as string)?.[0] || "?"}
+              <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#005F8C]/10 text-sm font-semibold text-[#005F8C]">
+                {avatarUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={avatarUrl} alt={(swimmer?.name as string) || ""} className="h-full w-full object-cover" />
+                ) : (
+                  (swimmer?.name as string)?.[0] || "?"
+                )}
               </div>
 
               {/* Info */}
