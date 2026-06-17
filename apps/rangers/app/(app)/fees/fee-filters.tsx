@@ -5,10 +5,21 @@ interface FeeFiltersProps {
   selectedTeamId: string
   selectedType: "annual" | "monthly" | "stamp_card"
   selectedPeriod: string
+  teamFeeFlags: {
+    has_annual_fee: boolean
+    has_monthly_fee: boolean
+    has_point_card: boolean
+  }
 }
 
-export function FeeFilters({ teams, selectedTeamId, selectedType, selectedPeriod }: FeeFiltersProps) {
+export function FeeFilters({ teams, selectedTeamId, selectedType, selectedPeriod, teamFeeFlags }: FeeFiltersProps) {
   const now = new Date()
+
+  const tabs = [
+    { type: "annual" as const, label: "年会費", enabled: teamFeeFlags.has_annual_fee },
+    { type: "monthly" as const, label: "月謝", enabled: teamFeeFlags.has_monthly_fee },
+    { type: "stamp_card" as const, label: "回数券", enabled: teamFeeFlags.has_point_card },
+  ].filter((t) => t.enabled)
 
   return (
     <div className="flex flex-wrap gap-4 p-4">
@@ -21,6 +32,8 @@ export function FeeFilters({ teams, selectedTeamId, selectedType, selectedPeriod
           onChange={(e) => {
             const url = new URL(window.location.href)
             url.searchParams.set("team", e.target.value)
+            url.searchParams.delete("type")
+            url.searchParams.delete("period")
             window.location.href = url.toString()
           }}
           className="h-9 rounded-lg border border-[#dce3ea] px-3 text-sm text-[#1a2332] focus:outline-none"
@@ -33,32 +46,34 @@ export function FeeFilters({ teams, selectedTeamId, selectedType, selectedPeriod
         </select>
       </div>
 
-      {/* Type selector */}
-      <div className="flex flex-col gap-1">
-        <label className="text-xs text-[#5c6a7a]">種別</label>
-        <div className="flex overflow-hidden rounded-lg border border-[#dce3ea]">
-          {(["annual", "monthly", "stamp_card"] as const).map((type) => (
-            <a
-              key={type}
-              href={`/fees?team=${selectedTeamId}&type=${type}${
-                type !== "stamp_card"
-                  ? `&period=${type === "annual" ? now.getFullYear().toString() : `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`}`
-                  : ""
-              }`}
-              className={`px-3 py-1.5 text-sm ${
-                selectedType === type
-                  ? "bg-[#005F8C] text-white"
-                  : "text-[#5c6a7a] hover:bg-[#f2f7fa]"
-              }`}
-            >
-              {type === "annual" ? "年会費" : type === "monthly" ? "月謝" : "回数券"}
-            </a>
-          ))}
+      {/* Type selector — enabled tabs only */}
+      {tabs.length > 0 && (
+        <div className="flex flex-col gap-1">
+          <label className="text-xs text-[#5c6a7a]">種別</label>
+          <div className="flex overflow-hidden rounded-lg border border-[#dce3ea]">
+            {tabs.map(({ type, label }) => (
+              <a
+                key={type}
+                href={`/fees?team=${selectedTeamId}&type=${type}${
+                  type !== "stamp_card"
+                    ? `&period=${type === "annual" ? now.getFullYear().toString() : `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`}`
+                    : ""
+                }`}
+                className={`px-3 py-1.5 text-sm ${
+                  selectedType === type
+                    ? "bg-[#005F8C] text-white"
+                    : "text-[#5c6a7a] hover:bg-[#f2f7fa]"
+                }`}
+              >
+                {label}
+              </a>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Period（回数券タブでは非表示）*/}
-      {selectedType !== "stamp_card" && (
+      {tabs.length > 0 && selectedType !== "stamp_card" && (
         <div className="flex flex-col gap-1">
           <label className="text-xs text-[#5c6a7a]">
             {selectedType === "annual" ? "年度" : "月"}

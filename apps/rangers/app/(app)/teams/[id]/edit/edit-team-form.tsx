@@ -21,6 +21,10 @@ interface Team {
   is_recruiting: boolean
   status: string | null
   activity_area: string | null
+  has_session_fee: boolean | null
+  has_annual_fee: boolean | null
+  has_monthly_fee: boolean | null
+  has_point_card: boolean | null
   default_member_price: number | null
   default_guest_price: number | null
   annual_fee_amount: number | null
@@ -41,6 +45,10 @@ export function EditTeamForm({ team }: EditTeamFormProps) {
 
   const [isRecruiting, setIsRecruiting] = useState(team.is_recruiting)
   const [isActive, setIsActive] = useState((team.status ?? "active") === "active")
+  const [hasSessionFee, setHasSessionFee] = useState(team.has_session_fee ?? true)
+  const [hasAnnualFee, setHasAnnualFee] = useState(team.has_annual_fee ?? false)
+  const [hasMonthlyFee, setHasMonthlyFee] = useState(team.has_monthly_fee ?? false)
+  const [hasPointCard, setHasPointCard] = useState(team.has_point_card ?? false)
 
   // Image state
   const [coverPreview, setCoverPreview] = useState<string | null>(team.cover_image_url)
@@ -113,13 +121,17 @@ export function EditTeamForm({ team }: EditTeamFormProps) {
         activity_area: (data.get("activity_area") as string) || undefined,
         is_recruiting: isRecruiting,
         status: isActive ? "active" : "inactive",
-        default_member_price: parseInt(data.get("default_member_price") as string) || 0,
-        default_guest_price: parseInt(data.get("default_guest_price") as string) || 0,
-        annual_fee_amount: parseInt(data.get("annual_fee_amount") as string) || undefined,
-        monthly_fee_amount: parseInt(data.get("monthly_fee_amount") as string) || undefined,
+        has_session_fee: hasSessionFee,
+        has_annual_fee: hasAnnualFee,
+        has_monthly_fee: hasMonthlyFee,
+        has_point_card: hasPointCard,
+        default_member_price: hasSessionFee ? (parseInt(data.get("default_member_price") as string) || 0) : 0,
+        default_guest_price: hasSessionFee ? (parseInt(data.get("default_guest_price") as string) || 0) : 0,
+        annual_fee_amount: hasAnnualFee ? (parseInt(data.get("annual_fee_amount") as string) || undefined) : undefined,
+        monthly_fee_amount: hasMonthlyFee ? (parseInt(data.get("monthly_fee_amount") as string) || undefined) : undefined,
         cancellation_days: parseInt(data.get("cancellation_days") as string) || 3,
-        point_card_count: parseInt(data.get("point_card_count") as string) || 10,
-        point_card_price: parseInt(data.get("point_card_price") as string) || undefined,
+        point_card_count: hasPointCard ? (parseInt(data.get("point_card_count") as string) || 10) : 10,
+        point_card_price: hasPointCard ? (parseInt(data.get("point_card_price") as string) || undefined) : undefined,
       }
 
       if (newCoverUrl) payload.cover_image_url = newCoverUrl
@@ -325,115 +337,184 @@ export function EditTeamForm({ team }: EditTeamFormProps) {
           </CardContent>
         </Card>
 
-        {/* 料金設定 */}
+        {/* 料金体系 */}
         <Card className="border-[#dce3ea]">
           <CardHeader className="pb-3">
-            <CardTitle className="text-base font-semibold text-[#1a2332]">料金設定（デフォルト値）</CardTitle>
-            <p className="text-xs text-[#5c6a7a]">セッション作成時に自動入力されます。個別に変更可能です。</p>
+            <CardTitle className="text-base font-semibold text-[#1a2332]">料金体系</CardTitle>
+            <p className="text-xs text-[#5c6a7a]">このチームで利用する料金体系を選択してください。</p>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label htmlFor="default_member_price">参加費（メンバー）</Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#5c6a7a]">¥</span>
-                  <Input
-                    id="default_member_price"
-                    name="default_member_price"
-                    type="number"
-                    min="0"
-                    step="100"
-                    defaultValue={team.default_member_price ?? 0}
-                    className="border-[#dce3ea] pl-7"
-                  />
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="default_guest_price">参加費（ゲスト）</Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#5c6a7a]">¥</span>
-                  <Input
-                    id="default_guest_price"
-                    name="default_guest_price"
-                    type="number"
-                    min="0"
-                    step="100"
-                    defaultValue={team.default_guest_price ?? 0}
-                    className="border-[#dce3ea] pl-7"
-                  />
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="annual_fee_amount">年会費</Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#5c6a7a]">¥</span>
-                  <Input
-                    id="annual_fee_amount"
-                    name="annual_fee_amount"
-                    type="number"
-                    min="0"
-                    step="100"
-                    defaultValue={team.annual_fee_amount ?? ""}
-                    placeholder="未設定"
-                    className="border-[#dce3ea] pl-7"
-                  />
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="monthly_fee_amount">月謝</Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#5c6a7a]">¥</span>
-                  <Input
-                    id="monthly_fee_amount"
-                    name="monthly_fee_amount"
-                    type="number"
-                    min="0"
-                    step="100"
-                    defaultValue={team.monthly_fee_amount ?? ""}
-                    placeholder="未設定"
-                    className="border-[#dce3ea] pl-7"
-                  />
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* 回数券設定 */}
-        <Card className="border-[#dce3ea]">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base font-semibold text-[#1a2332]">回数券（スタンプカード）</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label htmlFor="point_card_count">1枚あたりの回数</Label>
-                <Input
-                  id="point_card_count"
-                  name="point_card_count"
-                  type="number"
-                  min="1"
-                  max="100"
-                  defaultValue={team.point_card_count ?? 10}
-                  className="border-[#dce3ea]"
+            {/* セッション参加費 */}
+            <div className="space-y-3">
+              <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-[#dce3ea] p-3 hover:border-[#005F8C]/40">
+                <input
+                  type="checkbox"
+                  checked={hasSessionFee}
+                  onChange={(e) => setHasSessionFee(e.target.checked)}
+                  className="h-4 w-4 rounded border-[#dce3ea] accent-[#005F8C]"
                 />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="point_card_price">回数券の価格</Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#5c6a7a]">¥</span>
-                  <Input
-                    id="point_card_price"
-                    name="point_card_price"
-                    type="number"
-                    min="0"
-                    step="100"
-                    defaultValue={team.point_card_price ?? ""}
-                    placeholder="未設定"
-                    className="border-[#dce3ea] pl-7"
-                  />
+                <div>
+                  <p className="text-sm font-medium text-[#1a2332]">セッション参加費あり</p>
+                  <p className="text-xs text-[#8d99a8]">練習・イベントごとに参加費を徴収する</p>
                 </div>
-              </div>
+              </label>
+              {hasSessionFee && (
+                <div className="ml-4 grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="default_member_price">参加費（メンバー）</Label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#5c6a7a]">¥</span>
+                      <Input
+                        id="default_member_price"
+                        name="default_member_price"
+                        type="number"
+                        min="0"
+                        step="100"
+                        defaultValue={team.default_member_price ?? 0}
+                        className="border-[#dce3ea] pl-7"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="default_guest_price">参加費（ゲスト）</Label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#5c6a7a]">¥</span>
+                      <Input
+                        id="default_guest_price"
+                        name="default_guest_price"
+                        type="number"
+                        min="0"
+                        step="100"
+                        defaultValue={team.default_guest_price ?? 0}
+                        className="border-[#dce3ea] pl-7"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 年会費 */}
+            <div className="space-y-3">
+              <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-[#dce3ea] p-3 hover:border-[#005F8C]/40">
+                <input
+                  type="checkbox"
+                  checked={hasAnnualFee}
+                  onChange={(e) => setHasAnnualFee(e.target.checked)}
+                  className="h-4 w-4 rounded border-[#dce3ea] accent-[#005F8C]"
+                />
+                <div>
+                  <p className="text-sm font-medium text-[#1a2332]">年会費あり</p>
+                  <p className="text-xs text-[#8d99a8]">年1回の会費を徴収する</p>
+                </div>
+              </label>
+              {hasAnnualFee && (
+                <div className="ml-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="annual_fee_amount">年会費金額</Label>
+                    <div className="relative w-40">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#5c6a7a]">¥</span>
+                      <Input
+                        id="annual_fee_amount"
+                        name="annual_fee_amount"
+                        type="number"
+                        min="0"
+                        step="100"
+                        defaultValue={team.annual_fee_amount ?? ""}
+                        placeholder="0"
+                        className="border-[#dce3ea] pl-7"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 月謝 */}
+            <div className="space-y-3">
+              <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-[#dce3ea] p-3 hover:border-[#005F8C]/40">
+                <input
+                  type="checkbox"
+                  checked={hasMonthlyFee}
+                  onChange={(e) => setHasMonthlyFee(e.target.checked)}
+                  className="h-4 w-4 rounded border-[#dce3ea] accent-[#005F8C]"
+                />
+                <div>
+                  <p className="text-sm font-medium text-[#1a2332]">月謝あり</p>
+                  <p className="text-xs text-[#8d99a8]">毎月の月謝を徴収する</p>
+                </div>
+              </label>
+              {hasMonthlyFee && (
+                <div className="ml-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="monthly_fee_amount">月謝金額</Label>
+                    <div className="relative w-40">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#5c6a7a]">¥</span>
+                      <Input
+                        id="monthly_fee_amount"
+                        name="monthly_fee_amount"
+                        type="number"
+                        min="0"
+                        step="100"
+                        defaultValue={team.monthly_fee_amount ?? ""}
+                        placeholder="0"
+                        className="border-[#dce3ea] pl-7"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 回数券 */}
+            <div className="space-y-3">
+              <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-[#dce3ea] p-3 hover:border-[#005F8C]/40">
+                <input
+                  type="checkbox"
+                  checked={hasPointCard}
+                  onChange={(e) => setHasPointCard(e.target.checked)}
+                  className="h-4 w-4 rounded border-[#dce3ea] accent-[#005F8C]"
+                />
+                <div>
+                  <p className="text-sm font-medium text-[#1a2332]">回数券あり</p>
+                  <p className="text-xs text-[#8d99a8]">スタンプカード方式で回数管理をする</p>
+                </div>
+              </label>
+              {hasPointCard && (
+                <div className="ml-4 grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="point_card_count">1枚あたりの回数</Label>
+                    <Input
+                      id="point_card_count"
+                      name="point_card_count"
+                      type="number"
+                      min="1"
+                      max="100"
+                      defaultValue={team.point_card_count ?? 10}
+                      className="border-[#dce3ea]"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="point_card_price">
+                      回数券の価格
+                      <span className="ml-1 text-xs font-normal text-[#8d99a8]">（任意）</span>
+                    </Label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#5c6a7a]">¥</span>
+                      <Input
+                        id="point_card_price"
+                        name="point_card_price"
+                        type="number"
+                        min="0"
+                        step="100"
+                        defaultValue={team.point_card_price ?? ""}
+                        placeholder="未設定"
+                        className="border-[#dce3ea] pl-7"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
