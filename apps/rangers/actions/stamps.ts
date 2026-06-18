@@ -17,6 +17,7 @@ export async function getStampMembers(teamId: string) {
     .eq("team_id", teamId)
     .eq("swimmer_id", user.id)
     .eq("role", "admin")
+    .eq("status", "active")
     .single()
   if (!adminCheck) return { data: [] }
 
@@ -72,6 +73,7 @@ export async function addStampPurchase(
     .eq("team_id", teamId)
     .eq("swimmer_id", user.id)
     .eq("role", "admin")
+    .eq("status", "active")
     .single()
   if (!adminCheck) return { error: "権限がありません" }
 

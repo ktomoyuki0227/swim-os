@@ -14,6 +14,7 @@ interface InviteSectionProps {
 export function InviteSection({ team }: InviteSectionProps) {
   const [copied, setCopied] = useState(false)
   const [isRegenerating, setIsRegenerating] = useState(false)
+  const [regenerateError, setRegenerateError] = useState<string | null>(null)
 
   const inviteUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/teams/join/${team.invite_code}`
 
@@ -26,9 +27,14 @@ export function InviteSection({ team }: InviteSectionProps) {
   const handleRegenerate = async () => {
     if (!confirm("招待コードを再生成しますか？\n現在のリンクは使えなくなります。")) return
     setIsRegenerating(true)
-    await regenerateInviteCode(team.id)
+    setRegenerateError(null)
+    const result = await regenerateInviteCode(team.id)
     setIsRegenerating(false)
-    window.location.reload()
+    if ("error" in result && result.error) {
+      setRegenerateError(result.error)
+    } else {
+      window.location.reload()
+    }
   }
 
   return (
@@ -78,6 +84,11 @@ export function InviteSection({ team }: InviteSectionProps) {
               {isRegenerating ? "更新中..." : "再生成"}
             </Button>
           </div>
+          {regenerateError && (
+            <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600">
+              {regenerateError}
+            </p>
+          )}
         </CardContent>
       </Card>
     </div>

@@ -89,10 +89,10 @@ export default async function InstructorProfilePage({ params }: InstructorPagePr
               </div>
             )}
 
-            {profile.prefecture && (
+            {profile.prefectures && profile.prefectures.length > 0 && (
               <div className="mb-3 flex items-center gap-1.5 text-sm text-muted-foreground">
                 <MapPin className="h-4 w-4" />
-                <span>{profile.prefecture} 活動</span>
+                <span>{profile.prefectures[0]} 活動</span>
               </div>
             )}
 

@@ -409,7 +409,7 @@ export default function OnboardingPage() {
       if (avatarFile) {
         const fd = new FormData()
         fd.append("avatar", avatarFile)
-        await uploadAvatar({ error: null, success: false }, fd)
+        await uploadAvatar(fd)
       }
 
       const birthday =

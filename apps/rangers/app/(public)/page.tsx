@@ -30,7 +30,7 @@ export default async function HomePage() {
   if (coachIds.length > 0) {
     const { data: coachData } = await admin
       .from("profiles")
-      .select("id, name, avatar_url, bio, specialties, prefecture")
+      .select("id, name, avatar_url, bio, specialties, prefectures")
       .in("id", coachIds)
       .order("review_count", { ascending: false })
       .limit(4)
@@ -369,8 +369,8 @@ export default async function HomePage() {
                       <h3 className="font-bold text-[#1a2332] group-hover:text-[#005F8C]">
                         {coach.name} コーチ
                       </h3>
-                      {coach.prefecture && (
-                        <p className="mt-0.5 text-xs text-[#5c6a7a]">📍 {coach.prefecture}</p>
+                      {coach.prefectures && coach.prefectures.length > 0 && (
+                        <p className="mt-0.5 text-xs text-[#5c6a7a]">📍 {coach.prefectures[0]}</p>
                       )}
                       {coach.bio && (
                         <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-[#5c6a7a]">{coach.bio}</p>

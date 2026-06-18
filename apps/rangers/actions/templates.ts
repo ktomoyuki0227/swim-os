@@ -26,6 +26,7 @@ export async function saveAsTemplate(sessionId: string, name: string) {
     .eq("team_id", session.team_id)
     .eq("swimmer_id", user.id)
     .eq("role", "admin")
+    .eq("status", "active")
     .single()
   if (!adminMembership) return { error: "権限がありません" }
 
@@ -72,6 +73,7 @@ export async function getTeamTemplates(teamId: string) {
     .eq("team_id", teamId)
     .eq("swimmer_id", user.id)
     .eq("role", "admin")
+    .eq("status", "active")
     .single()
   if (!adminMembership) return { data: [] }
 
@@ -105,6 +107,7 @@ export async function getTemplate(templateId: string) {
     .eq("team_id", data.team_id)
     .eq("swimmer_id", user.id)
     .eq("role", "admin")
+    .eq("status", "active")
     .single()
   if (!adminMembership) return { data: null }
 
@@ -137,6 +140,7 @@ export async function updateTemplate(
     .eq("team_id", tmpl.team_id)
     .eq("swimmer_id", user.id)
     .eq("role", "admin")
+    .eq("status", "active")
     .single()
   if (!adminMembership) return { error: "権限がありません" }
 
@@ -171,6 +175,7 @@ export async function deleteTemplate(templateId: string) {
     .eq("team_id", tmpl.team_id)
     .eq("swimmer_id", user.id)
     .eq("role", "admin")
+    .eq("status", "active")
     .single()
   if (!adminMembership) return { error: "権限がありません" }
 
@@ -209,6 +214,7 @@ export async function createSessionFromTemplate(
     .eq("team_id", template.team_id)
     .eq("swimmer_id", user.id)
     .eq("role", "admin")
+    .eq("status", "active")
     .single()
   if (!adminMembership) return { error: "権限がありません" }
 

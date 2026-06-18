@@ -82,9 +82,9 @@ function InstructorCard({ instructor }: { instructor: Profile }) {
           )}
 
           <div className="flex flex-wrap items-center gap-2">
-            {instructor.prefecture && (
+            {instructor.prefectures && instructor.prefectures.length > 0 && (
               <span className="text-xs text-muted-foreground">
-                📍 {instructor.prefecture}
+                📍 {instructor.prefectures[0]}
               </span>
             )}
             {instructor.specialties?.slice(0, 3).map((s) => (
@@ -140,7 +140,7 @@ export default async function InstructorsPage({ searchParams }: InstructorsPageP
     query = query.contains("specialties", [specialty])
   }
   if (prefecture) {
-    query = query.eq("prefecture", prefecture)
+    query = query.contains("prefectures", [prefecture])
   }
   if (age) {
     query = query.contains("target_ages", [age])

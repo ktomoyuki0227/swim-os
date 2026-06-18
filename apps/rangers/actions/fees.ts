@@ -22,6 +22,7 @@ export async function getTeamFees(
     .eq("team_id", teamId)
     .eq("swimmer_id", user.id)
     .eq("role", "admin")
+    .eq("status", "active")
     .single()
   if (!adminMembership) return { data: [] }
 
@@ -90,6 +91,7 @@ export async function updateFeeStatus(
     .eq("team_id", fee.team_id)
     .eq("swimmer_id", user.id)
     .eq("role", "admin")
+    .eq("status", "active")
     .single()
   if (!adminMembership) return { error: "権限がありません" }
 
@@ -132,6 +134,7 @@ export async function bulkCreateFees(
     .eq("team_id", teamId)
     .eq("swimmer_id", user.id)
     .eq("role", "admin")
+    .eq("status", "active")
     .single()
   if (!adminMembership) return { error: "権限がありません" }
 

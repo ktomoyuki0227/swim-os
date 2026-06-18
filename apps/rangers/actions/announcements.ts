@@ -20,6 +20,7 @@ export async function createAnnouncement(teamId: string, data: unknown) {
     .eq("team_id", teamId)
     .eq("swimmer_id", user.id)
     .eq("role", "admin")
+    .eq("status", "active")
     .single()
   if (!adminMembership) return { error: "権限がありません" }
 
@@ -95,6 +96,7 @@ export async function getAnnouncementReads(announcementId: string) {
     .eq("team_id", announcement.team_id)
     .eq("swimmer_id", user.id)
     .eq("role", "admin")
+    .eq("status", "active")
     .single()
   if (!adminMembership) return { error: "権限がありません" }
 

@@ -17,7 +17,6 @@ export interface Profile {
   career: string | null
   achievements: string | null
   specialties: string[]
-  prefecture: string | null
   target_ages: string[]
   rating_avg: number
   review_count: number
@@ -252,7 +251,13 @@ export interface TeamMember {
 }
 
 export interface TeamMemberWithProfile extends TeamMember {
-  swimmer: Pick<Profile, "id" | "name" | "avatar_url">
+  swimmer: Pick<
+    Profile,
+    | "id" | "name" | "avatar_url" | "furigana" | "gender" | "birthday"
+    | "address" | "emergency_contact" | "emergency_contact_name" | "emergency_contact_relation"
+    | "masters_registered" | "masters_number" | "jsa_registered" | "jsa_number"
+    | "specialties" | "prefectures" | "swimming_goals" | "participation_styles"
+  > | null
 }
 
 export interface CourseRule {

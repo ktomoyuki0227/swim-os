@@ -1,10 +1,12 @@
 "use client"
 
 import { useState } from "react"
-import { removeMember, updateMembershipType } from "@/actions/teams"
+import { removeMember } from "@/actions/teams"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { useToast } from "@/components/toast"
+import type { TeamMemberWithProfile } from "@/types/database"
 
 const TAG_LABELS: Record<string, string> = {
   level_beginner: "初級",
@@ -21,18 +23,23 @@ const TAG_LABELS: Record<string, string> = {
 
 interface MemberListProps {
   teamId: string
-  members: Record<string, unknown>[]
+  members: TeamMemberWithProfile[]
 }
 
 export function MemberList({ teamId, members }: MemberListProps) {
   const [removingId, setRemovingId] = useState<string | null>(null)
+  const { showToast } = useToast()
 
   const handleRemove = async (swimmerId: string) => {
     if (!confirm("このメンバーをチームから削除しますか？")) return
     setRemovingId(swimmerId)
-    await removeMember(teamId, swimmerId)
+    const result = await removeMember(teamId, swimmerId)
     setRemovingId(null)
-    window.location.reload()
+    if (result.error) {
+      showToast(result.error, "error")
+    } else {
+      window.location.reload()
+    }
   }
 
   if (members.length === 0) {
@@ -49,66 +56,68 @@ export function MemberList({ teamId, members }: MemberListProps) {
   return (
     <div className="space-y-3">
       {members.map((member) => {
-        const swimmer = member.swimmer as Record<string, unknown> | null
-        const tags = (member.tags as string[]) || []
+        const swimmer = member.swimmer
+        const tags = member.tags || []
         const isAdmin = member.role === "admin"
         const isPointCard = member.membership_type === "point_card"
 
-        const avatarUrl = swimmer?.avatar_url as string | null | undefined
-
         return (
-          <Card key={member.id as string} className="border-[#dce3ea]">
+          <Card key={member.id} className="border-[#dce3ea]">
             <CardContent className="flex items-center gap-3 p-4">
               {/* Avatar */}
               <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#005F8C]/10 text-sm font-semibold text-[#005F8C]">
-                {avatarUrl ? (
+                {swimmer?.avatar_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={avatarUrl} alt={(swimmer?.name as string) || ""} className="h-full w-full object-cover" />
+                  <img src={swimmer.avatar_url} alt={swimmer.name || ""} className="h-full w-full object-cover" />
                 ) : (
-                  (swimmer?.name as string)?.[0] || "?"
+                  swimmer?.name?.[0] || "?"
                 )}
               </div>
 
               {/* Info */}
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-1.5">
-                  <p className="font-medium text-[#1a2332]">
-                    {(swimmer?.name as string) || "不明"}
-                  </p>
+                  <p className="font-medium text-[#1a2332]">{swimmer?.name || "不明"}</p>
                   {isAdmin && (
-                    <Badge className="bg-[#e8f2f8] text-[#005F8C] border-transparent text-[10px] px-1.5 py-0">
+                    <Badge className="border-transparent bg-[#e8f2f8] px-1.5 py-0 text-[10px] text-[#005F8C]">
                       管理者
                     </Badge>
                   )}
                   <Badge
                     className={
                       isPointCard
-                        ? "bg-[#fdf6e3] text-[#b8860b] border-transparent text-[10px] px-1.5 py-0"
-                        : "bg-[#eaf7f0] text-[#0f8a4f] border-transparent text-[10px] px-1.5 py-0"
+                        ? "border-transparent bg-[#fdf6e3] px-1.5 py-0 text-[10px] text-[#b8860b]"
+                        : "border-transparent bg-[#eaf7f0] px-1.5 py-0 text-[10px] text-[#0f8a4f]"
                     }
                   >
                     {isPointCard ? "回数券" : "レギュラー"}
                   </Badge>
                 </div>
                 {!!swimmer?.furigana && (
-                  <p className="mt-0.5 text-xs text-[#8d99a8]">{swimmer.furigana as string}</p>
+                  <p className="mt-0.5 text-xs text-[#8d99a8]">{swimmer.furigana}</p>
                 )}
+                {/* チームタグ */}
                 {tags.length > 0 && (
                   <div className="mt-1 flex flex-wrap gap-1">
                     {tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="rounded-full bg-[#f2f7fa] px-2 py-0.5 text-[10px] text-[#5c6a7a]"
-                      >
+                      <span key={tag} className="rounded-full bg-[#f2f7fa] px-2 py-0.5 text-[10px] text-[#5c6a7a]">
                         {TAG_LABELS[tag] || tag}
                       </span>
                     ))}
                   </div>
                 )}
+                {/* プロフィール種目タグ */}
+                {(swimmer?.specialties || []).length > 0 && (
+                  <div className="mt-1 flex flex-wrap gap-1">
+                    {swimmer!.specialties.map((s) => (
+                      <span key={s} className="rounded-full bg-[#e8f2f8] px-2 py-0.5 text-[10px] text-[#005F8C]">
+                        {s}
+                      </span>
+                    ))}
+                  </div>
+                )}
                 {isPointCard && member.stamp_remaining !== undefined && (
-                  <p className="mt-0.5 text-xs text-[#5c6a7a]">
-                    残り {member.stamp_remaining as number} 回
-                  </p>
+                  <p className="mt-0.5 text-xs text-[#5c6a7a]">残り {member.stamp_remaining} 回</p>
                 )}
                 {/* スイマー詳細情報 */}
                 <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-[#8d99a8]">
@@ -117,18 +126,22 @@ export function MemberList({ teamId, members }: MemberListProps) {
                       {swimmer.gender === "male" ? "男性" : swimmer.gender === "female" ? "女性" : "その他"}
                     </span>
                   )}
-                  {!!swimmer?.address && (
-                    <span>{swimmer.address as string}</span>
-                  )}
-                  {!!swimmer?.masters_registered && (
+                  {(swimmer?.prefectures || []).length > 0 && (
                     <span>
-                      マスターズ登録済{swimmer.masters_number ? `（${swimmer.masters_number as string}）` : ""}
+                      {(() => {
+                        const prefs = swimmer!.prefectures
+                        const shown = prefs.slice(0, 2).join("・")
+                        const rest = prefs.length - 2
+                        return rest > 0 ? `${shown} +${rest}` : shown
+                      })()}
                     </span>
+                  )}
+                  {!!swimmer?.address && <span>{swimmer.address}</span>}
+                  {!!swimmer?.masters_registered && (
+                    <span>マスターズ登録済{swimmer.masters_number ? `（${swimmer.masters_number}）` : ""}</span>
                   )}
                   {!!swimmer?.jsa_registered && (
-                    <span>
-                      JSA登録済{swimmer.jsa_number ? `（${swimmer.jsa_number as string}）` : ""}
-                    </span>
+                    <span>JSA登録済{swimmer.jsa_number ? `（${swimmer.jsa_number}）` : ""}</span>
                   )}
                 </div>
               </div>
@@ -138,8 +151,8 @@ export function MemberList({ teamId, members }: MemberListProps) {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => handleRemove(swimmer?.id as string)}
-                  disabled={removingId === (swimmer?.id as string)}
+                  onClick={() => { if (swimmer?.id) handleRemove(swimmer.id) }}
+                  disabled={!swimmer?.id || removingId === swimmer.id}
                   className="shrink-0 text-xs text-[#5c6a7a] hover:text-red-600"
                 >
                   削除

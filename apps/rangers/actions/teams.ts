@@ -102,6 +102,7 @@ export async function updateTeam(teamId: string, data: unknown) {
     .eq("team_id", teamId)
     .eq("swimmer_id", user.id)
     .eq("role", "admin")
+    .eq("status", "active")
     .single()
   if (adminError || !adminMembership) return { error: "権限がありません" }
 
@@ -235,17 +236,14 @@ export async function joinTeamByCode(
   // レギュラー会員なら年会費レコードを自動生成
   if (membershipType === "regular" && team.annual_fee_amount) {
     const currentYear = new Date().getFullYear().toString()
-    const { error: feeError } = await supabase.from("membership_fees").insert({
+    // 年会費生成失敗はチーム参加を妨げない（非致命的）
+    await supabase.from("membership_fees").insert({
       team_id: team.id,
       swimmer_id: user.id,
       type: "annual",
       period: currentYear,
       amount: team.annual_fee_amount,
     })
-    // 年会費生成失敗はチーム参加を妨げないが、エラーをログに残す
-    if (feeError) {
-      console.error("membership_fees insert failed:", feeError.message)
-    }
   }
 
   revalidatePath("/teams")
@@ -253,16 +251,30 @@ export async function joinTeamByCode(
 }
 
 export async function getTeamMembers(teamId: string) {
-  const admin = createAdminClient()
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { data: [], error: "ログインが必要です" }
 
+  // 呼び出し元が当該チームの管理者であることを確認
+  const { data: adminMembership } = await supabase
+    .from("team_members")
+    .select("id")
+    .eq("team_id", teamId)
+    .eq("swimmer_id", user.id)
+    .eq("role", "admin")
+    .eq("status", "active")
+    .single()
+  if (!adminMembership) return { data: [], error: "権限がありません" }
+
+  const admin = createAdminClient()
   const { data, error } = await admin
     .from("team_members")
-    .select("*, swimmer:profiles(id, name, avatar_url, furigana, gender, birthday, address, emergency_contact, emergency_contact_name, emergency_contact_relation, masters_registered, masters_number, jsa_registered, jsa_number)")
+    .select("*, swimmer:profiles(id, name, avatar_url, furigana, gender, birthday, address, emergency_contact, emergency_contact_name, emergency_contact_relation, masters_registered, masters_number, jsa_registered, jsa_number, specialties, prefectures, swimming_goals, participation_styles)")
     .eq("team_id", teamId)
     .eq("status", "active")
     .order("joined_at", { ascending: true })
 
-  if (error) return { data: [] }
+  if (error) return { data: [], error: "メンバーの取得に失敗しました" }
   return { data: data || [] }
 }
 
@@ -284,6 +296,7 @@ export async function updateMemberTags(teamMemberId: string, tags: string[]) {
     .eq("team_id", tm.team_id)
     .eq("swimmer_id", user.id)
     .eq("role", "admin")
+    .eq("status", "active")
     .single()
   if (!adminMembership) return { error: "権限がありません" }
 
@@ -309,6 +322,7 @@ export async function removeMember(teamId: string, swimmerId: string) {
     .eq("team_id", teamId)
     .eq("swimmer_id", user.id)
     .eq("role", "admin")
+    .eq("status", "active")
     .single()
   if (!adminMembership) return { error: "権限がありません" }
 
@@ -345,6 +359,7 @@ export async function updateMembershipType(
     .eq("team_id", tm.team_id)
     .eq("swimmer_id", user.id)
     .eq("role", "admin")
+    .eq("status", "active")
     .single()
   if (!adminMembership) return { error: "権限がありません" }
 
@@ -417,6 +432,7 @@ export async function regenerateInviteCode(teamId: string) {
     .eq("team_id", teamId)
     .eq("swimmer_id", user.id)
     .eq("role", "admin")
+    .eq("status", "active")
     .single()
   if (!adminMembership) return { error: "権限がありません" }
 
@@ -437,6 +453,20 @@ export async function regenerateInviteCode(teamId: string) {
 }
 
 export async function getTeamFeeStats(teamId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "ログインが必要です" }
+
+  const { data: adminMembership } = await supabase
+    .from("team_members")
+    .select("id")
+    .eq("team_id", teamId)
+    .eq("swimmer_id", user.id)
+    .eq("role", "admin")
+    .eq("status", "active")
+    .single()
+  if (!adminMembership) return { error: "権限がありません" }
+
   const admin = createAdminClient()
   const currentYear = new Date().getFullYear().toString()
 
@@ -509,7 +539,7 @@ export async function getPublicTeam(teamId: string) {
   // 管理者プロフィール
   const { data: adminMember } = await admin
     .from("team_members")
-    .select("swimmer:profiles(id, name, avatar_url, bio, career, achievements, prefecture)")
+    .select("swimmer:profiles(id, name, avatar_url, bio, career, achievements, prefectures)")
     .eq("team_id", teamId)
     .eq("role", "admin")
     .eq("status", "active")

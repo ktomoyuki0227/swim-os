@@ -22,6 +22,7 @@ export async function createSession(teamId: string, data: unknown) {
     .eq("team_id", teamId)
     .eq("swimmer_id", user.id)
     .eq("role", "admin")
+    .eq("status", "active")
     .single()
   if (!adminMembership) return { error: "権限がありません" }
 
@@ -88,6 +89,7 @@ export async function updateSession(sessionId: string, data: unknown) {
     .eq("team_id", session.team_id)
     .eq("swimmer_id", user.id)
     .eq("role", "admin")
+    .eq("status", "active")
     .single()
   if (!adminMembership) return { error: "権限がありません" }
 
@@ -120,6 +122,7 @@ export async function deleteSession(sessionId: string) {
     .eq("team_id", session.team_id)
     .eq("swimmer_id", user.id)
     .eq("role", "admin")
+    .eq("status", "active")
     .single()
   if (!adminMembership) return { error: "権限がありません" }
 
@@ -168,6 +171,7 @@ export async function confirmSession(sessionId: string) {
     .eq("team_id", session.team_id)
     .eq("swimmer_id", user.id)
     .eq("role", "admin")
+    .eq("status", "active")
     .single()
   if (!adminMembership) return { error: "権限がありません" }
 
@@ -248,6 +252,7 @@ export async function cancelSession(sessionId: string) {
     .eq("team_id", session.team_id)
     .eq("swimmer_id", user.id)
     .eq("role", "admin")
+    .eq("status", "active")
     .single()
   if (!adminMembership) return { error: "権限がありません" }
 
@@ -600,6 +605,7 @@ export async function retryPayment(registrationId: string) {
     .eq("team_id", session.team_id)
     .eq("swimmer_id", user.id)
     .eq("role", "admin")
+    .eq("status", "active")
     .single()
   if (!adminMembership) return { error: "権限がありません" }
 
@@ -639,6 +645,7 @@ export async function exportSessionRegistrations(
     .eq("team_id", session.team_id)
     .eq("swimmer_id", user.id)
     .eq("role", "admin")
+    .eq("status", "active")
     .single()
   if (!adminMembership) return { error: "権限がありません" }
 
@@ -711,6 +718,7 @@ export async function getPriceViewers(sessionId: string) {
     .eq("team_id", session.team_id)
     .eq("swimmer_id", user.id)
     .eq("role", "admin")
+    .eq("status", "active")
     .single()
   if (!adminMembership) return { error: "権限がありません", data: [] }
 
@@ -743,6 +751,7 @@ export async function getSessionRegistrations(sessionId: string) {
     .eq("team_id", session.team_id)
     .eq("swimmer_id", user.id)
     .eq("role", "admin")
+    .eq("status", "active")
     .single()
   if (!adminMembership) return { error: "権限がありません", data: [], count: 0 }
 

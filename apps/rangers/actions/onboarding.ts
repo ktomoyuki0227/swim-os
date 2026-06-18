@@ -52,6 +52,7 @@ export async function completeOnboarding(
       bio: data.bio || null,
       achievements: data.achievements || null,
       prefecture: data.prefecture || null,
+      prefectures: data.prefecture ? [data.prefecture] : undefined,
       onboarding_completed_at: new Date().toISOString(),
     })
     .eq("id", user.id)
