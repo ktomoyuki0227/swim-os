@@ -1,6 +1,6 @@
 "use server"
 
-import { createClient } from "@/lib/supabase/server"
+import { createClient, createAdminClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { announcementSchema } from "@/lib/validations"
@@ -13,8 +13,9 @@ export async function createAnnouncement(teamId: string, data: unknown) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
 
-  // admin権限チェック
-  const { data: adminMembership } = await supabase
+  // admin権限チェック（team_members は RLS バイパスが必要）
+  const adminClient = createAdminClient()
+  const { data: adminMembership } = await adminClient
     .from("team_members")
     .select("id")
     .eq("team_id", teamId)
@@ -90,7 +91,8 @@ export async function getAnnouncementReads(announcementId: string) {
 
   if (!announcement) return { data: [] }
 
-  const { data: adminMembership } = await supabase
+  const admin2 = createAdminClient()
+  const { data: adminMembership } = await admin2
     .from("team_members")
     .select("id")
     .eq("team_id", announcement.team_id)
@@ -133,8 +135,9 @@ export async function getUnreadAnnouncementCount() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { count: 0 }
 
-  // 自分が所属するチームのお知らせ
-  const { data: memberships } = await supabase
+  // 自分が所属するチームのお知らせ（team_members は RLS バイパスが必要）
+  const admin3 = createAdminClient()
+  const { data: memberships } = await admin3
     .from("team_members")
     .select("team_id")
     .eq("swimmer_id", user.id)

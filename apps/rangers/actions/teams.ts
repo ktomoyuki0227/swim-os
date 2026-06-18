@@ -96,7 +96,8 @@ export async function updateTeam(teamId: string, data: unknown) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
 
-  const { data: adminMembership, error: adminError } = await supabase
+  const admin = createAdminClient()
+  const { data: adminMembership } = await admin
     .from("team_members")
     .select("id")
     .eq("team_id", teamId)
@@ -104,7 +105,7 @@ export async function updateTeam(teamId: string, data: unknown) {
     .eq("role", "admin")
     .eq("status", "active")
     .single()
-  if (adminError || !adminMembership) return { error: "権限がありません" }
+  if (!adminMembership) return { error: "権限がありません" }
 
   const { error } = await supabase
     .from("teams")
@@ -255,8 +256,9 @@ export async function getTeamMembers(teamId: string) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { data: [], error: "ログインが必要です" }
 
-  // 呼び出し元が当該チームの管理者であることを確認
-  const { data: adminMembership } = await supabase
+  // RLS バイパスが必要なため adminClient で admin チェック
+  const admin = createAdminClient()
+  const { data: adminMembership } = await admin
     .from("team_members")
     .select("id")
     .eq("team_id", teamId)
@@ -265,8 +267,6 @@ export async function getTeamMembers(teamId: string) {
     .eq("status", "active")
     .single()
   if (!adminMembership) return { data: [], error: "権限がありません" }
-
-  const admin = createAdminClient()
   const { data, error } = await admin
     .from("team_members")
     .select("*, swimmer:profiles(id, name, avatar_url, furigana, gender, birthday, address, emergency_contact, emergency_contact_name, emergency_contact_relation, masters_registered, masters_number, jsa_registered, jsa_number, specialties, prefectures, swimming_goals, participation_styles)")
@@ -283,14 +283,15 @@ export async function updateMemberTags(teamMemberId: string, tags: string[]) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
 
-  const { data: tm } = await supabase
+  const admin = createAdminClient()
+  const { data: tm } = await admin
     .from("team_members")
     .select("team_id")
     .eq("id", teamMemberId)
     .single()
   if (!tm) return { error: "メンバーが見つかりません" }
 
-  const { data: adminMembership } = await supabase
+  const { data: adminMembership } = await admin
     .from("team_members")
     .select("id")
     .eq("team_id", tm.team_id)
@@ -300,7 +301,7 @@ export async function updateMemberTags(teamMemberId: string, tags: string[]) {
     .single()
   if (!adminMembership) return { error: "権限がありません" }
 
-  const { error } = await supabase
+  const { error } = await admin
     .from("team_members")
     .update({ tags })
     .eq("id", teamMemberId)
@@ -316,7 +317,8 @@ export async function removeMember(teamId: string, swimmerId: string) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
 
-  const { data: adminMembership } = await supabase
+  const admin = createAdminClient()
+  const { data: adminMembership } = await admin
     .from("team_members")
     .select("id")
     .eq("team_id", teamId)
@@ -326,7 +328,7 @@ export async function removeMember(teamId: string, swimmerId: string) {
     .single()
   if (!adminMembership) return { error: "権限がありません" }
 
-  const { error } = await supabase
+  const { error } = await admin
     .from("team_members")
     .update({ status: "inactive" })
     .eq("team_id", teamId)
@@ -346,14 +348,15 @@ export async function updateMembershipType(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
 
-  const { data: tm } = await supabase
+  const admin = createAdminClient()
+  const { data: tm } = await admin
     .from("team_members")
     .select("team_id")
     .eq("id", teamMemberId)
     .single()
   if (!tm) return { error: "メンバーが見つかりません" }
 
-  const { data: adminMembership } = await supabase
+  const { data: adminMembership } = await admin
     .from("team_members")
     .select("id")
     .eq("team_id", tm.team_id)
@@ -363,7 +366,7 @@ export async function updateMembershipType(
     .single()
   if (!adminMembership) return { error: "権限がありません" }
 
-  const { error } = await supabase
+  const { error } = await admin
     .from("team_members")
     .update({ membership_type: type })
     .eq("id", teamMemberId)
@@ -426,7 +429,8 @@ export async function regenerateInviteCode(teamId: string) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
 
-  const { data: adminMembership } = await supabase
+  const admin = createAdminClient()
+  const { data: adminMembership } = await admin
     .from("team_members")
     .select("id")
     .eq("team_id", teamId)
@@ -457,7 +461,9 @@ export async function getTeamFeeStats(teamId: string) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: "ログインが必要です" }
 
-  const { data: adminMembership } = await supabase
+  // RLS バイパスが必要なため adminClient で admin チェック
+  const admin = createAdminClient()
+  const { data: adminMembership } = await admin
     .from("team_members")
     .select("id")
     .eq("team_id", teamId)
@@ -466,8 +472,6 @@ export async function getTeamFeeStats(teamId: string) {
     .eq("status", "active")
     .single()
   if (!adminMembership) return { error: "権限がありません" }
-
-  const admin = createAdminClient()
   const currentYear = new Date().getFullYear().toString()
 
   // 全アクティブメンバーを取得

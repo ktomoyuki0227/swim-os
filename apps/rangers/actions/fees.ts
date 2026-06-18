@@ -78,14 +78,15 @@ export async function updateFeeStatus(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
 
-  const { data: fee } = await supabase
+  const admin = createAdminClient()
+  const { data: fee } = await admin
     .from("membership_fees")
     .select("team_id")
     .eq("id", feeId)
     .single()
   if (!fee) return { error: "会費レコードが見つかりません" }
 
-  const { data: adminMembership } = await supabase
+  const { data: adminMembership } = await admin
     .from("team_members")
     .select("id")
     .eq("team_id", fee.team_id)
@@ -127,8 +128,9 @@ export async function bulkCreateFees(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
 
-  // admin権限チェック
-  const { data: adminMembership } = await supabase
+  // admin権限チェック（team_members は RLS バイパスが必要）
+  const admin = createAdminClient()
+  const { data: adminMembership } = await admin
     .from("team_members")
     .select("id")
     .eq("team_id", teamId)
@@ -139,7 +141,7 @@ export async function bulkCreateFees(
   if (!adminMembership) return { error: "権限がありません" }
 
   // レギュラー会員のみ対象
-  const { data: members } = await supabase
+  const { data: members } = await admin
     .from("team_members")
     .select("swimmer_id")
     .eq("team_id", teamId)
@@ -175,9 +177,10 @@ export async function getMemberFees(swimmerId?: string) {
 
   const targetId = swimmerId || user.id
 
-  // 他ユーザーのデータを取得する場合はadmin権限チェック
+  // 他ユーザーのデータを取得する場合はadmin権限チェック（team_members は RLS バイパスが必要）
   if (targetId !== user.id) {
-    const { data: adminTeams } = await supabase
+    const admin = createAdminClient()
+    const { data: adminTeams } = await admin
       .from("team_members")
       .select("team_id")
       .eq("swimmer_id", user.id)
@@ -188,7 +191,7 @@ export async function getMemberFees(swimmerId?: string) {
 
     const adminTeamIds = adminTeams.map((t) => t.team_id)
 
-    const { data: targetMembership } = await supabase
+    const { data: targetMembership } = await admin
       .from("team_members")
       .select("id")
       .eq("swimmer_id", targetId)
@@ -224,8 +227,9 @@ export async function purchasePointCard(teamId: string) {
   if (!team) return { error: "チームが見つかりません" }
   if (!team.point_card_price) return { error: "ポイントカードの料金が設定されていません" }
 
-  // メンバー情報を取得
-  const { data: member } = await supabase
+  // メンバー情報を取得（team_members は RLS バイパスが必要）
+  const adminMemberCheck = createAdminClient()
+  const { data: member } = await adminMemberCheck
     .from("team_members")
     .select("id, stamp_remaining, membership_type")
     .eq("team_id", teamId)
