@@ -1,5 +1,5 @@
 # 作業ステータス
-最終更新: 2026-06-20
+最終更新: 2026-06-18
 
 ---
 
@@ -45,6 +45,65 @@
 | Stripe Connect | 🔲 未実装 |
 | LINE OAuth | 🔲 スタブのみ |
 | Resend | 🔲 未導入 |
+
+---
+
+## 直近でやったこと（2026-06-18）
+
+### チーム詳細ページ メンバーリストUI全面改善 ✅
+
+チーム詳細（管理者ビュー）のメンバー一覧カードを大幅にブラッシュアップ。
+
+**レイアウト変更（app/(app)/teams/[id]/member-list.tsx）**
+- カード上段を1行化: `[アバター][名前/フリガナ/参加日]` → `[バッジ群][•••メニュー]`（右寄せ）
+- `items-start` → `items-center` で縦ズレを解消
+- 削除ボタンを廃止し、•••（三点リーダー）ドロップダウンメニューに変更
+  - click-outside 検知あり。管理者メンバーには•••非表示
+
+**バッジ改善**
+- 会員種別バッジロジック整理: 「月謝・年会費」複合ケースを削除 → `月謝 > 年会費 > メンバー` の優先順位に統一
+- 回数券バッジをバッジ統合型に変更: `回数券 · 残りN回` を1バッジに収める
+  - 残り3回以下で赤色（`bg-[#fef2f2] text-[#dc2626]`）に切り替え
+  - 詳細セクションの「残り N 回」テキストは削除（重複解消）
+
+**参加日表示追加**
+- 名前ブロック内（フリガナの下）に参加日を常時表示
+- `joined_at` は `TeamMember` 型に存在・`select("*")` で取得済みのためデータ変更なし
+- 表示形式: `参加 2024年4月1日`
+
+**パディング圧縮**
+- カード内パディング: `p-4` → `px-4 py-0`（縦パディングを完全除去）
+- カード間スペース: `space-y-3` → `space-y-2`
+- 詳細セクション上マージン: `mt-3 space-y-1.5` → `mt-2 space-y-1`
+
+**呼び出し元修正**
+- `app/teams/[id]/page.tsx` L236: `<MemberList teamId={id} members={members} />` → `team={team}` prop 追加
+- TypeScript: `tsc --noEmit` クリーン確認済み
+
+---
+
+## 直近でやったこと（2026-06-21）
+
+### プロフィールページ 多重コードレビュー → 全指摘修正完了 ✅（commit: 5db138b）
+
+計4ラウンドのコードレビューを実施し、全 HIGH/CRITICAL を解消して PASS を確認。
+
+- セキュリティ: `updateProfilePartial` に Zod(`profilePartialSchema` + `.strict()`) を導入
+  - birthday: YYYY-MM-DD regex + Date.parse で2重検証
+  - 配列フィールド（prefectures / specialties 等）を定数リストで refine 検証
+  - `result.data` のみ Supabase に渡す（フィールド許可リスト保証）
+- 堅牢性: `getProfile` が Supabase エラーを throw → 呼び出し元 `.catch()` で補足
+- 堅牢性: `saveSection` に try/catch 追加（ネットワークエラー時の isPending スタック防止）
+- 型安全性: `saveSection` の型を `ProfilePartialInput` に変更（unsafe cast 解消）
+- React: `isFirstAvatarEffect` ref を削除 → `!error && !success` ガードに置換
+- React: `showToast` を useEffect 依存配列に追加
+- React: 2つ目の avatar useEffect 依存を `[avatarState.success, avatarState.avatarUrl]` に修正
+- UX: `PrefectureMultiSelect` に outside-click-to-close 追加
+- UI: スイマー情報スケルトン `Array(2)` → `Array(4)` に修正
+- 整理: 指導対象年齢をインライン実装から `TagGroup` コンポーネントに統一
+- 整理: 旧 `updateProfile` 関数（dead code）を完全削除
+- 整理: コメントアウトされたログアウトボタンを削除
+- TypeScript: `tsc --noEmit` クリーン確認済み
 
 ---
 

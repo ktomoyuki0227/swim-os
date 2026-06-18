@@ -17,7 +17,6 @@ export interface AvatarActionState {
 }
 
 export async function uploadAvatar(
-  _prevState: AvatarActionState,
   formData: FormData
 ): Promise<AvatarActionState> {
   // 認証チェックはユーザークライアントで行う
@@ -67,6 +66,15 @@ export async function deleteAvatar(): Promise<ProfileActionState> {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: "ログインが必要です", success: false }
 
+  // Storage からファイルを削除（adminClient でRLSバイパス）
+  const admin = createAdminClient()
+  const { data: files } = await admin.storage.from("avatars").list(user.id)
+  if (files && files.length > 0) {
+    const paths = files.map((f) => `${user.id}/${f.name}`)
+    await admin.storage.from("avatars").remove(paths)
+  }
+
+  // DB の参照を null に更新
   const { error } = await supabase
     .from("profiles")
     .update({ avatar_url: null })

@@ -46,7 +46,7 @@ export function PublicTeamView({ data, hasBottomNav = false }: PublicTeamViewPro
   const coachName = (coach?.name as string) ?? null
   const coachAvatarUrl = (coach?.avatar_url as string) ?? null
   const coachCareer = (coach?.career as string) ?? null
-  const coachPrefecture = (coach?.prefecture as string) ?? null
+  const coachPrefecture = (coach?.prefectures as string[] | undefined)?.[0] ?? null
   const coachBio = (coach?.bio as string) ?? null
 
   const heroBannerUrl = team.cover_image_url ?? team.avatar_url ?? null

@@ -34,6 +34,17 @@ function ProfileRow({ label, value, muted }: { label: string; value: string | nu
   )
 }
 
+function ProfileBlockRow({ label, value }: { label: string; value: string | null | undefined }) {
+  return (
+    <div className="border-b border-[#f2f7fa] py-2.5 last:border-0">
+      <span className="text-xs text-[#8d99a8]">{label}</span>
+      <p className={`mt-0.5 whitespace-pre-wrap text-sm leading-relaxed ${value ? "text-[#1a2332]" : "text-[#c0c8d0]"}`}>
+        {value || "未設定"}
+      </p>
+    </div>
+  )
+}
+
 function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
   return (
     <button
@@ -110,15 +121,39 @@ function TagGroup({
   )
 }
 
-function TagRow({ label, items }: { label: string; items: string[] }) {
+function TagRow({ label, items, maxVisible = Infinity }: { label: string; items: string[]; maxVisible?: number }) {
+  const [expanded, setExpanded] = useState(false)
+  useEffect(() => { setExpanded(false) }, [items])
+  const shouldCollapse = !expanded && items.length > maxVisible
+  const visible = shouldCollapse ? items.slice(0, maxVisible) : items
+  const hiddenCount = Math.max(0, items.length - maxVisible)
+
   return (
     <div className="border-b border-[#f2f7fa] py-2.5 last:border-0">
       <span className="mb-1.5 block text-xs text-[#8d99a8]">{label}</span>
       {items.length > 0 ? (
         <div className="flex flex-wrap gap-1.5">
-          {items.map((item) => (
+          {visible.map((item) => (
             <span key={item} className="rounded-full bg-[#005F8C]/10 px-2.5 py-0.5 text-xs text-[#005F8C]">{item}</span>
           ))}
+          {shouldCollapse && (
+            <button
+              type="button"
+              onClick={() => setExpanded(true)}
+              className="rounded-full border border-[#dce3ea] px-2.5 py-0.5 text-xs text-[#8d99a8] transition-colors hover:border-[#005F8C] hover:text-[#005F8C]"
+            >
+              +{hiddenCount}件
+            </button>
+          )}
+          {expanded && items.length > maxVisible && (
+            <button
+              type="button"
+              onClick={() => setExpanded(false)}
+              className="rounded-full border border-[#dce3ea] px-2.5 py-0.5 text-xs text-[#8d99a8] transition-colors hover:border-[#005F8C] hover:text-[#005F8C]"
+            >
+              折りたたむ
+            </button>
+          )}
         </div>
       ) : (
         <span className="text-sm text-[#c0c8d0]">未設定</span>
@@ -225,26 +260,28 @@ function EditActions({
   isPending: boolean
 }) {
   return (
-    <div className="flex gap-2 pt-5">
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        className="flex-1 rounded-full border-[#dce3ea] text-[#5c6a7a]"
-        onClick={onCancel}
-        disabled={isPending}
-      >
-        キャンセル
-      </Button>
-      <Button
-        type="button"
-        size="sm"
-        className="flex-1 rounded-full bg-[#005F8C] hover:bg-[#004E73] text-white"
-        onClick={onSave}
-        disabled={isPending}
-      >
-        {isPending ? "保存中..." : "保存する"}
-      </Button>
+    <div className="-mx-4 -mb-4 mt-4 border-t border-[#f2f7fa] bg-[#f7fafc] px-4 py-3">
+      <div className="flex gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="flex-1 rounded-full border-[#dce3ea] text-[#5c6a7a]"
+          onClick={onCancel}
+          disabled={isPending}
+        >
+          キャンセル
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          className="flex-1 rounded-full bg-[#005F8C] hover:bg-[#004E73] text-white"
+          onClick={onSave}
+          disabled={isPending}
+        >
+          {isPending ? "保存中..." : "保存する"}
+        </Button>
+      </div>
     </div>
   )
 }
@@ -383,7 +420,7 @@ export default function ProfilePage() {
     formData.set("avatar", file)
     startAvatarTransition(async () => {
       try {
-        const result = await uploadAvatar({ error: null, success: false }, formData)
+        const result = await uploadAvatar(formData)
         clearPreview()
         if (result.error) {
           showToast(result.error, "error")
@@ -508,9 +545,10 @@ export default function ProfilePage() {
     !!bio,
     prefectures.length > 0,
     specialties.length > 0,
-    targetAges.length > 0,
   ]
-  const completeness = Math.round(completenessFields.filter(Boolean).length / completenessFields.length * 100)
+  const completedCount = completenessFields.filter(Boolean).length
+  const remainingCount = completenessFields.length - completedCount
+  const completeness = Math.round(completedCount / completenessFields.length * 100)
 
   // ── 表示用変換 ────────────────────────────────────────────────────
 
@@ -526,8 +564,7 @@ export default function ProfilePage() {
       <h1 className="text-2xl font-bold text-[#1a2332]">プロフィール</h1>
 
       {/* アバター・完成度 */}
-      <Card className="border-[#dce3ea]">
-        <CardContent className="pt-6 space-y-4">
+      <div className="pt-2 space-y-4">
           {/* アバター（中央揃え） */}
           <div className="flex justify-center">
             <div ref={avatarMenuRef} className="relative">
@@ -535,16 +572,16 @@ export default function ProfilePage() {
               <button
                 type="button"
                 onClick={() => !isAvatarPending && setAvatarMenuOpen((v) => !v)}
-                className="relative h-24 w-24 cursor-pointer rounded-full ring-2 ring-[#dce3ea] focus:outline-none focus-visible:ring-[#005F8C]"
+                className="relative h-20 w-20 cursor-pointer rounded-full ring-2 ring-[#dce3ea] focus:outline-none focus-visible:ring-[#005F8C]"
                 aria-label="プロフィール写真を変更"
                 disabled={isLoading}
               >
                 {isLoading ? (
-                  <Skeleton className="h-24 w-24 rounded-full" />
+                  <Skeleton className="h-20 w-20 rounded-full" />
                 ) : displayUrl ? (
                   <Image src={displayUrl} alt={name} fill className="rounded-full object-cover" />
                 ) : (
-                  <span className="flex h-24 w-24 items-center justify-center rounded-full bg-[#005F8C]/10 text-2xl font-semibold text-[#005F8C]">
+                  <span className="flex h-20 w-20 items-center justify-center rounded-full bg-[#005F8C]/10 text-xl font-semibold text-[#005F8C]">
                     {initials || "?"}
                   </span>
                 )}
@@ -556,19 +593,17 @@ export default function ProfilePage() {
                 )}
               </button>
 
-              {/* カメラアイコン（右下） */}
+              {/* カメラアイコン（右下）— 視覚補助のみ。フォーカスと aria はアバターボタン側で担う */}
               {!isLoading && (
-                <button
-                  type="button"
-                  onClick={() => !isAvatarPending && setAvatarMenuOpen((v) => !v)}
-                  className="absolute bottom-0 right-0 flex h-7 w-7 items-center justify-center rounded-full bg-[#005F8C] text-white shadow ring-2 ring-white hover:bg-[#004E73] transition-colors"
-                  aria-label="プロフィール写真を変更"
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute bottom-0 right-0 flex h-7 w-7 items-center justify-center rounded-full bg-[#005F8C] text-white shadow ring-2 ring-white"
                 >
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
                     <circle cx="12" cy="13" r="4"/>
                   </svg>
-                </button>
+                </div>
               )}
 
               {/* 非表示ファイル入力（フォトライブラリ） */}
@@ -577,6 +612,7 @@ export default function ProfilePage() {
                 type="file"
                 accept="image/jpeg,image/png,image/webp"
                 className="hidden"
+                disabled={isAvatarPending}
                 onChange={handleAvatarFileSelected}
               />
               {/* 非表示ファイル入力（カメラ） */}
@@ -586,6 +622,7 @@ export default function ProfilePage() {
                 accept="image/jpeg,image/png,image/webp"
                 capture="environment"
                 className="hidden"
+                disabled={isAvatarPending}
                 onChange={handleAvatarFileSelected}
               />
 
@@ -616,7 +653,7 @@ export default function ProfilePage() {
                     </svg>
                     カメラ
                   </button>
-                  {(avatarUrl || previewUrl) && (
+                  {!isAvatarPending && avatarUrl && (
                     <>
                       <div className="border-t border-[#f2f7fa]" />
                       <button
@@ -644,20 +681,24 @@ export default function ProfilePage() {
             <div className="rounded-xl bg-[#f7fafc] px-4 py-3">
               <div className="mb-1.5 flex items-center justify-between">
                 <span className="text-xs text-[#5c6a7a]">プロフィール完成度</span>
-                <span className="text-xs font-semibold text-[#005F8C]">{completeness}%</span>
+                <div className="flex items-center gap-2">
+                  {remainingCount > 0 && (
+                    <span className="text-[10px] text-[#8d99a8]">あと{remainingCount}項目</span>
+                  )}
+                  <span className="text-xs font-semibold text-[#005F8C]">{completeness}%</span>
+                </div>
               </div>
               <div className="h-2 rounded-full bg-[#dce3ea]">
                 <div className="h-2 rounded-full bg-[#005F8C] transition-all duration-500" style={{ width: `${completeness}%` }} />
               </div>
-              {completeness < 100 && (
-                <p className="mt-1.5 text-[11px] text-[#8d99a8]">
-                  情報を充実させるとチーム管理者がメンバーを把握しやすくなります
+              {completeness === 100 && (
+                <p className="mt-1.5 text-[11px] text-[#005F8C]">
+                  プロフィールが完成しました！
                 </p>
               )}
             </div>
           )}
-        </CardContent>
-      </Card>
+      </div>
 
       {/* 基本情報 */}
       <Card className={`border-[#dce3ea] transition-shadow ${editingSection === "basic" ? "ring-2 ring-[#005F8C]/20" : ""}`}>
@@ -772,7 +813,7 @@ export default function ProfilePage() {
             </div>
           ) : (
             <div className="space-y-1">
-              <TagRow label="活動地域" items={prefectures} />
+              <TagRow label="活動地域" items={prefectures} maxVisible={5} />
               <TagRow label="種目・泳法" items={specialties} />
               <TagRow label="活動目的" items={swimmingGoals} />
               <TagRow label="参加スタイル" items={participationStyles} />
@@ -893,7 +934,10 @@ export default function ProfilePage() {
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between gap-2">
             <div className="min-w-0">
-              <CardTitle className="text-base text-[#1a2332]">コーチ・指導員プロフィール</CardTitle>
+              <CardTitle className="text-base text-[#1a2332]">
+                <span className="inline-block">コーチ・指導員</span>
+                <span className="inline-block">プロフィール</span>
+              </CardTitle>
               <p className="mt-0.5 text-[11px] text-[#8d99a8]">任意・コーチ登録がある方向け</p>
             </div>
             <div className="flex shrink-0 items-center gap-2">
@@ -925,10 +969,10 @@ export default function ProfilePage() {
             </div>
           ) : (
             <div>
-              <ProfileRow label="自己紹介" value={bio || null} />
-              <ProfileRow label="経歴" value={career || null} />
-              <ProfileRow label="実績" value={achievements || null} />
-              <TagRow label="指導対象年齢" items={targetAges} />
+              <ProfileBlockRow label="自己紹介" value={bio || null} />
+              <ProfileBlockRow label="経歴" value={career || null} />
+              <ProfileBlockRow label="実績" value={achievements || null} />
+              {targetAges.length > 0 && <TagRow label="指導対象年齢" items={targetAges} />}
             </div>
           )}
         </CardContent>

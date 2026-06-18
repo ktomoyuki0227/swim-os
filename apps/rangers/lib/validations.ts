@@ -209,7 +209,12 @@ export const profilePartialSchema = z.object({
   name: z.string().min(1, "名前は必須です").max(100, "名前は100文字以内").optional(),
   furigana: z.string().max(100).nullable().optional(),
   gender: z.enum(["male", "female", "other"]).nullable().optional(),
-  birthday: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "生年月日はYYYY-MM-DD形式で入力してください").refine((v) => !isNaN(Date.parse(v)), "有効な日付を入力してください").nullable().optional(),
+  birthday: z.union([
+    z.string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, "生年月日はYYYY-MM-DD形式で入力してください")
+      .refine((v) => !isNaN(Date.parse(v)), "有効な日付を入力してください"),
+    z.null(),
+  ]).optional(),
   phone: z.string().max(20).nullable().optional(),
   address: z.string().max(200).nullable().optional(),
   swimwear_size: z.string().max(10).nullable().optional(),

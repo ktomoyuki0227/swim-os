@@ -233,7 +233,7 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
 
             {/* Tab content */}
             {tab === "members" && (
-              <MemberList teamId={id} members={members} />
+              <MemberList teamId={id} team={team} members={members} />
             )}
 
             {tab === "sessions" && (
