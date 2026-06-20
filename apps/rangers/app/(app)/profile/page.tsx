@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useToast } from "@/components/toast"
-import { SWIM_SPECIALTIES, TARGET_AGES, PREFECTURES, SWIMMING_GOALS, PARTICIPATION_STYLES } from "@/types/database"
+import { SWIM_SPECIALTIES, TARGET_AGES, PREFECTURES, SWIMMING_GOALS, PARTICIPATION_STYLES, SWIM_LEVELS } from "@/types/database"
 import type { Profile } from "@/types/database"
 
 type EditingSection = "basic" | "swimmer" | "emergency" | "registration" | "public" | null
@@ -323,6 +323,7 @@ export default function ProfilePage() {
   const [swimwearSize, setSwimwearSize] = useState("")
 
   // スイマー情報
+  const [selectedLevel, setSelectedLevel] = useState<string>("")
   const [prefectures, setPrefectures] = useState<string[]>([])
   const [specialties, setSpecialties] = useState<string[]>([])
   const [swimmingGoals, setSwimmingGoals] = useState<string[]>([])
@@ -369,6 +370,7 @@ export default function ProfilePage() {
         setJsaRegistered(prof.jsa_registered ?? false)
         setJsaNumber(prof.jsa_number ?? "")
         setSwimwearSize(prof.swimwear_size ?? "")
+        setSelectedLevel(prof.level ?? "")
         setPrefectures(prof.prefectures ?? [])
         setSpecialties(prof.specialties ?? [])
         setSwimmingGoals(prof.swimming_goals ?? [])
@@ -480,6 +482,7 @@ export default function ProfilePage() {
         setSwimwearSize(profile.swimwear_size ?? "")
         break
       case "swimmer":
+        setSelectedLevel(profile.level ?? "")
         setPrefectures(profile.prefectures ?? [])
         setSpecialties(profile.specialties ?? [])
         setSwimmingGoals(profile.swimming_goals ?? [])
@@ -529,7 +532,7 @@ export default function ProfilePage() {
   }
 
   const saveSwimmer = () => {
-    saveSection({ prefectures, specialties, swimming_goals: swimmingGoals, participation_styles: participationStyles })
+    saveSection({ level: selectedLevel || null, prefectures, specialties, swimming_goals: swimmingGoals, participation_styles: participationStyles })
   }
 
   const savePublic = () => {
@@ -543,6 +546,7 @@ export default function ProfilePage() {
     !!emergencyContact,
     !!swimwearSize,
     !!bio,
+    !!selectedLevel,
     prefectures.length > 0,
     specialties.length > 0,
   ]
@@ -790,6 +794,21 @@ export default function ProfilePage() {
             <div className="space-y-3">{[...Array(4)].map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}</div>
           ) : editingSection === "swimmer" ? (
             <div className="space-y-5">
+              <div className="space-y-2">
+                <Label className="text-sm text-[#5c6a7a]">レベル</Label>
+                <div className="flex gap-2">
+                  {SWIM_LEVELS.map((lv) => (
+                    <button
+                      key={lv}
+                      type="button"
+                      onClick={() => setSelectedLevel(selectedLevel === lv ? "" : lv)}
+                      className={`flex-1 rounded-full border py-2 text-sm transition-colors ${selectedLevel === lv ? "border-transparent bg-[#005F8C] text-white" : "border-[#dce3ea] text-[#5c6a7a] hover:border-[#005F8C] hover:text-[#005F8C]"}`}
+                    >
+                      {lv}
+                    </button>
+                  ))}
+                </div>
+              </div>
               <PrefectureMultiSelect selected={prefectures} onChange={setPrefectures} />
               <TagGroup
                 label="種目・泳法"
@@ -813,6 +832,14 @@ export default function ProfilePage() {
             </div>
           ) : (
             <div className="space-y-1">
+              <div className="border-b border-[#f2f7fa] py-2.5">
+                <span className="mb-1.5 block text-xs text-[#8d99a8]">レベル</span>
+                {selectedLevel ? (
+                  <span className="rounded-full bg-[#f2f7fa] px-2.5 py-0.5 text-xs text-[#5c6a7a]">{selectedLevel}</span>
+                ) : (
+                  <span className="text-sm text-[#c0c8d0]">未設定</span>
+                )}
+              </div>
               <TagRow label="活動地域" items={prefectures} maxVisible={5} />
               <TagRow label="種目・泳法" items={specialties} />
               <TagRow label="活動目的" items={swimmingGoals} />

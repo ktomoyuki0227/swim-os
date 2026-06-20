@@ -9,11 +9,11 @@ const initialState: AuthState = { error: null }
 
 const ALL_STEPS = [
   { num: 1, label: "アカウント作成" },
-  { num: 2, label: "基本情報①" },
-  { num: 3, label: "基本情報②" },
-  { num: 4, label: "緊急連絡先" },
-  { num: 5, label: "競技登録" },
-  { num: 6, label: "プロフィール" },
+  { num: 2, label: "自己紹介" },
+  { num: 3, label: "基本情報①" },
+  { num: 4, label: "基本情報②" },
+  { num: 5, label: "緊急連絡先" },
+  { num: 6, label: "競技登録" },
   { num: 7, label: "お支払い" },
 ]
 
@@ -65,7 +65,7 @@ function RegisterForm() {
       <StepProgress current={1} />
 
       <div className="rounded-2xl bg-white px-8 py-8 shadow-sm">
-        <h1 className="mb-6 text-center text-xl font-bold text-blue-500">アカウント作成</h1>
+        <h1 className="mb-6 text-center text-xl font-bold text-[#1a2332]">アカウント作成</h1>
 
         <form action={formAction} className="space-y-4">
           {invite && <input type="hidden" name="invite" value={invite} />}
@@ -85,7 +85,7 @@ function RegisterForm() {
               type="text"
               placeholder="例）田中 太郎"
               required
-              className="w-full rounded-lg border bg-white px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-400"
+              className="w-full rounded-lg border bg-white px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#005F8C]/30"
             />
             <p className="mt-1 text-xs text-muted-foreground">本名で登録してください</p>
           </div>
@@ -100,7 +100,7 @@ function RegisterForm() {
               type="email"
               placeholder="例）mail@example.com"
               required
-              className="w-full rounded-lg border bg-white px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-400"
+              className="w-full rounded-lg border bg-white px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#005F8C]/30"
             />
           </div>
 
@@ -115,17 +115,17 @@ function RegisterForm() {
               minLength={6}
               placeholder="6文字以上"
               required
-              className="w-full rounded-lg border bg-white px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-400"
+              className="w-full rounded-lg border bg-white px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#005F8C]/30"
             />
           </div>
 
           <div className="space-y-2 pt-1">
             <label className="flex cursor-pointer items-start gap-2 text-sm">
-              <input type="checkbox" name="termsAgreed" value="on" required className="mt-0.5 accent-blue-500" />
+              <input type="checkbox" name="termsAgreed" value="on" required className="mt-0.5 accent-[#005F8C]" />
               <span className="text-muted-foreground">
-                <Link href="/terms" className="text-blue-600 hover:underline">利用規約</Link>
+                <Link href="/terms" className="text-[#005F8C] hover:underline">利用規約</Link>
                 と
-                <Link href="/privacy" className="text-blue-600 hover:underline">プライバシーポリシー</Link>
+                <Link href="/privacy" className="text-[#005F8C] hover:underline">プライバシーポリシー</Link>
                 に同意します
               </span>
             </label>
@@ -134,7 +134,7 @@ function RegisterForm() {
           <button
             type="submit"
             disabled={isPending}
-            className="mt-2 w-full rounded-xl bg-blue-500 py-3 text-sm font-bold text-white transition-colors hover:bg-blue-600 disabled:opacity-60"
+            className="mt-2 w-full rounded-xl bg-[#005F8C] py-3 text-sm font-bold text-white transition-colors hover:bg-[#004E73] disabled:opacity-60"
           >
             {isPending ? "登録中..." : "登録"}
           </button>
@@ -143,7 +143,7 @@ function RegisterForm() {
         <div className="mt-6 border-t pt-5 text-center text-sm text-muted-foreground">
           すでにアカウントをお持ちの方はこちら
           <br />
-          <Link href="/login" className="mt-1 inline-block text-blue-500 font-medium hover:underline">
+          <Link href="/login" className="mt-1 inline-block text-[#005F8C] font-medium hover:underline">
             ログイン
           </Link>
         </div>
