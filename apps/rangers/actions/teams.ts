@@ -295,6 +295,27 @@ export async function removeMember(teamId: string, swimmerId: string) {
     .single()
   if (!adminMembership) return { error: "権限がありません" }
 
+  // 最後の管理者の削除を防ぐ
+  const { data: targetMember } = await admin
+    .from("team_members")
+    .select("role")
+    .eq("team_id", teamId)
+    .eq("swimmer_id", swimmerId)
+    .eq("status", "active")
+    .single()
+
+  if (targetMember?.role === "admin") {
+    const { count } = await admin
+      .from("team_members")
+      .select("id", { count: "exact", head: true })
+      .eq("team_id", teamId)
+      .eq("role", "admin")
+      .eq("status", "active")
+    if ((count ?? 0) <= 1) {
+      return { error: "最後の管理者は削除できません" }
+    }
+  }
+
   const { error } = await admin
     .from("team_members")
     .update({ status: "inactive" })
@@ -525,6 +546,17 @@ export async function updateMemberInfo(
     role: "admin" | "member"
   }
 ) {
+  // 入力バリデーション
+  const validMembershipTypes: MembershipType[] = ["annual", "monthly", "point_card"]
+  if (!validMembershipTypes.includes(data.membershipType)) return { error: "入力値が不正です" }
+  if (data.role !== "admin" && data.role !== "member") return { error: "入力値が不正です" }
+  if (
+    data.stampRemaining !== undefined &&
+    (!Number.isInteger(data.stampRemaining) || data.stampRemaining < 0)
+  ) {
+    return { error: "入力値が不正です" }
+  }
+
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: "ログインが必要です" }
@@ -541,6 +573,11 @@ export async function updateMemberInfo(
     .eq("status", "active")
     .single()
   if (!adminMembership) return { error: "権限がありません" }
+
+  // 自分自身のロール変更禁止（管理者が自分を降格するのを防ぐ）
+  if (swimmerId === user.id && data.role !== "admin") {
+    return { error: "自分自身のロールは変更できません" }
+  }
 
   // 最後の管理者を降格しようとしていないかチェック（管理者→一般への変更のみ対象）
   if (data.role === "member") {
@@ -567,8 +604,13 @@ export async function updateMemberInfo(
     membership_type: data.membershipType,
     role: data.role,
   }
-  if (data.membershipType === "point_card" && data.stampRemaining !== undefined) {
-    updateData.stamp_remaining = Math.max(0, data.stampRemaining)
+  if (data.membershipType === "point_card") {
+    updateData.stamp_remaining = data.stampRemaining !== undefined
+      ? Math.max(0, data.stampRemaining)
+      : 0
+  } else {
+    // 回数券以外に切り替えたときは残数をリセット
+    updateData.stamp_remaining = 0
   }
 
   const { error } = await admin
