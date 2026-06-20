@@ -516,6 +516,65 @@ export async function getTeamFeeStats(teamId: string) {
   return { data: { paid, subscriptionUnpaid, stampUnpaid, total } }
 }
 
+export async function updateMemberInfo(
+  teamId: string,
+  swimmerId: string,
+  data: {
+    membershipType: MembershipType
+    stampRemaining?: number
+    role: "admin" | "member"
+  }
+) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "ログインが必要です" }
+
+  const admin = createAdminClient()
+
+  // 操作者が管理者かチェック
+  const { data: adminMembership } = await admin
+    .from("team_members")
+    .select("id")
+    .eq("team_id", teamId)
+    .eq("swimmer_id", user.id)
+    .eq("role", "admin")
+    .eq("status", "active")
+    .single()
+  if (!adminMembership) return { error: "権限がありません" }
+
+  // 最後の管理者を降格しようとしていないかチェック
+  if (data.role === "member") {
+    const { count } = await admin
+      .from("team_members")
+      .select("id", { count: "exact", head: true })
+      .eq("team_id", teamId)
+      .eq("role", "admin")
+      .eq("status", "active")
+    if ((count ?? 0) <= 1) {
+      return { error: "最後の管理者のロールは変更できません" }
+    }
+  }
+
+  const updateData: Record<string, unknown> = {
+    membership_type: data.membershipType,
+    role: data.role,
+  }
+  if (data.membershipType === "point_card" && data.stampRemaining !== undefined) {
+    updateData.stamp_remaining = Math.max(0, data.stampRemaining)
+  }
+
+  const { error } = await admin
+    .from("team_members")
+    .update(updateData)
+    .eq("team_id", teamId)
+    .eq("swimmer_id", swimmerId)
+
+  if (error) return { error: "メンバー情報の更新に失敗しました" }
+
+  revalidatePath(`/teams/${teamId}`)
+  return { success: true }
+}
+
 // 認証不要・公開向けグループ詳細取得
 export async function getPublicTeam(teamId: string) {
   const admin = createAdminClient()
