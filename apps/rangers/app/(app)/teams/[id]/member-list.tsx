@@ -8,6 +8,12 @@ import { useToast } from "@/components/toast"
 import type { TeamMemberWithProfile, Team } from "@/types/database"
 
 
+const LEVEL_STARS: Record<string, string> = {
+  "上級": "★★★",
+  "中級": "★★☆",
+  "初級": "★☆☆",
+}
+
 function getMembershipLabel(member: TeamMemberWithProfile, team: Team): string {
   if (member.membership_type === "point_card") {
     return member.stamp_remaining !== undefined
@@ -111,7 +117,10 @@ export function MemberList({ teamId, team, members }: MemberListProps) {
         const isLowStamp = isPointCard && member.stamp_remaining !== undefined && member.stamp_remaining <= 3
         const membershipLabel = getMembershipLabel(member, team)
 
+        const levelStars = swimmer?.level ? LEVEL_STARS[swimmer.level] ?? null : null
+
         const hasDetails =
+          !!swimmer?.level ||
           (swimmer?.specialties || []).length > 0 ||
           (swimmer?.swimming_goals || []).length > 0 ||
           !!swimmer?.gender ||
@@ -153,11 +162,6 @@ export function MemberList({ teamId, team, members }: MemberListProps) {
                       管理者
                     </Badge>
                   )}
-                  {!!swimmer?.level && (
-                    <Badge className="border-transparent bg-[#f2f7fa] px-1.5 py-0 text-[10px] text-[#5c6a7a]">
-                      {swimmer.level}
-                    </Badge>
-                  )}
                   <Badge
                     className={
                       isLowStamp
@@ -182,19 +186,17 @@ export function MemberList({ teamId, team, members }: MemberListProps) {
               {/* 下段: タグ・詳細情報（全幅） */}
               {hasDetails && (
                 <div className="mt-2 space-y-1">
-                  {/* 種目タグ */}
-                  {(swimmer?.specialties ?? []).length > 0 && (
-                    <div className="flex flex-wrap gap-1">
+                  {/* 種目・目的タグ（レベル星を先頭に付与） */}
+                  {(levelStars || (swimmer?.specialties ?? []).length > 0 || (swimmer?.swimming_goals ?? []).length > 0) && (
+                    <div className="flex flex-wrap items-center gap-1">
+                      {levelStars && swimmer?.level && (
+                        <span className="mr-1 text-[11px] font-medium text-[#8d99a8]">{levelStars} {swimmer.level}</span>
+                      )}
                       {swimmer?.specialties?.map((s) => (
                         <span key={s} className="rounded-full bg-[#e8f2f8] px-2 py-0.5 text-[10px] text-[#005F8C]">
                           {s}
                         </span>
                       ))}
-                    </div>
-                  )}
-                  {/* 活動目的タグ */}
-                  {(swimmer?.swimming_goals ?? []).length > 0 && (
-                    <div className="flex flex-wrap gap-1">
                       {swimmer?.swimming_goals?.map((g) => (
                         <span key={g} className="rounded-full bg-[#f0faf5] px-2 py-0.5 text-[10px] text-[#0f8a4f]">
                           {g}
