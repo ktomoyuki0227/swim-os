@@ -42,24 +42,21 @@ export function EditMemberModal({
       ? currentType
       : (membershipOptions[0]?.value ?? "monthly")
 
-  const [membershipType, setMembershipType] = useState<MembershipType>(initialType)
-  const [stampRemaining, setStampRemaining] = useState(
+  // 回数券に切り替えたときのデフォルト残数（元が回数券なら現在値、そうでなければチーム上限）
+  const defaultStampForPointCard =
     member.membership_type === "point_card"
       ? (member.stamp_remaining ?? pointCardCount)
       : pointCardCount
-  )
 
-  // 会員種別を回数券に切り替えたときのデフォルト値をセット
-  useEffect(() => {
-    if (membershipType === "point_card") {
-      setStampRemaining(
-        member.membership_type === "point_card"
-          ? (member.stamp_remaining ?? pointCardCount)
-          : pointCardCount
-      )
+  const [membershipType, setMembershipType] = useState<MembershipType>(initialType)
+  const [stampRemaining, setStampRemaining] = useState(defaultStampForPointCard)
+
+  const handleMembershipTypeChange = (type: MembershipType) => {
+    setMembershipType(type)
+    if (type === "point_card") {
+      setStampRemaining(defaultStampForPointCard)
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [membershipType])
+  }
   const [role, setRole] = useState<"admin" | "member">(
     (member.role as "admin" | "member") ?? "member"
   )
@@ -84,17 +81,22 @@ export function EditMemberModal({
   const handleSubmit = async () => {
     if (!member.swimmer?.id) return
     setIsSaving(true)
-    const result = await updateMemberInfo(teamId, member.swimmer.id, {
-      membershipType,
-      stampRemaining: membershipType === "point_card" ? stampRemaining : undefined,
-      role,
-    })
-    setIsSaving(false)
-    if (result.error) {
-      showToast(result.error, "error")
-    } else {
-      showToast("メンバー情報を更新しました", "success")
-      onSuccess()
+    try {
+      const result = await updateMemberInfo(teamId, member.swimmer.id, {
+        membershipType,
+        stampRemaining: membershipType === "point_card" ? stampRemaining : undefined,
+        role,
+      })
+      if (result.error) {
+        showToast(result.error, "error")
+      } else {
+        showToast("メンバー情報を更新しました", "success")
+        onSuccess()
+      }
+    } catch {
+      showToast("通信エラーが発生しました", "error")
+    } finally {
+      setIsSaving(false)
     }
   }
 
@@ -132,7 +134,7 @@ export function EditMemberModal({
                   <button
                     key={opt.value}
                     type="button"
-                    onClick={() => setMembershipType(opt.value)}
+                    onClick={() => handleMembershipTypeChange(opt.value)}
                     className={`rounded-full border px-4 py-1.5 text-sm font-medium transition-colors ${
                       membershipType === opt.value
                         ? "border-[#005F8C] bg-[#e8f2f8] text-[#005F8C]"
