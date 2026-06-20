@@ -233,7 +233,15 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
 
             {/* Tab content */}
             {tab === "members" && (
-              <MemberList teamId={id} members={members} />
+              <MemberList
+                teamId={id}
+                members={members}
+                currentUserId={user.id}
+                hasAnnualFee={team.has_annual_fee ?? false}
+                hasMonthlyFee={team.has_monthly_fee ?? false}
+                hasPointCard={team.has_point_card ?? false}
+                pointCardCount={team.point_card_count ?? 0}
+              />
             )}
 
             {tab === "sessions" && (
