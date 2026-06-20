@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition, Fragment } from "react"
+import { useState, useEffect, useTransition, Fragment } from "react"
 import { useRouter } from "next/navigation"
 import { loadStripe } from "@stripe/stripe-js"
 import {
@@ -280,10 +280,11 @@ function StripeStep({ onSuccess }: { onSuccess: (paymentMethodId: string) => voi
       .finally(() => setLoading(false))
   }
 
-  useState(() => {
+  useEffect(() => {
     if (!stripePromise) { setFetchError(true); setLoading(false); return }
     fetchIntent()
-  })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   if (loading) {
     return (
@@ -394,7 +395,11 @@ export default function OnboardingPage() {
       if (avatarFile) {
         const fd = new FormData()
         fd.append("avatar", avatarFile)
-        await uploadAvatar(fd)
+        const avatarResult = await uploadAvatar(fd)
+        if (avatarResult.error) {
+          setSaveError("プロフィール写真のアップロードに失敗しました。もう一度お試しください。")
+          return
+        }
       }
 
       const birthday =
