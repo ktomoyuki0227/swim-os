@@ -5,7 +5,7 @@ import { removeMember } from "@/actions/teams"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/components/toast"
-import type { TeamMemberWithProfile, Team } from "@/types/database"
+import type { TeamMemberWithProfile } from "@/types/database"
 
 
 const LEVEL_STARS: Record<string, string> = {
@@ -14,14 +14,14 @@ const LEVEL_STARS: Record<string, string> = {
   "初級": "★☆☆",
 }
 
-function getMembershipLabel(member: TeamMemberWithProfile, team: Team): string {
+function getMembershipLabel(member: TeamMemberWithProfile): string {
   if (member.membership_type === "point_card") {
     return member.stamp_remaining !== undefined
       ? `回数券 · 残り${member.stamp_remaining}回`
       : "回数券"
   }
-  if (team.has_monthly_fee) return "月謝"
-  if (team.has_annual_fee) return "年会費"
+  if (member.membership_type === "annual") return "年会費"
+  if (member.membership_type === "monthly") return "月謝"
   return "メンバー"
 }
 
@@ -77,11 +77,10 @@ function MemberMenu({
 
 interface MemberListProps {
   teamId: string
-  team: Team
   members: TeamMemberWithProfile[]
 }
 
-export function MemberList({ teamId, team, members }: MemberListProps) {
+export function MemberList({ teamId, members }: MemberListProps) {
   const [removingId, setRemovingId] = useState<string | null>(null)
   const { showToast } = useToast()
 
@@ -115,7 +114,7 @@ export function MemberList({ teamId, team, members }: MemberListProps) {
         const isAdmin = member.role === "admin"
         const isPointCard = member.membership_type === "point_card"
         const isLowStamp = isPointCard && member.stamp_remaining !== undefined && member.stamp_remaining <= 3
-        const membershipLabel = getMembershipLabel(member, team)
+        const membershipLabel = getMembershipLabel(member)
 
         const levelStars = swimmer?.level ? LEVEL_STARS[swimmer.level] ?? null : null
 

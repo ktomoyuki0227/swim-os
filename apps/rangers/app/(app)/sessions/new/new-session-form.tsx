@@ -200,15 +200,39 @@ export function NewSessionForm({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, activeTeamId, currentUserId])
 
-  // タグ変更 → selectedMemberIds を AND ロジックで自動更新
+  // タグ変更 → selectedMemberIds をプロフィールフィールドで AND フィルタ
   useEffect(() => {
     if (!membersLoaded) return
     if (selectedTags.length === 0) {
       setSelectedMemberIds(teamMembers.map((m) => (m.swimmer as Record<string, unknown>).id as string))
     } else {
       const matched = teamMembers.filter((m) => {
-        const memberTags = (m.tags as string[]) || []
-        return selectedTags.every((t) => memberTags.includes(t))
+        const swimmer = m.swimmer as Record<string, unknown>
+        return selectedTags.every((tag) => {
+          if (tag === "level_beginner") return swimmer.level === "初級"
+          if (tag === "level_intermediate") return swimmer.level === "中級"
+          if (tag === "level_advanced") return swimmer.level === "上級"
+          if (tag.startsWith("stroke_")) {
+            const labelMap: Record<string, string> = {
+              stroke_freestyle: "クロール",
+              stroke_backstroke: "背泳ぎ",
+              stroke_breaststroke: "平泳ぎ",
+              stroke_butterfly: "バタフライ",
+              stroke_medley: "個人メドレー",
+            }
+            const label = labelMap[tag]
+            return label && Array.isArray(swimmer.specialties) && (swimmer.specialties as string[]).includes(label)
+          }
+          if (tag.startsWith("purpose_")) {
+            const labelMap: Record<string, string> = {
+              purpose_health: "健康維持",
+              purpose_competitive: "競技・タイム向上",
+            }
+            const label = labelMap[tag]
+            return label && Array.isArray(swimmer.swimming_goals) && (swimmer.swimming_goals as string[]).includes(label)
+          }
+          return true
+        })
       })
       setSelectedMemberIds(matched.map((m) => (m.swimmer as Record<string, unknown>).id as string))
     }
@@ -834,9 +858,10 @@ export function NewSessionForm({
                       const swimmer = m.swimmer as Record<string, unknown>
                       const id = swimmer.id as string
                       const isChecked = selectedMemberIds.includes(id)
-                      const memberTagLabels = ((m.tags as string[]) || [])
-                        .map((t) => SYSTEM_TAGS.find((s) => s.id === t)?.label)
-                        .filter(Boolean)
+                      const memberTagLabels = [
+                        swimmer.level as string | undefined,
+                        ...((swimmer.specialties as string[]) || []).slice(0, 2),
+                      ].filter(Boolean)
                       return (
                         <button
                           key={id}

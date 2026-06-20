@@ -16,7 +16,7 @@ export default async function TeamJoinPage({ params }: PageProps) {
   const admin = createAdminClient()
   const { data: team } = await admin
     .from("teams")
-    .select("id, name, description, avatar_url, point_card_count, invite_code")
+    .select("id, name, description, avatar_url, point_card_count, invite_code, has_annual_fee, has_monthly_fee, has_point_card")
     .eq("id", id)
     .eq("status", "active")
     .single()
@@ -69,6 +69,9 @@ export default async function TeamJoinPage({ params }: PageProps) {
         <JoinForm
           inviteCode={team.invite_code}
           teamName={team.name}
+          hasAnnualFee={team.has_annual_fee ?? false}
+          hasMonthlyFee={team.has_monthly_fee ?? false}
+          hasPointCard={team.has_point_card ?? false}
           pointCardCount={team.point_card_count ?? 0}
         />
       ) : (

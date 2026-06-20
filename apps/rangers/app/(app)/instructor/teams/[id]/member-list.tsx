@@ -57,7 +57,6 @@ export function MemberList({ teamId, members }: MemberListProps) {
     <div className="space-y-3">
       {members.map((member) => {
         const swimmer = member.swimmer
-        const tags = member.tags || []
         const isAdmin = member.role === "admin"
         const isPointCard = member.membership_type === "point_card"
 
@@ -95,16 +94,6 @@ export function MemberList({ teamId, members }: MemberListProps) {
                 </div>
                 {!!swimmer?.furigana && (
                   <p className="mt-0.5 text-xs text-[#8d99a8]">{swimmer.furigana}</p>
-                )}
-                {/* グループタグ */}
-                {tags.length > 0 && (
-                  <div className="mt-1 flex flex-wrap gap-1">
-                    {tags.map((tag) => (
-                      <span key={tag} className="rounded-full bg-[#f2f7fa] px-2 py-0.5 text-[10px] text-[#5c6a7a]">
-                        {TAG_LABELS[tag] || tag}
-                      </span>
-                    ))}
-                  </div>
                 )}
                 {/* プロフィール種目タグ */}
                 {(swimmer?.specialties || []).length > 0 && (

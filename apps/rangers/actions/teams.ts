@@ -186,16 +186,12 @@ export async function getTeam(teamId: string) {
 export async function joinTeamByCode(
   inviteCode: unknown,
   membershipType: unknown,
-  tags: unknown
 ) {
   if (typeof inviteCode !== "string" || inviteCode.trim() === "") {
     return { error: "無効な招待コードです" }
   }
-  if (membershipType !== "regular" && membershipType !== "point_card") {
+  if (membershipType !== "annual" && membershipType !== "monthly" && membershipType !== "point_card") {
     return { error: "会員種別が不正です" }
-  }
-  if (!Array.isArray(tags) || tags.some((t) => typeof t !== "string")) {
-    return { error: "タグの値が不正です" }
   }
 
   const supabase = await createClient()
@@ -228,14 +224,13 @@ export async function joinTeamByCode(
     swimmer_id: user.id,
     role: "member",
     membership_type: membershipType,
-    tags,
     stamp_remaining: 0,
   })
 
   if (joinError) return { error: "グループへの参加に失敗しました" }
 
-  // レギュラー会員なら年会費レコードを自動生成
-  if (membershipType === "regular" && team.annual_fee_amount) {
+  // 年会費会員なら年会費レコードを自動生成
+  if (membershipType === "annual" && team.annual_fee_amount) {
     const currentYear = new Date().getFullYear().toString()
     // 年会費生成失敗はグループ参加を妨げない（非致命的）
     await supabase.from("membership_fees").insert({
@@ -278,39 +273,6 @@ export async function getTeamMembers(teamId: string) {
   return { data: data || [] }
 }
 
-export async function updateMemberTags(teamMemberId: string, tags: string[]) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect("/login")
-
-  const admin = createAdminClient()
-  const { data: tm } = await admin
-    .from("team_members")
-    .select("team_id")
-    .eq("id", teamMemberId)
-    .single()
-  if (!tm) return { error: "メンバーが見つかりません" }
-
-  const { data: adminMembership } = await admin
-    .from("team_members")
-    .select("id")
-    .eq("team_id", tm.team_id)
-    .eq("swimmer_id", user.id)
-    .eq("role", "admin")
-    .eq("status", "active")
-    .single()
-  if (!adminMembership) return { error: "権限がありません" }
-
-  const { error } = await admin
-    .from("team_members")
-    .update({ tags })
-    .eq("id", teamMemberId)
-
-  if (error) return { error: "タグの更新に失敗しました" }
-
-  revalidatePath("/teams")
-  return { success: true }
-}
 
 export async function removeMember(teamId: string, swimmerId: string) {
   const supabase = await createClient()
@@ -384,7 +346,7 @@ export async function joinTeamAction(
   const invite = (formData.get("invite") as string)?.trim()
   const membershipType = formData.get("membership_type") as string
 
-  const result = await joinTeamByCode(invite, membershipType, [])
+  const result = await joinTeamByCode(invite, membershipType)
   if ("error" in result) return { error: result.error ?? "参加に失敗しました" }
 
   redirect(`/teams/${result.data.id}`)

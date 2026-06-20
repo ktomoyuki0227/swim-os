@@ -208,7 +208,7 @@ export type Prefecture = (typeof PREFECTURES)[number]
 
 export type TeamStatus = "active" | "inactive"
 export type TeamMemberRole = "admin" | "member"
-export type MembershipType = "regular" | "point_card"
+export type MembershipType = "annual" | "monthly" | "point_card"
 export type SessionType = "practice" | "camp" | "competition" | "event" | "meeting"
 export type SessionStatus = "open" | "confirmed" | "cancelled"
 export type PaymentMethod = "stripe" | "cash" | "point_card"
@@ -250,7 +250,6 @@ export interface TeamMember {
   role: TeamMemberRole
   membership_type: MembershipType
   stamp_remaining: number
-  tags: string[]
   status: TeamStatus
   joined_at: string
 }
