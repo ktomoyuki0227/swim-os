@@ -17,7 +17,7 @@ const LEVEL_STARS: Record<string, string> = {
 function getMembershipLabel(member: TeamMemberWithProfile): string {
   if (member.membership_type === "point_card") {
     return member.stamp_remaining !== undefined
-      ? `回数券 · 残り${member.stamp_remaining}回`
+      ? `回数券（残${member.stamp_remaining}）`
       : "回数券"
   }
   if (member.membership_type === "annual") return "年会費"

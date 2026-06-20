@@ -26,13 +26,14 @@ export async function getTeamFees(
     .single()
   if (!adminMembership) return { data: [] }
 
-  // 年会費・月謝の対象はレギュラー会員のみ（回数券会員は除外）
+  // 年会費・月謝の対象メンバーを取得（回数券会員は除外）
+  const feeTypeMembership = type === "annual" ? ["annual"] : type === "monthly" ? ["monthly"] : ["annual", "monthly"]
   const { data: members } = await admin
     .from("team_members")
     .select("swimmer_id, membership_type, profiles(id, name, avatar_url)")
     .eq("team_id", teamId)
     .eq("status", "active")
-    .eq("membership_type", "regular")
+    .in("membership_type", feeTypeMembership)
 
   if (!members || members.length === 0) return { data: [] }
 
@@ -140,13 +141,14 @@ export async function bulkCreateFees(
     .single()
   if (!adminMembership) return { error: "権限がありません" }
 
-  // レギュラー会員のみ対象
+  // 対応する会員種別のみ対象（年会費 → annual, 月謝 → monthly）
+  const bulkMembership = type === "annual" ? ["annual"] : type === "monthly" ? ["monthly"] : ["annual", "monthly"]
   const { data: members } = await admin
     .from("team_members")
     .select("swimmer_id")
     .eq("team_id", teamId)
     .eq("status", "active")
-    .eq("membership_type", "regular")
+    .in("membership_type", bulkMembership)
 
   if (!members || members.length === 0) {
     return { error: "対象メンバーがいません" }

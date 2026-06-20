@@ -72,11 +72,16 @@ export async function createTeam(data: unknown) {
   }
 
   // 作成者を admin として追加（失敗時はグループごと削除してロールバック）
+  // 管理者の会員種別: チームの料金体系に合わせて設定
+  const adminMembershipType: MembershipType =
+    team.has_annual_fee && !team.has_monthly_fee ? "annual" :
+    team.has_monthly_fee ? "monthly" :
+    "monthly"
   const { error: memberError } = await supabase.from("team_members").insert({
     team_id: team.id,
     swimmer_id: user.id,
     role: "admin",
-    membership_type: "regular",
+    membership_type: adminMembershipType,
   })
 
   if (memberError) {
@@ -448,25 +453,47 @@ export async function getTeamFeeStats(teamId: string) {
   }
 
   const total = members.length
-  const regularIds = members.filter((m) => m.membership_type === "regular").map((m) => m.swimmer_id)
+  const annualIds = members.filter((m) => m.membership_type === "annual").map((m) => m.swimmer_id)
+  const monthlyIds = members.filter((m) => m.membership_type === "monthly").map((m) => m.swimmer_id)
   const pointCardIds = members.filter((m) => m.membership_type === "point_card").map((m) => m.swimmer_id)
 
-  // 継続課金メンバー（regular）: 今年の年会費ステータスを確認
-  let subscriptionPaid = 0
-  let subscriptionUnpaid = 0
-  if (regularIds.length > 0) {
+  // 年会費メンバー: 今年の年会費ステータスを確認
+  let annualPaid = 0
+  let annualUnpaid = 0
+  if (annualIds.length > 0) {
     const { data: fees } = await admin
       .from("membership_fees")
       .select("swimmer_id, status")
       .eq("team_id", teamId)
       .eq("type", "annual")
       .eq("period", currentYear)
-      .in("swimmer_id", regularIds)
+      .in("swimmer_id", annualIds)
 
     const feeMap = new Map((fees || []).map((f) => [f.swimmer_id, f.status]))
-    subscriptionPaid = regularIds.filter((id) => feeMap.get(id) === "paid").length
-    subscriptionUnpaid = regularIds.length - subscriptionPaid
+    annualPaid = annualIds.filter((id) => feeMap.get(id) === "paid").length
+    annualUnpaid = annualIds.length - annualPaid
   }
+
+  // 月謝メンバー: 今月の月謝ステータスを確認
+  const currentMonth = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}`
+  let monthlyPaid = 0
+  let monthlyUnpaid = 0
+  if (monthlyIds.length > 0) {
+    const { data: fees } = await admin
+      .from("membership_fees")
+      .select("swimmer_id, status")
+      .eq("team_id", teamId)
+      .eq("type", "monthly")
+      .eq("period", currentMonth)
+      .in("swimmer_id", monthlyIds)
+
+    const feeMap = new Map((fees || []).map((f) => [f.swimmer_id, f.status]))
+    monthlyPaid = monthlyIds.filter((id) => feeMap.get(id) === "paid").length
+    monthlyUnpaid = monthlyIds.length - monthlyPaid
+  }
+
+  const subscriptionPaid = annualPaid + monthlyPaid
+  const subscriptionUnpaid = annualUnpaid + monthlyUnpaid
 
   // 回数券メンバー（point_card）: 未払い・失敗の購入記録があるか確認
   let stampPaid = 0
