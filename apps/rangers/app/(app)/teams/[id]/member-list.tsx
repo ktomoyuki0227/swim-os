@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { removeMember } from "@/actions/teams"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -110,6 +111,7 @@ export function MemberList({
   hasPointCard,
   pointCardCount,
 }: MemberListProps) {
+  const router = useRouter()
   const [removingId, setRemovingId] = useState<string | null>(null)
   const [editingMember, setEditingMember] = useState<TeamMemberWithProfile | null>(null)
   const { showToast } = useToast()
@@ -127,7 +129,7 @@ export function MemberList({
     if (result.error) {
       showToast(result.error, "error")
     } else {
-      window.location.reload()
+      router.refresh()
     }
   }
 
