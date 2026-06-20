@@ -24,6 +24,7 @@ export function EditMemberModal({
   hasAnnualFee,
   hasMonthlyFee,
   hasPointCard,
+  pointCardCount,
   onClose,
   onSuccess,
 }: EditMemberModalProps) {
