@@ -6,13 +6,31 @@ import { joinTeamAction } from "@/actions/teams"
 interface JoinFormProps {
   inviteCode: string
   teamName: string
+  hasAnnualFee: boolean
+  hasMonthlyFee: boolean
+  hasPointCard: boolean
   pointCardCount: number
 }
 
 const initialState = { error: null }
 
-export function JoinForm({ inviteCode, teamName, pointCardCount }: JoinFormProps) {
+export function JoinForm({
+  inviteCode,
+  teamName,
+  hasAnnualFee,
+  hasMonthlyFee,
+  hasPointCard,
+  pointCardCount,
+}: JoinFormProps) {
   const [state, formAction, isPending] = useActionState(joinTeamAction, initialState)
+
+  const options = [
+    hasAnnualFee && { value: "annual", label: "年会費", desc: "年単位でお支払い" },
+    hasMonthlyFee && { value: "monthly", label: "月謝", desc: "月単位でお支払い" },
+    hasPointCard && { value: "point_card", label: "回数券", desc: `${pointCardCount}回券` },
+  ].filter(Boolean) as { value: string; label: string; desc: string }[]
+
+  const defaultType = options[0]?.value ?? "monthly"
 
   return (
     <form action={formAction} className="space-y-4">
@@ -25,28 +43,34 @@ export function JoinForm({ inviteCode, teamName, pointCardCount }: JoinFormProps
       )}
 
       {/* 会員種別 */}
-      <div>
-        <p className="mb-2 text-sm font-medium text-[#1a2332]">会員種別を選択</p>
-        <div className="grid grid-cols-2 gap-3">
-          <label className="flex cursor-pointer flex-col items-center gap-1 rounded-xl border-2 border-[#dce3ea] px-4 py-3 text-sm transition-colors has-[:checked]:border-[#005F8C] has-[:checked]:bg-[#e8f2f8]">
-            <input type="radio" name="membership_type" value="regular" defaultChecked className="sr-only" />
-            <span className="font-semibold text-[#1a2332]">レギュラー</span>
-            <span className="text-xs text-[#5c6a7a]">月謝・年会費制</span>
-          </label>
-          {pointCardCount > 0 ? (
-            <label className="flex cursor-pointer flex-col items-center gap-1 rounded-xl border-2 border-[#dce3ea] px-4 py-3 text-sm transition-colors has-[:checked]:border-[#005F8C] has-[:checked]:bg-[#e8f2f8]">
-              <input type="radio" name="membership_type" value="point_card" className="sr-only" />
-              <span className="font-semibold text-[#1a2332]">ポイントカード</span>
-              <span className="text-xs text-[#5c6a7a]">{pointCardCount}回券</span>
-            </label>
-          ) : (
-            <div className="flex cursor-not-allowed flex-col items-center gap-1 rounded-xl border-2 border-[#dce3ea] bg-[#f8f9fa] px-4 py-3 text-sm opacity-40">
-              <span className="font-semibold text-[#1a2332]">ポイントカード</span>
-              <span className="text-xs text-[#5c6a7a]">このグループでは未対応</span>
-            </div>
-          )}
+      {options.length > 0 && (
+        <div>
+          <p className="mb-2 text-sm font-medium text-[#1a2332]">会員種別を選択</p>
+          <div className="grid grid-cols-2 gap-3">
+            {options.map((opt, i) => (
+              <label
+                key={opt.value}
+                className="flex cursor-pointer flex-col items-center gap-1 rounded-xl border-2 border-[#dce3ea] px-4 py-3 text-sm transition-colors has-[:checked]:border-[#005F8C] has-[:checked]:bg-[#e8f2f8]"
+              >
+                <input
+                  type="radio"
+                  name="membership_type"
+                  value={opt.value}
+                  defaultChecked={i === 0}
+                  className="sr-only"
+                />
+                <span className="font-semibold text-[#1a2332]">{opt.label}</span>
+                <span className="text-xs text-[#5c6a7a]">{opt.desc}</span>
+              </label>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* 選択肢がない場合のデフォルト */}
+      {options.length === 0 && (
+        <input type="hidden" name="membership_type" value={defaultType} />
+      )}
 
       <button
         type="submit"

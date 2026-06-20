@@ -89,7 +89,13 @@ export function MemberList({ teamId, members }: MemberListProps) {
                         : "border-transparent bg-[#eaf7f0] px-1.5 py-0 text-[10px] text-[#0f8a4f]"
                     }
                   >
-                    {isPointCard ? "回数券" : "レギュラー"}
+                    {member.membership_type === "point_card"
+                      ? "回数券"
+                      : member.membership_type === "annual"
+                      ? "年会費"
+                      : member.membership_type === "monthly"
+                      ? "月謝"
+                      : "メンバー"}
                   </Badge>
                 </div>
                 {!!swimmer?.furigana && (
