@@ -42,7 +42,23 @@ export function EditMemberModal({
       : (membershipOptions[0]?.value ?? "monthly")
 
   const [membershipType, setMembershipType] = useState<MembershipType>(initialType)
-  const [stampRemaining, setStampRemaining] = useState(member.stamp_remaining ?? 0)
+  const [stampRemaining, setStampRemaining] = useState(
+    member.membership_type === "point_card"
+      ? (member.stamp_remaining ?? pointCardCount)
+      : pointCardCount
+  )
+
+  // 会員種別を回数券に切り替えたときのデフォルト値をセット
+  useEffect(() => {
+    if (membershipType === "point_card") {
+      setStampRemaining(
+        member.membership_type === "point_card"
+          ? (member.stamp_remaining ?? pointCardCount)
+          : pointCardCount
+      )
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [membershipType])
   const [role, setRole] = useState<"admin" | "member">(
     (member.role as "admin" | "member") ?? "member"
   )
