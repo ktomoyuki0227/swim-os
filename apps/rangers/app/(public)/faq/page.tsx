@@ -132,7 +132,7 @@ export default function FaqPage() {
         <div className="mt-16 rounded-2xl bg-sky-50 p-8 text-center">
           <p className="mb-1 font-semibold">解決しませんでしたか？</p>
           <p className="mb-5 text-sm text-muted-foreground">
-            サポートチームがお答えします。
+            サポートグループがお答えします。
           </p>
           <Link
             href="/messages"

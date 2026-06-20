@@ -107,7 +107,7 @@ export default async function InstructorsPage({ searchParams }: InstructorsPageP
   const supabase = await createClient()
   const admin = createAdminClient()
 
-  // チームの管理者（team_members.role === 'admin'）のIDを取得
+  // グループの管理者（team_members.role === 'admin'）のIDを取得
   const { data: adminMemberships } = await admin
     .from("team_members")
     .select("swimmer_id")

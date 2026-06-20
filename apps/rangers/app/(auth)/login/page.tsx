@@ -22,7 +22,7 @@ function LoginForm() {
   const invite = searchParams.get("invite")
 
   const handleLineLogin = () => {
-    // LINEログイン本実装前の検証用：新規ユーザー（チーム未所属）としてデモログイン
+    // LINEログイン本実装前の検証用：新規ユーザー（グループ未所属）としてデモログイン
     setEmail("test4@example.com")
     setPassword("test1234")
     setShowDevLogin(true)
@@ -43,7 +43,7 @@ function LoginForm() {
           <div className="flex justify-center">
             <Image src="/rangers-name-背景透過.png" alt="Rangers" width={160} height={44} className="object-contain" />
           </div>
-          <p className="mt-1 text-sm text-[#5c6a7a]">マスターズ水泳チーム管理</p>
+          <p className="mt-1 text-sm text-[#5c6a7a]">マスターズ水泳グループ管理</p>
         </CardHeader>
         <CardContent className="space-y-6 pt-4">
           <button
@@ -131,25 +131,25 @@ function LoginForm() {
                         email: "test1@example.com",
                         label: "山田 健太",
                         role: "マウントリバー 管理者",
-                        desc: "マウントリバー水泳クラブのチーム管理者。セッション作成・メンバー管理・会費管理。東京マスターズのメンバーでもある。",
+                        desc: "マウントリバー水泳クラブのグループ管理者。セッション作成・メンバー管理・会費管理。東京マスターズのメンバーでもある。",
                       },
                       {
                         email: "test2@example.com",
                         label: "鈴木 太郎",
                         role: "東京マスターズ 管理者",
-                        desc: "東京マスターズ水泳クラブのチーム管理者。マウントリバーのレギュラー会員（現金払い）でもある。年会費未払い。",
+                        desc: "東京マスターズ水泳クラブのグループ管理者。マウントリバーのレギュラー会員（現金払い）でもある。年会費未払い。",
                       },
                       {
                         email: "test3@example.com",
                         label: "佐藤 花子",
                         role: "回数券会員",
-                        desc: "両チームのメンバー。スタンプ残7回・point_card支払い・年会費支払い済み。",
+                        desc: "両グループのメンバー。スタンプ残7回・point_card支払い・年会費支払い済み。",
                       },
                       {
                         email: "test4@example.com",
                         label: "田中 新太郎",
                         role: "新規ユーザー",
-                        desc: "チーム未所属。LINEログイン後のオンボーディング導線を確認したいときに使用。",
+                        desc: "グループ未所属。LINEログイン後のオンボーディング導線を確認したいときに使用。",
                         highlight: true,
                       },
                     ].map((a) => (
@@ -188,7 +188,7 @@ function LoginForm() {
         </CardContent>
       </Card>
       <p className="mt-6 text-center text-sm text-[#8d99a8]">
-        Rangers · マスターズ水泳チーム管理
+        Rangers · マスターズ水泳グループ管理
       </p>
     </div>
   )

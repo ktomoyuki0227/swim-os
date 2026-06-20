@@ -87,7 +87,7 @@ export function PublicTeamView({ data, hasBottomNav = false }: PublicTeamViewPro
 
       {/* ── コンテンツ ── */}
       <div className="mx-auto max-w-lg px-4 pb-40">
-        {/* チーム説明 headline */}
+        {/* グループ説明 headline */}
         {team.description && (
           <div className="py-5">
             <p className="text-[22px] font-bold leading-snug text-[#1a2332]">
@@ -96,10 +96,10 @@ export function PublicTeamView({ data, hasBottomNav = false }: PublicTeamViewPro
           </div>
         )}
 
-        {/* ── チームプロフィールカード ── */}
+        {/* ── グループプロフィールカード ── */}
         <div className="rounded-2xl bg-white px-5 py-6 shadow-sm">
           <div className="flex gap-4">
-            {/* チームアバター */}
+            {/* グループアバター */}
             <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-full border-2 border-[#dce3ea] bg-[#e8f2f8]">
               {team.avatar_url ? (
                 <Image src={team.avatar_url} alt={team.name} fill className="object-cover" />
@@ -142,7 +142,7 @@ export function PublicTeamView({ data, hasBottomNav = false }: PublicTeamViewPro
             {coachBio && (
               <div className="flex items-start gap-3">
                 <span className="shrink-0 rounded-md border border-[#dce3ea] px-2 py-0.5 text-xs text-[#5c6a7a]">
-                  チーム紹介
+                  グループ紹介
                 </span>
                 <p className="text-sm leading-relaxed text-[#1a2332]">{coachBio}</p>
               </div>
@@ -232,7 +232,7 @@ export function PublicTeamView({ data, hasBottomNav = false }: PublicTeamViewPro
             className="flex w-full items-center justify-center rounded-full bg-[#005F8C] py-3.5 text-base font-bold text-white shadow-lg transition-colors hover:bg-[#004a6b] active:scale-[0.98]"
             style={{ minHeight: "52px" }}
           >
-            このチームに参加する
+            このグループに参加する
           </Link>
         </div>
       </div>

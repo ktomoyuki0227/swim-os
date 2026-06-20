@@ -20,7 +20,7 @@ export function SearchBar({ defaultValue = "", tab = "sessions" }: Props) {
     router.push(`/search?${params.toString()}`)
   }
 
-  const placeholder = tab === "teams" ? "チーム名で検索..." : "場所やキーワードで検索..."
+  const placeholder = tab === "teams" ? "グループ名で検索..." : "場所やキーワードで検索..."
 
   return (
     <form onSubmit={handleSubmit} className="flex gap-2">

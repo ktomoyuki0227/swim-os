@@ -32,7 +32,7 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
     data: { user },
   } = await supabase.auth.getUser()
 
-  // ─── 非ログインユーザー: 公開チームページ ─────────────────────────────
+  // ─── 非ログインユーザー: 公開グループページ ─────────────────────────────
   if (!user) {
     const result = await getPublicTeam(id)
     if (result.error || !result.data) notFound()
@@ -313,7 +313,7 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
               <div className="space-y-4">
                 <Card className="border-[#dce3ea]">
                   <CardHeader>
-                    <CardTitle className="text-base text-[#1a2332]">チーム設定</CardTitle>
+                    <CardTitle className="text-base text-[#1a2332]">グループ設定</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
                     {/* 有効な料金体系バッジ */}
@@ -382,7 +382,7 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
                     className="w-full rounded-full border-[#005F8C] text-[#005F8C]"
                     style={{ minHeight: "48px" }}
                   >
-                    チーム情報を編集
+                    グループ情報を編集
                   </Button>
                 </Link>
               </div>
@@ -443,7 +443,7 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
           {/* Header */}
           <div>
             <Link href="/teams" className="text-sm text-[#5c6a7a] hover:text-[#1a2332]">
-              ← チーム
+              ← グループ
             </Link>
             <h1 className="mt-2 text-xl font-bold text-[#1a2332]">{team.name}</h1>
             {team.description && (

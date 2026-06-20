@@ -35,7 +35,7 @@ export default async function FeesPage({ searchParams }: FeesPageProps) {
       : `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`
   const selectedPeriod = params.period || defaultPeriod
 
-  // 選択中チームの料金体系フラグを取得
+  // 選択中グループの料金体系フラグを取得
   const admin = createAdminClient()
   const teamFeeFlags = { has_annual_fee: false, has_monthly_fee: false, has_point_card: false }
   if (selectedTeamId) {
@@ -97,7 +97,7 @@ export default async function FeesPage({ searchParams }: FeesPageProps) {
         {adminTeams.length === 0 ? (
           <Card className="border-[#dce3ea]">
             <CardContent className="py-10 text-center text-sm text-[#5c6a7a]">
-              チームを作成してください
+              グループを作成してください
             </CardContent>
           </Card>
         ) : (
@@ -156,7 +156,7 @@ export default async function FeesPage({ searchParams }: FeesPageProps) {
       {adminTeams.length === 0 ? (
         <Card className="border-[#dce3ea]">
           <CardContent className="py-10 text-center text-sm text-[#5c6a7a]">
-            チームを作成してください
+            グループを作成してください
           </CardContent>
         </Card>
       ) : (
@@ -291,7 +291,7 @@ function NoFeeTypeMessage({ teamId }: { teamId: string }) {
             className="rounded-full border-[#dce3ea] text-[#005F8C]"
             style={{ minHeight: "40px" }}
           >
-            チームを編集
+            グループを編集
           </Button>
         </Link>
       </CardContent>

@@ -92,7 +92,7 @@ export function MemberList({ teamId, team, members }: MemberListProps) {
   const { showToast } = useToast()
 
   const handleRemove = async (swimmerId: string) => {
-    if (!confirm("このメンバーをチームから削除しますか？")) return
+    if (!confirm("このメンバーをグループから削除しますか？")) return
     setRemovingId(swimmerId)
     const result = await removeMember(teamId, swimmerId)
     setRemovingId(null)
@@ -190,7 +190,7 @@ export function MemberList({ teamId, team, members }: MemberListProps) {
               {/* 下段: タグ・詳細情報（全幅） */}
               {hasDetails && (
                 <div className="mt-2 space-y-1">
-                  {/* チームタグ */}
+                  {/* グループタグ */}
                   {tags.length > 0 && (
                     <div className="flex flex-wrap gap-1">
                       {tags.map((tag) => (

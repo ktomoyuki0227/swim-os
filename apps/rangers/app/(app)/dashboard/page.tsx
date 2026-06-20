@@ -49,7 +49,7 @@ export default async function DashboardPage() {
   const greeting = hour < 12 ? "おはようございます" : hour < 18 ? "こんにちは" : "こんばんは"
   const userName = profile?.name || ""
 
-  // ── チームなし: オンボーディング画面 ────────────────────────
+  // ── グループなし: オンボーディング画面 ────────────────────────
   if (allTeams.length === 0) {
     const { data: publicSessions } = await getPublicSessions({ from: now.toISOString() })
 
@@ -62,8 +62,8 @@ export default async function DashboardPage() {
             ようこそ、{userName}さん！
           </h1>
           <p className="mt-2 text-sm leading-relaxed text-[#5c6a7a]">
-            Rangers では水泳チームの練習・大会・会費を<br className="hidden sm:inline" />
-            まとめて管理できます。まずチームに参加しましょう。
+            Rangers では水泳グループの練習・大会・会費を<br className="hidden sm:inline" />
+            まとめて管理できます。まずグループに参加しましょう。
           </p>
         </div>
 
@@ -71,7 +71,7 @@ export default async function DashboardPage() {
         <section>
           <h2 className="mb-3 text-base font-semibold text-[#1a2332]">はじめる</h2>
           <div className="grid grid-cols-2 gap-3">
-            {/* チームを探す */}
+            {/* グループを探す */}
             <Link href="/search?tab=teams">
               <div className="flex h-full flex-col gap-3 rounded-xl border border-[#dce3ea] bg-white p-4 transition-all hover:border-[#005F8C] hover:shadow-sm">
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#005F8C]/10">
@@ -83,13 +83,13 @@ export default async function DashboardPage() {
                   </svg>
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-[#1a2332]">チームを探す</p>
-                  <p className="mt-0.5 text-xs text-[#8d99a8]">公開チームに参加</p>
+                  <p className="text-sm font-semibold text-[#1a2332]">グループを探す</p>
+                  <p className="mt-0.5 text-xs text-[#8d99a8]">公開グループに参加</p>
                 </div>
               </div>
             </Link>
 
-            {/* チームを作る */}
+            {/* グループを作る */}
             <Link href="/teams/new">
               <div className="flex h-full flex-col gap-3 rounded-xl border border-[#dce3ea] bg-white p-4 transition-all hover:border-[#0f8a4f] hover:shadow-sm">
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#0f8a4f]/10">
@@ -100,7 +100,7 @@ export default async function DashboardPage() {
                   </svg>
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-[#1a2332]">チームを作る</p>
+                  <p className="text-sm font-semibold text-[#1a2332]">グループを作る</p>
                   <p className="mt-0.5 text-xs text-[#8d99a8]">コーチ・管理者として</p>
                 </div>
               </div>
@@ -172,7 +172,7 @@ export default async function DashboardPage() {
     )
   }
 
-  // ── チームあり: 通常ダッシュボード ──────────────────────────
+  // ── グループあり: 通常ダッシュボード ──────────────────────────
   const teamColors: Record<string, string> = {}
   allTeams.forEach((team, idx) => {
     teamColors[team.id as string] = TEAM_COLORS[idx % TEAM_COLORS.length]
@@ -225,10 +225,10 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      {/* あなたのチーム */}
+      {/* あなたのグループ */}
       <section>
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-base font-semibold text-[#1a2332]">あなたのチーム</h2>
+          <h2 className="text-base font-semibold text-[#1a2332]">あなたのグループ</h2>
           {allTeams.length > 4 && (
             <Link href="/teams" className="text-sm text-[#005F8C] hover:underline">
               すべて見る →
@@ -249,7 +249,7 @@ export default async function DashboardPage() {
                   className="flex h-[72px] overflow-hidden rounded-xl border bg-white transition-all hover:shadow-sm"
                   style={{ borderColor: `${color}40` }}
                 >
-                  {/* 左: チーム画像 */}
+                  {/* 左: グループ画像 */}
                   <div
                     className="flex w-2/5 shrink-0 items-center justify-center text-lg font-bold text-white"
                     style={{ backgroundColor: color }}
@@ -261,7 +261,7 @@ export default async function DashboardPage() {
                       (team.name as string)?.[0] || "T"
                     )}
                   </div>
-                  {/* 右: チーム名 + バッジ */}
+                  {/* 右: グループ名 + バッジ */}
                   <div className="flex min-w-0 flex-1 flex-col justify-center gap-1 px-2.5">
                     <p className="line-clamp-2 text-xs font-semibold leading-tight text-[#1a2332]">
                       {team.name as string}
@@ -282,7 +282,7 @@ export default async function DashboardPage() {
             )
           })}
 
-          {/* 1チームのみのとき: 「チームを探す」プレースホルダー */}
+          {/* 1グループのみのとき: 「グループを探す」プレースホルダー */}
           {allTeams.length === 1 && (
             <Link href="/search?tab=teams" className="block shrink-0 w-40">
               <div className="flex h-[72px] items-center justify-center rounded-xl border border-dashed border-[#dce3ea] bg-[#f7fafc] transition-colors hover:bg-[#eef3f7]">
@@ -291,7 +291,7 @@ export default async function DashboardPage() {
                     <circle cx="11" cy="11" r="8" />
                     <line x1="21" y1="21" x2="16.65" y2="16.65" />
                   </svg>
-                  <p className="text-[11px] text-[#5c6a7a]">チームを探す</p>
+                  <p className="text-[11px] text-[#5c6a7a]">グループを探す</p>
                 </div>
               </div>
             </Link>

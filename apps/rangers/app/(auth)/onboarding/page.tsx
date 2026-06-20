@@ -51,7 +51,7 @@ const WIZARD_STEPS = [
   { num: 3, label: "緊急連絡先", desc: "万が一の際の緊急連絡先を登録してください" },
   { num: 4, label: "競技登録", desc: "マスターズ水泳・JSAの登録情報を入力してください" },
   { num: 5, label: "公開プロフィール", desc: "公開ページに表示する情報を登録してください（すべて任意・後から変更可）" },
-  { num: 6, label: "お支払い", desc: "チームの年会費・月謝・練習費などのお支払い方法を登録してください" },
+  { num: 6, label: "お支払い", desc: "グループの年会費・月謝・練習費などのお支払い方法を登録してください" },
 ]
 
 interface FormState {
@@ -597,7 +597,7 @@ export default function OnboardingPage() {
                   rows={3}
                 />
                 <p className="text-xs text-[#8d99a8]">
-                  チームからの郵便物等に使用される場合があります
+                  グループからの郵便物等に使用される場合があります
                 </p>
               </div>
               <div className="space-y-1.5">
@@ -733,7 +733,7 @@ export default function OnboardingPage() {
           {step === 5 && (
             <>
               <div className="rounded-lg bg-[#f2f7fa] px-3 py-2.5 text-xs text-[#5c6a7a]">
-                チームの公開ページに表示されます。すべて任意で、後からプロフィールページでも変更できます。入力しない場合はそのまま「次へ」を押してください。
+                グループの公開ページに表示されます。すべて任意で、後からプロフィールページでも変更できます。入力しない場合はそのまま「次へ」を押してください。
               </div>
 
               {/* アバター（任意） */}

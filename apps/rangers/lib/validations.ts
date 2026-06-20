@@ -48,11 +48,11 @@ export type LessonInput = z.infer<typeof lessonSchema>
 export type ProfileInput = z.infer<typeof profileSchema>
 
 // ============================================================
-// マスターズチーム管理
+// マスターズグループ管理
 // ============================================================
 
 export const teamSchema = z.object({
-  name: z.string().min(1, "チーム名を入力してください").max(100, "チーム名は100文字以内"),
+  name: z.string().min(1, "グループ名を入力してください").max(100, "グループ名は100文字以内"),
   description: z.string().max(2000, "説明は2000文字以内").optional(),
   cover_image_url: z.string().url().optional(),
   avatar_url: z.string().url().optional(),
@@ -106,9 +106,9 @@ export const sessionSchema = z.object({
   })).optional(),
 })
 
-// チーム更新用（更新可能フィールドのみ。coach_id / invite_code 等は除外）
+// グループ更新用（更新可能フィールドのみ。coach_id / invite_code 等は除外）
 export const teamUpdateSchema = z.object({
-  name: z.string().min(1, "チーム名を入力してください").max(100, "100文字以内").optional(),
+  name: z.string().min(1, "グループ名を入力してください").max(100, "100文字以内").optional(),
   description: z.string().max(2000, "2000文字以内").optional(),
   cover_image_url: z.string().url().optional(),
   is_recruiting: z.boolean().optional(),

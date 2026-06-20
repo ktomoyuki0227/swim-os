@@ -14,7 +14,7 @@ export function FeeFilters({ teams, selectedTeamId, selectedType, selectedPeriod
     <div className="flex flex-wrap gap-4 p-4">
       {/* Team selector */}
       <div className="flex flex-col gap-1">
-        <label className="text-xs text-[#5c6a7a]">チーム</label>
+        <label className="text-xs text-[#5c6a7a]">グループ</label>
         <select
           name="team"
           defaultValue={selectedTeamId}

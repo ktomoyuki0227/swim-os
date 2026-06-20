@@ -25,7 +25,7 @@ export default async function TeamJoinPage({ params }: PageProps) {
         <div className="mb-4 text-5xl">🔗</div>
         <h1 className="mb-2 text-xl font-bold text-[#1a2332]">招待リンクが無効です</h1>
         <p className="mb-8 text-sm text-[#5c6a7a]">
-          このリンクは期限切れか、存在しないチームの招待コードです。
+          このリンクは期限切れか、存在しないグループの招待コードです。
           <br />コーチに最新のリンクを送ってもらってください。
         </p>
         <Link
@@ -66,9 +66,9 @@ export default async function TeamJoinPage({ params }: PageProps) {
         </Link>
       </div>
 
-      {/* チームカード */}
+      {/* グループカード */}
       <div className="mb-6 rounded-2xl border border-[#dce3ea] bg-white p-6 shadow-sm">
-        <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-[#005F8C]">チームへの招待</p>
+        <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-[#005F8C]">グループへの招待</p>
         <h1 className="mb-2 text-2xl font-bold text-[#1a2332]">{team.name}</h1>
         {team.description && (
           <p className="text-sm leading-relaxed text-[#5c6a7a]">{team.description}</p>
@@ -90,7 +90,7 @@ export default async function TeamJoinPage({ params }: PageProps) {
             className="flex items-center justify-center rounded-full bg-[#005F8C] px-6 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-[#004E73]"
             style={{ minHeight: "48px" }}
           >
-            アカウントを作成してチームに参加
+            アカウントを作成してグループに参加
           </Link>
           <Link
             href={`/login?invite=${inviteCode}`}
@@ -100,7 +100,7 @@ export default async function TeamJoinPage({ params }: PageProps) {
             ログインして参加
           </Link>
           <p className="text-center text-xs text-[#8d99a8]">
-            アカウント登録・ログイン後、自動的にチーム参加画面に戻ります
+            アカウント登録・ログイン後、自動的にグループ参加画面に戻ります
           </p>
         </div>
       )}

@@ -17,7 +17,7 @@ export default async function SessionsPage() {
   const { data: teams } = await getMyTeams()
   const adminTeams = ((teams || []) as Record<string, unknown>[]).filter((t) => t.my_role === "admin")
 
-  // すべての管理チームのセッションを取得
+  // すべての管理グループのセッションを取得
   const allSessions: Record<string, unknown>[] = []
   for (const team of adminTeams) {
     const { data } = await getTeamSessions(team.id as string)
@@ -60,10 +60,10 @@ export default async function SessionsPage() {
       {adminTeams.length === 0 ? (
         <Card className="border-[#dce3ea]">
           <CardContent className="flex flex-col items-center justify-center py-12">
-            <p className="text-[#5c6a7a]">まずチームを作成してください</p>
+            <p className="text-[#5c6a7a]">まずグループを作成してください</p>
             <Link href="/teams/new" className="mt-4">
               <Button variant="outline" className="rounded-full border-[#005F8C] text-[#005F8C]">
-                チームを作成する
+                グループを作成する
               </Button>
             </Link>
           </CardContent>

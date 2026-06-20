@@ -48,7 +48,7 @@ export function PriceReveal({ sessionId, memberPrice, guestPrice }: PriceRevealP
         </button>
       </div>
       <p className="mt-1 text-[10px] text-[#8d99a8]">
-        料金情報の閲覧はチーム管理者に共有されます
+        料金情報の閲覧はグループ管理者に共有されます
       </p>
     </div>
   )

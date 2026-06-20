@@ -217,14 +217,14 @@ export async function purchasePointCard(teamId: string) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
 
-  // チームのポイントカード設定を取得
+  // グループのポイントカード設定を取得
   const { data: team } = await supabase
     .from("teams")
     .select("point_card_count, point_card_price")
     .eq("id", teamId)
     .single()
 
-  if (!team) return { error: "チームが見つかりません" }
+  if (!team) return { error: "グループが見つかりません" }
   if (!team.point_card_price) return { error: "ポイントカードの料金が設定されていません" }
 
   // メンバー情報を取得（team_members は RLS バイパスが必要）
@@ -237,7 +237,7 @@ export async function purchasePointCard(teamId: string) {
     .eq("status", "active")
     .single()
 
-  if (!member) return { error: "チームメンバーではありません" }
+  if (!member) return { error: "グループメンバーではありません" }
   if (member.membership_type !== "point_card") {
     return { error: "ポイントカード会員ではありません" }
   }

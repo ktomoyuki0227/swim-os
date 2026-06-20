@@ -99,7 +99,7 @@ export default async function MemberSessionPage({ params }: SessionPageProps) {
     <div className="space-y-6">
       <div>
         <Link href={`/teams/${teamId}`} className="text-sm text-[#5c6a7a] hover:text-[#1a2332]">
-          ← チームに戻る
+          ← グループに戻る
         </Link>
         <div className="mt-2 flex items-start justify-between gap-3">
           <div>

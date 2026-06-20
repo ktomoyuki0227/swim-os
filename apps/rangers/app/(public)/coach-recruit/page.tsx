@@ -5,19 +5,19 @@ import { Button } from "@/components/ui/button"
 
 export const metadata: Metadata = {
   title: "コーチ登録について",
-  description: "マスターズ水泳チームのコーチとして Rangers に登録しませんか。あなたの指導経験を活かして、会員の技術向上をサポートしましょう。",
+  description: "マスターズ水泳グループのコーチとして Rangers に登録しませんか。あなたの指導経験を活かして、会員の技術向上をサポートしましょう。",
 }
 
 const benefits = [
   {
     num: "01",
-    title: "チームの会員さんに寄り添う指導",
+    title: "グループの会員さんに寄り添う指導",
     desc: "既存の会員さんとの信頼関係を活かして、個別指導でさらに深いサポートができます。",
   },
   {
     num: "02",
     title: "スケジュールを自分で管理",
-    desc: "空き時間にレッスンを設定できます。チームの練習スケジュールと柔軟に組み合わせられます。",
+    desc: "空き時間にレッスンを設定できます。グループの練習スケジュールと柔軟に組み合わせられます。",
   },
   {
     num: "03",
@@ -27,14 +27,14 @@ const benefits = [
   {
     num: "04",
     title: "サポート体制が充実",
-    desc: "運営チームがプロフィール作成から予約管理まで丁寧にサポートします。",
+    desc: "運営グループがプロフィール作成から予約管理まで丁寧にサポートします。",
   },
 ]
 
 const steps = [
   { step: 1, title: "アカウント登録", desc: "メールアドレスで無料登録。「指導員」を選択してください。" },
   { step: 2, title: "プロフィール入力", desc: "経歴・得意種目・活動地域・料金などを設定します。" },
-  { step: 3, title: "審査・承認", desc: "Rangers 運営チームが経歴・実績を確認します（1〜3営業日）。" },
+  { step: 3, title: "審査・承認", desc: "Rangers 運営グループが経歴・実績を確認します（1〜3営業日）。" },
   { step: 4, title: "レッスン公開", desc: "承認後すぐにレッスンを公開してコーチ活動を開始できます！" },
 ]
 
@@ -62,14 +62,14 @@ export default function CoachRecruitPage() {
             For Coaches
           </p>
           <h1 className="mb-5 text-4xl font-bold leading-tight sm:text-5xl">
-            マスターズチームを持つ
+            マスターズグループを持つ
             <br />
             あなたへ。
           </h1>
           <p className="mb-8 max-w-xl text-lg leading-relaxed text-sky-100">
-            Rangers は、マスターズ水泳チームの指導者・コーチを対象にした
+            Rangers は、マスターズ水泳グループの指導者・コーチを対象にした
             個別レッスン予約プラットフォームです。
-            チームの会員さんにさらに深く寄り添う指導の場を提供します。
+            グループの会員さんにさらに深く寄り添う指導の場を提供します。
           </p>
           <Link href="/login">
             <Button size="lg" className="bg-blue-500 px-10 hover:bg-blue-600">

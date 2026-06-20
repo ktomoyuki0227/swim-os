@@ -43,7 +43,7 @@ export default async function TeamJoinPage({ params }: PageProps) {
 
   return (
     <div className="mx-auto max-w-md py-4">
-      {/* チームカード */}
+      {/* グループカード */}
       <div className="mb-6 rounded-2xl border border-[#dce3ea] bg-white p-6 shadow-sm">
         <div className="mb-4 flex items-center gap-4">
           <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-full border border-[#dce3ea] bg-[#e8f2f8]">
@@ -78,7 +78,7 @@ export default async function TeamJoinPage({ params }: PageProps) {
             className="flex items-center justify-center rounded-full bg-[#005F8C] px-6 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-[#004E73]"
             style={{ minHeight: "48px" }}
           >
-            アカウントを作成してチームに参加
+            アカウントを作成してグループに参加
           </Link>
           <Link
             href={`/login?invite=${team.invite_code}`}
@@ -88,7 +88,7 @@ export default async function TeamJoinPage({ params }: PageProps) {
             ログインして参加
           </Link>
           <p className="text-center text-xs text-[#8d99a8]">
-            アカウント登録・ログイン後、自動的にチーム参加画面に戻ります
+            アカウント登録・ログイン後、自動的にグループ参加画面に戻ります
           </p>
         </div>
       )}
@@ -98,7 +98,7 @@ export default async function TeamJoinPage({ params }: PageProps) {
           href={`/teams/${team.id}`}
           className="text-sm text-[#5c6a7a] hover:text-[#1a2332]"
         >
-          ← チームページに戻る
+          ← グループページに戻る
         </Link>
       </div>
     </div>

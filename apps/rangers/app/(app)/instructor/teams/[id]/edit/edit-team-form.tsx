@@ -55,7 +55,7 @@ export function EditTeamForm({ team }: EditTeamFormProps) {
       if (result.error) {
         showToast(result.error, "error")
       } else {
-        showToast("チーム情報を更新しました", "success")
+        showToast("グループ情報を更新しました", "success")
         setTimeout(() => {
           router.push(`/teams/${team.id}?tab=settings`)
         }, 800)
@@ -71,7 +71,7 @@ export function EditTeamForm({ team }: EditTeamFormProps) {
         </Link>
       </div>
 
-      <h1 className="text-2xl font-bold text-[#1a2332]">チーム情報を編集</h1>
+      <h1 className="text-2xl font-bold text-[#1a2332]">グループ情報を編集</h1>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* 基本情報 */}
@@ -81,7 +81,7 @@ export function EditTeamForm({ team }: EditTeamFormProps) {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-1.5">
-              <Label htmlFor="name">チーム名 <span className="text-[#E8614D]">*</span></Label>
+              <Label htmlFor="name">グループ名 <span className="text-[#E8614D]">*</span></Label>
               <Input
                 id="name"
                 name="name"
@@ -93,12 +93,12 @@ export function EditTeamForm({ team }: EditTeamFormProps) {
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="description">チームの説明</Label>
+              <Label htmlFor="description">グループの説明</Label>
               <Textarea
                 id="description"
                 name="description"
                 defaultValue={team.description ?? ""}
-                placeholder="チームの活動内容や特徴を入力してください"
+                placeholder="グループの活動内容や特徴を入力してください"
                 rows={3}
                 maxLength={2000}
                 className="resize-none border-[#dce3ea]"

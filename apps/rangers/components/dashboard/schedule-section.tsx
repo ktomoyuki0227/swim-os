@@ -118,7 +118,7 @@ export function ScheduleSection({ sessions, teams }: Props) {
         ))}
       </div>
 
-      {/* チームフィルターチップ — 2チーム以上のとき表示 */}
+      {/* グループフィルターチップ — 2グループ以上のとき表示 */}
       {teams.length > 1 && (
         <div className="mb-3 flex gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {teams.map((team) => {

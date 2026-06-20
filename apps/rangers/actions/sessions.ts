@@ -416,9 +416,9 @@ export async function registerForSession(
 
   const isMember = !!membership
 
-  // 非外部セッションはチームメンバーのみ参加可
+  // 非外部セッションはグループメンバーのみ参加可
   if (!session.is_external && !isMember) {
-    return { error: "このチームのメンバーではありません" }
+    return { error: "このグループのメンバーではありません" }
   }
 
   // 締め切りチェック
@@ -737,7 +737,7 @@ export async function getSessionRegistrations(sessionId: string) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { data: [], count: 0 }
 
-  // セッションのチームIDを取得してadmin権限チェック
+  // セッションのグループIDを取得してadmin権限チェック
   const { data: session } = await supabase
     .from("practice_sessions")
     .select("team_id")

@@ -154,7 +154,7 @@ export function NewSessionForm({
     { key: "age_group", label: "年齢区分", type: "text", required: false },
   ])
   const [templates, setTemplates] = useState<Record<string, unknown>[]>(initialTemplates)
-  // サーバーで取得済みのチームIDを記憶しておき、同じチームでの再フェッチをスキップする
+  // サーバーで取得済みのグループIDを記憶しておき、同じグループでの再フェッチをスキップする
   const serverFetchedTeamId = useRef(initialTeamId)
 
   useEffect(() => {
@@ -163,7 +163,7 @@ export function NewSessionForm({
     })
   }, [])
 
-  // teamId が URL になければ管理者チームを自動取得
+  // teamId が URL になければ管理者グループを自動取得
   useEffect(() => {
     if (teamId) {
       setActiveTeamId(teamId)
@@ -302,7 +302,7 @@ export function NewSessionForm({
   }
 
   const handleSubmit = () => {
-    if (!activeTeamId) { showToast("チームが選択されていません", "error"); return }
+    if (!activeTeamId) { showToast("グループが選択されていません", "error"); return }
     startTransition(async () => {
       const result = await createSession(activeTeamId, {
         title: form.title,
@@ -384,16 +384,16 @@ export function NewSessionForm({
       {/* ステップインジケーター */}
       <StepIndicator current={step} />
 
-      {/* チーム未選択時のピッカー（URL に team なし・複数チームあり） */}
+      {/* グループ未選択時のピッカー（URL に team なし・複数グループあり） */}
       {!teamId && adminTeams.length > 1 && step === 0 && (
         <div className="rounded-xl border border-[#005F8C]/30 bg-[#f2f7fa] p-4">
-          <p className="mb-2 text-sm font-medium text-[#005F8C]">対象チームを選択</p>
+          <p className="mb-2 text-sm font-medium text-[#005F8C]">対象グループを選択</p>
           <select
             className="h-10 w-full rounded-lg border border-[#005F8C]/30 bg-white px-3 text-sm text-[#1a2332] focus:outline-none"
             value={activeTeamId}
             onChange={(e) => setActiveTeamId(e.target.value)}
           >
-            <option value="">チームを選択...</option>
+            <option value="">グループを選択...</option>
             {adminTeams.map((t) => (
               <option key={(t as Record<string, unknown>).id as string} value={(t as Record<string, unknown>).id as string}>
                 {(t as Record<string, unknown>).name as string}

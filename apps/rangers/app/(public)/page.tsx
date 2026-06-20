@@ -7,7 +7,7 @@ import type { Profile } from "@/types/database"
 export default async function HomePage() {
   const admin = createAdminClient()
 
-  // ===== 人気チーム =====
+  // ===== 人気グループ =====
   const { data: teamsRaw } = await admin
     .from("teams")
     .select("id, name, description, avatar_url")
@@ -76,7 +76,7 @@ export default async function HomePage() {
                 <span className="text-[#5BC0EB]">ここにある。</span>
               </h1>
               <p className="mb-8 text-base leading-relaxed text-slate-300 sm:text-lg max-w-xl">
-                チーム、パーソナルレッスン、合宿、イベント。<br className="hidden sm:block" />
+                グループ、パーソナルレッスン、合宿、イベント。<br className="hidden sm:block" />
                 水泳に関わる人と機会をつなぐプラットフォーム。
               </p>
               <div className="flex flex-col gap-3 sm:flex-row">
@@ -96,7 +96,7 @@ export default async function HomePage() {
                     className="w-full rounded-full border-2 border-white bg-transparent px-8 text-white backdrop-blur-sm hover:bg-white hover:text-[#005F8C] sm:w-auto"
                     style={{ minHeight: "52px" }}
                   >
-                    チーム・コーチ登録
+                    グループ・コーチ登録
                   </Button>
                 </Link>
               </div>
@@ -110,7 +110,7 @@ export default async function HomePage() {
         <div className="mx-auto max-w-5xl">
           <div className="mb-12 text-center">
             <h2 className="text-2xl font-bold text-[#1a2332] sm:text-3xl">Rangers でできること</h2>
-            <p className="mt-2 text-sm text-[#5c6a7a]">スイマーも、コーチも、チームも——みんなのための水泳プラットフォーム</p>
+            <p className="mt-2 text-sm text-[#5c6a7a]">スイマーも、コーチも、グループも——みんなのための水泳プラットフォーム</p>
           </div>
           <div className="grid gap-6 sm:grid-cols-3">
             {[
@@ -121,7 +121,7 @@ export default async function HomePage() {
                 title: "探せる",
                 subtitle: "Find",
                 points: [
-                  "近くのマスターズチームを検索",
+                  "近くのマスターズグループを検索",
                   "種目・地域でコーチを探す",
                   "参加できる合宿・イベントを発見",
                 ],
@@ -146,7 +146,7 @@ export default async function HomePage() {
                 subtitle: "Connect",
                 points: [
                   "コーチとダイレクトでやりとり",
-                  "チームメンバーとコミュニティ形成",
+                  "グループメンバーとコミュニティ形成",
                   "水泳仲間の輪を広げる",
                 ],
               },
@@ -182,7 +182,7 @@ export default async function HomePage() {
       <section className="bg-[#f2f7fa] px-4 py-16 sm:py-20">
         <div className="mx-auto max-w-5xl">
           <div className="mb-12 text-center">
-            <h2 className="text-2xl font-bold text-[#1a2332] sm:text-3xl">チーム・コーチが掲載するメリット</h2>
+            <h2 className="text-2xl font-bold text-[#1a2332] sm:text-3xl">グループ・コーチが掲載するメリット</h2>
             <p className="mt-2 text-sm text-[#5c6a7a]">無料で始めて、必要な機能だけ使う</p>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -190,7 +190,7 @@ export default async function HomePage() {
               {
                 num: "01",
                 title: "無料で専用ページ作成",
-                desc: "チーム・コーチの専用ページを無料で作成。URLをシェアするだけで集客できます。",
+                desc: "グループ・コーチの専用ページを無料で作成。URLをシェアするだけで集客できます。",
                 color: "#005F8C",
               },
               {
@@ -227,7 +227,7 @@ export default async function HomePage() {
                 className="rounded-full bg-[#005F8C] px-10 hover:bg-[#004E73]"
                 style={{ minHeight: "52px" }}
               >
-                チーム・コーチ登録はこちら
+                グループ・コーチ登録はこちら
               </Button>
             </Link>
           </div>
@@ -242,7 +242,7 @@ export default async function HomePage() {
             <h2 className="text-2xl font-bold text-white sm:text-3xl">Rangers が目指す未来</h2>
             <p className="mt-3 text-sm leading-relaxed text-slate-400 max-w-2xl mx-auto">
               水泳業界のインフラになる。<br />
-              チーム・コーチ・レッスン・合宿・イベント・大会・プール施設——<br />
+              グループ・コーチ・レッスン・合宿・イベント・大会・プール施設——<br />
               すべての情報が一箇所に集まる場所をつくります。
             </p>
           </div>
@@ -251,11 +251,11 @@ export default async function HomePage() {
               {
                 icon: "👤",
                 label: "スイマー",
-                desc: "目標や好みに合ったチーム・コーチ・練習を見つけられる",
+                desc: "目標や好みに合ったグループ・コーチ・練習を見つけられる",
               },
               {
                 icon: "🏊",
-                label: "コーチ・チーム",
+                label: "コーチ・グループ",
                 desc: "専用ページで集客し、運営・管理コストをゼロに近づける",
               },
               {
@@ -279,14 +279,14 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ===== 人気のマスターズチーム ===== */}
+      {/* ===== 人気のマスターズグループ ===== */}
       {teams.length > 0 && (
         <section className="bg-white px-4 py-16 sm:py-20">
           <div className="mx-auto max-w-5xl">
             <div className="mb-8 flex items-end justify-between">
               <div>
-                <h2 className="text-2xl font-bold text-[#1a2332] sm:text-3xl">人気のマスターズチーム</h2>
-                <p className="mt-1 text-sm text-[#5c6a7a]">活動中のチームを探して、参加してみよう</p>
+                <h2 className="text-2xl font-bold text-[#1a2332] sm:text-3xl">人気のマスターズグループ</h2>
+                <p className="mt-1 text-sm text-[#5c6a7a]">活動中のグループを探して、参加してみよう</p>
               </div>
               <Link href="/login" className="hidden text-sm font-medium text-[#005F8C] hover:text-[#004E73] sm:block">
                 すべて見る →
@@ -493,7 +493,7 @@ export default async function HomePage() {
             始めよう。
           </h2>
           <p className="mb-10 text-sm leading-relaxed text-blue-100">
-            チームを探したい人も、チームを運営したい人も、<br className="hidden sm:block" />
+            グループを探したい人も、グループを運営したい人も、<br className="hidden sm:block" />
             コーチとして活躍したい人も。全員のための Rangers。
           </p>
           <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
@@ -513,7 +513,7 @@ export default async function HomePage() {
                 className="w-full rounded-full border-2 border-white bg-transparent px-10 text-white hover:bg-white/10 sm:w-auto"
                 style={{ minHeight: "52px" }}
               >
-                チーム・コーチ登録
+                グループ・コーチ登録
               </Button>
             </Link>
           </div>

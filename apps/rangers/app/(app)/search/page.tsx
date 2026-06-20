@@ -38,14 +38,14 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-[#1a2332]">探す</h1>
-        <p className="mt-1 text-sm text-[#5c6a7a]">チームやセッションを見つけましょう</p>
+        <p className="mt-1 text-sm text-[#5c6a7a]">グループやセッションを見つけましょう</p>
       </div>
 
       {/* タブ */}
       <div className="flex gap-1 rounded-xl bg-[#f2f7fa] p-1">
         {[
           { key: "sessions", label: "セッション" },
-          { key: "teams", label: "チーム" },
+          { key: "teams", label: "グループ" },
         ].map((t) => (
           <Link
             key={t.key}
@@ -153,7 +153,7 @@ async function TeamResults({ q, userId }: { q: string; userId?: string }) {
             <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
             <path d="M16 3.13a4 4 0 0 1 0 7.75" />
           </svg>
-          <p className="mt-3 text-sm text-[#5c6a7a]">チームが見つかりませんでした</p>
+          <p className="mt-3 text-sm text-[#5c6a7a]">グループが見つかりませんでした</p>
         </CardContent>
       </Card>
     )
@@ -161,7 +161,7 @@ async function TeamResults({ q, userId }: { q: string; userId?: string }) {
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-sm text-[#5c6a7a]">{teams.length}件のチーム</p>
+      <p className="text-sm text-[#5c6a7a]">{teams.length}件のグループ</p>
       {teams.map((team: Record<string, unknown>) => (
         <Link key={team.id as string} href={`/teams/${team.id}`}>
           <Card className="border-[#dce3ea] transition-all hover:border-[#005F8C]">

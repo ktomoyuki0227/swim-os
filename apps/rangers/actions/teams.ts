@@ -68,10 +68,10 @@ export async function createTeam(data: unknown) {
     .single()
 
   if (error) {
-    return { error: "チームの作成に失敗しました" }
+    return { error: "グループの作成に失敗しました" }
   }
 
-  // 作成者を admin として追加（失敗時はチームごと削除してロールバック）
+  // 作成者を admin として追加（失敗時はグループごと削除してロールバック）
   const { error: memberError } = await supabase.from("team_members").insert({
     team_id: team.id,
     swimmer_id: user.id,
@@ -81,7 +81,7 @@ export async function createTeam(data: unknown) {
 
   if (memberError) {
     await supabase.from("teams").delete().eq("id", team.id)
-    return { error: "チームの作成に失敗しました" }
+    return { error: "グループの作成に失敗しました" }
   }
 
   revalidatePath("/teams")
@@ -112,7 +112,7 @@ export async function updateTeam(teamId: string, data: unknown) {
     .update(parsed.data)
     .eq("id", teamId)
 
-  if (error) return { error: "チーム情報の更新に失敗しました" }
+  if (error) return { error: "グループ情報の更新に失敗しました" }
 
   revalidatePath(`/teams/${teamId}`)
   return { success: true }
@@ -171,7 +171,7 @@ export async function getTeam(teamId: string) {
     .eq("status", "active")
     .single()
 
-  if (!membership) return { error: "チームが見つかりません" }
+  if (!membership) return { error: "グループが見つかりません" }
 
   const { data: team, error } = await admin
     .from("teams")
@@ -179,7 +179,7 @@ export async function getTeam(teamId: string) {
     .eq("id", teamId)
     .single()
 
-  if (error || !team) return { error: "チームが見つかりません" }
+  if (error || !team) return { error: "グループが見つかりません" }
   return { data: team }
 }
 
@@ -202,7 +202,7 @@ export async function joinTeamByCode(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
 
-  // 招待コードでチームを検索
+  // 招待コードでグループを検索
   const { data: team, error: teamError } = await supabase
     .from("teams")
     .select("*")
@@ -220,7 +220,7 @@ export async function joinTeamByCode(
     .eq("swimmer_id", user.id)
     .single()
 
-  if (existing) return { error: "既にこのチームに参加しています" }
+  if (existing) return { error: "既にこのグループに参加しています" }
 
   // メンバーとして追加
   const { error: joinError } = await supabase.from("team_members").insert({
@@ -232,12 +232,12 @@ export async function joinTeamByCode(
     stamp_remaining: 0,
   })
 
-  if (joinError) return { error: "チームへの参加に失敗しました" }
+  if (joinError) return { error: "グループへの参加に失敗しました" }
 
   // レギュラー会員なら年会費レコードを自動生成
   if (membershipType === "regular" && team.annual_fee_amount) {
     const currentYear = new Date().getFullYear().toString()
-    // 年会費生成失敗はチーム参加を妨げない（非致命的）
+    // 年会費生成失敗はグループ参加を妨げない（非致命的）
     await supabase.from("membership_fees").insert({
       team_id: team.id,
       swimmer_id: user.id,
@@ -393,7 +393,7 @@ export async function joinTeamAction(
 export async function getPublicTeams(options?: { q?: string; excludeUserId?: string }) {
   const admin = createAdminClient()
 
-  // ログインユーザーが所属しているチームIDを取得して除外
+  // ログインユーザーが所属しているグループIDを取得して除外
   let excludeIds: string[] = []
   if (options?.excludeUserId) {
     const { data: memberships } = await admin
@@ -527,7 +527,7 @@ export async function getTeamFeeStats(teamId: string) {
   return { data: { paid, subscriptionUnpaid, stampUnpaid, total } }
 }
 
-// 認証不要・公開向けチーム詳細取得
+// 認証不要・公開向けグループ詳細取得
 export async function getPublicTeam(teamId: string) {
   const admin = createAdminClient()
 
@@ -538,7 +538,7 @@ export async function getPublicTeam(teamId: string) {
     .eq("status", "active")
     .single()
 
-  if (error || !team) return { error: "チームが見つかりません" }
+  if (error || !team) return { error: "グループが見つかりません" }
 
   // 管理者プロフィール
   const { data: adminMember } = await admin

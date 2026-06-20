@@ -42,7 +42,7 @@ export function JoinForm({ inviteCode, teamName, pointCardCount }: JoinFormProps
           ) : (
             <div className="flex cursor-not-allowed flex-col items-center gap-1 rounded-xl border-2 border-[#dce3ea] bg-[#f8f9fa] px-4 py-3 text-sm opacity-40">
               <span className="font-semibold text-[#1a2332]">ポイントカード</span>
-              <span className="text-xs text-[#5c6a7a]">このチームでは未対応</span>
+              <span className="text-xs text-[#5c6a7a]">このグループでは未対応</span>
             </div>
           )}
         </div>

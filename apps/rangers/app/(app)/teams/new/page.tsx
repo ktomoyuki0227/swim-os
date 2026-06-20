@@ -171,9 +171,9 @@ export default function NewTeamPage() {
     <div className="mx-auto max-w-xl space-y-6">
       <div>
         <Link href="/teams" className="text-sm text-[#5c6a7a] hover:text-[#1a2332]">
-          ← チーム一覧
+          ← グループ一覧
         </Link>
-        <h1 className="mt-2 text-xl font-bold text-[#1a2332]">チームを作成</h1>
+        <h1 className="mt-2 text-xl font-bold text-[#1a2332]">グループを作成</h1>
       </div>
 
       {/* ステップインジケーター */}
@@ -209,7 +209,7 @@ export default function NewTeamPage() {
             <CardContent className="space-y-4 pt-5">
               <div className="space-y-1.5">
                 <Label htmlFor="name">
-                  チーム名 <span className="text-[#E8614D]">*</span>
+                  グループ名 <span className="text-[#E8614D]">*</span>
                 </Label>
                 <Input
                   id="name"
@@ -224,7 +224,7 @@ export default function NewTeamPage() {
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="description">
-                  チームの説明
+                  グループの説明
                   <span className="ml-1 text-xs font-normal text-[#8d99a8]">（任意）</span>
                 </Label>
                 <Textarea
@@ -301,7 +301,7 @@ export default function NewTeamPage() {
 
               {/* カバー画像 */}
               <div className="space-y-2">
-                <Label>チームイメージ画像（ヒーロー）</Label>
+                <Label>グループイメージ画像（ヒーロー）</Label>
                 <div
                   className="relative w-full overflow-hidden rounded-xl border border-dashed border-[#dce3ea] bg-[#f5f8fa] cursor-pointer hover:border-[#005F8C]/50 transition-colors"
                   style={{ aspectRatio: "16/5" }}
@@ -342,9 +342,9 @@ export default function NewTeamPage() {
                 )}
               </div>
 
-              {/* チームアイコン */}
+              {/* グループアイコン */}
               <div className="space-y-2">
-                <Label>チームアイコン（丸アイコン）</Label>
+                <Label>グループアイコン（丸アイコン）</Label>
                 <div className="flex items-center gap-4">
                   <div
                     className="relative h-20 w-20 shrink-0 cursor-pointer overflow-hidden rounded-full border border-dashed border-[#dce3ea] bg-[#f5f8fa] hover:border-[#005F8C]/50 transition-colors"
@@ -423,9 +423,9 @@ export default function NewTeamPage() {
       {/* Step 3: 料金・ポリシー設定 */}
       {step === 3 && (
         <form onSubmit={handleStep3Submit} className="space-y-4">
-          {/* チーム名の確認表示 */}
+          {/* グループ名の確認表示 */}
           <div className="rounded-xl bg-[#f2f7fa] px-4 py-3">
-            <p className="text-xs text-[#5c6a7a]">チーム名</p>
+            <p className="text-xs text-[#5c6a7a]">グループ名</p>
             <p className="font-medium text-[#1a2332]">{step1.name}</p>
           </div>
 
@@ -434,7 +434,7 @@ export default function NewTeamPage() {
             <CardContent className="space-y-4 pt-5">
               <div>
                 <p className="text-sm font-semibold text-[#1a2332]">料金体系</p>
-                <p className="mt-0.5 text-xs text-[#5c6a7a]">このチームで利用する料金体系を選択してください。後から変更できます。</p>
+                <p className="mt-0.5 text-xs text-[#5c6a7a]">このグループで利用する料金体系を選択してください。後から変更できます。</p>
               </div>
 
               {/* セッション参加費 */}
@@ -647,7 +647,7 @@ export default function NewTeamPage() {
               className="flex-1 rounded-full bg-[#005F8C] hover:bg-[#004E73]"
               style={{ minHeight: "48px" }}
             >
-              {isPending ? "作成中..." : "チームを作成"}
+              {isPending ? "作成中..." : "グループを作成"}
             </Button>
           </div>
         </form>
