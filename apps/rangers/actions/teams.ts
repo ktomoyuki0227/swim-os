@@ -542,16 +542,24 @@ export async function updateMemberInfo(
     .single()
   if (!adminMembership) return { error: "権限がありません" }
 
-  // 最後の管理者を降格しようとしていないかチェック
+  // 最後の管理者を降格しようとしていないかチェック（管理者→一般への変更のみ対象）
   if (data.role === "member") {
-    const { count } = await admin
+    const { data: current } = await admin
       .from("team_members")
-      .select("id", { count: "exact", head: true })
+      .select("role")
       .eq("team_id", teamId)
-      .eq("role", "admin")
-      .eq("status", "active")
-    if ((count ?? 0) <= 1) {
-      return { error: "最後の管理者のロールは変更できません" }
+      .eq("swimmer_id", swimmerId)
+      .single()
+    if (current?.role === "admin") {
+      const { count } = await admin
+        .from("team_members")
+        .select("id", { count: "exact", head: true })
+        .eq("team_id", teamId)
+        .eq("role", "admin")
+        .eq("status", "active")
+      if ((count ?? 0) <= 1) {
+        return { error: "最後の管理者のロールは変更できません" }
+      }
     }
   }
 
