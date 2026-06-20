@@ -5,6 +5,7 @@ import { removeMember } from "@/actions/teams"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/components/toast"
+import { EditMemberModal } from "./edit-member-modal"
 import type { TeamMemberWithProfile } from "@/types/database"
 
 
@@ -27,11 +28,15 @@ function getMembershipLabel(member: TeamMemberWithProfile): string {
 
 function MemberMenu({
   swimmerId,
+  isAdmin,
   isRemoving,
+  onEdit,
   onRemove,
 }: {
   swimmerId: string
+  isAdmin: boolean
   isRemoving: boolean
+  onEdit: (id: string) => void
   onRemove: (id: string) => void
 }) {
   const [open, setOpen] = useState(false)
@@ -63,12 +68,23 @@ function MemberMenu({
           <button
             onClick={() => {
               setOpen(false)
-              onRemove(swimmerId)
+              onEdit(swimmerId)
             }}
-            className="flex w-full items-center px-4 py-2.5 text-sm text-red-600 transition-colors hover:bg-red-50"
+            className="flex w-full items-center px-4 py-2.5 text-sm text-[#1a2332] transition-colors hover:bg-[#f2f7fa]"
           >
-            削除
+            編集
           </button>
+          {!isAdmin && (
+            <button
+              onClick={() => {
+                setOpen(false)
+                onRemove(swimmerId)
+              }}
+              className="flex w-full items-center px-4 py-2.5 text-sm text-red-600 transition-colors hover:bg-red-50"
+            >
+              削除
+            </button>
+          )}
         </div>
       )}
     </div>
@@ -78,11 +94,30 @@ function MemberMenu({
 interface MemberListProps {
   teamId: string
   members: TeamMemberWithProfile[]
+  currentUserId: string
+  hasAnnualFee: boolean
+  hasMonthlyFee: boolean
+  hasPointCard: boolean
+  pointCardCount: number
 }
 
-export function MemberList({ teamId, members }: MemberListProps) {
+export function MemberList({
+  teamId,
+  members,
+  currentUserId,
+  hasAnnualFee,
+  hasMonthlyFee,
+  hasPointCard,
+  pointCardCount,
+}: MemberListProps) {
   const [removingId, setRemovingId] = useState<string | null>(null)
+  const [editingMember, setEditingMember] = useState<TeamMemberWithProfile | null>(null)
   const { showToast } = useToast()
+
+  const handleEdit = (swimmerId: string) => {
+    const found = members.find((m) => m.swimmer?.id === swimmerId) ?? null
+    setEditingMember(found)
+  }
 
   const handleRemove = async (swimmerId: string) => {
     if (!confirm("このメンバーをグループから削除しますか？")) return
@@ -108,6 +143,7 @@ export function MemberList({ teamId, members }: MemberListProps) {
   }
 
   return (
+    <>
     <div className="space-y-2">
       {members.map((member) => {
         const swimmer = member.swimmer
@@ -172,10 +208,12 @@ export function MemberList({ teamId, members }: MemberListProps) {
                   >
                     {membershipLabel}
                   </Badge>
-                  {!isAdmin && swimmer?.id && (
+                  {swimmer?.id && (
                     <MemberMenu
                       swimmerId={swimmer.id}
+                      isAdmin={isAdmin}
                       isRemoving={removingId === swimmer.id}
+                      onEdit={handleEdit}
                       onRemove={handleRemove}
                     />
                   )}
@@ -235,5 +273,20 @@ export function MemberList({ teamId, members }: MemberListProps) {
         )
       })}
     </div>
+
+    {editingMember && (
+      <EditMemberModal
+        member={editingMember}
+        teamId={teamId}
+        currentUserId={currentUserId}
+        hasAnnualFee={hasAnnualFee}
+        hasMonthlyFee={hasMonthlyFee}
+        hasPointCard={hasPointCard}
+        pointCardCount={pointCardCount}
+        onClose={() => setEditingMember(null)}
+        onSuccess={() => { setEditingMember(null); window.location.reload() }}
+      />
+    )}
+    </>
   )
 }
