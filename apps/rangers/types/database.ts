@@ -39,6 +39,7 @@ export interface Profile {
   onboarding_completed_at: string | null
   stripe_payment_method_id: string | null
   // スイマー情報（複数選択）
+  level: string | null
   prefectures: string[]
   swimming_goals: string[]
   participation_styles: string[]
@@ -151,6 +152,10 @@ export const SWIMMING_GOALS = [
 
 export type SwimmingGoal = (typeof SWIMMING_GOALS)[number]
 
+/** レベルマスター */
+export const SWIM_LEVELS = ["初級", "中級", "上級"] as const
+export type SwimLevel = (typeof SWIM_LEVELS)[number]
+
 /** 参加スタイルマスター */
 export const PARTICIPATION_STYLES = [
   "チーム練習",
@@ -256,7 +261,7 @@ export interface TeamMemberWithProfile extends TeamMember {
     | "id" | "name" | "avatar_url" | "furigana" | "gender" | "birthday"
     | "address" | "emergency_contact" | "emergency_contact_name" | "emergency_contact_relation"
     | "masters_registered" | "masters_number" | "jsa_registered" | "jsa_number"
-    | "specialties" | "prefectures" | "swimming_goals" | "participation_styles"
+    | "specialties" | "prefectures" | "swimming_goals" | "participation_styles" | "level"
   > | null
 }
 

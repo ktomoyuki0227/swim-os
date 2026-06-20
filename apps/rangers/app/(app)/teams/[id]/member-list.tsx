@@ -7,18 +7,6 @@ import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/components/toast"
 import type { TeamMemberWithProfile, Team } from "@/types/database"
 
-const TAG_LABELS: Record<string, string> = {
-  level_beginner: "初級",
-  level_intermediate: "中級",
-  level_advanced: "上級",
-  stroke_freestyle: "クロール",
-  stroke_backstroke: "背泳ぎ",
-  stroke_breaststroke: "平泳ぎ",
-  stroke_butterfly: "バタフライ",
-  stroke_medley: "個人メドレー",
-  purpose_health: "健康・趣味",
-  purpose_competitive: "競技",
-}
 
 function getMembershipLabel(member: TeamMemberWithProfile, team: Team): string {
   if (member.membership_type === "point_card") {
@@ -118,15 +106,14 @@ export function MemberList({ teamId, team, members }: MemberListProps) {
     <div className="space-y-2">
       {members.map((member) => {
         const swimmer = member.swimmer
-        const tags = member.tags || []
         const isAdmin = member.role === "admin"
         const isPointCard = member.membership_type === "point_card"
         const isLowStamp = isPointCard && member.stamp_remaining !== undefined && member.stamp_remaining <= 3
         const membershipLabel = getMembershipLabel(member, team)
 
         const hasDetails =
-          tags.length > 0 ||
           (swimmer?.specialties || []).length > 0 ||
+          (swimmer?.swimming_goals || []).length > 0 ||
           !!swimmer?.gender ||
           (swimmer?.prefectures || []).length > 0 ||
           !!swimmer?.address ||
@@ -166,6 +153,11 @@ export function MemberList({ teamId, team, members }: MemberListProps) {
                       管理者
                     </Badge>
                   )}
+                  {!!swimmer?.level && (
+                    <Badge className="border-transparent bg-[#f2f7fa] px-1.5 py-0 text-[10px] text-[#5c6a7a]">
+                      {swimmer.level}
+                    </Badge>
+                  )}
                   <Badge
                     className={
                       isLowStamp
@@ -190,22 +182,22 @@ export function MemberList({ teamId, team, members }: MemberListProps) {
               {/* 下段: タグ・詳細情報（全幅） */}
               {hasDetails && (
                 <div className="mt-2 space-y-1">
-                  {/* グループタグ */}
-                  {tags.length > 0 && (
+                  {/* 種目タグ */}
+                  {(swimmer?.specialties ?? []).length > 0 && (
                     <div className="flex flex-wrap gap-1">
-                      {tags.map((tag) => (
-                        <span key={tag} className="rounded-full bg-[#f2f7fa] px-2 py-0.5 text-[10px] text-[#5c6a7a]">
-                          {TAG_LABELS[tag] || tag}
+                      {swimmer?.specialties?.map((s) => (
+                        <span key={s} className="rounded-full bg-[#e8f2f8] px-2 py-0.5 text-[10px] text-[#005F8C]">
+                          {s}
                         </span>
                       ))}
                     </div>
                   )}
-                  {/* 種目タグ */}
-                  {(swimmer?.specialties || []).length > 0 && (
+                  {/* 活動目的タグ */}
+                  {(swimmer?.swimming_goals ?? []).length > 0 && (
                     <div className="flex flex-wrap gap-1">
-                      {swimmer!.specialties.map((s) => (
-                        <span key={s} className="rounded-full bg-[#e8f2f8] px-2 py-0.5 text-[10px] text-[#005F8C]">
-                          {s}
+                      {swimmer?.swimming_goals?.map((g) => (
+                        <span key={g} className="rounded-full bg-[#f0faf5] px-2 py-0.5 text-[10px] text-[#0f8a4f]">
+                          {g}
                         </span>
                       ))}
                     </div>
@@ -217,10 +209,10 @@ export function MemberList({ teamId, team, members }: MemberListProps) {
                         {swimmer.gender === "male" ? "男性" : swimmer.gender === "female" ? "女性" : "その他"}
                       </span>
                     )}
-                    {(swimmer?.prefectures || []).length > 0 && (
+                    {(swimmer?.prefectures ?? []).length > 0 && (
                       <span>
                         {(() => {
-                          const prefs = swimmer!.prefectures
+                          const prefs = swimmer?.prefectures ?? []
                           const shown = prefs.slice(0, 2).join("・")
                           const rest = prefs.length - 2
                           return rest > 0 ? `${shown} +${rest}` : shown

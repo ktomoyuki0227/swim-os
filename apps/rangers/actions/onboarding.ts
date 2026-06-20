@@ -19,7 +19,11 @@ export interface OnboardingData {
   career?: string
   bio?: string
   achievements?: string
-  prefecture?: string
+  // プロフィールタグ（Step 1 で収集）
+  level?: string
+  specialties?: string[]
+  swimming_goals?: string[]
+  prefectures?: string[]
 }
 
 export async function completeOnboarding(
@@ -51,8 +55,10 @@ export async function completeOnboarding(
       career: data.career || null,
       bio: data.bio || null,
       achievements: data.achievements || null,
-      prefecture: data.prefecture || null,
-      prefectures: data.prefecture ? [data.prefecture] : undefined,
+      level: data.level || null,
+      specialties: data.specialties ?? [],
+      swimming_goals: data.swimming_goals ?? [],
+      prefectures: data.prefectures ?? [],
       onboarding_completed_at: new Date().toISOString(),
     })
     .eq("id", user.id)

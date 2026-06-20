@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useTransition, Fragment } from "react"
+import { useState, useTransition, Fragment } from "react"
 import { useRouter } from "next/navigation"
 import { loadStripe } from "@stripe/stripe-js"
 import {
@@ -18,13 +18,12 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { completeOnboarding, type OnboardingData } from "@/actions/onboarding"
 import { uploadAvatar } from "@/actions/profile"
-import { PREFECTURES } from "@/types/database"
+import { SWIM_SPECIALTIES, SWIMMING_GOALS, SWIM_LEVELS, PREFECTURES } from "@/types/database"
 
 const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
   ? loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
   : null
 
-// Stripe テストモード時のみ表示するテストカード一覧
 const IS_TEST_MODE = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY?.startsWith("pk_test_") ?? false
 
 const TEST_CARDS = [
@@ -33,24 +32,22 @@ const TEST_CARDS = [
   { number: "4000 0000 0000 0002", result: "拒否", variant: "error" as const },
 ]
 
-// 登録〜オンボーディングの全体進捗（登録ページと共通）
 const ALL_STEPS = [
   { num: 1, label: "アカウント作成" },
-  { num: 2, label: "基本情報①" },
-  { num: 3, label: "基本情報②" },
-  { num: 4, label: "緊急連絡先" },
-  { num: 5, label: "競技登録" },
-  { num: 6, label: "プロフィール" },
+  { num: 2, label: "自己紹介" },
+  { num: 3, label: "基本情報①" },
+  { num: 4, label: "基本情報②" },
+  { num: 5, label: "緊急連絡先" },
+  { num: 6, label: "競技登録" },
   { num: 7, label: "お支払い" },
 ]
 
-// ウィザード内部のステップ定義（wizardStep 1〜6 = ALL_STEPS 2〜7）
 const WIZARD_STEPS = [
-  { num: 1, label: "基本情報(1)", desc: "フリガナ・生年月日・性別を教えてください" },
-  { num: 2, label: "基本情報(2)", desc: "住所と電話番号を入力してください" },
-  { num: 3, label: "緊急連絡先", desc: "万が一の際の緊急連絡先を登録してください" },
-  { num: 4, label: "競技登録", desc: "マスターズ水泳・JSAの登録情報を入力してください" },
-  { num: 5, label: "公開プロフィール", desc: "公開ページに表示する情報を登録してください（すべて任意・後から変更可）" },
+  { num: 1, label: "自分を紹介する", desc: "あなたのスイマープロフィールを設定してください" },
+  { num: 2, label: "基本情報(1)", desc: "フリガナ・生年月日・性別を教えてください" },
+  { num: 3, label: "基本情報(2)", desc: "住所と電話番号を入力してください" },
+  { num: 4, label: "緊急連絡先", desc: "万が一の際の緊急連絡先を登録してください" },
+  { num: 5, label: "競技登録", desc: "マスターズ水泳・JSAの登録情報を入力してください" },
   { num: 6, label: "お支払い", desc: "グループの年会費・月謝・練習費などのお支払い方法を登録してください" },
 ]
 
@@ -70,9 +67,6 @@ interface FormState {
   jsa_registered: boolean
   jsa_number: string
   bio: string
-  career: string
-  achievements: string
-  prefecture: string
 }
 
 const stripeInputStyle = {
@@ -85,7 +79,32 @@ const stripeInputStyle = {
   invalid: { color: "#dc2626" },
 }
 
-// ── Stripe card setup form (must be inside <Elements>) ──────────────────────
+// ── TagButton: タグ選択用ボタン ──────────────────────────────────────────────
+function TagButton({
+  label,
+  selected,
+  onClick,
+}: {
+  label: string
+  selected: boolean
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+        selected
+          ? "border-[#005F8C] bg-[#005F8C] text-white"
+          : "border-[#dce3ea] text-[#5c6a7a] hover:border-[#005F8C]/40 hover:text-[#005F8C]"
+      }`}
+    >
+      {label}
+    </button>
+  )
+}
+
+// ── Stripe カードセットアップフォーム ────────────────────────────────────────
 function CardSetupForm({
   clientSecret,
   onSuccess,
@@ -97,11 +116,7 @@ function CardSetupForm({
   const elements = useElements()
   const [formError, setFormError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
-  const [cardComplete, setCardComplete] = useState({
-    number: false,
-    expiry: false,
-    cvc: false,
-  })
+  const [cardComplete, setCardComplete] = useState({ number: false, expiry: false, cvc: false })
   const [showTestCards, setShowTestCards] = useState(false)
   const [copiedCard, setCopiedCard] = useState<string | null>(null)
 
@@ -186,23 +201,19 @@ function CardSetupForm({
         </p>
       )}
 
-      {/* テストカード（Stripe テストモード時のみ表示） */}
       {IS_TEST_MODE && (
         <div className="border-t border-[#dce3ea] pt-3">
           <button
             type="button"
             onClick={() => setShowTestCards((v) => !v)}
-            className="w-full text-center text-xs text-[#8d99a8] hover:text-[#5c6a7a] transition-colors"
+            className="w-full text-center text-xs text-[#8d99a8] transition-colors hover:text-[#5c6a7a]"
           >
             {showTestCards ? "▲ 閉じる" : "▼ テストカード（開発用）"}
           </button>
-
           {showTestCards && (
-            <div className="mt-3 rounded-lg bg-[#f2f7fa] p-3 space-y-2">
+            <div className="mt-3 space-y-2 rounded-lg bg-[#f2f7fa] p-3">
               <p className="text-xs font-medium text-[#1a2332]">テストカード番号</p>
-              <p className="text-[10px] text-[#8d99a8]">
-                有効期限: 12/34　　CVC: 任意の3桁（例: 123）
-              </p>
+              <p className="text-[10px] text-[#8d99a8]">有効期限: 12/34　　CVC: 任意の3桁（例: 123）</p>
               <div className="flex flex-col gap-1.5">
                 {TEST_CARDS.map((card) => (
                   <button
@@ -210,26 +221,18 @@ function CardSetupForm({
                     type="button"
                     onClick={() => copyTestCard(card.number)}
                     className={`rounded-lg border px-3 py-2 text-left transition-colors hover:border-[#005F8C] hover:bg-white ${
-                      copiedCard === card.number
-                        ? "border-[#005F8C] bg-white"
-                        : "border-[#dce3ea] bg-white"
+                      copiedCard === card.number ? "border-[#005F8C] bg-white" : "border-[#dce3ea] bg-white"
                     }`}
                   >
                     <div className="flex items-center justify-between gap-2">
-                      <span className="font-mono text-xs font-semibold text-[#1a2332]">
-                        {card.number}
-                      </span>
+                      <span className="font-mono text-xs font-semibold text-[#1a2332]">{card.number}</span>
                       {copiedCard === card.number ? (
-                        <span className="shrink-0 text-[10px] font-medium text-[#005F8C]">
-                          ✓ コピー済み
-                        </span>
+                        <span className="shrink-0 text-[10px] font-medium text-[#005F8C]">✓ コピー済み</span>
                       ) : (
                         <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
-                          card.variant === "success"
-                            ? "bg-green-100 text-green-700"
-                            : card.variant === "warning"
-                            ? "bg-orange-100 text-orange-700"
-                            : "bg-red-100 text-red-700"
+                          card.variant === "success" ? "bg-green-100 text-green-700"
+                          : card.variant === "warning" ? "bg-orange-100 text-orange-700"
+                          : "bg-red-100 text-red-700"
                         }`}>
                           {card.result}
                         </span>
@@ -238,9 +241,7 @@ function CardSetupForm({
                   </button>
                 ))}
               </div>
-              <p className="text-[10px] text-[#8d99a8]">
-                クリックするとカード番号をクリップボードにコピーします
-              </p>
+              <p className="text-[10px] text-[#8d99a8]">クリックするとカード番号をクリップボードにコピーします</p>
             </div>
           )}
         </div>
@@ -258,12 +259,7 @@ function CardSetupForm({
   )
 }
 
-// ── Stripe step wrapper (fetches SetupIntent, renders Elements) ─────────────
-function StripeStep({
-  onSuccess,
-}: {
-  onSuccess: (paymentMethodId: string) => void
-}) {
+function StripeStep({ onSuccess }: { onSuccess: (paymentMethodId: string) => void }) {
   const [clientSecret, setClientSecret] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [fetchError, setFetchError] = useState(false)
@@ -277,25 +273,17 @@ function StripeStep({
         return res.json()
       })
       .then((data: { clientSecret?: string }) => {
-        if (data.clientSecret) {
-          setClientSecret(data.clientSecret)
-        } else {
-          setFetchError(true)
-        }
+        if (data.clientSecret) setClientSecret(data.clientSecret)
+        else setFetchError(true)
       })
       .catch(() => setFetchError(true))
       .finally(() => setLoading(false))
   }
 
-  useEffect(() => {
-    if (!stripePromise) {
-      setFetchError(true)
-      setLoading(false)
-      return
-    }
+  useState(() => {
+    if (!stripePromise) { setFetchError(true); setLoading(false); return }
     fetchIntent()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  })
 
   if (loading) {
     return (
@@ -311,11 +299,7 @@ function StripeStep({
         <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
           お支払い情報の読み込みに失敗しました。再度お試しください。
         </p>
-        <Button
-          onClick={fetchIntent}
-          className="w-full rounded-full bg-[#005F8C] text-white hover:bg-[#004a6b]"
-          style={{ minHeight: "44px" }}
-        >
+        <Button onClick={fetchIntent} className="w-full rounded-full bg-[#005F8C] text-white hover:bg-[#004a6b]" style={{ minHeight: "44px" }}>
           再試行
         </Button>
       </div>
@@ -325,32 +309,28 @@ function StripeStep({
   return (
     <Elements
       stripe={stripePromise}
-      options={{
-        clientSecret,
-        locale: "ja",
-        appearance: {
-          theme: "stripe",
-          variables: {
-            colorPrimary: "#005F8C",
-            fontFamily: "system-ui, sans-serif",
-          },
-        },
-      }}
+      options={{ clientSecret, locale: "ja", appearance: { theme: "stripe", variables: { colorPrimary: "#005F8C", fontFamily: "system-ui, sans-serif" } } }}
     >
       <CardSetupForm clientSecret={clientSecret} onSuccess={onSuccess} />
     </Elements>
   )
 }
 
-// ── Main wizard ─────────────────────────────────────────────────────────────
+// ── メインウィザード ──────────────────────────────────────────────────────────
 export default function OnboardingPage() {
   const router = useRouter()
   const [step, setStep] = useState(1)
   const [isPending, startTransition] = useTransition()
 
+  // Step 1: スイマープロフィール
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
+  const [selectedLevel, setSelectedLevel] = useState<string>("")
+  const [selectedSpecialties, setSelectedSpecialties] = useState<string[]>([])
+  const [selectedGoals, setSelectedGoals] = useState<string[]>([])
+  const [selectedPrefectures, setSelectedPrefectures] = useState<string[]>([])
 
+  // Step 2–5: 基本情報
   const [form, setForm] = useState<FormState>({
     furigana: "",
     birthYear: "",
@@ -367,32 +347,38 @@ export default function OnboardingPage() {
     jsa_registered: false,
     jsa_number: "",
     bio: "",
-    career: "",
-    achievements: "",
-    prefecture: "",
   })
   const [saveError, setSaveError] = useState<string | null>(null)
 
-  const isValidPhone = (val: string) =>
-    /^\d{11}$/.test(val.replace(/[-\s]/g, ""))
+  const isValidPhone = (val: string) => /^\d{11}$/.test(val.replace(/[-\s]/g, ""))
+
+  const toggleItem = (list: string[], item: string): string[] =>
+    list.includes(item) ? list.filter((v) => v !== item) : [...list, item]
+
+  // Step 1 バリデーション
+  const step1Valid =
+    !!avatarFile &&
+    !!selectedLevel &&
+    selectedSpecialties.length >= 2 &&
+    selectedGoals.length >= 1 &&
+    selectedPrefectures.length >= 1
 
   const canProceed = (): boolean => {
     switch (step) {
-      case 1:
-        return !!form.furigana.trim() && !!form.birthYear && !!form.birthMonth && !!form.birthDay && !!form.gender
+      case 1: return step1Valid
       case 2:
-        return !!form.address.trim() && isValidPhone(form.phone)
+        return !!form.furigana.trim() && !!form.birthYear && !!form.birthMonth && !!form.birthDay && !!form.gender
       case 3:
+        return !!form.address.trim() && isValidPhone(form.phone)
+      case 4:
         return (
           !!form.emergency_contact_name.trim() &&
           !!form.emergency_contact_relation.trim() &&
           isValidPhone(form.emergency_contact)
         )
-      case 4:
+      case 5:
         if (form.masters_registered && !form.masters_number.trim()) return false
         if (form.jsa_registered && !form.jsa_number.trim()) return false
-        return true
-      case 5:
         return true
       default:
         return true
@@ -405,7 +391,6 @@ export default function OnboardingPage() {
   const handleComplete = (stripePaymentMethodId?: string) => {
     setSaveError(null)
     startTransition(async () => {
-      // アバターが選択されていれば先にアップロード（失敗しても続行）
       if (avatarFile) {
         const fd = new FormData()
         fd.append("avatar", avatarFile)
@@ -431,14 +416,14 @@ export default function OnboardingPage() {
         jsa_registered: form.jsa_registered,
         jsa_number: form.jsa_number || undefined,
         bio: form.bio || undefined,
-        career: form.career || undefined,
-        achievements: form.achievements || undefined,
-        prefecture: form.prefecture || undefined,
         stripe_payment_method_id: stripePaymentMethodId,
+        level: selectedLevel || undefined,
+        specialties: selectedSpecialties,
+        swimming_goals: selectedGoals,
+        prefectures: selectedPrefectures,
       }
       const result = await completeOnboarding(data)
       if (!result.error) {
-        // next パラメータがあれば遷移（open redirect 対策: 同一オリジンのパスのみ許可）
         const params = new URLSearchParams(window.location.search)
         const next = params.get("next")
         const destination = next && next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard"
@@ -450,47 +435,33 @@ export default function OnboardingPage() {
   }
 
   const currentStep = WIZARD_STEPS[step - 1]
-  // ウィザードのstep(1〜6)は全体進捗の2〜7に対応
   const progressStep = step + 1
 
   return (
     <div className="mx-auto w-full max-w-lg">
-      {/* ── Progress indicator（登録ページと共通の6ステップ） ── */}
+      {/* 進捗インジケーター */}
       <div className="mb-4 flex items-center">
         {ALL_STEPS.map(({ num, label }, i) => (
           <Fragment key={num}>
             <div className="flex flex-col items-center">
-              <div
-                className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold transition-colors ${
-                  num < progressStep
-                    ? "bg-[#005F8C]/20 text-[#005F8C]"
-                    : num === progressStep
-                    ? "bg-[#005F8C] text-white shadow-md"
-                    : "bg-[#dce3ea] text-[#8d99a8]"
-                }`}
-              >
+              <div className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold transition-colors ${
+                num < progressStep ? "bg-[#005F8C]/20 text-[#005F8C]"
+                : num === progressStep ? "bg-[#005F8C] text-white shadow-md"
+                : "bg-[#dce3ea] text-[#8d99a8]"
+              }`}>
                 {num < progressStep ? "✓" : num}
               </div>
-              <p
-                className={`mt-1 hidden text-[10px] sm:block ${
-                  num === progressStep ? "font-medium text-[#005F8C]" : "text-[#8d99a8]"
-                }`}
-              >
+              <p className={`mt-1 hidden text-[10px] sm:block ${num === progressStep ? "font-medium text-[#005F8C]" : "text-[#8d99a8]"}`}>
                 {label}
               </p>
             </div>
             {i < ALL_STEPS.length - 1 && (
-              <div
-                className={`mx-1 h-[2px] flex-1 transition-colors ${
-                  num < progressStep ? "bg-[#005F8C]/30" : "bg-[#dce3ea]"
-                }`}
-              />
+              <div className={`mx-1 h-[2px] flex-1 transition-colors ${num < progressStep ? "bg-[#005F8C]/30" : "bg-[#dce3ea]"}`} />
             )}
           </Fragment>
         ))}
       </div>
 
-      {/* ── Form card ── */}
       <Card className="border-[#dce3ea] bg-white shadow-lg">
         <CardHeader className="pb-2">
           <p className="text-xs font-semibold uppercase tracking-widest text-[#005F8C]">
@@ -501,8 +472,160 @@ export default function OnboardingPage() {
         </CardHeader>
 
         <CardContent className="space-y-5 pt-2">
-          {/* ── Step 1: 基本情報(1) ── */}
+
+          {/* ── Step 1: 自分を紹介する ── */}
           {step === 1 && (
+            <>
+              {/* アバター */}
+              <div className="flex flex-col items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => document.getElementById("avatar-upload-input")?.click()}
+                  className="relative h-24 w-24 overflow-hidden rounded-full border-2 border-dashed border-[#dce3ea] bg-[#f5f8fa] transition-colors hover:border-[#005F8C]"
+                >
+                  {avatarPreview ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={avatarPreview} alt="アバタープレビュー" className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="flex h-full w-full flex-col items-center justify-center gap-1 text-[#8d99a8]">
+                      <span className="text-2xl">📷</span>
+                      <span className="text-[9px] leading-tight">タップして追加</span>
+                    </div>
+                  )}
+                </button>
+                <input
+                  id="avatar-upload-input"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (!file) return
+                    setAvatarFile(file)
+                    const reader = new FileReader()
+                    reader.onloadend = () => setAvatarPreview(reader.result as string)
+                    reader.readAsDataURL(file)
+                  }}
+                />
+                <div className="flex items-center gap-2 text-xs">
+                  <span className={avatarFile ? "text-[#0f8a4f]" : "text-[#E8614D] font-medium"}>
+                    {avatarFile ? "✓ 設定済み" : "プロフィール写真（必須）"}
+                  </span>
+                  {avatarPreview && (
+                    <button
+                      type="button"
+                      onClick={() => { setAvatarFile(null); setAvatarPreview(null) }}
+                      className="text-red-400 hover:text-red-600"
+                    >
+                      × 削除
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* レベル */}
+              <div className="space-y-2">
+                <Label className="text-sm text-[#5c6a7a]">
+                  水泳レベル<span className="ml-0.5 text-red-500">*</span>
+                  <span className="ml-1.5 text-xs font-normal text-[#8d99a8]">1つ選択</span>
+                </Label>
+                <div className="flex gap-3">
+                  {SWIM_LEVELS.map((lvl) => (
+                    <button
+                      key={lvl}
+                      type="button"
+                      onClick={() => setSelectedLevel(lvl)}
+                      className={`flex-1 rounded-lg border py-2.5 text-sm font-medium transition-colors ${
+                        selectedLevel === lvl
+                          ? "border-[#005F8C] bg-[#005F8C]/5 text-[#005F8C]"
+                          : "border-[#dce3ea] text-[#5c6a7a] hover:border-[#005F8C]/40"
+                      }`}
+                    >
+                      {lvl}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* 種目・泳法 */}
+              <div className="space-y-2">
+                <Label className="text-sm text-[#5c6a7a]">
+                  種目・泳法<span className="ml-0.5 text-red-500">*</span>
+                  <span className="ml-1.5 text-xs font-normal text-[#8d99a8]">
+                    2つ以上選択（{selectedSpecialties.length}個選択中）
+                  </span>
+                </Label>
+                <div className="flex flex-wrap gap-2">
+                  {SWIM_SPECIALTIES.map((s) => (
+                    <TagButton
+                      key={s}
+                      label={s}
+                      selected={selectedSpecialties.includes(s)}
+                      onClick={() => setSelectedSpecialties((prev) => toggleItem(prev, s))}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* 活動目的 */}
+              <div className="space-y-2">
+                <Label className="text-sm text-[#5c6a7a]">
+                  活動目的<span className="ml-0.5 text-red-500">*</span>
+                  <span className="ml-1.5 text-xs font-normal text-[#8d99a8]">
+                    1つ以上選択（{selectedGoals.length}個選択中）
+                  </span>
+                </Label>
+                <div className="flex flex-wrap gap-2">
+                  {SWIMMING_GOALS.map((g) => (
+                    <TagButton
+                      key={g}
+                      label={g}
+                      selected={selectedGoals.includes(g)}
+                      onClick={() => setSelectedGoals((prev) => toggleItem(prev, g))}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* 活動エリア */}
+              <div className="space-y-2">
+                <Label className="text-sm text-[#5c6a7a]">
+                  活動エリア<span className="ml-0.5 text-red-500">*</span>
+                  <span className="ml-1.5 text-xs font-normal text-[#8d99a8]">
+                    1つ以上選択（{selectedPrefectures.length}個選択中）
+                  </span>
+                </Label>
+                <div className="flex flex-wrap gap-2">
+                  {PREFECTURES.map((p) => (
+                    <TagButton
+                      key={p}
+                      label={p}
+                      selected={selectedPrefectures.includes(p)}
+                      onClick={() => setSelectedPrefectures((prev) => toggleItem(prev, p))}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* 自己紹介（任意） */}
+              <div className="space-y-1.5">
+                <Label className="text-sm text-[#5c6a7a]">
+                  自己紹介<span className="ml-1 text-xs text-[#8d99a8]">任意</span>
+                </Label>
+                <Textarea
+                  placeholder="例: マスターズ水泳歴10年。クロールと個人メドレーが得意です。"
+                  value={form.bio}
+                  onChange={(e) => set("bio", e.target.value)}
+                  className="border-[#dce3ea]"
+                  rows={3}
+                  maxLength={500}
+                />
+              </div>
+            </>
+          )}
+
+          {/* ── Step 2: 基本情報(1) ── */}
+          {step === 2 && (
             <>
               <div className="space-y-1.5">
                 <Label className="text-sm text-[#5c6a7a]">
@@ -549,8 +672,7 @@ export default function OnboardingPage() {
                     {Array.from(
                       { length: form.birthYear && form.birthMonth
                         ? new Date(Number(form.birthYear), Number(form.birthMonth), 0).getDate()
-                        : 31
-                      },
+                        : 31 },
                       (_, i) => i + 1
                     ).map((d) => (
                       <option key={d} value={String(d)}>{d}日</option>
@@ -582,8 +704,8 @@ export default function OnboardingPage() {
             </>
           )}
 
-          {/* ── Step 2: 基本情報(2) ── */}
-          {step === 2 && (
+          {/* ── Step 3: 基本情報(2) ── */}
+          {step === 3 && (
             <>
               <div className="space-y-1.5">
                 <Label className="text-sm text-[#5c6a7a]">
@@ -596,9 +718,7 @@ export default function OnboardingPage() {
                   className="border-[#dce3ea]"
                   rows={3}
                 />
-                <p className="text-xs text-[#8d99a8]">
-                  グループからの郵便物等に使用される場合があります
-                </p>
+                <p className="text-xs text-[#8d99a8]">グループからの郵便物等に使用される場合があります</p>
               </div>
               <div className="space-y-1.5">
                 <Label className="text-sm text-[#5c6a7a]">
@@ -616,8 +736,8 @@ export default function OnboardingPage() {
             </>
           )}
 
-          {/* ── Step 3: 緊急連絡先 ── */}
-          {step === 3 && (
+          {/* ── Step 4: 緊急連絡先 ── */}
+          {step === 4 && (
             <>
               <div className="space-y-1.5">
                 <Label className="text-sm text-[#5c6a7a]">
@@ -657,27 +777,19 @@ export default function OnboardingPage() {
             </>
           )}
 
-          {/* ── Step 4: 競技登録 ── */}
-          {step === 4 && (
+          {/* ── Step 5: 競技登録 ── */}
+          {step === 5 && (
             <>
-              <div className="rounded-xl border border-[#dce3ea] p-4 space-y-3">
+              <div className="space-y-3 rounded-xl border border-[#dce3ea] p-4">
                 <div className="flex items-center gap-3">
                   <button
                     type="button"
                     onClick={() => set("masters_registered", !form.masters_registered)}
-                    className={`relative h-6 w-10 rounded-full transition-colors ${
-                      form.masters_registered ? "bg-[#005F8C]" : "bg-[#dce3ea]"
-                    }`}
+                    className={`relative h-6 w-10 rounded-full transition-colors ${form.masters_registered ? "bg-[#005F8C]" : "bg-[#dce3ea]"}`}
                   >
-                    <span
-                      className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
-                        form.masters_registered ? "translate-x-4" : "translate-x-0"
-                      }`}
-                    />
+                    <span className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${form.masters_registered ? "translate-x-4" : "translate-x-0"}`} />
                   </button>
-                  <span className="text-sm font-medium text-[#1a2332]">
-                    マスターズ水泳に登録済み
-                  </span>
+                  <span className="text-sm font-medium text-[#1a2332]">マスターズ水泳に登録済み</span>
                 </div>
                 {form.masters_registered && (
                   <div className="space-y-1.5">
@@ -693,24 +805,16 @@ export default function OnboardingPage() {
                   </div>
                 )}
               </div>
-              <div className="rounded-xl border border-[#dce3ea] p-4 space-y-3">
+              <div className="space-y-3 rounded-xl border border-[#dce3ea] p-4">
                 <div className="flex items-center gap-3">
                   <button
                     type="button"
                     onClick={() => set("jsa_registered", !form.jsa_registered)}
-                    className={`relative h-6 w-10 rounded-full transition-colors ${
-                      form.jsa_registered ? "bg-[#005F8C]" : "bg-[#dce3ea]"
-                    }`}
+                    className={`relative h-6 w-10 rounded-full transition-colors ${form.jsa_registered ? "bg-[#005F8C]" : "bg-[#dce3ea]"}`}
                   >
-                    <span
-                      className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
-                        form.jsa_registered ? "translate-x-4" : "translate-x-0"
-                      }`}
-                    />
+                    <span className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${form.jsa_registered ? "translate-x-4" : "translate-x-0"}`} />
                   </button>
-                  <span className="text-sm font-medium text-[#1a2332]">
-                    日本水泳連盟（JSA）に登録済み
-                  </span>
+                  <span className="text-sm font-medium text-[#1a2332]">日本水泳連盟（JSA）に登録済み</span>
                 </div>
                 {form.jsa_registered && (
                   <div className="space-y-1.5">
@@ -729,122 +833,14 @@ export default function OnboardingPage() {
             </>
           )}
 
-          {/* ── Step 5: 公開プロフィール ── */}
-          {step === 5 && (
-            <>
-              <div className="rounded-lg bg-[#f2f7fa] px-3 py-2.5 text-xs text-[#5c6a7a]">
-                グループの公開ページに表示されます。すべて任意で、後からプロフィールページでも変更できます。入力しない場合はそのまま「次へ」を押してください。
-              </div>
-
-              {/* アバター（任意） */}
-              <div className="flex flex-col items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => document.getElementById("avatar-upload-input")?.click()}
-                  className="relative h-24 w-24 overflow-hidden rounded-full border-2 border-dashed border-[#dce3ea] bg-[#f5f8fa] transition-colors hover:border-[#005F8C]"
-                >
-                  {avatarPreview ? (
-                    <img src={avatarPreview} alt="アバタープレビュー" className="h-full w-full object-cover" />
-                  ) : (
-                    <div className="flex h-full w-full flex-col items-center justify-center gap-1 text-[#8d99a8]">
-                      <span className="text-2xl">📷</span>
-                      <span className="text-[9px] leading-tight">タップして追加</span>
-                    </div>
-                  )}
-                </button>
-                <input
-                  id="avatar-upload-input"
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  className="hidden"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0]
-                    if (!file) return
-                    setAvatarFile(file)
-                    const reader = new FileReader()
-                    reader.onloadend = () => setAvatarPreview(reader.result as string)
-                    reader.readAsDataURL(file)
-                  }}
-                />
-                <div className="flex items-center gap-2 text-xs text-[#8d99a8]">
-                  <span>プロフィール写真（任意）</span>
-                  {avatarPreview && (
-                    <button
-                      type="button"
-                      onClick={() => { setAvatarFile(null); setAvatarPreview(null) }}
-                      className="text-red-400 hover:text-red-600"
-                    >
-                      × 削除
-                    </button>
-                  )}
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-sm text-[#5c6a7a]">
-                  自己紹介<span className="ml-1 text-xs text-[#8d99a8]">任意</span>
-                </Label>
-                <Textarea
-                  placeholder="例: 20年以上のコーチ経験を持ち、マスターズ水泳を通じた健康づくりをサポートしています。"
-                  value={form.bio}
-                  onChange={(e) => set("bio", e.target.value)}
-                  className="border-[#dce3ea]"
-                  rows={3}
-                  maxLength={500}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-sm text-[#5c6a7a]">
-                  経歴<span className="ml-1 text-xs text-[#8d99a8]">任意</span>
-                </Label>
-                <Input
-                  placeholder="例: 東京大学体育会水泳部 / 〇〇スイミングクラブ指導員"
-                  value={form.career}
-                  onChange={(e) => set("career", e.target.value)}
-                  className="border-[#dce3ea]"
-                  maxLength={200}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-sm text-[#5c6a7a]">
-                  実績<span className="ml-1 text-xs text-[#8d99a8]">任意</span>
-                </Label>
-                <Textarea
-                  placeholder="例: 50m自由形元日本記録保持者（xx秒）/ 日本マスターズ水泳選手権優勝"
-                  value={form.achievements}
-                  onChange={(e) => set("achievements", e.target.value)}
-                  className="border-[#dce3ea]"
-                  rows={2}
-                  maxLength={300}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-sm text-[#5c6a7a]">
-                  活動エリア<span className="ml-1 text-xs text-[#8d99a8]">任意</span>
-                </Label>
-                <select
-                  value={form.prefecture}
-                  onChange={(e) => set("prefecture", e.target.value)}
-                  className="w-full rounded-lg border border-[#dce3ea] bg-white px-3 py-2.5 text-sm text-[#1a2332] focus:outline-none focus:ring-2 focus:ring-[#005F8C]/40"
-                >
-                  <option value="">都道府県を選択</option>
-                  {PREFECTURES.map((p) => (
-                    <option key={p} value={p}>{p}</option>
-                  ))}
-                </select>
-              </div>
-            </>
-          )}
-
           {/* ── Step 6: Stripe ── */}
           {step === 6 && (
-            <StripeStep
-              onSuccess={(pmId) => handleComplete(pmId)}
-            />
+            <StripeStep onSuccess={(pmId) => handleComplete(pmId)} />
           )}
 
-          {/* ── Navigation (steps 1–5) ── */}
+          {/* ナビゲーション（Step 1–5） */}
           {step < 6 && (
-            <div className={`flex gap-3 pt-2 ${step === 1 ? "" : ""}`}>
+            <div className="flex gap-3 pt-2">
               {step > 1 && (
                 <Button
                   variant="outline"
