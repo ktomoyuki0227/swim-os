@@ -282,6 +282,7 @@ export function NewSessionForm({
           min_participants: (data.min_participants as number) ?? undefined, max_participants: (data.max_participants as number) ?? undefined,
           cancellation_days: (data.cancellation_days as number) ?? undefined, content: (data.content as string) ?? undefined,
           is_external: data.is_external as boolean, target_tags: (data.target_tags as string[]) ?? [],
+          course_rules: (data.course_rules as CourseRule[]) ?? [],
         })
       })
     }
@@ -296,6 +297,13 @@ export function NewSessionForm({
       if (!form.title.trim()) return "タイトルを入力してください"
       if (!form.scheduled_at) return "日時を入力してください"
       if (!form.location.trim()) return "場所を入力してください"
+    }
+    if (step === 2) {
+      for (const rule of courseRules) {
+        if (rule.max !== undefined && rule.max < rule.min) {
+          return "コース代ルール: 参加人数の上限は下限以上に設定してください"
+        }
+      }
     }
     return null
   }
@@ -381,6 +389,7 @@ export function NewSessionForm({
                   min_participants: (data.min_participants as number) ?? undefined, max_participants: (data.max_participants as number) ?? undefined,
                   cancellation_days: (data.cancellation_days as number) ?? undefined, content: (data.content as string) ?? undefined,
                   is_external: data.is_external as boolean, target_tags: (data.target_tags as string[]) ?? [],
+                  course_rules: (data.course_rules as CourseRule[]) ?? [],
                 })
               })
             }}
