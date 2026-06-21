@@ -76,7 +76,7 @@ export default async function SessionDetailPage({ params }: SessionDetailPagePro
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <Link href="/sessions" className="text-sm text-[#5c6a7a] hover:text-[#1a2332]">
+        <Link href={`/teams/${team?.id as string}?tab=sessions`} className="text-sm text-[#5c6a7a] hover:text-[#1a2332]">
           ← セッション管理
         </Link>
         <div className="mt-2 flex items-start justify-between gap-4">
@@ -267,6 +267,7 @@ export default async function SessionDetailPage({ params }: SessionDetailPagePro
       {!isPast && session.session_status !== "cancelled" && (
         <SessionActions
           sessionId={id}
+          teamId={team?.id as string}
           currentStatus={session.session_status}
           hasFailedPayments={activeRegistrations.some((r) => r.payment_status === "failed")}
           failedRegistrationIds={activeRegistrations.filter((r) => r.payment_status === "failed").map((r) => r.id as string)}

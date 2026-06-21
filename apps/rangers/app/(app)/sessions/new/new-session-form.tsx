@@ -13,19 +13,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/components/toast"
-
-const SYSTEM_TAGS = [
-  { id: "level_beginner", label: "初級", category: "レベル" },
-  { id: "level_intermediate", label: "中級", category: "レベル" },
-  { id: "level_advanced", label: "上級", category: "レベル" },
-  { id: "stroke_freestyle", label: "クロール", category: "種目" },
-  { id: "stroke_backstroke", label: "背泳ぎ", category: "種目" },
-  { id: "stroke_breaststroke", label: "平泳ぎ", category: "種目" },
-  { id: "stroke_butterfly", label: "バタフライ", category: "種目" },
-  { id: "stroke_medley", label: "個人メドレー", category: "種目" },
-  { id: "purpose_health", label: "健康・趣味", category: "目的" },
-  { id: "purpose_competitive", label: "競技", category: "目的" },
-]
+import { SYSTEM_TAGS } from "@/types/database"
 
 const STEPS = [
   { label: "基本情報" },
@@ -363,13 +351,13 @@ export function NewSessionForm({
     if (!acc[tag.category]) acc[tag.category] = []
     acc[tag.category].push(tag)
     return acc
-  }, {} as Record<string, typeof SYSTEM_TAGS>)
+  }, {} as Record<string, typeof SYSTEM_TAGS[number][]>)
 
   return (
     <div className={`mx-auto space-y-6 ${step === 3 ? "max-w-3xl" : "max-w-xl"} transition-all`}>
       {/* ヘッダー */}
       <div>
-        <Link href="/sessions" className="text-sm text-[#5c6a7a] hover:text-[#1a2332]">
+        <Link href={activeTeamId ? `/teams/${activeTeamId}?tab=sessions` : "/"} className="text-sm text-[#5c6a7a] hover:text-[#1a2332]">
           ← セッション管理
         </Link>
         <h1 className="mt-2 text-2xl font-bold text-[#1a2332]">セッションを作成</h1>
@@ -770,7 +758,14 @@ export function NewSessionForm({
             (b.swimmer as Record<string, unknown>).name as string, "ja"
           )
         })
-        const untaggedCount = teamMembers.filter((m) => ((m.tags as string[]) || []).length === 0).length
+        const untaggedCount = teamMembers.filter((m) => {
+          const sw = m.swimmer as Record<string, unknown>
+          return (
+            !sw?.level &&
+            ((sw?.specialties as string[]) || []).length === 0 &&
+            ((sw?.swimming_goals as string[]) || []).length === 0
+          )
+        }).length
         const allChecked = teamMembers.length > 0 && teamMembers.every(
           (m) => selectedMemberIds.includes((m.swimmer as Record<string, unknown>).id as string)
         )
@@ -1036,7 +1031,7 @@ export function NewSessionForm({
       {/* ナビゲーションボタン */}
       <div className="flex gap-3">
         {step === 0 ? (
-          <Link href="/sessions" className="flex-1">
+          <Link href={activeTeamId ? `/teams/${activeTeamId}?tab=sessions` : "/"} className="flex-1">
             <Button type="button" variant="outline" className="w-full rounded-full border-[#dce3ea] text-[#5c6a7a]" style={{ minHeight: "48px" }}>
               キャンセル
             </Button>

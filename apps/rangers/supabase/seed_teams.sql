@@ -55,24 +55,24 @@ INSERT INTO teams (
 -- ============================================================
 
 -- コーチ自身を admin として追加
-INSERT INTO team_members (team_id, swimmer_id, role, membership_type, tags, stamp_remaining)
-VALUES (v_team_id, v_instructor_id, 'admin', 'regular', '["level_advanced", "stroke_freestyle", "stroke_medley", "purpose_competitive"]', 0);
+INSERT INTO team_members (team_id, swimmer_id, role, membership_type, stamp_remaining)
+VALUES (v_team_id, v_instructor_id, 'admin', 'annual', 0);
 
 -- メンバー1: レギュラー会員・中級・クロール中心
-INSERT INTO team_members (team_id, swimmer_id, role, membership_type, tags, stamp_remaining)
-VALUES (v_team_id, v_swimmer1_id, 'member', 'regular', '["level_intermediate", "stroke_freestyle", "stroke_backstroke", "purpose_health"]', 0);
+INSERT INTO team_members (team_id, swimmer_id, role, membership_type, stamp_remaining)
+VALUES (v_team_id, v_swimmer1_id, 'member', 'annual', 0);
 
 -- メンバー2: 回数券会員・初級
-INSERT INTO team_members (team_id, swimmer_id, role, membership_type, tags, stamp_remaining)
-VALUES (v_team_id, v_swimmer2_id, 'member', 'point_card', '["level_beginner", "stroke_freestyle", "purpose_health"]', 7);
+INSERT INTO team_members (team_id, swimmer_id, role, membership_type, stamp_remaining)
+VALUES (v_team_id, v_swimmer2_id, 'member', 'point_card', 7);
 
 -- メンバー3: レギュラー会員・上級
-INSERT INTO team_members (team_id, swimmer_id, role, membership_type, tags, stamp_remaining)
-VALUES (v_team_id, v_swimmer3_id, 'member', 'regular', '["level_advanced", "stroke_butterfly", "stroke_medley", "purpose_competitive"]', 0);
+INSERT INTO team_members (team_id, swimmer_id, role, membership_type, stamp_remaining)
+VALUES (v_team_id, v_swimmer3_id, 'member', 'annual', 0);
 
 -- メンバー4: レギュラー会員・中級・平泳ぎ
-INSERT INTO team_members (team_id, swimmer_id, role, membership_type, tags, stamp_remaining)
-VALUES (v_team_id, v_swimmer4_id, 'member', 'regular', '["level_intermediate", "stroke_breaststroke", "purpose_health"]', 0);
+INSERT INTO team_members (team_id, swimmer_id, role, membership_type, stamp_remaining)
+VALUES (v_team_id, v_swimmer4_id, 'member', 'annual', 0);
 
 -- ============================================================
 -- セッション作成

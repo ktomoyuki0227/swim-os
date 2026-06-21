@@ -206,6 +206,22 @@ export type Prefecture = (typeof PREFECTURES)[number]
 // マスターズチーム管理
 // ============================================================
 
+/** セッション・メンバー絞り込みタグマスター */
+export const SYSTEM_TAGS = [
+  { id: "level_beginner", label: "初級", category: "レベル" },
+  { id: "level_intermediate", label: "中級", category: "レベル" },
+  { id: "level_advanced", label: "上級", category: "レベル" },
+  { id: "stroke_freestyle", label: "クロール", category: "種目" },
+  { id: "stroke_backstroke", label: "背泳ぎ", category: "種目" },
+  { id: "stroke_breaststroke", label: "平泳ぎ", category: "種目" },
+  { id: "stroke_butterfly", label: "バタフライ", category: "種目" },
+  { id: "stroke_medley", label: "個人メドレー", category: "種目" },
+  { id: "purpose_health", label: "健康維持", category: "目的" },
+  { id: "purpose_competitive", label: "競技・タイム向上", category: "目的" },
+] as const
+
+export type SystemTagId = (typeof SYSTEM_TAGS)[number]["id"]
+
 export type TeamStatus = "active" | "inactive"
 export type TeamMemberRole = "admin" | "member"
 export type MembershipType = "annual" | "monthly" | "point_card"
@@ -444,9 +460,3 @@ export interface SystemTag {
   sort_order: number
 }
 
-/** タグカテゴリーの選択ルール */
-export const TAG_SELECTION_RULES: Record<string, "single" | "multi"> = {
-  level: "single",
-  stroke: "multi",
-  purpose: "multi",
-} as const

@@ -1,5 +1,5 @@
 # 作業ステータス
-最終更新: 2026-06-18
+最終更新: 2026-06-22
 
 ---
 
@@ -48,6 +48,56 @@
 
 ---
 
+## 直近でやったこと（2026-06-22）
+
+### クリーンアップ ✅
+
+**`app/(app)/instructor/` ディレクトリ削除**（17ファイル）
+- スイマー/インストラクター ロール分離時代の dead code を完全削除
+- 外部依存なし（import・リンクなし）を事前確認済み
+- ともくんが手動で削除
+
+**シードファイル4本 修正**（`team_members.tags` カラム参照を削除）
+- `seed_data.sql`: 3件修正（lines 61・65・69）
+- `seed_teams.sql`: 5件修正済み（前セッション）
+- `seed_team2.sql`: 3件修正済み（前セッション）
+- `seed_combined.sql`: 3件修正済み（前セッション）
+- `practice_sessions.target_tags` は別カラムのため変更なし
+
+---
+
+### メンバータグシステム 全面リファクタリング ✅
+
+チーム単位で管理していた `team_members.tags` を廃止し、ユーザー自身のプロフィールデータを参照・編集する設計に移行。
+
+**DB変更**
+- Migration `00031_drop_member_tags.sql`: `team_members.tags` カラムを DROP
+- Supabase CLI で本番DB に適用済み
+
+**Server Action 変更（`actions/teams.ts`）**
+- `updateMemberInfo`: `tags` パラメータを完全削除。`.select("id")` を追加して0行更新を検出
+- `updateMemberProfileTags`（新規追加）: `profiles.level / specialties / swimming_goals` を更新。SYSTEM_TAGが管理しない値（健康目的以外等）は保持しつつ上書き
+
+**型定義変更（`types/database.ts`）**
+- `TeamMember` interface から `tags: string[] | null` を削除
+- `SYSTEM_TAGS` の `purpose_health` label: `"健康・趣味"` → `"健康維持"` に統一
+- `SYSTEM_TAGS` の `purpose_competitive` label: `"競技"` → `"競技・タイム向上"` に統一
+  （プロフィール表示・モーダル・セッションフォームの表示が一致）
+
+**UIコンポーネント変更**
+- `edit-member-modal.tsx`: 読み取り専用タグ表示 → SYSTEM_TAGS 全10件を編集可能ボタンに変更
+  - `profileToTagIds` / `tagIdsToProfile` でプロフィール値 ↔ SYSTEM_TAG ID を双方向変換
+  - レベルカテゴリは単一選択、種目・目的はマルチ選択
+  - 保存時に `updateMemberInfo` + `updateMemberProfileTags` を並列実行
+  - 両方のエラーを収集してトースト表示（片方失敗時の見落とし防止）
+- `app/(app)/teams/[id]/member-list.tsx`: 旧 `m.tags` 参照削除、プロフィールデータ表示を維持
+- `app/(app)/instructor/teams/[id]/member-list.tsx`: 旧 `TAG_LABELS` 定数（デッドコード）削除
+- `app/(app)/sessions/new/new-session-form.tsx`: `untaggedCount` の計算を `m.tags` → プロフィールフィールド参照に修正
+
+TypeScript: `tsc --noEmit` クリーン確認済み（.next/ 自動生成ファイル除く）
+
+---
+
 ## 直近でやったこと（2026-06-18）
 
 ### チーム詳細ページ メンバーリストUI全面改善 ✅
@@ -79,6 +129,39 @@
 **呼び出し元修正**
 - `app/teams/[id]/page.tsx` L236: `<MemberList teamId={id} members={members} />` → `team={team}` prop 追加
 - TypeScript: `tsc --noEmit` クリーン確認済み
+
+---
+
+## 直近でやったこと（2026-06-21 後半）
+
+### セッション作成フォーム コース代ルール（course_rules）UI実装 ✅（1-E 部分完了）
+
+**`app/(app)/sessions/new/new-session-form.tsx` を修正**
+
+- Step 2（詳細設定）に「コース代ルール」セクションを追加
+  - グリッドレイアウト `[1fr_1fr_1fr_1fr_auto]` で4入力フィールド（下限人数/上限人数/コース数/キャンセル下限）+ 削除ボタン
+  - 「+ ルールを追加」ボタンで行を追加
+  - `max < min` のバリデーションを `validateStep(2)` に追加
+- Step 4（確認）に course_rules のサマリー表示を追加（例: `3〜9人 → 3コース`）
+- テンプレートプリフィル漏れを2か所修正（URLパラム / ドロップダウン onChange）
+- Zod スキーマの `min` / `courses` フィールドを `optional()` から必須に修正（`sessionSchema` / `sessionUpdateSchema` / `templateUpdateSchema` 3スキーマ）
+- TypeScript: `tsc --noEmit` クリーン確認済み
+
+### `/sessions` リストページ削除とルーティング整理 ✅
+
+孤立していた `/sessions` ページ（全チームのセッション一覧）を削除し、ナビゲーション全体を整合。
+
+**削除（4ファイル）**
+- `app/(app)/sessions/page.tsx` — `/sessions` リスト本体（ナビリンクなし・冗長・削除確認済み）
+- `app/(app)/instructor/sessions/page.tsx` — `/sessions` へのリダイレクト（行き先削除のため）
+- `app/(app)/instructor/sessions/new/new-session-form.tsx` — デッドコード（page はリダイレクトのみ）
+- `app/(app)/instructor/sessions/[id]/session-actions.tsx` — デッドコード（同上）
+
+**修正（5ファイル）**
+- `app/teams/[id]/page.tsx` — 「すべて表示→」リンク（`/sessions?team=xxx`、パラム無視で壊れていた）を削除
+- `app/(app)/sessions/[id]/page.tsx` — 「← セッション管理」を `/teams/${team.id}?tab=sessions` へ変更
+- `app/(app)/sessions/[id]/session-actions.tsx` — セッション削除後の `router.push("/sessions")` を `/teams/${teamId}?tab=sessions` へ変更（重大バグ修正）。`teamId` プロップを追加
+- `app/(app)/sessions/new/new-session-form.tsx` — ヘッダーの戻るリンクとキャンセルボタンを `activeTeamId` ベースのURLに変更（フォールバック: `/`）
 
 ---
 
@@ -185,14 +268,11 @@
 
 ### P1（近日中）
 
-1. **登録フロー改善（オンボーディング分岐）**（P1-A）
-   - 登録完了後「どう使いますか？」選択画面
-   - スイマー / チーム作る / パーソナルコーチ の3分岐
+1. **セッションタグ拡張**（1-J）
+   - `SYSTEM_TAGS` に `swimmer_type`（選手/マスターズ）と `swim_discipline`（競泳/シンクロ等）を追加
+   - セッション作成フォーム・メンバータグUIに反映
 
-2. **セッション作成フォーム拡張**（P1-E）
-   - 合宿の複数期間指定 / 待ち合わせ場所 / 性別絞り込み
-
-3. **会費・回数券の改善**（P1-F）
+3. **会費・回数券の改善**（1-F、内容要確認）
 
 ---
 

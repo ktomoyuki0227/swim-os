@@ -613,13 +613,73 @@ export async function updateMemberInfo(
     updateData.stamp_remaining = 0
   }
 
-  const { error } = await admin
+  const { data: updated, error } = await admin
     .from("team_members")
     .update(updateData)
     .eq("team_id", teamId)
     .eq("swimmer_id", swimmerId)
+    .select("id")
 
   if (error) return { error: "メンバー情報の更新に失敗しました" }
+  if (!updated || updated.length === 0) return { error: "メンバーが見つかりません" }
+
+  revalidatePath(`/teams/${teamId}`)
+  return { success: true }
+}
+
+// SYSTEM_TAGS でカバーする種目・目的の値（保存時に非対象の値を保持するため）
+const SYSTEM_TAG_SPECIALTIES = ["クロール", "背泳ぎ", "平泳ぎ", "バタフライ", "個人メドレー"]
+const SYSTEM_TAG_GOALS = ["健康維持", "競技・タイム向上"]
+
+export async function updateMemberProfileTags(
+  teamId: string,
+  swimmerId: string,
+  data: {
+    level: string | null
+    specialties: string[]
+    swimmingGoals: string[]
+  }
+) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "ログインが必要です" }
+
+  const admin = createAdminClient()
+
+  const { data: adminMembership } = await admin
+    .from("team_members")
+    .select("id")
+    .eq("team_id", teamId)
+    .eq("swimmer_id", user.id)
+    .eq("role", "admin")
+    .eq("status", "active")
+    .single()
+  if (!adminMembership) return { error: "権限がありません" }
+
+  // 現在のプロフィールを取得し、SYSTEM_TAGS が管理しない値を保持する
+  const { data: currentProfile } = await admin
+    .from("profiles")
+    .select("specialties, swimming_goals")
+    .eq("id", swimmerId)
+    .single()
+
+  const otherSpecialties = ((currentProfile?.specialties ?? []) as string[]).filter(
+    (s) => !SYSTEM_TAG_SPECIALTIES.includes(s)
+  )
+  const otherGoals = ((currentProfile?.swimming_goals ?? []) as string[]).filter(
+    (g) => !SYSTEM_TAG_GOALS.includes(g)
+  )
+
+  const { error } = await admin
+    .from("profiles")
+    .update({
+      level: data.level,
+      specialties: [...otherSpecialties, ...data.specialties],
+      swimming_goals: [...otherGoals, ...data.swimmingGoals],
+    })
+    .eq("id", swimmerId)
+
+  if (error) return { error: "プロフィールの更新に失敗しました" }
 
   revalidatePath(`/teams/${teamId}`)
   return { success: true }

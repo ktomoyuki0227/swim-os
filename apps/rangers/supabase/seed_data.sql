@@ -58,17 +58,14 @@ BEGIN
   );
 
   -- メンバー登録
-  INSERT INTO team_members (team_id, swimmer_id, role, membership_type, tags, stamp_remaining)
-  VALUES (v_team_id, v_user1, 'admin', 'regular',
-    '["level_advanced","stroke_freestyle","stroke_backstroke","stroke_breaststroke","stroke_butterfly","stroke_medley","purpose_competitive"]', 0);
+  INSERT INTO team_members (team_id, swimmer_id, role, membership_type, stamp_remaining)
+  VALUES (v_team_id, v_user1, 'admin', 'annual', 0);
 
-  INSERT INTO team_members (team_id, swimmer_id, role, membership_type, tags, stamp_remaining)
-  VALUES (v_team_id, v_user2, 'member', 'regular',
-    '["level_intermediate","stroke_freestyle","stroke_backstroke","purpose_health"]', 0);
+  INSERT INTO team_members (team_id, swimmer_id, role, membership_type, stamp_remaining)
+  VALUES (v_team_id, v_user2, 'member', 'annual', 0);
 
-  INSERT INTO team_members (team_id, swimmer_id, role, membership_type, tags, stamp_remaining)
-  VALUES (v_team_id, v_user3, 'member', 'point_card',
-    '["level_beginner","stroke_breaststroke","stroke_butterfly","purpose_health"]', 7);
+  INSERT INTO team_members (team_id, swimmer_id, role, membership_type, stamp_remaining)
+  VALUES (v_team_id, v_user3, 'member', 'point_card', 7);
 
   -- セッション1: 水曜朝練（open）
   INSERT INTO practice_sessions (

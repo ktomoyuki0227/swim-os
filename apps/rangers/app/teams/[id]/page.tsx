@@ -301,9 +301,7 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
                         </Card>
                       </Link>
                     ))}
-                    <Link href={`/sessions?team=${id}`} className="block text-center text-sm text-[#005F8C] hover:underline">
-                      すべて表示 →
-                    </Link>
+
                   </div>
                 )}
               </div>

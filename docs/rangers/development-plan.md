@@ -1,6 +1,6 @@
 # Rangers 開発プラン
 
-最終更新: 2026-06-03（全面棚卸し・実装ベースで再作成）
+最終更新: 2026-06-22
 
 ---
 
@@ -87,7 +87,7 @@
 | `lessons` | 個別指導レッスン（price / capacity / scheduled_at / status: draft/published/cancelled） |
 | `bookings` | レッスン予約（Stripe payment_intent / status: pending/confirmed/cancelled） |
 | `teams` | チーム（coach_id / invite_code / member_price / guest_price / 年会費・月会費設定 / ポイントカード設定） |
-| `team_members` | チームメンバー（role: admin/member / membership_type: regular/point_card / stamp_remaining / tags） |
+| `team_members` | チームメンバー（role: admin/member / membership_type: annual/monthly/point_card / stamp_remaining） ※`tags`カラムは廃止・削除済み（2026-06-22） |
 | `practice_sessions` | セッション（type: practice/camp/competition/event/meeting / 締切 / 会員・非会員料金） |
 | `session_registrations` | セッション参加登録（payment_method: stripe/cash/point_card / payment_status） |
 | `membership_fees` | チームの年会費・月会費管理 |
@@ -241,6 +241,8 @@ RLS: 全テーブルに Row Level Security 設定済み
 | 1-5 | PWA 設定（manifest.json・service worker） | 0.5日 | 未 |
 | 1-6 | チーム参加フロー実装（`/teams/join/[inviteCode]` ルート・未ログイン時は登録→自動参加） | 1日 | ✅ 完了 |
 | 1-7 | Vitest 導入・主要 Server Actions のユニットテスト | 2日 | 未 |
+| 1-8 | 管理者によるメンバー情報編集（会員種別・タグ） | 1日 | ✅ 完了（2026-06-22） |
+| 1-9 | 不要コード削除（/instructor 旧ルート・旧タグ関連残骸） | 0.5日 | 次タスク |
 
 ---
 

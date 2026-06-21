@@ -69,14 +69,14 @@ INSERT INTO teams (
   1000, 1500, 5000, NULL, 3, 10, 9000, 'active'
 ) RETURNING id INTO v_team_id;
 
-INSERT INTO team_members (team_id, swimmer_id, role, membership_type, tags, stamp_remaining)
-VALUES (v_team_id, v_instructor_id, 'admin', 'regular', '["level_advanced", "stroke_freestyle", "stroke_medley", "purpose_competitive"]', 0);
+INSERT INTO team_members (team_id, swimmer_id, role, membership_type, stamp_remaining)
+VALUES (v_team_id, v_instructor_id, 'admin', 'annual', 0);
 
-INSERT INTO team_members (team_id, swimmer_id, role, membership_type, tags, stamp_remaining)
-VALUES (v_team_id, v_swimmer1_id, 'member', 'regular', '["level_intermediate", "stroke_freestyle", "stroke_backstroke", "purpose_health"]', 0);
+INSERT INTO team_members (team_id, swimmer_id, role, membership_type, stamp_remaining)
+VALUES (v_team_id, v_swimmer1_id, 'member', 'annual', 0);
 
-INSERT INTO team_members (team_id, swimmer_id, role, membership_type, tags, stamp_remaining)
-VALUES (v_team_id, v_swimmer2_id, 'member', 'point_card', '["level_beginner", "stroke_freestyle", "purpose_health"]', 7);
+INSERT INTO team_members (team_id, swimmer_id, role, membership_type, stamp_remaining)
+VALUES (v_team_id, v_swimmer2_id, 'member', 'point_card', 7);
 
 INSERT INTO practice_sessions (
   id, team_id, coach_id, title, description, content, type, scheduled_at, location,

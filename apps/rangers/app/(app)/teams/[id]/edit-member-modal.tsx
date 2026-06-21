@@ -1,9 +1,62 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { updateMemberInfo } from "@/actions/teams"
+import { updateMemberInfo, updateMemberProfileTags } from "@/actions/teams"
 import { useToast } from "@/components/toast"
+import { SYSTEM_TAGS } from "@/types/database"
 import type { TeamMemberWithProfile, MembershipType } from "@/types/database"
+
+// プロフィールデータを SYSTEM_TAGS の ID 配列に変換
+function profileToTagIds(swimmer: TeamMemberWithProfile["swimmer"]): string[] {
+  if (!swimmer) return []
+  const tags: string[] = []
+  if (swimmer.level === "初級") tags.push("level_beginner")
+  else if (swimmer.level === "中級") tags.push("level_intermediate")
+  else if (swimmer.level === "上級") tags.push("level_advanced")
+  const specs = swimmer.specialties ?? []
+  if (specs.includes("クロール")) tags.push("stroke_freestyle")
+  if (specs.includes("背泳ぎ")) tags.push("stroke_backstroke")
+  if (specs.includes("平泳ぎ")) tags.push("stroke_breaststroke")
+  if (specs.includes("バタフライ")) tags.push("stroke_butterfly")
+  if (specs.includes("個人メドレー")) tags.push("stroke_medley")
+  const goals = swimmer.swimming_goals ?? []
+  if (goals.includes("健康維持")) tags.push("purpose_health")
+  if (goals.includes("競技・タイム向上")) tags.push("purpose_competitive")
+  return tags
+}
+
+// SYSTEM_TAGS の ID 配列をプロフィールフィールドに変換
+function tagIdsToProfile(tags: string[]) {
+  const LEVEL_MAP: Record<string, string> = {
+    level_beginner: "初級",
+    level_intermediate: "中級",
+    level_advanced: "上級",
+  }
+  const SPECIALTY_MAP: Record<string, string> = {
+    stroke_freestyle: "クロール",
+    stroke_backstroke: "背泳ぎ",
+    stroke_breaststroke: "平泳ぎ",
+    stroke_butterfly: "バタフライ",
+    stroke_medley: "個人メドレー",
+  }
+  const GOAL_MAP: Record<string, string> = {
+    purpose_health: "健康維持",
+    purpose_competitive: "競技・タイム向上",
+  }
+  const levelTag = tags.find((t) => t.startsWith("level_"))
+  const level = levelTag ? (LEVEL_MAP[levelTag] ?? null) : null
+  const specialties = tags
+    .filter((t) => t.startsWith("stroke_"))
+    .map((t) => SPECIALTY_MAP[t])
+    .filter(Boolean)
+  const swimmingGoals = tags
+    .filter((t) => t.startsWith("purpose_"))
+    .map((t) => GOAL_MAP[t])
+    .filter(Boolean)
+  return { level, specialties, swimmingGoals }
+}
+
+const LEVEL_TAG_IDS = ["level_beginner", "level_intermediate", "level_advanced"]
 
 interface EditMemberModalProps {
   member: TeamMemberWithProfile
@@ -50,6 +103,7 @@ export function EditMemberModal({
 
   const [membershipType, setMembershipType] = useState<MembershipType>(initialType)
   const [stampRemaining, setStampRemaining] = useState(defaultStampForPointCard)
+  const [selectedTags, setSelectedTags] = useState<string[]>(() => profileToTagIds(member.swimmer))
 
   const handleMembershipTypeChange = (type: MembershipType) => {
     setMembershipType(type)
@@ -61,6 +115,27 @@ export function EditMemberModal({
     (member.role as "admin" | "member") ?? "member"
   )
   const [isSaving, setIsSaving] = useState(false)
+
+  const tagsByCategory = SYSTEM_TAGS.reduce<Record<string, (typeof SYSTEM_TAGS)[number][]>>(
+    (acc, tag) => {
+      if (!acc[tag.category]) acc[tag.category] = []
+      acc[tag.category].push(tag)
+      return acc
+    },
+    {}
+  )
+
+  const toggleTag = (tagId: string) => {
+    setSelectedTags((prev) => {
+      if (LEVEL_TAG_IDS.includes(tagId)) {
+        const isSelected = prev.includes(tagId)
+        return isSelected
+          ? prev.filter((t) => !LEVEL_TAG_IDS.includes(t))
+          : [...prev.filter((t) => !LEVEL_TAG_IDS.includes(t)), tagId]
+      }
+      return prev.includes(tagId) ? prev.filter((t) => t !== tagId) : [...prev, tagId]
+    })
+  }
 
   const isSelf = member.swimmer?.id === currentUserId
 
@@ -82,13 +157,18 @@ export function EditMemberModal({
     if (!member.swimmer?.id) return
     setIsSaving(true)
     try {
-      const result = await updateMemberInfo(teamId, member.swimmer.id, {
-        membershipType,
-        stampRemaining: membershipType === "point_card" ? stampRemaining : undefined,
-        role,
-      })
-      if (result.error) {
-        showToast(result.error, "error")
+      const { level, specialties, swimmingGoals } = tagIdsToProfile(selectedTags)
+      const [result, tagResult] = await Promise.all([
+        updateMemberInfo(teamId, member.swimmer.id, {
+          membershipType,
+          stampRemaining: membershipType === "point_card" ? stampRemaining : undefined,
+          role,
+        }),
+        updateMemberProfileTags(teamId, member.swimmer.id, { level, specialties, swimmingGoals }),
+      ])
+      const errors = [result.error, tagResult.error].filter(Boolean)
+      if (errors.length > 0) {
+        showToast(errors.join(" / "), "error")
       } else {
         showToast("メンバー情報を更新しました", "success")
         onSuccess()
@@ -106,9 +186,9 @@ export function EditMemberModal({
       style={{ backgroundColor: "rgba(0,0,0,0.45)" }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
-      <div className="w-full max-w-sm rounded-t-2xl border border-[#dce3ea] bg-white shadow-xl sm:rounded-2xl">
+      <div className="flex max-h-[85dvh] w-full max-w-sm flex-col rounded-t-2xl border border-[#dce3ea] bg-white shadow-xl sm:rounded-2xl">
         {/* ヘッダー */}
-        <div className="flex items-start justify-between border-b border-[#dce3ea] px-5 py-4">
+        <div className="flex shrink-0 items-start justify-between border-b border-[#dce3ea] px-5 py-4">
           <div>
             <p className="text-xs text-[#8d99a8]">メンバー情報の編集</p>
             <p className="mt-0.5 font-semibold text-[#1a2332]">
@@ -124,7 +204,7 @@ export function EditMemberModal({
           </button>
         </div>
 
-        <div className="space-y-5 px-5 py-5">
+        <div className="flex-1 space-y-5 overflow-y-auto px-5 py-5">
           {/* 会員種別 */}
           {membershipOptions.length > 0 && (
             <div>
@@ -180,6 +260,32 @@ export function EditMemberModal({
             </div>
           )}
 
+          {/* タグ（プロフィールから編集） */}
+          <div>
+            <p className="mb-2.5 text-sm font-medium text-[#1a2332]">タグ</p>
+            {Object.entries(tagsByCategory).map(([category, tags]) => (
+              <div key={category} className="mb-3">
+                <p className="mb-1.5 text-xs text-[#8d99a8]">{category}</p>
+                <div className="flex flex-wrap gap-2">
+                  {tags.map((tag) => (
+                    <button
+                      key={tag.id}
+                      type="button"
+                      onClick={() => toggleTag(tag.id)}
+                      className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                        selectedTags.includes(tag.id)
+                          ? "border-[#005F8C] bg-[#e8f2f8] text-[#005F8C]"
+                          : "border-[#dce3ea] text-[#5c6a7a] hover:border-[#005F8C]"
+                      }`}
+                    >
+                      {tag.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+
           {/* 役割 */}
           <div>
             <p className="mb-2.5 text-sm font-medium text-[#1a2332]">グループでの役割</p>
@@ -207,7 +313,7 @@ export function EditMemberModal({
         </div>
 
         {/* フッター */}
-        <div className="flex gap-2 border-t border-[#dce3ea] px-5 py-4">
+        <div className="flex shrink-0 gap-2 border-t border-[#dce3ea] px-5 py-4">
           <button
             type="button"
             onClick={onClose}

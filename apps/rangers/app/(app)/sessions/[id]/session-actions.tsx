@@ -9,6 +9,7 @@ import { useToast } from "@/components/toast"
 
 interface SessionActionsProps {
   sessionId: string
+  teamId: string
   currentStatus: string
   hasFailedPayments?: boolean
   failedRegistrationIds?: string[]
@@ -17,6 +18,7 @@ interface SessionActionsProps {
 
 export function SessionActions({
   sessionId,
+  teamId,
   currentStatus,
   hasFailedPayments,
   failedRegistrationIds,
@@ -68,7 +70,7 @@ export function SessionActions({
       setIsDeleting(false)
     } else {
       showToast("セッションを削除しました", "success")
-      router.push("/sessions")
+      router.push(`/teams/${teamId}?tab=sessions`)
     }
   }
 

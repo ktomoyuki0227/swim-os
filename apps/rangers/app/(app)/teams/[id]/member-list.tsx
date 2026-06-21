@@ -286,7 +286,7 @@ export function MemberList({
         hasPointCard={hasPointCard}
         pointCardCount={pointCardCount}
         onClose={() => setEditingMember(null)}
-        onSuccess={() => { setEditingMember(null); window.location.reload() }}
+        onSuccess={() => { setEditingMember(null); router.refresh() }}
       />
     )}
     </>

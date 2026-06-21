@@ -64,19 +64,16 @@ BEGIN
     AND team_id = (SELECT id FROM teams WHERE name = 'マウントリバー水泳クラブ' AND coach_id = v_user1);
 
   -- 山田健太: 東京マスターズの coach として admin に
-  INSERT INTO team_members (team_id, swimmer_id, role, membership_type, tags, stamp_remaining)
-  VALUES (v_team2_id, v_user1, 'admin', 'regular',
-    '["level_advanced","stroke_freestyle","stroke_medley","purpose_competitive"]', 0);
+  INSERT INTO team_members (team_id, swimmer_id, role, membership_type, stamp_remaining)
+  VALUES (v_team2_id, v_user1, 'admin', 'annual', 0);
 
   -- 鈴木太郎: 東京マスターズは member として追加
-  INSERT INTO team_members (team_id, swimmer_id, role, membership_type, tags, stamp_remaining)
-  VALUES (v_team2_id, v_user2, 'member', 'regular',
-    '["level_intermediate","stroke_freestyle","stroke_backstroke","purpose_health"]', 0);
+  INSERT INTO team_members (team_id, swimmer_id, role, membership_type, stamp_remaining)
+  VALUES (v_team2_id, v_user2, 'member', 'annual', 0);
 
   -- 佐藤花子: レギュラー会員として追加
-  INSERT INTO team_members (team_id, swimmer_id, role, membership_type, tags, stamp_remaining)
-  VALUES (v_team2_id, v_user3, 'member', 'regular',
-    '["level_beginner","stroke_breaststroke","purpose_health"]', 0);
+  INSERT INTO team_members (team_id, swimmer_id, role, membership_type, stamp_remaining)
+  VALUES (v_team2_id, v_user3, 'member', 'annual', 0);
 
   -- ============================================================
   -- セッション（マウントリバーとずらした日程: +3/+6/+8/+17日）
