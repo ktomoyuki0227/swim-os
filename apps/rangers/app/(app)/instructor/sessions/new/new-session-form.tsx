@@ -43,6 +43,13 @@ type CompetitionField = {
   options?: string[]
 }
 
+type CourseRule = {
+  min: number
+  max?: number
+  courses: number
+  cancel_below?: number
+}
+
 type FormData = {
   title: string
   type: string
@@ -153,6 +160,7 @@ export function NewSessionForm({
     { key: "entry_time", label: "エントリータイム", type: "text", required: true },
     { key: "age_group", label: "年齢区分", type: "text", required: false },
   ])
+  const [courseRules, setCourseRules] = useState<CourseRule[]>([])
   const [templates, setTemplates] = useState<Record<string, unknown>[]>(initialTemplates)
   // サーバーで取得済みのグループIDを記憶しておき、同じグループでの再フェッチをスキップする
   const serverFetchedTeamId = useRef(initialTeamId)
@@ -223,6 +231,7 @@ export function NewSessionForm({
     cancellation_days?: string | number
     target_tags?: string[]
     competition_fields?: CompetitionField[]
+    course_rules?: CourseRule[]
   }
 
   const applyPrefill = (data: PrefillInput) => {
@@ -245,6 +254,7 @@ export function NewSessionForm({
     }))
     if (data.target_tags) setSelectedTags(data.target_tags)
     if (data.competition_fields) setCompetitionFields(data.competition_fields)
+    if (data.course_rules) setCourseRules(data.course_rules)
   }
 
   useEffect(() => {
@@ -259,6 +269,7 @@ export function NewSessionForm({
           cancellation_days: data.cancellation_days ?? undefined, content: data.content ?? undefined,
           is_external: data.is_external, target_tags: (data.target_tags as string[]) ?? [],
           competition_fields: data.competition_fields as CompetitionField[],
+          course_rules: (data.course_rules as CourseRule[]) ?? [],
         })
       })
     } else if (templateId) {
@@ -325,6 +336,7 @@ export function NewSessionForm({
         target_tags: selectedTags,
         target_members: selectedMemberIds ?? undefined,
         competition_fields: form.type === "competition" ? competitionFields : undefined,
+        course_rules: courseRules.length > 0 ? courseRules : undefined,
       })
       if (result.error) {
         showToast(result.error, "error")
@@ -678,6 +690,101 @@ export function NewSessionForm({
               />
             </div>
 
+            {/* コース料金ルール */}
+            <div className="space-y-3 rounded-xl border border-[#dce3ea] p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-[#1a2332]">コース代ルール</p>
+                  <p className="mt-0.5 text-xs text-[#5c6a7a]">参加人数によって変わるコース代の内訳を設定します</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setCourseRules([...courseRules, { min: 1, courses: 1 }])}
+                  className="rounded-full border border-[#005F8C] px-3 py-1 text-xs font-medium text-[#005F8C] hover:bg-[#e8f2f8]"
+                >
+                  + 追加
+                </button>
+              </div>
+
+              {courseRules.length === 0 ? (
+                <p className="text-center text-xs text-[#8d99a8] py-2">ルールなし（設定しない場合は空のままでOK）</p>
+              ) : (
+                <div className="space-y-2">
+                  {/* ヘッダー行 */}
+                  <div className="grid grid-cols-[1fr_1fr_1fr_1fr_auto] gap-2 px-1">
+                    <p className="text-[10px] font-medium text-[#8d99a8]">参加人数（下限）</p>
+                    <p className="text-[10px] font-medium text-[#8d99a8]">参加人数（上限）</p>
+                    <p className="text-[10px] font-medium text-[#8d99a8]">コース数</p>
+                    <p className="text-[10px] font-medium text-[#8d99a8]">最低催行人数</p>
+                    <span />
+                  </div>
+                  {courseRules.map((rule, idx) => (
+                    <div key={idx} className="grid grid-cols-[1fr_1fr_1fr_1fr_auto] items-center gap-2 rounded-lg border border-[#dce3ea] bg-white p-2">
+                      <input
+                        type="number"
+                        min={1}
+                        value={rule.min}
+                        onChange={(e) => {
+                          const updated = [...courseRules]
+                          updated[idx] = { ...rule, min: parseInt(e.target.value) || 1 }
+                          setCourseRules(updated)
+                        }}
+                        className="w-full rounded-lg border border-[#dce3ea] px-2 py-1.5 text-center text-sm text-[#1a2332] focus:border-[#005F8C] focus:outline-none"
+                        placeholder="1"
+                      />
+                      <input
+                        type="number"
+                        min={rule.min}
+                        value={rule.max ?? ""}
+                        onChange={(e) => {
+                          const updated = [...courseRules]
+                          const val = parseInt(e.target.value)
+                          updated[idx] = { ...rule, max: isNaN(val) ? undefined : val }
+                          setCourseRules(updated)
+                        }}
+                        className="w-full rounded-lg border border-[#dce3ea] px-2 py-1.5 text-center text-sm text-[#1a2332] focus:border-[#005F8C] focus:outline-none"
+                        placeholder="上限なし"
+                      />
+                      <input
+                        type="number"
+                        min={1}
+                        value={rule.courses}
+                        onChange={(e) => {
+                          const updated = [...courseRules]
+                          updated[idx] = { ...rule, courses: parseInt(e.target.value) || 1 }
+                          setCourseRules(updated)
+                        }}
+                        className="w-full rounded-lg border border-[#dce3ea] px-2 py-1.5 text-center text-sm text-[#1a2332] focus:border-[#005F8C] focus:outline-none"
+                        placeholder="1"
+                      />
+                      <input
+                        type="number"
+                        min={0}
+                        value={rule.cancel_below ?? ""}
+                        onChange={(e) => {
+                          const updated = [...courseRules]
+                          const val = parseInt(e.target.value)
+                          updated[idx] = { ...rule, cancel_below: isNaN(val) ? undefined : val }
+                          setCourseRules(updated)
+                        }}
+                        className="w-full rounded-lg border border-[#dce3ea] px-2 py-1.5 text-center text-sm text-[#1a2332] focus:border-[#005F8C] focus:outline-none"
+                        placeholder="未設定"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setCourseRules(courseRules.filter((_, i) => i !== idx))}
+                        className="text-[#E8614D] hover:text-[#c0392b]"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {/* 試合エントリー設定 */}
             {form.type === "competition" && (
               <div className="space-y-3 rounded-xl border border-[#dce3ea] p-4">
@@ -980,6 +1087,19 @@ export function NewSessionForm({
                   <span className="w-24 shrink-0 text-[#8d99a8]">外部公開</span>
                   <span className="text-[#1a2332]">{form.is_external ? "あり" : "なし"}</span>
                 </div>
+                {courseRules.length > 0 && (
+                  <div className="flex gap-2">
+                    <span className="w-24 shrink-0 text-[#8d99a8]">コース代ルール</span>
+                    <div className="space-y-1">
+                      {courseRules.map((r, i) => (
+                        <span key={i} className="block text-[#1a2332]">
+                          {r.min}{r.max !== undefined ? `〜${r.max}人` : "人〜"} → {r.courses}コース
+                          {r.cancel_below !== undefined ? `（${r.cancel_below}人未満で中止）` : ""}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
