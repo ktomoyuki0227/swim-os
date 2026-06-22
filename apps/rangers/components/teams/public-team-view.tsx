@@ -1,5 +1,6 @@
 import Image from "next/image"
 import Link from "next/link"
+import { ContactButton } from "./contact-button"
 
 interface PublicSession {
   id: unknown
@@ -32,6 +33,10 @@ interface PublicTeamViewProps {
   data: PublicTeamData
   /** (app)レイアウトのボトムナビ分 (h-16=64px) を考慮するか */
   hasBottomNav?: boolean
+  /** ログイン済み非メンバーの参加申請状況 */
+  joinRequestStatus?: "pending" | "approved" | "rejected" | null
+  /** ログイン状態（問い合わせボタンの表示制御に使用） */
+  isLoggedIn?: boolean
 }
 
 const SESSION_TYPE_LABEL: Record<string, string> = {
@@ -42,7 +47,7 @@ const SESSION_TYPE_LABEL: Record<string, string> = {
   meeting: "ミーティング",
 }
 
-export function PublicTeamView({ data, hasBottomNav = false }: PublicTeamViewProps) {
+export function PublicTeamView({ data, hasBottomNav = false, joinRequestStatus = null, isLoggedIn = false }: PublicTeamViewProps) {
   const { team, coach, memberCount, sessions } = data
 
   const coachName = (coach?.name as string) ?? null
@@ -261,14 +266,24 @@ export function PublicTeamView({ data, hasBottomNav = false }: PublicTeamViewPro
 
       {/* ── 固定 CTA ── */}
       <div className={`fixed ${ctaBottom} left-0 right-0 z-10 px-4 pb-2`}>
-        <div className="mx-auto max-w-lg">
-          <Link
-            href={`/teams/${team.id}/join`}
-            className="flex w-full items-center justify-center rounded-full bg-[#005F8C] py-3.5 text-base font-bold text-white shadow-lg transition-colors hover:bg-[#004a6b] active:scale-[0.98]"
-            style={{ minHeight: "52px" }}
-          >
-            このグループに参加する
-          </Link>
+        <div className="mx-auto flex max-w-lg flex-col gap-2">
+          {joinRequestStatus === "pending" ? (
+            <div className="flex w-full items-center justify-center gap-2 rounded-full bg-[#f59e0b] py-3.5 text-base font-bold text-white shadow-lg" style={{ minHeight: "52px" }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+              </svg>
+              参加申請中（承認待ち）
+            </div>
+          ) : (
+            <Link
+              href={`/teams/${team.id}/join`}
+              className="flex w-full items-center justify-center rounded-full bg-[#005F8C] py-3.5 text-base font-bold text-white shadow-lg transition-colors hover:bg-[#004a6b] active:scale-[0.98]"
+              style={{ minHeight: "52px" }}
+            >
+              このグループに参加する
+            </Link>
+          )}
+          <ContactButton teamId={team.id} isLoggedIn={isLoggedIn} />
         </div>
       </div>
     </div>

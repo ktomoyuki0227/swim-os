@@ -18,6 +18,8 @@ import { InviteSection } from "@/app/(app)/teams/[id]/invite-section"
 import { MemberList } from "@/app/(app)/teams/[id]/member-list"
 import { AnnouncementsSection } from "@/app/(app)/teams/[id]/announcements-section"
 import { MarkReadButton } from "@/app/(app)/teams/[id]/mark-read-button"
+import { JoinRequestsTab } from "@/app/(app)/teams/[id]/join-requests-tab"
+import { getTeamJoinRequests, getMyJoinRequest } from "@/actions/join-requests"
 
 interface TeamPageProps {
   params: Promise<{ id: string }>
@@ -41,7 +43,7 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
       <div className="flex min-h-screen flex-col">
         <PublicHeader user={null} />
         <main className="flex-1">
-          <PublicTeamView data={result.data} hasBottomNav={false} />
+          <PublicTeamView data={result.data} hasBottomNav={false} isLoggedIn={false} />
         </main>
         <PublicFooter />
       </div>
@@ -79,16 +81,21 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
 
   // ─── 非メンバー: 公開ビュー（アプリナビ付き）──────────────────────────
   if (!isMember) {
-    const result = await getPublicTeam(id)
-    if (result.error || !result.data) notFound()
+    const [publicResult, joinRequestResult] = await Promise.all([
+      getPublicTeam(id),
+      getMyJoinRequest(id),
+    ])
+    if (publicResult.error || !publicResult.data) notFound()
+
+    const joinRequestStatus = (joinRequestResult.data?.status ?? null) as "pending" | "approved" | "rejected" | null
 
     return (
       <ToastProvider>
-        <Navigation userName={profile.name} avatarUrl={profile.avatar_url} />
+        <Navigation userName={profile.name} avatarUrl={profile.avatar_url} inactiveRoutes={["/teams"]} />
         <main className="mx-auto w-full max-w-5xl flex-1 overflow-x-hidden px-4 py-6 pb-24 md:pb-6">
           {/* -mx-4 -mt-6 は layout の padding を打ち消して PublicTeamView をフルブリードにする */}
           <div className="-mx-4 -mt-6">
-            <PublicTeamView data={result.data} hasBottomNav={true} />
+            <PublicTeamView data={publicResult.data} hasBottomNav={true} joinRequestStatus={joinRequestStatus} isLoggedIn={true} />
           </div>
         </main>
       </ToastProvider>
@@ -100,12 +107,13 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
 
   // ─── 管理者ビュー ─────────────────────────────────────────────────
   if (isAdmin) {
-    const [teamResult, membersResult, sessionsResult, announcementsResult, feeStatsResult] = await Promise.all([
+    const [teamResult, membersResult, sessionsResult, announcementsResult, feeStatsResult, joinRequestsResult] = await Promise.all([
       getTeam(id),
       getTeamMembers(id),
       getTeamSessions(id),
       getTeamAnnouncements(id),
       getTeamFeeStats(id),
+      getTeamJoinRequests(id),
     ])
 
     if (teamResult.error || !teamResult.data) notFound()
@@ -125,6 +133,7 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
       created_at: string
     }>
 
+    const joinRequests = joinRequestsResult.data || []
     const feeStats = feeStatsResult.data ?? { paid: 0, subscriptionUnpaid: 0, stampUnpaid: 0, total: 0 }
     const hasFeeStats = feeStats.total > 0
     const paidPct = hasFeeStats ? (feeStats.paid / feeStats.total) * 100 : 0
@@ -135,6 +144,7 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
       { id: "members", label: `メンバー (${members.length})` },
       { id: "sessions", label: "セッション" },
       { id: "announcements", label: `お知らせ (${announcements.length})` },
+      { id: "requests", label: joinRequests.length > 0 ? `申請 (${joinRequests.length})` : "申請" },
       { id: "invite", label: "招待" },
       { id: "settings", label: "設定" },
     ]
@@ -311,6 +321,10 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
               <AnnouncementsSection teamId={id} announcements={announcements} />
             )}
 
+            {tab === "requests" && (
+              <JoinRequestsTab teamId={id} initialRequests={joinRequests} />
+            )}
+
             {tab === "invite" && (
               <InviteSection team={team} />
             )}
@@ -380,41 +394,41 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
                         </span>
                       </div>
                     )}
+                    {/* 練習情報 */}
+                    {(team.practice_frequency || (team.practice_days ?? []).length > 0 || team.main_pool) && (
+                      <div className="border-t border-[#f0f3f7] pt-3 space-y-2">
+                        <p className="text-xs font-medium text-[#8d99a8]">練習情報</p>
+                        {team.main_pool && (
+                          <div className="flex justify-between text-sm">
+                            <span className="text-[#5c6a7a]">主な使用プール</span>
+                            <span className="font-medium text-[#1a2332]">{team.main_pool}</span>
+                          </div>
+                        )}
+                        {team.practice_frequency && (
+                          <div className="flex justify-between text-sm">
+                            <span className="text-[#5c6a7a]">練習頻度</span>
+                            <span className="font-medium text-[#1a2332]">{team.practice_frequency}</span>
+                          </div>
+                        )}
+                        {(team.practice_days ?? []).length > 0 && (
+                          <div className="flex justify-between items-center text-sm">
+                            <span className="text-[#5c6a7a]">練習曜日</span>
+                            <div className="flex gap-1">
+                              {(team.practice_days ?? []).map((day: string) => (
+                                <span
+                                  key={day}
+                                  className="flex h-6 w-6 items-center justify-center rounded-full bg-[#e8f2f8] text-[10px] font-medium text-[#005F8C]"
+                                >
+                                  {day}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
-                {/* 練習情報 */}
-                {(team.practice_frequency || (team.practice_days ?? []).length > 0 || team.main_pool) && (
-                  <div className="border-t border-[#f0f3f7] pt-3 space-y-2">
-                    <p className="text-xs font-medium text-[#8d99a8]">練習情報</p>
-                    {team.main_pool && (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-[#5c6a7a]">主な使用プール</span>
-                        <span className="font-medium text-[#1a2332]">{team.main_pool}</span>
-                      </div>
-                    )}
-                    {team.practice_frequency && (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-[#5c6a7a]">練習頻度</span>
-                        <span className="font-medium text-[#1a2332]">{team.practice_frequency}</span>
-                      </div>
-                    )}
-                    {(team.practice_days ?? []).length > 0 && (
-                      <div className="flex justify-between items-center text-sm">
-                        <span className="text-[#5c6a7a]">練習曜日</span>
-                        <div className="flex gap-1">
-                          {(team.practice_days ?? []).map((day: string) => (
-                            <span
-                              key={day}
-                              className="flex h-6 w-6 items-center justify-center rounded-full bg-[#e8f2f8] text-[10px] font-medium text-[#005F8C]"
-                            >
-                              {day}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
                 <Link href={`/teams/${id}/edit`}>
                   <Button
                     variant="outline"
