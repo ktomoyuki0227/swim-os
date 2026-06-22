@@ -496,16 +496,10 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
         <div className="space-y-6">
           {/* Header */}
           <div>
-            <Link href="/teams" className="text-sm text-[#5c6a7a] hover:text-[#1a2332]">
-              ← グループ
-            </Link>
-            <div className="mt-2 flex items-start justify-between gap-2">
-              <div className="min-w-0 flex-1">
-                <h1 className="text-xl font-bold text-[#1a2332]">{team.name}</h1>
-                {team.description && (
-                  <p className="mt-1 text-sm text-[#5c6a7a]">{team.description}</p>
-                )}
-              </div>
+            <div className="flex items-center justify-between">
+              <Link href="/teams" className="text-sm text-[#5c6a7a] hover:text-[#1a2332]">
+                ← グループ
+              </Link>
               {(team.contact_email || team.contact_phone) && (
                 <ContactInfoButton
                   teamId={team.id}
@@ -515,6 +509,10 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
                 />
               )}
             </div>
+            <h1 className="mt-2 text-xl font-bold text-[#1a2332]">{team.name}</h1>
+            {team.description && (
+              <p className="mt-1 text-sm text-[#5c6a7a]">{team.description}</p>
+            )}
           </div>
 
           {/* Tabs */}
