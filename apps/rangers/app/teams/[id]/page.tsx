@@ -20,6 +20,7 @@ import { AnnouncementsSection } from "@/app/(app)/teams/[id]/announcements-secti
 import { MarkReadButton } from "@/app/(app)/teams/[id]/mark-read-button"
 import { JoinRequestsTab } from "@/app/(app)/teams/[id]/join-requests-tab"
 import { getTeamJoinRequests, getMyJoinRequest } from "@/actions/join-requests"
+import { ContactInfoButton } from "@/components/teams/contact-info-button"
 
 interface TeamPageProps {
   params: Promise<{ id: string }>
@@ -498,10 +499,22 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
             <Link href="/teams" className="text-sm text-[#5c6a7a] hover:text-[#1a2332]">
               ← グループ
             </Link>
-            <h1 className="mt-2 text-xl font-bold text-[#1a2332]">{team.name}</h1>
-            {team.description && (
-              <p className="mt-1 text-sm text-[#5c6a7a]">{team.description}</p>
-            )}
+            <div className="mt-2 flex items-start justify-between gap-2">
+              <div className="min-w-0 flex-1">
+                <h1 className="text-xl font-bold text-[#1a2332]">{team.name}</h1>
+                {team.description && (
+                  <p className="mt-1 text-sm text-[#5c6a7a]">{team.description}</p>
+                )}
+              </div>
+              {(team.contact_email || team.contact_phone) && (
+                <ContactInfoButton
+                  teamId={team.id}
+                  contactEmail={(team.contact_email as string | null) ?? null}
+                  contactPhone={(team.contact_phone as string | null) ?? null}
+                  isLoggedIn={true}
+                />
+              )}
+            </div>
           </div>
 
           {/* Tabs */}

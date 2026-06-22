@@ -21,6 +21,8 @@ interface Step1Data {
   practice_frequency: string
   practice_days: string[]
   main_pool: string
+  contact_email: string
+  contact_phone: string
 }
 
 interface Step2Data {
@@ -52,6 +54,8 @@ export default function NewTeamPage() {
     practice_frequency: "",
     practice_days: [],
     main_pool: "",
+    contact_email: "",
+    contact_phone: "",
   })
 
   // Step 2 state
@@ -82,6 +86,8 @@ export default function NewTeamPage() {
       practice_frequency: (data.get("practice_frequency") as string) || "",
       practice_days: step1.practice_days,
       main_pool: (data.get("main_pool") as string) || "",
+      contact_email: (data.get("contact_email") as string) || "",
+      contact_phone: (data.get("contact_phone") as string) || "",
     })
     setStep(2)
   }
@@ -168,6 +174,8 @@ export default function NewTeamPage() {
       cancellation_days: parseInt(data.get("cancellation_days") as string) || 3,
       point_card_count: hasPointCard ? (parseInt(data.get("point_card_count") as string) || 10) : undefined,
       point_card_price: hasPointCard ? (Number.isNaN(pointCardPriceVal) ? undefined : pointCardPriceVal) : undefined,
+      contact_email: step1.contact_email || undefined,
+      contact_phone: step1.contact_phone || undefined,
     }
 
     startTransition(async () => {
@@ -190,29 +198,31 @@ export default function NewTeamPage() {
       </div>
 
       {/* ステップインジケーター */}
-      <div className="flex items-center gap-2 px-12">
-        {([1, 2, 3] as const).map((n, i) => (
-          <div key={n} className="flex flex-1 items-center gap-2">
-            <div
-              className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-colors ${
-                step > n
-                  ? "bg-[#005F8C]/20 text-[#005F8C]"
-                  : step === n
-                  ? "bg-[#005F8C] text-white"
-                  : "bg-[#edf0f4] text-[#5c6a7a]"
-              }`}
-            >
-              {step > n ? "✓" : n}
-            </div>
-            {i < 2 && (
+      <div className="flex justify-center">
+        <div className="flex items-center">
+          {([1, 2, 3] as const).map((n, i) => (
+            <div key={n} className="flex items-center">
               <div
-                className={`h-0.5 flex-1 transition-colors ${
-                  step > n ? "bg-[#005F8C]/40" : "bg-[#dce3ea]"
+                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-colors ${
+                  step > n
+                    ? "bg-[#005F8C]/20 text-[#005F8C]"
+                    : step === n
+                    ? "bg-[#005F8C] text-white"
+                    : "bg-[#edf0f4] text-[#5c6a7a]"
                 }`}
-              />
-            )}
-          </div>
-        ))}
+              >
+                {step > n ? "✓" : n}
+              </div>
+              {i < 2 && (
+                <div
+                  className={`h-0.5 w-16 transition-colors ${
+                    step > n ? "bg-[#005F8C]/40" : "bg-[#dce3ea]"
+                  }`}
+                />
+              )}
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Step 1: 基本情報 */}
@@ -277,6 +287,37 @@ export default function NewTeamPage() {
                   maxLength={200}
                   className="border-[#dce3ea]"
                 />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="contact_email">
+                  問い合わせ用メールアドレス
+                  <span className="ml-1 text-xs font-normal text-[#8d99a8]">（任意）</span>
+                </Label>
+                <Input
+                  id="contact_email"
+                  name="contact_email"
+                  type="email"
+                  placeholder="例：contact@example.com"
+                  defaultValue={step1.contact_email}
+                  maxLength={254}
+                  className="border-[#dce3ea]"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="contact_phone">
+                  問い合わせ用電話番号
+                  <span className="ml-1 text-xs font-normal text-[#8d99a8]">（任意）</span>
+                </Label>
+                <Input
+                  id="contact_phone"
+                  name="contact_phone"
+                  type="tel"
+                  placeholder="09012345678"
+                  defaultValue={step1.contact_phone}
+                  maxLength={20}
+                  className="border-[#dce3ea]"
+                />
+                <p className="text-xs text-[#8d99a8]">ハイフンなし11桁で入力してください</p>
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="practice_frequency">

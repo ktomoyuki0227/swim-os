@@ -1,6 +1,6 @@
 import Image from "next/image"
 import Link from "next/link"
-import { ContactButton } from "./contact-button"
+import { ContactInfoButton } from "./contact-info-button"
 
 interface PublicSession {
   id: unknown
@@ -23,6 +23,8 @@ interface PublicTeamData {
     practice_frequency: string | null
     practice_days: string[]
     main_pool: string | null
+    contact_email: string | null
+    contact_phone: string | null
   }
   coach: Record<string, unknown> | null
   memberCount: number
@@ -93,8 +95,8 @@ export function PublicTeamView({ data, hasBottomNav = false, joinRequestStatus =
       </div>
 
       {/* ── コンテンツ ── */}
-      {/* CTA 2ボタン分の高さ(~112px) + 位置オフセット分のパディング */}
-      <div className={`mx-auto max-w-lg px-4 ${hasBottomNav ? "pb-52" : "pb-44"}`}>
+      {/* CTA 1ボタン分の高さ(~60px) + 位置オフセット分のパディング */}
+      <div className={`mx-auto max-w-lg px-4 ${hasBottomNav ? "pb-36" : "pb-28"}`}>
         {/* グループ説明 headline */}
         {team.description && (
           <div className="py-5">
@@ -117,23 +119,34 @@ export function PublicTeamView({ data, hasBottomNav = false, joinRequestStatus =
             </div>
 
             {/* 情報 */}
-            <div className="min-w-0 flex-1">
-              {team.is_recruiting && (
-                <div className="mb-1.5">
-                  <span className="inline-block rounded-full bg-[#f59e0b] px-2.5 py-0.5 text-xs font-semibold text-white">
-                    メンバー募集中
-                  </span>
+            <div className="flex min-w-0 flex-1 items-start justify-between gap-2">
+              <div className="min-w-0 flex-1">
+                {team.is_recruiting && (
+                  <div className="mb-1.5">
+                    <span className="inline-block rounded-full bg-[#f59e0b] px-2.5 py-0.5 text-xs font-semibold text-white">
+                      メンバー募集中
+                    </span>
+                  </div>
+                )}
+                {coachCareer && (
+                  <p className="text-xs text-[#5c6a7a]">{coachCareer}</p>
+                )}
+                <h1 className="mt-0.5 text-xl font-bold text-[#1a2332]">{team.name}</h1>
+                <div className="mt-1.5 flex items-center gap-1">
+                  <span className="text-base">👥</span>
+                  <span className="text-sm font-semibold text-[#1a2332]">{memberCount}</span>
+                  <span className="text-xs text-[#5c6a7a]">人のメンバー</span>
                 </div>
-              )}
-              {coachCareer && (
-                <p className="text-xs text-[#5c6a7a]">{coachCareer}</p>
-              )}
-              <h1 className="mt-0.5 text-xl font-bold text-[#1a2332]">{team.name}</h1>
-              <div className="mt-1.5 flex items-center gap-1">
-                <span className="text-base">👥</span>
-                <span className="text-sm font-semibold text-[#1a2332]">{memberCount}</span>
-                <span className="text-xs text-[#5c6a7a]">人のメンバー</span>
               </div>
+              {/* 問い合わせアイコンボタン */}
+              {(team.contact_email || team.contact_phone) && (
+                <ContactInfoButton
+                  teamId={team.id}
+                  contactEmail={team.contact_email}
+                  contactPhone={team.contact_phone}
+                  isLoggedIn={isLoggedIn ?? false}
+                />
+              )}
             </div>
           </div>
 
@@ -284,7 +297,6 @@ export function PublicTeamView({ data, hasBottomNav = false, joinRequestStatus =
               このグループに参加する
             </Link>
           )}
-          <ContactButton teamId={team.id} isLoggedIn={isLoggedIn} />
         </div>
       </div>
     </div>

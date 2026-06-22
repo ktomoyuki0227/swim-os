@@ -76,6 +76,8 @@ export const teamSchema = z.object({
   cancellation_days: z.number().int().min(0).max(30).default(3),
   point_card_count: z.number().int().min(1).max(100).default(10),
   point_card_price: z.number().int().min(0).optional(),
+  contact_email: z.string().max(254).optional(),
+  contact_phone: z.string().max(20).optional(),
 })
 
 export const sessionSchema = z.object({
@@ -122,11 +124,12 @@ export const teamUpdateSchema = z.object({
   activity_area: z.string().max(100).optional(),
   practice_frequency: z.string()
     .refine((v) => (PRACTICE_FREQUENCIES as readonly string[]).includes(v), "無効な練習頻度です")
+    .nullable()
     .optional(),
   practice_days: z.array(
     z.string().refine((v) => (PRACTICE_DAYS as readonly string[]).includes(v), "無効な練習曜日です")
   ).optional(),
-  main_pool: z.string().max(200).optional(),
+  main_pool: z.string().max(200).nullable().optional(),
   avatar_url: z.string().url().optional(),
   has_session_fee: z.boolean().optional(),
   has_annual_fee: z.boolean().optional(),
@@ -140,6 +143,8 @@ export const teamUpdateSchema = z.object({
   point_card_count: z.number().int().min(1).max(100).optional(),
   point_card_price: z.number().int().min(0).optional(),
   status: z.enum(["active", "inactive"]).optional(),
+  contact_email: z.string().max(254).nullable().optional(),
+  contact_phone: z.string().max(20).nullable().optional(),
 })
 
 // セッション更新用（全フィールド optional）

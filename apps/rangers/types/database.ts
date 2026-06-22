@@ -429,7 +429,6 @@ export type NotificationType =
   | "join_request_received"
   | "join_request_approved"
   | "join_request_rejected"
-  | "inquiry_received"
 
 export interface Notification {
   id: string

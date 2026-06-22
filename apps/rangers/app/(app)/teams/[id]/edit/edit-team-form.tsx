@@ -36,6 +36,8 @@ interface Team {
   cancellation_days: number
   point_card_count: number
   point_card_price: number | null
+  contact_email: string | null
+  contact_phone: string | null
 }
 
 interface EditTeamFormProps {
@@ -128,9 +130,9 @@ export function EditTeamForm({ team }: EditTeamFormProps) {
         name: data.get("name") as string,
         description: (data.get("description") as string) || undefined,
         activity_area: (data.get("activity_area") as string) || undefined,
-        practice_frequency: (data.get("practice_frequency") as string) || undefined,
+        practice_frequency: (data.get("practice_frequency") as string) || null,
         practice_days: practiceDays,
-        main_pool: (data.get("main_pool") as string) || undefined,
+        main_pool: (data.get("main_pool") as string) || null,
         is_recruiting: isRecruiting,
         status: isActive ? "active" : "inactive",
         has_session_fee: hasSessionFee,
@@ -144,6 +146,8 @@ export function EditTeamForm({ team }: EditTeamFormProps) {
         cancellation_days: parseInt(data.get("cancellation_days") as string) || 3,
         point_card_count: hasPointCard ? (parseInt(data.get("point_card_count") as string) || team.point_card_count || 10) : undefined,
         point_card_price: hasPointCard ? (Number.isNaN(pointCardPriceVal) ? undefined : pointCardPriceVal) : undefined,
+        contact_email: (data.get("contact_email") as string) || null,
+        contact_phone: (data.get("contact_phone") as string) || null,
       }
 
       if (newCoverUrl) payload.cover_image_url = newCoverUrl
@@ -229,6 +233,37 @@ export function EditTeamForm({ team }: EditTeamFormProps) {
                 maxLength={200}
                 className="border-[#dce3ea]"
               />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="contact_email">
+                問い合わせ用メールアドレス
+                <span className="ml-1 text-xs font-normal text-[#8d99a8]">（任意）</span>
+              </Label>
+              <Input
+                id="contact_email"
+                name="contact_email"
+                type="email"
+                placeholder="例：contact@example.com"
+                defaultValue={team.contact_email ?? ""}
+                maxLength={254}
+                className="border-[#dce3ea]"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="contact_phone">
+                問い合わせ用電話番号
+                <span className="ml-1 text-xs font-normal text-[#8d99a8]">（任意）</span>
+              </Label>
+              <Input
+                id="contact_phone"
+                name="contact_phone"
+                type="tel"
+                placeholder="09012345678"
+                defaultValue={team.contact_phone ?? ""}
+                maxLength={20}
+                className="border-[#dce3ea]"
+              />
+              <p className="text-xs text-[#8d99a8]">ハイフンなし11桁で入力してください</p>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="practice_frequency">

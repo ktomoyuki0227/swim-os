@@ -25,13 +25,14 @@ export async function uploadTeamImage(
   const ext = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg"
   const filePath = `${user.id}/${type}-${Date.now()}.${ext}`
 
-  const { error: uploadError } = await supabase.storage
+  const admin = await createAdminClient()
+  const { error: uploadError } = await admin.storage
     .from("teams")
     .upload(filePath, file, { upsert: true })
 
   if (uploadError) return { error: "画像のアップロードに失敗しました" }
 
-  const { data: urlData } = supabase.storage.from("teams").getPublicUrl(filePath)
+  const { data: urlData } = admin.storage.from("teams").getPublicUrl(filePath)
   return { url: `${urlData.publicUrl}?t=${Date.now()}` }
 }
 
@@ -67,6 +68,8 @@ export async function createTeam(data: unknown) {
       cancellation_days: parsed.data.cancellation_days,
       point_card_count: parsed.data.point_card_count,
       point_card_price: parsed.data.point_card_price || null,
+      contact_email: parsed.data.contact_email || null,
+      contact_phone: parsed.data.contact_phone || null,
     })
     .select()
     .single()
@@ -116,7 +119,7 @@ export async function updateTeam(teamId: string, data: unknown) {
     .single()
   if (!adminMembership) return { error: "権限がありません" }
 
-  const { error } = await supabase
+  const { error } = await admin
     .from("teams")
     .update(parsed.data)
     .eq("id", teamId)
@@ -716,7 +719,7 @@ export async function getPublicTeam(teamId: string) {
 
   const { data: team, error } = await admin
     .from("teams")
-    .select("id, name, description, avatar_url, cover_image_url, is_recruiting, activity_area, practice_frequency, practice_days, main_pool, status")
+    .select("id, name, description, avatar_url, cover_image_url, is_recruiting, activity_area, practice_frequency, practice_days, main_pool, status, has_annual_fee, has_monthly_fee, has_point_card, annual_fee_amount, monthly_fee_amount, point_card_count, point_card_price, contact_email, contact_phone")
     .eq("id", teamId)
     .eq("status", "active")
     .single()
