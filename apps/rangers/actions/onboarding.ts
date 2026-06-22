@@ -1,6 +1,7 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
+import { SWIMMER_TYPES, SWIM_DISCIPLINES } from "@/types/database"
 
 export interface OnboardingData {
   furigana?: string
@@ -38,6 +39,14 @@ export async function completeOnboarding(
 
   if (!user) return { error: "ログインが必要です" }
 
+  // 新フィールドのホワイトリストバリデーション
+  if (data.swimmer_type != null && !(SWIMMER_TYPES as readonly string[]).includes(data.swimmer_type)) {
+    return { error: "入力値が不正です" }
+  }
+  if ((data.swim_disciplines ?? []).some((d) => !(SWIM_DISCIPLINES as readonly string[]).includes(d))) {
+    return { error: "入力値が不正です" }
+  }
+
   const { error } = await supabase
     .from("profiles")
     .update({
@@ -61,7 +70,7 @@ export async function completeOnboarding(
       specialties: data.specialties ?? [],
       swimming_goals: data.swimming_goals ?? [],
       prefectures: data.prefectures ?? [],
-      swimmer_type: data.swimmer_type ?? null,
+      swimmer_type: data.swimmer_type || null,
       swim_disciplines: data.swim_disciplines ?? [],
       onboarding_completed_at: new Date().toISOString(),
     })

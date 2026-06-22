@@ -217,7 +217,28 @@ export function NewSessionForm({
               purpose_competitive: "競技・タイム向上",
             }
             const label = labelMap[tag]
-            return label && Array.isArray(swimmer.swimming_goals) && (swimmer.swimming_goals as string[]).includes(label)
+            return label !== undefined && Array.isArray(swimmer.swimming_goals) && (swimmer.swimming_goals as string[]).includes(label)
+          }
+          if (tag.startsWith("swimmer_type_")) {
+            const labelMap: Record<string, string> = {
+              swimmer_type_player: "選手",
+              swimmer_type_masters: "マスターズ",
+            }
+            const label = labelMap[tag]
+            return label !== undefined && swimmer.swimmer_type === label
+          }
+          if (tag.startsWith("discipline_")) {
+            const labelMap: Record<string, string> = {
+              discipline_swimming: "競泳",
+              discipline_synchro: "シンクロ",
+              discipline_openwater: "オープンウォーター",
+              discipline_diving: "飛び込み",
+              discipline_waterpolo: "水球",
+            }
+            const label = labelMap[tag]
+            return label !== undefined &&
+              Array.isArray(swimmer.swim_disciplines) &&
+              (swimmer.swim_disciplines as string[]).includes(label)
           }
           return true
         })

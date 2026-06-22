@@ -160,6 +160,8 @@ export function MemberList({
           !!swimmer?.level ||
           (swimmer?.specialties || []).length > 0 ||
           (swimmer?.swimming_goals || []).length > 0 ||
+          !!swimmer?.swimmer_type ||
+          (swimmer?.swim_disciplines || []).length > 0 ||
           !!swimmer?.gender ||
           (swimmer?.prefectures || []).length > 0 ||
           !!swimmer?.address ||
@@ -225,8 +227,8 @@ export function MemberList({
               {/* 下段: タグ・詳細情報（全幅） */}
               {hasDetails && (
                 <div className="mt-2 space-y-1">
-                  {/* 種目・目的タグ（レベル星を先頭に付与） */}
-                  {(levelStars || (swimmer?.specialties ?? []).length > 0 || (swimmer?.swimming_goals ?? []).length > 0) && (
+                  {/* 種目・目的・スイマータイプ・水泳カテゴリタグ */}
+                  {(levelStars || (swimmer?.specialties ?? []).length > 0 || (swimmer?.swimming_goals ?? []).length > 0 || !!swimmer?.swimmer_type || (swimmer?.swim_disciplines ?? []).length > 0) && (
                     <div className="flex flex-wrap items-center gap-1">
                       {levelStars && swimmer?.level && (
                         <span className="mr-1 text-[11px] font-medium text-[#8d99a8]">{levelStars} {swimmer.level}</span>
@@ -239,6 +241,16 @@ export function MemberList({
                       {swimmer?.swimming_goals?.map((g) => (
                         <span key={g} className="rounded-full bg-[#f0faf5] px-2 py-0.5 text-[10px] text-[#0f8a4f]">
                           {g}
+                        </span>
+                      ))}
+                      {swimmer?.swimmer_type && (
+                        <span className="rounded-full bg-[#f0f4ff] px-2 py-0.5 text-[10px] text-[#3b5bdb]">
+                          {swimmer.swimmer_type}
+                        </span>
+                      )}
+                      {swimmer?.swim_disciplines?.map((d) => (
+                        <span key={d} className="rounded-full bg-[#f0f4ff] px-2 py-0.5 text-[10px] text-[#3b5bdb]">
+                          {d}
                         </span>
                       ))}
                     </div>
