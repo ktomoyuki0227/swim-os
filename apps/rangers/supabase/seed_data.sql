@@ -123,7 +123,7 @@ BEGIN
   -- 料金体系: セッション参加費 + 年会費 + 回数券
   -- ==========================================================
   INSERT INTO teams (
-    id, coach_id, name, description, avatar_url,
+    id, coach_id, name, description, avatar_url, cover_image_url,
     default_member_price, default_guest_price,
     annual_fee_amount, monthly_fee_amount,
     cancellation_days, point_card_count, point_card_price,
@@ -133,7 +133,8 @@ BEGIN
     v_team1, v_user1,
     'マウントリバー水泳クラブ',
     '山梨県甲府市を拠点とするマスターズ水泳チーム。毎週水・土曜日に甲府市民プールで練習。大会参加にも積極的なチームです。',
-    'https://picsum.photos/seed/mountriver/400',
+    'https://fastly.picsum.photos/seed/mountriver/400/400',
+    'https://fastly.picsum.photos/seed/mountriver/800/400',
     1000, 1500,
     5000, NULL,
     3, 10, 9000,
@@ -153,7 +154,7 @@ BEGIN
   -- 料金体系: セッション参加費 + 年会費 + 月謝
   -- ==========================================================
   INSERT INTO teams (
-    id, coach_id, name, description, avatar_url,
+    id, coach_id, name, description, avatar_url, cover_image_url,
     default_member_price, default_guest_price,
     annual_fee_amount, monthly_fee_amount,
     cancellation_days, point_card_count, point_card_price,
@@ -163,7 +164,8 @@ BEGIN
     v_team2, v_user1,
     '東京マスターズ水泳クラブ',
     '東京都江東区を拠点とするマスターズ水泳チーム。辰巳国際水泳場で月・木・日に活動中。初心者から競技者まで幅広く受け入れています。',
-    'https://picsum.photos/seed/tokyomasters/400',
+    'https://fastly.picsum.photos/seed/tokyomasters/400/400',
+    'https://fastly.picsum.photos/seed/tokyomasters/800/400',
     1200, 2000,
     6000, 3000,
     2, 10, 10000,
