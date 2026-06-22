@@ -19,6 +19,11 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "picsum.photos",
       },
+      {
+        // picsum.photos のリダイレクト先（Fastly CDN）
+        protocol: "https",
+        hostname: "fastly.picsum.photos",
+      },
     ],
   },
 };
