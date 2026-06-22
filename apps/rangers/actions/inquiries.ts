@@ -63,6 +63,7 @@ export async function sendInquiry(
         type: "inquiry_received",
         title: `${teamResult.data.name}へのお問い合わせが届きました`,
         body: `${senderName}さん: ${preview}`,
+        link: `/teams/${teamId}`,
         team_id: teamId,
         metadata: { sender_id: user.id, message: trimmed },
       }))

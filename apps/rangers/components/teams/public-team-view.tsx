@@ -93,7 +93,8 @@ export function PublicTeamView({ data, hasBottomNav = false, joinRequestStatus =
       </div>
 
       {/* ── コンテンツ ── */}
-      <div className="mx-auto max-w-lg px-4 pb-40">
+      {/* CTA 2ボタン分の高さ(~112px) + 位置オフセット分のパディング */}
+      <div className={`mx-auto max-w-lg px-4 ${hasBottomNav ? "pb-52" : "pb-44"}`}>
         {/* グループ説明 headline */}
         {team.description && (
           <div className="py-5">

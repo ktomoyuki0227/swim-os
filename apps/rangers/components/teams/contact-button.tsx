@@ -27,7 +27,11 @@ export function ContactButton({ teamId, isLoggedIn }: ContactButtonProps) {
       if (e.key === "Escape") handleClose()
     }
     document.addEventListener("keydown", handleKeyDown)
-    return () => document.removeEventListener("keydown", handleKeyDown)
+    document.body.style.overflow = "hidden"
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown)
+      document.body.style.overflow = ""
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
 

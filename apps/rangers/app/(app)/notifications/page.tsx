@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic"
 
 import { redirect } from "next/navigation"
+import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
 import { getMyNotifications } from "@/actions/notifications"
 import type React from "react"
@@ -90,34 +91,50 @@ export default async function NotificationsPage() {
         </Card>
       ) : (
         <div className="space-y-2">
-          {(notifications as Record<string, unknown>[]).map((notification) => (
-            <Card
-              key={notification.id as string}
-              className={`border-[#dce3ea] ${!notification.is_read ? "border-l-4 border-l-[#005F8C]" : ""}`}
-            >
-              <CardContent className="flex items-start gap-3 p-4">
-                <span className="mt-0.5 shrink-0">
-                  {typeIcons[notification.type as string] ?? defaultIcon}
-                </span>
-                <div className="flex-1">
-                  <p className={`text-sm font-medium ${notification.is_read ? "text-[#5c6a7a]" : "text-[#1a2332]"}`}>
-                    {notification.title as string}
-                  </p>
-                  {notification.body ? (
-                    <p className="mt-0.5 text-xs text-[#5c6a7a]">{notification.body as string}</p>
-                  ) : null}
-                  <p className="mt-1 text-xs text-[#8d99a8]">
-                    {new Date(notification.created_at as string).toLocaleDateString("ja-JP", {
-                      month: "long",
-                      day: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+          {(notifications as Record<string, unknown>[]).map((notification) => {
+            const notifLink = notification.link as string | null
+            const cardContent = (
+              <Card
+                key={notification.id as string}
+                className={`border-[#dce3ea] ${notifLink ? "transition-colors hover:border-[#005F8C]" : ""} ${!notification.is_read ? "border-l-4 border-l-[#005F8C]" : ""}`}
+              >
+                <CardContent className="flex items-start gap-3 p-4">
+                  <span className="mt-0.5 shrink-0">
+                    {typeIcons[notification.type as string] ?? defaultIcon}
+                  </span>
+                  <div className="flex-1">
+                    <p className={`text-sm font-medium ${notification.is_read ? "text-[#5c6a7a]" : "text-[#1a2332]"}`}>
+                      {notification.title as string}
+                    </p>
+                    {notification.body ? (
+                      <p className="mt-0.5 text-xs text-[#5c6a7a]">{notification.body as string}</p>
+                    ) : null}
+                    <div className="mt-1 flex items-center gap-2">
+                      <p className="text-xs text-[#8d99a8]">
+                        {new Date(notification.created_at as string).toLocaleDateString("ja-JP", {
+                          month: "long",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </p>
+                      {notifLink && (
+                        <span className="text-xs text-[#005F8C]">→ 確認する</span>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )
+
+            return notifLink ? (
+              <Link key={notification.id as string} href={notifLink}>
+                {cardContent}
+              </Link>
+            ) : (
+              <div key={notification.id as string}>{cardContent}</div>
+            )
+          })}
         </div>
       )}
     </div>
