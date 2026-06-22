@@ -1,5 +1,5 @@
 import { z } from "zod/v4"
-import { SWIM_SPECIALTIES, PREFECTURES, SWIMMING_GOALS, PARTICIPATION_STYLES, SWIM_LEVELS, TARGET_AGES, SWIMMER_TYPES, SWIM_DISCIPLINES } from "@/types/database"
+import { SWIM_SPECIALTIES, PREFECTURES, SWIMMING_GOALS, PARTICIPATION_STYLES, SWIM_LEVELS, TARGET_AGES, SWIMMER_TYPES, SWIM_DISCIPLINES, PRACTICE_FREQUENCIES, PRACTICE_DAYS } from "@/types/database"
 
 export const loginSchema = z.object({
   email: z.email("有効なメールアドレスを入力してください"),
@@ -58,8 +58,12 @@ export const teamSchema = z.object({
   avatar_url: z.string().url().optional(),
   is_recruiting: z.boolean().default(true),
   activity_area: z.string().max(100).optional(),
-  practice_frequency: z.string().max(50).optional(),
-  practice_days: z.array(z.string().max(10)).default([]),
+  practice_frequency: z.string()
+    .refine((v) => (PRACTICE_FREQUENCIES as readonly string[]).includes(v), "無効な練習頻度です")
+    .optional(),
+  practice_days: z.array(
+    z.string().refine((v) => (PRACTICE_DAYS as readonly string[]).includes(v), "無効な練習曜日です")
+  ).default([]),
   main_pool: z.string().max(200).optional(),
   has_session_fee: z.boolean().default(true),
   has_annual_fee: z.boolean().default(false),
@@ -116,8 +120,12 @@ export const teamUpdateSchema = z.object({
   cover_image_url: z.string().url().optional(),
   is_recruiting: z.boolean().optional(),
   activity_area: z.string().max(100).optional(),
-  practice_frequency: z.string().max(50).optional(),
-  practice_days: z.array(z.string().max(10)).optional(),
+  practice_frequency: z.string()
+    .refine((v) => (PRACTICE_FREQUENCIES as readonly string[]).includes(v), "無効な練習頻度です")
+    .optional(),
+  practice_days: z.array(
+    z.string().refine((v) => (PRACTICE_DAYS as readonly string[]).includes(v), "無効な練習曜日です")
+  ).optional(),
   main_pool: z.string().max(200).optional(),
   avatar_url: z.string().url().optional(),
   has_session_fee: z.boolean().optional(),

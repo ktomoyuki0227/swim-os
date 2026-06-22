@@ -716,7 +716,7 @@ export async function getPublicTeam(teamId: string) {
 
   const { data: team, error } = await admin
     .from("teams")
-    .select("id, name, description, avatar_url, cover_image_url, is_recruiting, activity_area, practice_frequency, practice_days, main_pool, status, invite_code")
+    .select("id, name, description, avatar_url, cover_image_url, is_recruiting, activity_area, practice_frequency, practice_days, main_pool, status")
     .eq("id", teamId)
     .eq("status", "active")
     .single()

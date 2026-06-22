@@ -22,7 +22,6 @@ interface PublicTeamData {
     practice_frequency: string | null
     practice_days: string[]
     main_pool: string | null
-    invite_code: string
   }
   coach: Record<string, unknown> | null
   memberCount: number

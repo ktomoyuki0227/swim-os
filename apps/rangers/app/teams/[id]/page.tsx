@@ -382,6 +382,39 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
                     )}
                   </CardContent>
                 </Card>
+                {/* 練習情報 */}
+                {(team.practice_frequency || (team.practice_days ?? []).length > 0 || team.main_pool) && (
+                  <div className="border-t border-[#f0f3f7] pt-3 space-y-2">
+                    <p className="text-xs font-medium text-[#8d99a8]">練習情報</p>
+                    {team.main_pool && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-[#5c6a7a]">主な使用プール</span>
+                        <span className="font-medium text-[#1a2332]">{team.main_pool}</span>
+                      </div>
+                    )}
+                    {team.practice_frequency && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-[#5c6a7a]">練習頻度</span>
+                        <span className="font-medium text-[#1a2332]">{team.practice_frequency}</span>
+                      </div>
+                    )}
+                    {(team.practice_days ?? []).length > 0 && (
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-[#5c6a7a]">練習曜日</span>
+                        <div className="flex gap-1">
+                          {(team.practice_days ?? []).map((day: string) => (
+                            <span
+                              key={day}
+                              className="flex h-6 w-6 items-center justify-center rounded-full bg-[#e8f2f8] text-[10px] font-medium text-[#005F8C]"
+                            >
+                              {day}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
                 <Link href={`/teams/${id}/edit`}>
                   <Button
                     variant="outline"
