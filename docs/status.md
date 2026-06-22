@@ -57,12 +57,19 @@
 - 外部依存なし（import・リンクなし）を事前確認済み
 - ともくんが手動で削除
 
-**シードファイル4本 修正**（`team_members.tags` カラム参照を削除）
-- `seed_data.sql`: 3件修正（lines 61・65・69）
-- `seed_teams.sql`: 5件修正済み（前セッション）
-- `seed_team2.sql`: 3件修正済み（前セッション）
-- `seed_combined.sql`: 3件修正済み（前セッション）
-- `practice_sessions.target_tags` は別カラムのため変更なし
+**シードファイル4本 修正・Supabase反映**
+
+修正内容（2点）:
+1. `team_members.tags` カラム参照を削除（migration 00031 対応）
+2. `membership_type: 'regular'` → `'annual'` に変更（migration 00029 対応）
+
+Supabase CLI 実行結果:
+- `seed_data.sql` ✅ 正常実行（クリーンアップ → テストデータ再投入）
+- `seed_team2.sql` ✅ 正常実行（東京マスターズ水泳クラブ追加）
+- `seed_combined.sql` ✗ 旧ハードコードUUIDがDBに存在せず実行不可（参照用ファイル）
+- `seed_teams.sql` ✗ プレースホルダUUID（00000000...）のため実行不可（参照用ファイル）
+
+**git push 完了**: commit `6c732d6` → `main`（35ファイル変更、instructor削除17ファイル含む）
 
 ---
 
