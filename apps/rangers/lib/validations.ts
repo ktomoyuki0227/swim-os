@@ -1,5 +1,5 @@
 import { z } from "zod/v4"
-import { SWIM_SPECIALTIES, PREFECTURES, SWIMMING_GOALS, PARTICIPATION_STYLES, SWIM_LEVELS, TARGET_AGES } from "@/types/database"
+import { SWIM_SPECIALTIES, PREFECTURES, SWIMMING_GOALS, PARTICIPATION_STYLES, SWIM_LEVELS, TARGET_AGES, SWIMMER_TYPES, SWIM_DISCIPLINES } from "@/types/database"
 
 export const loginSchema = z.object({
   email: z.email("有効なメールアドレスを入力してください"),
@@ -234,6 +234,8 @@ export const profilePartialSchema = z.object({
   swimming_goals: z.array(z.string().refine((v) => (SWIMMING_GOALS as readonly string[]).includes(v), "無効な活動目的です")).optional(),
   participation_styles: z.array(z.string().refine((v) => (PARTICIPATION_STYLES as readonly string[]).includes(v), "無効な参加スタイルです")).optional(),
   level: z.string().nullable().refine((v) => v === null || (SWIM_LEVELS as readonly string[]).includes(v), "無効なレベルです").optional(),
+  swimmer_type: z.string().nullable().refine((v) => v === null || (SWIMMER_TYPES as readonly string[]).includes(v), "無効なスイマータイプです").optional(),
+  swim_disciplines: z.array(z.string().refine((v) => (SWIM_DISCIPLINES as readonly string[]).includes(v), "無効な水泳カテゴリです")).optional(),
 }).strict()
 
 export type ProfilePartialInput = z.infer<typeof profilePartialSchema>

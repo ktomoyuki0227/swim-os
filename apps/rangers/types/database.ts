@@ -43,6 +43,8 @@ export interface Profile {
   prefectures: string[]
   swimming_goals: string[]
   participation_styles: string[]
+  swimmer_type: string | null
+  swim_disciplines: string[]
 }
 
 export interface Lesson {
@@ -208,19 +210,34 @@ export type Prefecture = (typeof PREFECTURES)[number]
 
 /** セッション・メンバー絞り込みタグマスター */
 export const SYSTEM_TAGS = [
-  { id: "level_beginner", label: "初級", category: "レベル" },
-  { id: "level_intermediate", label: "中級", category: "レベル" },
-  { id: "level_advanced", label: "上級", category: "レベル" },
-  { id: "stroke_freestyle", label: "クロール", category: "種目" },
-  { id: "stroke_backstroke", label: "背泳ぎ", category: "種目" },
-  { id: "stroke_breaststroke", label: "平泳ぎ", category: "種目" },
-  { id: "stroke_butterfly", label: "バタフライ", category: "種目" },
-  { id: "stroke_medley", label: "個人メドレー", category: "種目" },
-  { id: "purpose_health", label: "健康維持", category: "目的" },
-  { id: "purpose_competitive", label: "競技・タイム向上", category: "目的" },
+  { id: "level_beginner",          label: "初級",            category: "レベル" },
+  { id: "level_intermediate",      label: "中級",            category: "レベル" },
+  { id: "level_advanced",          label: "上級",            category: "レベル" },
+  { id: "stroke_freestyle",        label: "クロール",         category: "泳法" },
+  { id: "stroke_backstroke",       label: "背泳ぎ",          category: "泳法" },
+  { id: "stroke_breaststroke",     label: "平泳ぎ",          category: "泳法" },
+  { id: "stroke_butterfly",        label: "バタフライ",       category: "泳法" },
+  { id: "stroke_medley",           label: "個人メドレー",     category: "泳法" },
+  { id: "purpose_health",          label: "健康維持",         category: "目的" },
+  { id: "purpose_competitive",     label: "競技・タイム向上", category: "目的" },
+  { id: "swimmer_type_player",     label: "選手",             category: "スイマータイプ" },
+  { id: "swimmer_type_masters",    label: "マスターズ",       category: "スイマータイプ" },
+  { id: "discipline_swimming",     label: "競泳",             category: "水泳カテゴリ" },
+  { id: "discipline_synchro",      label: "シンクロ",         category: "水泳カテゴリ" },
+  { id: "discipline_openwater",    label: "オープンウォーター", category: "水泳カテゴリ" },
+  { id: "discipline_diving",       label: "飛び込み",         category: "水泳カテゴリ" },
+  { id: "discipline_waterpolo",    label: "水球",             category: "水泳カテゴリ" },
 ] as const
 
 export type SystemTagId = (typeof SYSTEM_TAGS)[number]["id"]
+
+/** スイマータイプマスター */
+export const SWIMMER_TYPES = ["選手", "マスターズ"] as const
+export type SwimmerType = (typeof SWIMMER_TYPES)[number]
+
+/** 水泳カテゴリマスター */
+export const SWIM_DISCIPLINES = ["競泳", "シンクロ", "オープンウォーター", "飛び込み", "水球"] as const
+export type SwimDiscipline = (typeof SWIM_DISCIPLINES)[number]
 
 export type TeamStatus = "active" | "inactive"
 export type TeamMemberRole = "admin" | "member"
@@ -277,6 +294,7 @@ export interface TeamMemberWithProfile extends TeamMember {
     | "address" | "emergency_contact" | "emergency_contact_name" | "emergency_contact_relation"
     | "masters_registered" | "masters_number" | "jsa_registered" | "jsa_number"
     | "specialties" | "prefectures" | "swimming_goals" | "participation_styles" | "level"
+    | "swimmer_type" | "swim_disciplines"
   > | null
 }
 

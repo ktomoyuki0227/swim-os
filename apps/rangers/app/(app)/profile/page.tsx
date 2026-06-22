@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useToast } from "@/components/toast"
-import { SWIM_SPECIALTIES, TARGET_AGES, PREFECTURES, SWIMMING_GOALS, PARTICIPATION_STYLES, SWIM_LEVELS } from "@/types/database"
+import { SWIM_SPECIALTIES, TARGET_AGES, PREFECTURES, SWIMMING_GOALS, PARTICIPATION_STYLES, SWIM_LEVELS, SWIMMER_TYPES, SWIM_DISCIPLINES } from "@/types/database"
 import type { Profile } from "@/types/database"
 
 type EditingSection = "basic" | "swimmer" | "emergency" | "registration" | "public" | null
@@ -328,6 +328,8 @@ export default function ProfilePage() {
   const [specialties, setSpecialties] = useState<string[]>([])
   const [swimmingGoals, setSwimmingGoals] = useState<string[]>([])
   const [participationStyles, setParticipationStyles] = useState<string[]>([])
+  const [selectedSwimmerType, setSelectedSwimmerType] = useState<string>("")
+  const [swimDisciplines, setSwimDisciplines] = useState<string[]>([])
 
   // コーチ・指導員プロフィール
   const [bio, setBio] = useState("")
@@ -375,6 +377,8 @@ export default function ProfilePage() {
         setSpecialties(prof.specialties ?? [])
         setSwimmingGoals(prof.swimming_goals ?? [])
         setParticipationStyles(prof.participation_styles ?? [])
+        setSelectedSwimmerType(prof.swimmer_type ?? "")
+        setSwimDisciplines(prof.swim_disciplines ?? [])
         setBio(prof.bio ?? "")
         setCareer(prof.career ?? "")
         setAchievements(prof.achievements ?? "")
@@ -487,6 +491,8 @@ export default function ProfilePage() {
         setSpecialties(profile.specialties ?? [])
         setSwimmingGoals(profile.swimming_goals ?? [])
         setParticipationStyles(profile.participation_styles ?? [])
+        setSelectedSwimmerType(profile.swimmer_type ?? "")
+        setSwimDisciplines(profile.swim_disciplines ?? [])
         break
       case "public":
         setBio(profile.bio ?? "")
@@ -532,7 +538,15 @@ export default function ProfilePage() {
   }
 
   const saveSwimmer = () => {
-    saveSection({ level: selectedLevel || null, prefectures, specialties, swimming_goals: swimmingGoals, participation_styles: participationStyles })
+    saveSection({
+      level: selectedLevel || null,
+      prefectures,
+      specialties,
+      swimming_goals: swimmingGoals,
+      participation_styles: participationStyles,
+      swimmer_type: selectedSwimmerType || null,
+      swim_disciplines: swimDisciplines,
+    })
   }
 
   const savePublic = () => {
@@ -828,6 +842,27 @@ export default function ProfilePage() {
                 selected={participationStyles}
                 onChange={setParticipationStyles}
               />
+              <div className="space-y-2">
+                <Label className="text-sm text-[#5c6a7a]">スイマータイプ</Label>
+                <div className="flex gap-2">
+                  {SWIMMER_TYPES.map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setSelectedSwimmerType(selectedSwimmerType === t ? "" : t)}
+                      className={`flex-1 rounded-full border py-2 text-sm transition-colors ${selectedSwimmerType === t ? "border-transparent bg-[#005F8C] text-white" : "border-[#dce3ea] text-[#5c6a7a] hover:border-[#005F8C] hover:text-[#005F8C]"}`}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <TagGroup
+                label="水泳カテゴリ"
+                items={SWIM_DISCIPLINES}
+                selected={swimDisciplines}
+                onChange={setSwimDisciplines}
+              />
               <EditActions onCancel={cancelEdit} onSave={saveSwimmer} isPending={isPending} />
             </div>
           ) : (
@@ -844,6 +879,15 @@ export default function ProfilePage() {
               <TagRow label="種目・泳法" items={specialties} />
               <TagRow label="活動目的" items={swimmingGoals} />
               <TagRow label="参加スタイル" items={participationStyles} />
+              <div className="border-b border-[#f2f7fa] py-2.5">
+                <span className="mb-1.5 block text-xs text-[#8d99a8]">スイマータイプ</span>
+                {selectedSwimmerType ? (
+                  <span className="rounded-full bg-[#f2f7fa] px-2.5 py-0.5 text-xs text-[#5c6a7a]">{selectedSwimmerType}</span>
+                ) : (
+                  <span className="text-sm text-[#c0c8d0]">未設定</span>
+                )}
+              </div>
+              <TagRow label="水泳カテゴリ" items={swimDisciplines} />
             </div>
           )}
         </CardContent>

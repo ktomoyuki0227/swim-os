@@ -269,7 +269,7 @@ export async function getTeamMembers(teamId: string) {
   if (!adminMembership) return { data: [], error: "権限がありません" }
   const { data, error } = await admin
     .from("team_members")
-    .select("*, swimmer:profiles(id, name, avatar_url, furigana, gender, birthday, address, emergency_contact, emergency_contact_name, emergency_contact_relation, masters_registered, masters_number, jsa_registered, jsa_number, specialties, prefectures, swimming_goals, participation_styles, level)")
+    .select("*, swimmer:profiles(id, name, avatar_url, furigana, gender, birthday, address, emergency_contact, emergency_contact_name, emergency_contact_relation, masters_registered, masters_number, jsa_registered, jsa_number, specialties, prefectures, swimming_goals, participation_styles, level, swimmer_type, swim_disciplines)")
     .eq("team_id", teamId)
     .eq("status", "active")
     .order("joined_at", { ascending: true })
@@ -627,7 +627,7 @@ export async function updateMemberInfo(
   return { success: true }
 }
 
-// SYSTEM_TAGS でカバーする種目・目的の値（保存時に非対象の値を保持するため）
+// SYSTEM_TAGS でカバーする値（保存時に非対象の値を保持するため）
 const SYSTEM_TAG_SPECIALTIES = ["クロール", "背泳ぎ", "平泳ぎ", "バタフライ", "個人メドレー"]
 const SYSTEM_TAG_GOALS = ["健康維持", "競技・タイム向上"]
 
@@ -638,6 +638,8 @@ export async function updateMemberProfileTags(
     level: string | null
     specialties: string[]
     swimmingGoals: string[]
+    swimmerType: string | null
+    swimDisciplines: string[]
   }
 ) {
   const supabase = await createClient()
@@ -676,6 +678,8 @@ export async function updateMemberProfileTags(
       level: data.level,
       specialties: [...otherSpecialties, ...data.specialties],
       swimming_goals: [...otherGoals, ...data.swimmingGoals],
+      swimmer_type: data.swimmerType,
+      swim_disciplines: data.swimDisciplines,
     })
     .eq("id", swimmerId)
 

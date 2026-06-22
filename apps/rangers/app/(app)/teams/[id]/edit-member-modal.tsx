@@ -22,6 +22,14 @@ function profileToTagIds(swimmer: TeamMemberWithProfile["swimmer"]): string[] {
   const goals = swimmer.swimming_goals ?? []
   if (goals.includes("健康維持")) tags.push("purpose_health")
   if (goals.includes("競技・タイム向上")) tags.push("purpose_competitive")
+  if (swimmer.swimmer_type === "選手") tags.push("swimmer_type_player")
+  else if (swimmer.swimmer_type === "マスターズ") tags.push("swimmer_type_masters")
+  const disciplines = swimmer.swim_disciplines ?? []
+  if (disciplines.includes("競泳")) tags.push("discipline_swimming")
+  if (disciplines.includes("シンクロ")) tags.push("discipline_synchro")
+  if (disciplines.includes("オープンウォーター")) tags.push("discipline_openwater")
+  if (disciplines.includes("飛び込み")) tags.push("discipline_diving")
+  if (disciplines.includes("水球")) tags.push("discipline_waterpolo")
   return tags
 }
 
@@ -43,6 +51,17 @@ function tagIdsToProfile(tags: string[]) {
     purpose_health: "健康維持",
     purpose_competitive: "競技・タイム向上",
   }
+  const SWIMMER_TYPE_MAP: Record<string, string> = {
+    swimmer_type_player: "選手",
+    swimmer_type_masters: "マスターズ",
+  }
+  const DISCIPLINE_MAP: Record<string, string> = {
+    discipline_swimming: "競泳",
+    discipline_synchro: "シンクロ",
+    discipline_openwater: "オープンウォーター",
+    discipline_diving: "飛び込み",
+    discipline_waterpolo: "水球",
+  }
   const levelTag = tags.find((t) => t.startsWith("level_"))
   const level = levelTag ? (LEVEL_MAP[levelTag] ?? null) : null
   const specialties = tags
@@ -53,10 +72,17 @@ function tagIdsToProfile(tags: string[]) {
     .filter((t) => t.startsWith("purpose_"))
     .map((t) => GOAL_MAP[t])
     .filter(Boolean)
-  return { level, specialties, swimmingGoals }
+  const swimmerTypeTag = tags.find((t) => t.startsWith("swimmer_type_"))
+  const swimmerType = swimmerTypeTag ? (SWIMMER_TYPE_MAP[swimmerTypeTag] ?? null) : null
+  const swimDisciplines = tags
+    .filter((t) => t.startsWith("discipline_"))
+    .map((t) => DISCIPLINE_MAP[t])
+    .filter(Boolean)
+  return { level, specialties, swimmingGoals, swimmerType, swimDisciplines }
 }
 
 const LEVEL_TAG_IDS = ["level_beginner", "level_intermediate", "level_advanced"]
+const SWIMMER_TYPE_TAG_IDS = ["swimmer_type_player", "swimmer_type_masters"]
 
 interface EditMemberModalProps {
   member: TeamMemberWithProfile
@@ -133,6 +159,12 @@ export function EditMemberModal({
           ? prev.filter((t) => !LEVEL_TAG_IDS.includes(t))
           : [...prev.filter((t) => !LEVEL_TAG_IDS.includes(t)), tagId]
       }
+      if (SWIMMER_TYPE_TAG_IDS.includes(tagId)) {
+        const isSelected = prev.includes(tagId)
+        return isSelected
+          ? prev.filter((t) => !SWIMMER_TYPE_TAG_IDS.includes(t))
+          : [...prev.filter((t) => !SWIMMER_TYPE_TAG_IDS.includes(t)), tagId]
+      }
       return prev.includes(tagId) ? prev.filter((t) => t !== tagId) : [...prev, tagId]
     })
   }
@@ -157,14 +189,14 @@ export function EditMemberModal({
     if (!member.swimmer?.id) return
     setIsSaving(true)
     try {
-      const { level, specialties, swimmingGoals } = tagIdsToProfile(selectedTags)
+      const { level, specialties, swimmingGoals, swimmerType, swimDisciplines } = tagIdsToProfile(selectedTags)
       const [result, tagResult] = await Promise.all([
         updateMemberInfo(teamId, member.swimmer.id, {
           membershipType,
           stampRemaining: membershipType === "point_card" ? stampRemaining : undefined,
           role,
         }),
-        updateMemberProfileTags(teamId, member.swimmer.id, { level, specialties, swimmingGoals }),
+        updateMemberProfileTags(teamId, member.swimmer.id, { level, specialties, swimmingGoals, swimmerType, swimDisciplines }),
       ])
       const errors = [result.error, tagResult.error].filter(Boolean)
       if (errors.length > 0) {
