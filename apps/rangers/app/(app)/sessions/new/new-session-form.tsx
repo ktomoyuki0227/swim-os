@@ -784,7 +784,9 @@ export function NewSessionForm({
           return (
             !sw?.level &&
             ((sw?.specialties as string[]) || []).length === 0 &&
-            ((sw?.swimming_goals as string[]) || []).length === 0
+            ((sw?.swimming_goals as string[]) || []).length === 0 &&
+            !sw?.swimmer_type &&
+            ((sw?.swim_disciplines as string[]) || []).length === 0
           )
         }).length
         const allChecked = teamMembers.length > 0 && teamMembers.every(
