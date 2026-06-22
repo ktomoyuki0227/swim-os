@@ -19,6 +19,9 @@ interface PublicTeamData {
     cover_image_url: string | null
     is_recruiting: boolean
     activity_area: string | null
+    practice_frequency: string | null
+    practice_days: string[]
+    main_pool: string | null
     invite_code: string
   }
   coach: Record<string, unknown> | null
@@ -137,6 +140,39 @@ export function PublicTeamView({ data, hasBottomNav = false }: PublicTeamViewPro
                   活動エリア
                 </span>
                 <p className="text-sm text-[#1a2332]">{activityArea}</p>
+              </div>
+            )}
+            {team.main_pool && (
+              <div className="flex items-start gap-3">
+                <span className="shrink-0 rounded-md border border-[#dce3ea] px-2 py-0.5 text-xs text-[#5c6a7a]">
+                  使用プール
+                </span>
+                <p className="text-sm text-[#1a2332]">{team.main_pool}</p>
+              </div>
+            )}
+            {team.practice_frequency && (
+              <div className="flex items-start gap-3">
+                <span className="shrink-0 rounded-md border border-[#dce3ea] px-2 py-0.5 text-xs text-[#5c6a7a]">
+                  練習頻度
+                </span>
+                <p className="text-sm text-[#1a2332]">{team.practice_frequency}</p>
+              </div>
+            )}
+            {team.practice_days && team.practice_days.length > 0 && (
+              <div className="flex items-start gap-3">
+                <span className="shrink-0 rounded-md border border-[#dce3ea] px-2 py-0.5 text-xs text-[#5c6a7a]">
+                  練習曜日
+                </span>
+                <div className="flex flex-wrap gap-1">
+                  {team.practice_days.map((day) => (
+                    <span
+                      key={day}
+                      className="flex h-7 w-7 items-center justify-center rounded-full bg-[#e8f2f8] text-xs font-medium text-[#005F8C]"
+                    >
+                      {day}
+                    </span>
+                  ))}
+                </div>
               </div>
             )}
             {coachBio && (

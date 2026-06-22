@@ -53,6 +53,9 @@ export async function createTeam(data: unknown) {
       cover_image_url: parsed.data.cover_image_url || null,
       is_recruiting: parsed.data.is_recruiting ?? true,
       activity_area: parsed.data.activity_area || null,
+      practice_frequency: parsed.data.practice_frequency || null,
+      practice_days: parsed.data.practice_days ?? [],
+      main_pool: parsed.data.main_pool || null,
       has_session_fee: parsed.data.has_session_fee ?? true,
       has_annual_fee: parsed.data.has_annual_fee ?? false,
       has_monthly_fee: parsed.data.has_monthly_fee ?? false,
@@ -713,7 +716,7 @@ export async function getPublicTeam(teamId: string) {
 
   const { data: team, error } = await admin
     .from("teams")
-    .select("id, name, description, avatar_url, cover_image_url, is_recruiting, activity_area, status, invite_code")
+    .select("id, name, description, avatar_url, cover_image_url, is_recruiting, activity_area, practice_frequency, practice_days, main_pool, status, invite_code")
     .eq("id", teamId)
     .eq("status", "active")
     .single()

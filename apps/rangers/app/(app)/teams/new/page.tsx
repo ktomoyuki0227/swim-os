@@ -11,12 +11,16 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/components/toast"
+import { PRACTICE_FREQUENCIES, PRACTICE_DAYS } from "@/types/database"
 
 interface Step1Data {
   name: string
   description: string
   activity_area: string
   is_recruiting: boolean
+  practice_frequency: string
+  practice_days: string[]
+  main_pool: string
 }
 
 interface Step2Data {
@@ -45,6 +49,9 @@ export default function NewTeamPage() {
     description: "",
     activity_area: "",
     is_recruiting: true,
+    practice_frequency: "",
+    practice_days: [],
+    main_pool: "",
   })
 
   // Step 2 state
@@ -72,6 +79,9 @@ export default function NewTeamPage() {
       description: (data.get("description") as string) || "",
       activity_area: (data.get("activity_area") as string) || "",
       is_recruiting: step1.is_recruiting,
+      practice_frequency: (data.get("practice_frequency") as string) || "",
+      practice_days: step1.practice_days,
+      main_pool: (data.get("main_pool") as string) || "",
     })
     setStep(2)
   }
@@ -142,6 +152,9 @@ export default function NewTeamPage() {
       description: step1.description || undefined,
       activity_area: step1.activity_area || undefined,
       is_recruiting: step1.is_recruiting,
+      practice_frequency: step1.practice_frequency || undefined,
+      practice_days: step1.practice_days,
+      main_pool: step1.main_pool || undefined,
       cover_image_url: coverImageUrl || undefined,
       avatar_url: iconImageUrl || undefined,
       has_session_fee: hasSessionFee,
@@ -250,6 +263,69 @@ export default function NewTeamPage() {
                   maxLength={100}
                   className="border-[#dce3ea]"
                 />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="main_pool">
+                  主な使用プール
+                  <span className="ml-1 text-xs font-normal text-[#8d99a8]">（任意）</span>
+                </Label>
+                <Input
+                  id="main_pool"
+                  name="main_pool"
+                  placeholder="例: 渋谷区スポーツセンタープール"
+                  defaultValue={step1.main_pool}
+                  maxLength={200}
+                  className="border-[#dce3ea]"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="practice_frequency">
+                  練習ペース
+                  <span className="ml-1 text-xs font-normal text-[#8d99a8]">（任意）</span>
+                </Label>
+                <select
+                  id="practice_frequency"
+                  name="practice_frequency"
+                  defaultValue={step1.practice_frequency}
+                  className="h-10 w-full rounded-md border border-[#dce3ea] bg-white px-3 text-sm text-[#1a2332] focus:outline-none focus:ring-2 focus:ring-[#005F8C]/30"
+                >
+                  <option value="">選択してください</option>
+                  {PRACTICE_FREQUENCIES.map((f) => (
+                    <option key={f} value={f}>{f}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label>
+                  練習曜日
+                  <span className="ml-1 text-xs font-normal text-[#8d99a8]">（任意・複数選択可）</span>
+                </Label>
+                <div className="flex flex-wrap gap-2">
+                  {PRACTICE_DAYS.map((day) => {
+                    const checked = step1.practice_days.includes(day)
+                    return (
+                      <button
+                        key={day}
+                        type="button"
+                        onClick={() =>
+                          setStep1((prev) => ({
+                            ...prev,
+                            practice_days: checked
+                              ? prev.practice_days.filter((d) => d !== day)
+                              : [...prev.practice_days, day],
+                          }))
+                        }
+                        className={`flex h-9 w-9 items-center justify-center rounded-full border text-sm font-medium transition-colors ${
+                          checked
+                            ? "border-[#005F8C] bg-[#005F8C] text-white"
+                            : "border-[#dce3ea] bg-white text-[#5c6a7a] hover:border-[#005F8C]/50"
+                        }`}
+                      >
+                        {day}
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
               <div className="space-y-2">
                 <Label>メンバー募集</Label>

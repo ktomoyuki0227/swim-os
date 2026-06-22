@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/components/toast"
+import { PRACTICE_FREQUENCIES, PRACTICE_DAYS } from "@/types/database"
 
 interface Team {
   id: string
@@ -21,6 +22,9 @@ interface Team {
   is_recruiting: boolean
   status: string | null
   activity_area: string | null
+  practice_frequency: string | null
+  practice_days: string[]
+  main_pool: string | null
   has_session_fee: boolean
   has_annual_fee: boolean
   has_monthly_fee: boolean
@@ -45,6 +49,7 @@ export function EditTeamForm({ team }: EditTeamFormProps) {
 
   const [isRecruiting, setIsRecruiting] = useState(team.is_recruiting)
   const [isActive, setIsActive] = useState((team.status ?? "active") === "active")
+  const [practiceDays, setPracticeDays] = useState<string[]>(team.practice_days ?? [])
   const [hasSessionFee, setHasSessionFee] = useState(team.has_session_fee)
   const [hasAnnualFee, setHasAnnualFee] = useState(team.has_annual_fee)
   const [hasMonthlyFee, setHasMonthlyFee] = useState(team.has_monthly_fee)
@@ -123,6 +128,9 @@ export function EditTeamForm({ team }: EditTeamFormProps) {
         name: data.get("name") as string,
         description: (data.get("description") as string) || undefined,
         activity_area: (data.get("activity_area") as string) || undefined,
+        practice_frequency: (data.get("practice_frequency") as string) || undefined,
+        practice_days: practiceDays,
+        main_pool: (data.get("main_pool") as string) || undefined,
         is_recruiting: isRecruiting,
         status: isActive ? "active" : "inactive",
         has_session_fee: hasSessionFee,
@@ -207,6 +215,66 @@ export function EditTeamForm({ team }: EditTeamFormProps) {
                 maxLength={100}
                 className="border-[#dce3ea]"
               />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="main_pool">
+                主な使用プール
+                <span className="ml-1 text-xs font-normal text-[#8d99a8]">（任意）</span>
+              </Label>
+              <Input
+                id="main_pool"
+                name="main_pool"
+                defaultValue={team.main_pool ?? ""}
+                placeholder="例: 渋谷区スポーツセンタープール"
+                maxLength={200}
+                className="border-[#dce3ea]"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="practice_frequency">
+                練習ペース
+                <span className="ml-1 text-xs font-normal text-[#8d99a8]">（任意）</span>
+              </Label>
+              <select
+                id="practice_frequency"
+                name="practice_frequency"
+                defaultValue={team.practice_frequency ?? ""}
+                className="h-10 w-full rounded-md border border-[#dce3ea] bg-white px-3 text-sm text-[#1a2332] focus:outline-none focus:ring-2 focus:ring-[#005F8C]/30"
+              >
+                <option value="">選択してください</option>
+                {PRACTICE_FREQUENCIES.map((f) => (
+                  <option key={f} value={f}>{f}</option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label>
+                練習曜日
+                <span className="ml-1 text-xs font-normal text-[#8d99a8]">（任意・複数選択可）</span>
+              </Label>
+              <div className="flex flex-wrap gap-2">
+                {PRACTICE_DAYS.map((day) => {
+                  const checked = practiceDays.includes(day)
+                  return (
+                    <button
+                      key={day}
+                      type="button"
+                      onClick={() =>
+                        setPracticeDays((prev) =>
+                          checked ? prev.filter((d) => d !== day) : [...prev, day]
+                        )
+                      }
+                      className={`flex h-9 w-9 items-center justify-center rounded-full border text-sm font-medium transition-colors ${
+                        checked
+                          ? "border-[#005F8C] bg-[#005F8C] text-white"
+                          : "border-[#dce3ea] bg-white text-[#5c6a7a] hover:border-[#005F8C]/50"
+                      }`}
+                    >
+                      {day}
+                    </button>
+                  )
+                })}
+              </div>
             </div>
             <div className="space-y-2">
               <Label>メンバー募集</Label>

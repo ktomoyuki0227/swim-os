@@ -239,6 +239,14 @@ export type SwimmerType = (typeof SWIMMER_TYPES)[number]
 export const SWIM_DISCIPLINES = ["競泳", "シンクロ", "オープンウォーター", "飛び込み", "水球"] as const
 export type SwimDiscipline = (typeof SWIM_DISCIPLINES)[number]
 
+/** 練習頻度マスター */
+export const PRACTICE_FREQUENCIES = ["週0〜1回（月3回程度）", "週1〜2回", "週2〜4回", "週5回以上"] as const
+export type PracticeFrequency = (typeof PRACTICE_FREQUENCIES)[number]
+
+/** 練習曜日マスター（日曜始まり） */
+export const PRACTICE_DAYS = ["日", "月", "火", "水", "木", "金", "土"] as const
+export type PracticeDay = (typeof PRACTICE_DAYS)[number]
+
 export type TeamStatus = "active" | "inactive"
 export type TeamMemberRole = "admin" | "member"
 export type MembershipType = "annual" | "monthly" | "point_card"
@@ -272,6 +280,9 @@ export interface Team {
   cancellation_days: number
   point_card_count: number
   point_card_price: number | null
+  practice_frequency: string | null
+  practice_days: string[]
+  main_pool: string | null
   status: TeamStatus
   created_at: string
 }
