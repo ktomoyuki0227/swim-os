@@ -9,20 +9,10 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       {
-        // Supabase Storage (avatars bucket)
+        // Supabase Storage
         protocol: "https",
         hostname: "*.supabase.co",
         pathname: "/storage/v1/object/public/**",
-      },
-      {
-        // Placeholder images (seed data)
-        protocol: "https",
-        hostname: "picsum.photos",
-      },
-      {
-        // picsum.photos のリダイレクト先（Fastly CDN）
-        protocol: "https",
-        hostname: "fastly.picsum.photos",
       },
     ],
   },
