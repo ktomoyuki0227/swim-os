@@ -4,7 +4,7 @@ import { createClient, createAdminClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { teamSchema, teamUpdateSchema } from "@/lib/validations"
-import { SWIMMER_TYPES, SWIM_DISCIPLINES, SWIM_LEVELS } from "@/types/database"
+import { SWIMMER_TYPES, SWIM_DISCIPLINES, SWIM_LEVELS, SYSTEM_TAGS } from "@/types/database"
 import type { MembershipType } from "@/types/database"
 
 export async function uploadTeamImage(
@@ -629,8 +629,8 @@ export async function updateMemberInfo(
 }
 
 // SYSTEM_TAGS でカバーする値（保存時に非対象の値を保持するため）
-const SYSTEM_TAG_SPECIALTIES = ["クロール", "背泳ぎ", "平泳ぎ", "バタフライ", "個人メドレー"]
-const SYSTEM_TAG_GOALS = ["健康維持", "競技・タイム向上"]
+const SYSTEM_TAG_SPECIALTIES: string[] = SYSTEM_TAGS.filter((t) => t.category === "泳法").map((t) => t.label)
+const SYSTEM_TAG_GOALS: string[] = SYSTEM_TAGS.filter((t) => t.category === "目的").map((t) => t.label)
 
 export async function updateMemberProfileTags(
   teamId: string,
