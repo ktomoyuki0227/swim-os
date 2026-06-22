@@ -4,6 +4,7 @@ import { createClient, createAdminClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { teamSchema, teamUpdateSchema } from "@/lib/validations"
+import { SWIMMER_TYPES, SWIM_DISCIPLINES, SWIM_LEVELS } from "@/types/database"
 import type { MembershipType } from "@/types/database"
 
 export async function uploadTeamImage(
@@ -657,6 +658,23 @@ export async function updateMemberProfileTags(
     .eq("status", "active")
     .single()
   if (!adminMembership) return { error: "権限がありません" }
+
+  // 入力値ホワイトリストバリデーション
+  if (data.level !== null && !(SWIM_LEVELS as readonly string[]).includes(data.level)) {
+    return { error: "入力値が不正です" }
+  }
+  if (!data.specialties.every((s) => SYSTEM_TAG_SPECIALTIES.includes(s))) {
+    return { error: "入力値が不正です" }
+  }
+  if (!data.swimmingGoals.every((g) => SYSTEM_TAG_GOALS.includes(g))) {
+    return { error: "入力値が不正です" }
+  }
+  if (data.swimmerType !== null && !(SWIMMER_TYPES as readonly string[]).includes(data.swimmerType)) {
+    return { error: "入力値が不正です" }
+  }
+  if (!data.swimDisciplines.every((d) => (SWIM_DISCIPLINES as readonly string[]).includes(d))) {
+    return { error: "入力値が不正です" }
+  }
 
   // 現在のプロフィールを取得し、SYSTEM_TAGS が管理しない値を保持する
   const { data: currentProfile } = await admin

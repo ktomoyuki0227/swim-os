@@ -24,6 +24,8 @@ export interface OnboardingData {
   specialties?: string[]
   swimming_goals?: string[]
   prefectures?: string[]
+  swimmer_type?: string | null
+  swim_disciplines?: string[]
 }
 
 export async function completeOnboarding(
@@ -59,6 +61,8 @@ export async function completeOnboarding(
       specialties: data.specialties ?? [],
       swimming_goals: data.swimming_goals ?? [],
       prefectures: data.prefectures ?? [],
+      swimmer_type: data.swimmer_type ?? null,
+      swim_disciplines: data.swim_disciplines ?? [],
       onboarding_completed_at: new Date().toISOString(),
     })
     .eq("id", user.id)

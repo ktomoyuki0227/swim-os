@@ -67,17 +67,17 @@ function tagIdsToProfile(tags: string[]) {
   const specialties = tags
     .filter((t) => t.startsWith("stroke_"))
     .map((t) => SPECIALTY_MAP[t])
-    .filter(Boolean)
+    .filter((v): v is string => !!v)
   const swimmingGoals = tags
     .filter((t) => t.startsWith("purpose_"))
     .map((t) => GOAL_MAP[t])
-    .filter(Boolean)
+    .filter((v): v is string => !!v)
   const swimmerTypeTag = tags.find((t) => t.startsWith("swimmer_type_"))
   const swimmerType = swimmerTypeTag ? (SWIMMER_TYPE_MAP[swimmerTypeTag] ?? null) : null
   const swimDisciplines = tags
     .filter((t) => t.startsWith("discipline_"))
     .map((t) => DISCIPLINE_MAP[t])
-    .filter(Boolean)
+    .filter((v): v is string => !!v)
   return { level, specialties, swimmingGoals, swimmerType, swimDisciplines }
 }
 

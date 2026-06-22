@@ -18,7 +18,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { completeOnboarding, type OnboardingData } from "@/actions/onboarding"
 import { uploadAvatar } from "@/actions/profile"
-import { SWIM_SPECIALTIES, SWIMMING_GOALS, SWIM_LEVELS, PREFECTURES } from "@/types/database"
+import { SWIM_SPECIALTIES, SWIMMING_GOALS, SWIM_LEVELS, PREFECTURES, SWIMMER_TYPES, SWIM_DISCIPLINES } from "@/types/database"
 
 const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
   ? loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
@@ -330,6 +330,8 @@ export default function OnboardingPage() {
   const [selectedSpecialties, setSelectedSpecialties] = useState<string[]>([])
   const [selectedGoals, setSelectedGoals] = useState<string[]>([])
   const [selectedPrefectures, setSelectedPrefectures] = useState<string[]>([])
+  const [selectedSwimmerType, setSelectedSwimmerType] = useState<string>("")
+  const [selectedSwimDisciplines, setSelectedSwimDisciplines] = useState<string[]>([])
 
   // Step 2–5: 基本情報
   const [form, setForm] = useState<FormState>({
@@ -426,6 +428,8 @@ export default function OnboardingPage() {
         specialties: selectedSpecialties,
         swimming_goals: selectedGoals,
         prefectures: selectedPrefectures,
+        swimmer_type: selectedSwimmerType || null,
+        swim_disciplines: selectedSwimDisciplines,
       }
       const result = await completeOnboarding(data)
       if (!result.error) {
@@ -607,6 +611,46 @@ export default function OnboardingPage() {
                       label={p}
                       selected={selectedPrefectures.includes(p)}
                       onClick={() => setSelectedPrefectures((prev) => toggleItem(prev, p))}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* スイマータイプ（任意） */}
+              <div className="space-y-2">
+                <Label className="text-sm text-[#5c6a7a]">
+                  スイマータイプ<span className="ml-1 text-xs text-[#8d99a8]">任意</span>
+                </Label>
+                <div className="flex gap-3">
+                  {SWIMMER_TYPES.map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setSelectedSwimmerType(selectedSwimmerType === t ? "" : t)}
+                      className={`flex-1 rounded-lg border py-2.5 text-sm font-medium transition-colors ${
+                        selectedSwimmerType === t
+                          ? "border-[#005F8C] bg-[#005F8C]/5 text-[#005F8C]"
+                          : "border-[#dce3ea] text-[#5c6a7a] hover:border-[#005F8C]/40"
+                      }`}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* 水泳カテゴリ（任意） */}
+              <div className="space-y-2">
+                <Label className="text-sm text-[#5c6a7a]">
+                  水泳カテゴリ<span className="ml-1 text-xs text-[#8d99a8]">任意</span>
+                </Label>
+                <div className="flex flex-wrap gap-2">
+                  {SWIM_DISCIPLINES.map((d) => (
+                    <TagButton
+                      key={d}
+                      label={d}
+                      selected={selectedSwimDisciplines.includes(d)}
+                      onClick={() => setSelectedSwimDisciplines((prev) => toggleItem(prev, d))}
                     />
                   ))}
                 </div>
