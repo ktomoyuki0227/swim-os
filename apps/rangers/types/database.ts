@@ -250,6 +250,7 @@ export type PracticeDay = (typeof PRACTICE_DAYS)[number]
 export type TeamStatus = "active" | "inactive"
 export type TeamMemberRole = "admin" | "member"
 export type MembershipType = "annual" | "monthly" | "point_card"
+export type JoinRequestStatus = "pending" | "approved" | "rejected"
 export type SessionType = "practice" | "camp" | "competition" | "event" | "meeting"
 export type SessionStatus = "open" | "confirmed" | "cancelled"
 export type PaymentMethod = "stripe" | "cash" | "point_card"
@@ -424,15 +425,38 @@ export interface StampPurchaseWithProfile extends StampPurchase {
   swimmer: Pick<Profile, "id" | "name" | "avatar_url">
 }
 
+export type NotificationType =
+  | "join_request_received"
+  | "join_request_approved"
+  | "join_request_rejected"
+  | "inquiry_received"
+
 export interface Notification {
   id: string
   user_id: string
-  type: string
+  type: NotificationType
   title: string
   body: string | null
   link: string | null
+  team_id: string | null
+  metadata: Record<string, unknown>
   is_read: boolean
   created_at: string
+}
+
+export interface JoinRequest {
+  id: string
+  team_id: string
+  swimmer_id: string
+  membership_type: MembershipType
+  status: JoinRequestStatus
+  rejection_reason: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface JoinRequestWithProfile extends JoinRequest {
+  swimmer: Pick<Profile, "id" | "name" | "avatar_url" | "furigana"> | null
 }
 
 export interface SessionTemplate {
