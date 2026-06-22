@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition, useEffect } from "react"
+import { useState, useTransition, useEffect, useCallback, useRef } from "react"
 import { sendInquiry } from "@/actions/inquiries"
 
 interface ContactButtonProps {
@@ -14,12 +14,13 @@ export function ContactButton({ teamId, isLoggedIn }: ContactButtonProps) {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const [isPending, startTransition] = useTransition()
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     setOpen(false)
     setMessage("")
     setError(null)
-  }
+  }, [])
 
   useEffect(() => {
     if (!open) return
@@ -32,8 +33,14 @@ export function ContactButton({ teamId, isLoggedIn }: ContactButtonProps) {
       document.removeEventListener("keydown", handleKeyDown)
       document.body.style.overflow = ""
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open])
+  }, [open, handleClose])
+
+  // コンポーネントのアンマウント時にタイマーをクリア
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current)
+    }
+  }, [])
 
   const handleSubmit = () => {
     setError(null)
@@ -44,7 +51,7 @@ export function ContactButton({ teamId, isLoggedIn }: ContactButtonProps) {
       } else {
         setSuccess(true)
         setMessage("")
-        setTimeout(() => {
+        timerRef.current = setTimeout(() => {
           setOpen(false)
           setSuccess(false)
         }, 2000)
@@ -103,7 +110,8 @@ export function ContactButton({ teamId, isLoggedIn }: ContactButtonProps) {
                     <polyline points="22 4 12 14.01 9 11.01" />
                   </svg>
                 </div>
-                <p className="text-sm font-medium text-[#1a2332]">
+                {/* aria-labelledby が常に有効な要素を参照できるよう、success 時にも id を付与 */}
+                <p id="inquiry-modal-title" className="text-sm font-medium text-[#1a2332]">
                   お問い合わせを送信しました
                 </p>
                 <p className="text-xs text-[#5c6a7a]">

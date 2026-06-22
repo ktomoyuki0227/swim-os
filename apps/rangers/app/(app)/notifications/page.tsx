@@ -95,7 +95,6 @@ export default async function NotificationsPage() {
             const notifLink = notification.link as string | null
             const cardContent = (
               <Card
-                key={notification.id as string}
                 className={`border-[#dce3ea] ${notifLink ? "transition-colors hover:border-[#005F8C]" : ""} ${!notification.is_read ? "border-l-4 border-l-[#005F8C]" : ""}`}
               >
                 <CardContent className="flex items-start gap-3 p-4">
