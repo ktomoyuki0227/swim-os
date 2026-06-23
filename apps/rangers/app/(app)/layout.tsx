@@ -2,6 +2,8 @@ import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { Navigation } from "@/components/navigation"
 import { ToastProvider } from "@/components/toast"
+import { getUnreadNotificationCount } from "@/actions/notifications"
+import { getOrCreateStripeCustomer } from "@/lib/stripe-helpers"
 
 export default async function AppLayout({
   children,
@@ -17,11 +19,16 @@ export default async function AppLayout({
     redirect("/login")
   }
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("name, avatar_url, onboarding_completed_at")
-    .eq("id", user.id)
-    .single()
+  const [profileResult, unreadResult] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("name, avatar_url, onboarding_completed_at, stripe_customer_id")
+      .eq("id", user.id)
+      .single(),
+    getUnreadNotificationCount(),
+  ])
+
+  const profile = profileResult.data
 
   if (!profile) {
     // プロフィールなし = 不完全なアカウント状態。サインアウトしてから /login に戻す
@@ -33,9 +40,14 @@ export default async function AppLayout({
     redirect("/onboarding")
   }
 
+  // Stripe Customer 自動マイグレーション: 未作成のユーザーは非同期で作成
+  if (!profile.stripe_customer_id && process.env.STRIPE_SECRET_KEY) {
+    void getOrCreateStripeCustomer(user.id, user.email ?? "", profile.name)
+  }
+
   return (
     <ToastProvider>
-      <Navigation userName={profile.name} avatarUrl={profile.avatar_url} />
+      <Navigation userName={profile.name} avatarUrl={profile.avatar_url} unreadCount={unreadResult.count} />
       <main className="mx-auto w-full max-w-5xl flex-1 overflow-x-hidden px-4 py-6 pb-24 md:pb-6">{children}</main>
     </ToastProvider>
   )

@@ -21,6 +21,7 @@ export interface Profile {
   rating_avg: number
   review_count: number
   stripe_account_id: string | null
+  stripe_customer_id: string | null
   created_at: string
   // スイマー向けフィールド（マスターズチーム管理）
   furigana: string | null
@@ -284,6 +285,8 @@ export interface Team {
   practice_frequency: string | null
   practice_days: string[]
   main_pool: string | null
+  stripe_monthly_price_id: string | null
+  stripe_annual_price_id: string | null
   status: TeamStatus
   created_at: string
 }
@@ -295,6 +298,7 @@ export interface TeamMember {
   role: TeamMemberRole
   membership_type: MembershipType
   stamp_remaining: number
+  stripe_subscription_id: string | null
   status: TeamStatus
   joined_at: string
 }
@@ -306,7 +310,7 @@ export interface TeamMemberWithProfile extends TeamMember {
     | "address" | "emergency_contact" | "emergency_contact_name" | "emergency_contact_relation"
     | "masters_registered" | "masters_number" | "jsa_registered" | "jsa_number"
     | "specialties" | "prefectures" | "swimming_goals" | "participation_styles" | "level"
-    | "swimmer_type" | "swim_disciplines"
+    | "swimmer_type" | "swim_disciplines" | "phone"
   > | null
 }
 

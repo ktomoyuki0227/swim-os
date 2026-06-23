@@ -1,23 +1,100 @@
-import { Card, CardContent } from "@/components/ui/card"
+import type { Metadata } from "next"
+import { redirect } from "next/navigation"
+import { createClient } from "@/lib/supabase/server"
+import { getOrCreateStripeCustomer, getCardDetails } from "@/lib/stripe-helpers"
+import { CreditCard, CheckCircle } from "lucide-react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { UpdateCardForm } from "./update-card-form"
 
-export default function PaymentsPage() {
+export const metadata: Metadata = {
+  title: "お支払い設定",
+}
+
+const CARD_BRAND_LABELS: Record<string, string> = {
+  visa: "Visa",
+  mastercard: "Mastercard",
+  amex: "American Express",
+  jcb: "JCB",
+  discover: "Discover",
+  diners: "Diners Club",
+  unionpay: "UnionPay",
+  unknown: "カード",
+}
+
+export default async function PaymentsPage() {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) redirect("/login")
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("name, stripe_customer_id, stripe_payment_method_id")
+    .eq("id", user.id)
+    .single()
+
+  if (!profile) redirect("/login")
+
+  // Stripe Customer を確保（未作成なら自動作成）
+  if (process.env.STRIPE_SECRET_KEY) {
+    await getOrCreateStripeCustomer(user.id, user.email ?? "", profile.name)
+  }
+
+  // 登録済みカードの詳細を取得
+  const cardDetails = profile.stripe_payment_method_id
+    ? await getCardDetails(profile.stripe_payment_method_id)
+    : null
+
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-[#1a2332]">お支払い</h1>
+    <div className="mx-auto max-w-2xl">
+      <h1 className="mb-6 text-2xl font-bold">お支払い設定</h1>
 
-      <Card className="border-[#dce3ea]">
-        <CardContent className="flex flex-col items-center justify-center py-16">
-          <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#005F8C]/10">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#005F8C" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="2" y="5" width="20" height="14" rx="2" />
-              <line x1="2" y1="10" x2="22" y2="10" />
-              <circle cx="12" cy="15" r="1.5" fill="#005F8C" stroke="none" />
-            </svg>
-          </div>
-          <p className="font-medium text-[#1a2332]">お支払い履歴</p>
-          <p className="mt-1 text-sm text-[#5c6a7a]">この機能は近日公開予定です</p>
-        </CardContent>
-      </Card>
+      <div className="space-y-6">
+        {/* 登録済みカード情報 */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <CreditCard className="h-5 w-5 text-muted-foreground" />
+              登録済みクレジットカード
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {cardDetails ? (
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 rounded-lg border bg-muted/30 px-4 py-3">
+                  <CheckCircle className="h-5 w-5 shrink-0 text-green-500" />
+                  <div>
+                    <p className="text-sm font-medium">
+                      {CARD_BRAND_LABELS[cardDetails.brand] ?? cardDetails.brand}{" "}
+                      <span className="font-mono">•••• {cardDetails.last4}</span>
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      有効期限: {String(cardDetails.expMonth).padStart(2, "0")}/{cardDetails.expYear}
+                    </p>
+                  </div>
+                </div>
+                <UpdateCardForm hasCard={true} />
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  まだクレジットカードが登録されていません。
+                  グループの年会費・月謝・練習参加費のお支払いに使用されます。
+                </p>
+                <UpdateCardForm hasCard={false} />
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* 補足情報 */}
+        <div className="rounded-lg border border-muted bg-muted/20 px-4 py-3">
+          <p className="text-xs text-muted-foreground">
+            カード情報は Stripe により安全に管理されます。Rangers はカード番号を直接保存しません。
+          </p>
+        </div>
+      </div>
     </div>
   )
 }
