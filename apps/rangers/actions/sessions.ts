@@ -77,14 +77,15 @@ export async function updateSession(sessionId: string, data: unknown) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
 
-  const { data: session } = await supabase
+  const updateAdmin = createAdminClient()
+  const { data: session } = await updateAdmin
     .from("practice_sessions")
     .select("team_id")
     .eq("id", sessionId)
     .single()
   if (!session) return { error: "セッションが見つかりません" }
 
-  const { data: adminMembership } = await createAdminClient()
+  const { data: adminMembership } = await updateAdmin
     .from("team_members")
     .select("id")
     .eq("team_id", session.team_id)
@@ -94,7 +95,8 @@ export async function updateSession(sessionId: string, data: unknown) {
     .single()
   if (!adminMembership) return { error: "権限がありません" }
 
-  const { error } = await supabase
+  // adminClientでRLSをバイパスして更新（user clientだとサイレントブロックの可能性あり）
+  const { error } = await updateAdmin
     .from("practice_sessions")
     .update(parsed.data)
     .eq("id", sessionId)
@@ -164,6 +166,7 @@ export async function confirmSession(sessionId: string) {
     .single()
 
   if (!session) return { error: "セッションが見つかりません" }
+  if (session.session_status !== "open") return { error: "受付中のセッションのみ開催確定できます" }
 
   // admin権限チェック
   const { data: adminMembership } = await createAdminClient()
@@ -303,6 +306,7 @@ export async function cancelSession(sessionId: string) {
     .single()
 
   if (!session) return { error: "セッションが見つかりません" }
+  if (session.session_status === "cancelled") return { error: "既に中止済みのセッションです" }
 
   // admin権限チェック
   const { data: adminMembership } = await createAdminClient()
@@ -501,9 +505,9 @@ export async function registerForSession(
     return { error: "参加登録の締め切りを過ぎています" }
   }
 
-  // 定員チェック
+  // 定員チェック（user clientはRLSで自分の登録しか見えないのでadminClientで全件取得）
   if (session.max_participants) {
-    const { count } = await supabase
+    const { count } = await adminClient
       .from("session_registrations")
       .select("id", { count: "exact" })
       .eq("session_id", sessionId)
@@ -639,23 +643,24 @@ export async function cancelRegistration(sessionId: string) {
 
   // 定員キャンセル待ち通知: 定員ありセッションで空きが出た場合
   if (session.max_participants) {
-    const { count } = await supabase
+    // adminClientで全件取得（user clientはRLSで自分の登録しか見えない）
+    const { count } = await adminClient
       .from("session_registrations")
       .select("id", { count: "exact" })
       .eq("session_id", sessionId)
       .is("cancelled_at", null)
 
     if (count !== null && count < session.max_participants) {
-      // セッションの通知対象メンバーに空き通知を配信
-      const { data: targetMembers } = await supabase
+      // セッションの通知対象メンバーに空き通知を配信（adminClientでRLS自己参照をバイパス）
+      const { data: targetMembers } = await adminClient
         .from("team_members")
         .select("swimmer_id")
         .eq("team_id", session.team_id)
         .eq("status", "active")
 
       if (targetMembers) {
-        // 既に登録済みのユーザーは除外
-        const { data: existingRegs } = await supabase
+        // 既に登録済みのユーザーは除外（adminClientで全件取得）
+        const { data: existingRegs } = await adminClient
           .from("session_registrations")
           .select("swimmer_id")
           .eq("session_id", sessionId)
@@ -664,14 +669,13 @@ export async function cancelRegistration(sessionId: string) {
         const registeredIds = new Set(existingRegs?.map((r) => r.swimmer_id) || [])
         const notifyTargets = targetMembers.filter((m) => !registeredIds.has(m.swimmer_id))
 
-        const adminClient = createAdminClient()
         for (const target of notifyTargets) {
           await adminClient.from("notifications").insert({
             user_id: target.swimmer_id,
             type: "waitlist_available",
             title: `空きが出ました: ${session.title}`,
             body: `「${session.title}」に空きが出ました。参加登録が可能です。`,
-            link: `/teams/${session.team_id}/sessions/${sessionId}`,
+            link: `/sessions/${sessionId}`,
           })
         }
       }
@@ -743,10 +747,12 @@ export async function retryPayment(registrationId: string) {
     }).catch(() => null)
     if (!pi) return { error: "再決済の準備に失敗しました" }
 
-    // Step 2: PI idをDBに保存（webhookが後から拾えるようにconfirmより先）
+    // Step 2: PI idをDBに保存し payment_status を "pending" に戻す（confirmより先）
+    // payment_status を "pending" に戻すことで、Step3後のDB更新失敗時に
+    // webhookが .eq("payment_status","pending") フィルタで確実にレコードを拾える
     const { error: piSaveErr } = await retryAdmin
       .from("session_registrations")
-      .update({ stripe_payment_intent_id: pi.id })
+      .update({ stripe_payment_intent_id: pi.id, payment_status: "pending" })
       .eq("id", registrationId)
     if (piSaveErr) {
       await stripe.paymentIntents.cancel(pi.id).catch(() => null)
@@ -782,7 +788,8 @@ export async function exportSessionRegistrations(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
 
-  const { data: session } = await supabase
+  const exportAdmin = createAdminClient()
+  const { data: session } = await exportAdmin
     .from("practice_sessions")
     .select("team_id, title, type, competition_fields")
     .eq("id", sessionId)
@@ -791,7 +798,7 @@ export async function exportSessionRegistrations(
   if (!session) return { error: "セッションが見つかりません" }
 
   // admin権限チェック
-  const { data: adminMembership } = await createAdminClient()
+  const { data: adminMembership } = await exportAdmin
     .from("team_members")
     .select("id")
     .eq("team_id", session.team_id)
@@ -801,7 +808,8 @@ export async function exportSessionRegistrations(
     .single()
   if (!adminMembership) return { error: "権限がありません" }
 
-  const { data: registrations } = await supabase
+  // adminClientで全参加者を取得（user clientはRLSで自分の登録しか見えない）
+  const { data: registrations } = await exportAdmin
     .from("session_registrations")
     .select("*, swimmer:profiles(id, name, avatar_url)")
     .eq("session_id", sessionId)
@@ -856,15 +864,17 @@ export async function getPriceViewers(sessionId: string) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
 
-  // admin権限チェック
-  const { data: session } = await supabase
+  const priceAdmin = createAdminClient()
+
+  // admin権限チェック（adminClientでRLS自己参照をバイパス）
+  const { data: session } = await priceAdmin
     .from("practice_sessions")
     .select("team_id")
     .eq("id", sessionId)
     .single()
   if (!session) return { data: [] }
 
-  const { data: adminMembership } = await createAdminClient()
+  const { data: adminMembership } = await priceAdmin
     .from("team_members")
     .select("id")
     .eq("team_id", session.team_id)
@@ -874,7 +884,7 @@ export async function getPriceViewers(sessionId: string) {
     .single()
   if (!adminMembership) return { error: "権限がありません", data: [] }
 
-  const { data, error } = await supabase
+  const { data, error } = await priceAdmin
     .from("price_views")
     .select("*, viewer:profiles(id, name, avatar_url)")
     .eq("session_id", sessionId)
@@ -889,15 +899,17 @@ export async function getSessionRegistrations(sessionId: string) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { data: [], count: 0 }
 
-  // セッションのグループIDを取得してadmin権限チェック
-  const { data: session } = await supabase
+  const regAdmin = createAdminClient()
+
+  // セッションのグループIDを取得してadmin権限チェック（adminClientでRLSバイパス）
+  const { data: session } = await regAdmin
     .from("practice_sessions")
     .select("team_id")
     .eq("id", sessionId)
     .single()
   if (!session) return { data: [], count: 0 }
 
-  const { data: adminMembership } = await createAdminClient()
+  const { data: adminMembership } = await regAdmin
     .from("team_members")
     .select("id")
     .eq("team_id", session.team_id)
@@ -907,7 +919,8 @@ export async function getSessionRegistrations(sessionId: string) {
     .single()
   if (!adminMembership) return { error: "権限がありません", data: [], count: 0 }
 
-  const { data, error } = await supabase
+  // adminClientで全参加者を取得（user clientはRLSで自分の登録しか見えない）
+  const { data, error } = await regAdmin
     .from("session_registrations")
     .select("*, swimmer:profiles(id, name, avatar_url)")
     .eq("session_id", sessionId)
