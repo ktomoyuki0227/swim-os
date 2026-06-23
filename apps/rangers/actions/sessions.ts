@@ -513,12 +513,14 @@ export async function registerForSession(
 
   if (cancelledReg) {
     // 既存レコードを再利用（cancelled_at をリセット）
+    // 支払い方法が変わる場合もあるので stripe_payment_intent_id もクリア
     const { error } = await adminClient
       .from("session_registrations")
       .update({
         cancelled_at: null,
         payment_method: paymentMethod,
         payment_status: "pending",
+        stripe_payment_intent_id: null,
         is_member: isMember,
         competition_entry: competitionEntry || null,
       })
@@ -565,7 +567,10 @@ export async function cancelRegistration(sessionId: string) {
 
   const session = registration.session
 
-  // 開催確定後のキャンセル
+  // 開催確定後のキャンセル: 返金可否を判定してから後の単一書き込みで適用
+  // Stripe 返金 / スタンプ戻しが失敗した場合はここで早期リターン（cancelled_at は未設定のまま）
+  let newPaymentStatus: string | null = null
+
   if (session.session_status === "confirmed" && registration.payment_status === "paid") {
     if (registration.payment_method === "stripe" && registration.stripe_payment_intent_id) {
       // キャンセル規定に基づく返金判定
@@ -576,15 +581,13 @@ export async function cancelRegistration(sessionId: string) {
       if (isRefundEligible && process.env.STRIPE_SECRET_KEY) {
         try {
           await stripe.refunds.create({ payment_intent: registration.stripe_payment_intent_id })
-          await adminClient
-            .from("session_registrations")
-            .update({ payment_status: "refunded" })
-            .eq("id", registration.id)
+          newPaymentStatus = "refunded"
         } catch (err) {
           console.error(`[cancelRegistration] Stripe refund failed for ${registration.id}:`, err)
           return { error: "返金処理に失敗しました。管理者にお問い合わせください" }
         }
       }
+      // isRefundEligible = false の場合は payment_status = "paid" のまま（支払い済み・返金なし）
     } else if (registration.payment_method === "point_card") {
       // ポイント戻し（アトミックなSQL式で競合を防ぐ）
       const { error: stampErr } = await supabase.rpc("increment_stamp", {
@@ -594,14 +597,18 @@ export async function cancelRegistration(sessionId: string) {
       if (stampErr) {
         return { error: "スタンプの返却に失敗しました。管理者にお問い合わせください" }
       }
+      newPaymentStatus = "refunded"
     }
   }
 
-  // キャンセル記録（adminClientでRLSをバイパス）
-  // 返金対象外の場合は payment_status = "paid" のまま cancelled_at を設定する（支払い済み・返金なし）
+  // キャンセル記録と payment_status 更新を 1 回の書き込みで原子的に行う
+  // これにより「Stripe返金済み + cancelled_at 未設定」のゾンビ状態を防ぐ
+  const cancelUpdate: Record<string, unknown> = { cancelled_at: new Date().toISOString() }
+  if (newPaymentStatus) cancelUpdate.payment_status = newPaymentStatus
+
   const { error: cancelWriteErr } = await adminClient
     .from("session_registrations")
-    .update({ cancelled_at: new Date().toISOString() })
+    .update(cancelUpdate)
     .eq("id", registration.id)
   if (cancelWriteErr) return { error: "キャンセルの記録に失敗しました" }
 
@@ -666,7 +673,11 @@ export async function retryPayment(registrationId: string) {
   if (registration.payment_status !== "failed") return { error: "決済失敗のステータスではありません" }
 
   // admin権限チェック
-  const session = registration.session as { team_id: string }
+  if (!registration.session) return { error: "セッション情報が見つかりません" }
+  const session = registration.session as { team_id: string; session_status: string }
+  if (session.session_status !== "confirmed") {
+    return { error: "確定済みセッションの登録のみ再決済できます" }
+  }
   const { data: adminMembership } = await createAdminClient()
     .from("team_members")
     .select("id")
@@ -690,7 +701,7 @@ export async function retryPayment(registrationId: string) {
     if (!swimmer?.stripe_customer_id || !swimmer?.stripe_payment_method_id) {
       return { error: "カード情報が登録されていません" }
     }
-    const retrySession = registration.session as { member_price: number; guest_price: number; team_id: string }
+    const retrySession = registration.session as { member_price: number; guest_price: number; team_id: string; session_status: string }
     const amount = registration.is_member ? retrySession.member_price : retrySession.guest_price
     try {
       const pi = await stripe.paymentIntents.create({
