@@ -23,9 +23,10 @@ export async function getOrCreateStripeCustomer(
     return profile.stripe_customer_id
   }
 
+  // name が空文字の場合は Stripe に渡さない（ダッシュボードの検索性向上のため）
   const customer = await stripe.customers.create({
     email,
-    name,
+    ...(name.trim() ? { name: name.trim() } : {}),
     metadata: { supabase_user_id: userId },
   })
 

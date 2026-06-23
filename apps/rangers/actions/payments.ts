@@ -18,14 +18,13 @@ export async function updatePaymentMethod(
 
   if (!user) return { error: "ログインが必要です" }
 
-  // pm_ で始まらない値を拒否（不正な入力ガード）
-  if (!paymentMethodId.startsWith("pm_")) {
+  // PM ID の形式チェック（pm_ + 英数字10文字以上）
+  if (!/^pm_[a-zA-Z0-9]{10,}$/.test(paymentMethodId)) {
     return { error: "無効な支払い方法IDです" }
   }
 
   const admin = createAdminClient()
 
-  // profiles から stripe_customer_id を取得
   const { data: profile } = await admin
     .from("profiles")
     .select("stripe_customer_id")
@@ -36,15 +35,30 @@ export async function updatePaymentMethod(
     return { error: "Stripe カスタマー情報が見つかりません" }
   }
 
-  // Stripe: Payment Method を Customer にアタッチ
-  await stripe.paymentMethods.attach(paymentMethodId, {
-    customer: profile.stripe_customer_id,
-  })
+  try {
+    // PM を Stripe から取得し、所有権を確認（他ユーザーの PM の不正使用を防止）
+    const pm = await stripe.paymentMethods.retrieve(paymentMethodId)
 
-  // Stripe: Customer のデフォルト決済手段を更新
-  await stripe.customers.update(profile.stripe_customer_id, {
-    invoice_settings: { default_payment_method: paymentMethodId },
-  })
+    if (pm.customer && pm.customer !== profile.stripe_customer_id) {
+      // 別の Customer に紐づいた PM は使用不可
+      return { error: "無効な支払い方法です" }
+    }
+
+    // まだ Customer にアタッチされていない場合のみアタッチ
+    if (!pm.customer) {
+      await stripe.paymentMethods.attach(paymentMethodId, {
+        customer: profile.stripe_customer_id,
+      })
+    }
+
+    // Customer のデフォルト決済手段を更新
+    await stripe.customers.update(profile.stripe_customer_id, {
+      invoice_settings: { default_payment_method: paymentMethodId },
+    })
+  } catch (err) {
+    console.error("[payments] Stripe payment method update failed:", err)
+    return { error: "カード情報の更新に失敗しました。もう一度お試しください。" }
+  }
 
   // Supabase: profiles の stripe_payment_method_id を更新
   const { error } = await admin

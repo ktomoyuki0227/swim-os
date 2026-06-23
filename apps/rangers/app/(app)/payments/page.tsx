@@ -36,15 +36,14 @@ export default async function PaymentsPage() {
 
   if (!profile) redirect("/login")
 
-  // Stripe Customer を確保（未作成なら自動作成）
+  // Stripe Customer を確保 & カード詳細を取得（KEY 未設定環境では省略）
+  let cardDetails: Awaited<ReturnType<typeof getCardDetails>> = null
   if (process.env.STRIPE_SECRET_KEY) {
     await getOrCreateStripeCustomer(user.id, user.email ?? "", profile.name)
+    if (profile.stripe_payment_method_id) {
+      cardDetails = await getCardDetails(profile.stripe_payment_method_id)
+    }
   }
-
-  // 登録済みカードの詳細を取得
-  const cardDetails = profile.stripe_payment_method_id
-    ? await getCardDetails(profile.stripe_payment_method_id)
-    : null
 
   return (
     <div className="mx-auto max-w-2xl">

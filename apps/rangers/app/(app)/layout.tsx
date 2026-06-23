@@ -40,9 +40,11 @@ export default async function AppLayout({
     redirect("/onboarding")
   }
 
-  // Stripe Customer 自動マイグレーション: 未作成のユーザーは非同期で作成
+  // Stripe Customer 自動マイグレーション: 未作成のユーザーは非同期で作成（ページ描画はブロックしない）
   if (!profile.stripe_customer_id && process.env.STRIPE_SECRET_KEY) {
-    void getOrCreateStripeCustomer(user.id, user.email ?? "", profile.name)
+    getOrCreateStripeCustomer(user.id, user.email ?? "", profile.name).catch((err) =>
+      console.error("[stripe] auto-migration failed:", err)
+    )
   }
 
   return (
