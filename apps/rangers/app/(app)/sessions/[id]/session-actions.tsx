@@ -41,6 +41,9 @@ export function SessionActions({
     const result = await confirmSession(sessionId)
     if (result.error) {
       showToast(result.error, "error")
+    } else if (result.failedPayments) {
+      showToast(`開催確定しました（決済失敗 ${result.failedPayments}件 — 再試行ボタンで再決済できます）`, "success")
+      setTimeout(() => router.refresh(), 500)
     } else {
       showToast("開催確定しました", "success")
       setTimeout(() => router.refresh(), 500)

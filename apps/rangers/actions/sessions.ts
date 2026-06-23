@@ -1,6 +1,7 @@
 "use server"
 
 import { createClient, createAdminClient } from "@/lib/supabase/server"
+import { stripe } from "@/lib/stripe"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { sessionSchema, sessionUpdateSchema } from "@/lib/validations"
@@ -175,11 +176,14 @@ export async function confirmSession(sessionId: string) {
     .single()
   if (!adminMembership) return { error: "権限がありません" }
 
-  // 参加登録者を取得
-  const { data: registrations } = await supabase
+  const confirmAdmin = createAdminClient()
+
+  // 参加登録者を取得（pending のみ: 再実行しても二重課金しない）
+  const { data: registrations } = await confirmAdmin
     .from("session_registrations")
     .select("*")
     .eq("session_id", sessionId)
+    .eq("payment_status", "pending")
     .is("cancelled_at", null)
 
   if (!registrations) return { error: "参加者情報の取得に失敗しました" }
@@ -188,13 +192,50 @@ export async function confirmSession(sessionId: string) {
   const paymentErrors: string[] = []
   for (const reg of registrations) {
     if (reg.payment_method === "stripe") {
-      // TODO: Stripe 一括課金（サンドボックス）
-      // const paymentIntent = await stripe.paymentIntents.create(...)
-      const { error: payErr } = await supabase
-        .from("session_registrations")
-        .update({ payment_status: "paid" })
-        .eq("id", reg.id)
-      if (payErr) paymentErrors.push(`${reg.id}: stripe update failed`)
+      if (!process.env.STRIPE_SECRET_KEY) {
+        paymentErrors.push(`${reg.id}: stripe not configured`)
+        continue
+      }
+      const { data: swimmer } = await confirmAdmin
+        .from("profiles")
+        .select("stripe_customer_id, stripe_payment_method_id")
+        .eq("id", reg.swimmer_id)
+        .single()
+      if (!swimmer?.stripe_customer_id || !swimmer?.stripe_payment_method_id) {
+        await confirmAdmin
+          .from("session_registrations")
+          .update({ payment_status: "failed" })
+          .eq("id", reg.id)
+        paymentErrors.push(`${reg.id}: no stripe customer or payment method`)
+        continue
+      }
+      const amount = reg.is_member ? session.member_price : session.guest_price
+      try {
+        const pi = await stripe.paymentIntents.create({
+          amount,
+          currency: "jpy",
+          customer: swimmer.stripe_customer_id,
+          payment_method: swimmer.stripe_payment_method_id,
+          off_session: true,
+          confirm: true,
+          metadata: { session_id: sessionId, registration_id: reg.id, swimmer_id: reg.swimmer_id },
+        })
+        await confirmAdmin
+          .from("session_registrations")
+          .update({ payment_status: "paid", stripe_payment_intent_id: pi.id })
+          .eq("id", reg.id)
+      } catch (err) {
+        console.error(`[confirmSession] Stripe charge failed for ${reg.id}:`, err)
+        const piId = (err as { payment_intent?: { id?: string } })?.payment_intent?.id
+        await confirmAdmin
+          .from("session_registrations")
+          .update({
+            payment_status: "failed",
+            ...(piId ? { stripe_payment_intent_id: piId } : {}),
+          })
+          .eq("id", reg.id)
+        paymentErrors.push(`${reg.id}: stripe charge failed`)
+      }
     } else if (reg.payment_method === "point_card") {
       // ポイントカード消費
       const { error: rpcErr } = await supabase.rpc("decrement_stamp", {
@@ -205,7 +246,7 @@ export async function confirmSession(sessionId: string) {
         paymentErrors.push(`${reg.id}: stamp decrement failed`)
         continue
       }
-      const { error: payErr } = await supabase
+      const { error: payErr } = await confirmAdmin
         .from("session_registrations")
         .update({ payment_status: "paid" })
         .eq("id", reg.id)
@@ -214,12 +255,8 @@ export async function confirmSession(sessionId: string) {
     // cash はそのまま（当日回収）
   }
 
-  if (paymentErrors.length > 0) {
-    return { error: `決済処理中にエラーが発生しました（${paymentErrors.length}件）` }
-  }
-
-  // セッションステータスを confirmed に更新（adminClientでRLSをバイパス）
-  const { error: confirmErr } = await createAdminClient()
+  // セッションステータスを confirmed に更新（決済失敗があっても確定し、リトライ可能にする）
+  const { error: confirmErr } = await confirmAdmin
     .from("practice_sessions")
     .update({ session_status: "confirmed" })
     .eq("id", sessionId)
@@ -229,6 +266,9 @@ export async function confirmSession(sessionId: string) {
   await createSessionAnnouncement(session.team_id, session, "confirmed")
 
   revalidatePath("/sessions")
+  if (paymentErrors.length > 0) {
+    return { success: true, failedPayments: paymentErrors.length }
+  }
   return { success: true }
 }
 
@@ -258,7 +298,8 @@ export async function cancelSession(sessionId: string) {
 
   // 確定後の中止の場合、返金・ポイント戻し
   if (session.session_status === "confirmed") {
-    const { data: registrations } = await supabase
+    const cancelAdmin = createAdminClient()
+    const { data: registrations } = await cancelAdmin
       .from("session_registrations")
       .select("*")
       .eq("session_id", sessionId)
@@ -268,13 +309,22 @@ export async function cancelSession(sessionId: string) {
       const refundErrors: string[] = []
       for (const reg of registrations) {
         if (reg.payment_method === "stripe" && reg.stripe_payment_intent_id) {
-          // TODO: Stripe 返金処理
-          // await stripe.refunds.create({ payment_intent: reg.stripe_payment_intent_id })
-          const { error: refErr } = await supabase
+          if (!process.env.STRIPE_SECRET_KEY) {
+            refundErrors.push(`${reg.id}: stripe not configured, refund skipped`)
+            continue
+          }
+          try {
+            await stripe.refunds.create({ payment_intent: reg.stripe_payment_intent_id })
+          } catch (err) {
+            console.error(`[cancelSession] Stripe refund failed for ${reg.id}:`, err)
+            refundErrors.push(`${reg.id}: stripe refund failed`)
+            continue
+          }
+          const { error: refErr } = await cancelAdmin
             .from("session_registrations")
             .update({ payment_status: "refunded" })
             .eq("id", reg.id)
-          if (refErr) refundErrors.push(`${reg.id}: stripe refund status update failed`)
+          if (refErr) refundErrors.push(`${reg.id}: refunded status update failed`)
         } else if (reg.payment_method === "point_card") {
           // ポイント戻し
           const { error: rpcErr } = await supabase.rpc("increment_stamp", {
@@ -285,7 +335,7 @@ export async function cancelSession(sessionId: string) {
             refundErrors.push(`${reg.id}: stamp increment failed`)
             continue
           }
-          const { error: refErr } = await supabase
+          const { error: refErr } = await cancelAdmin
             .from("session_registrations")
             .update({ payment_status: "refunded" })
             .eq("id", reg.id)
@@ -517,9 +567,24 @@ export async function cancelRegistration(sessionId: string) {
 
   // 開催確定後のキャンセル
   if (session.session_status === "confirmed" && registration.payment_status === "paid") {
-    if (registration.payment_method === "stripe") {
-      // TODO: キャンセルルールに基づく返金
-      // Stripe 返金処理
+    if (registration.payment_method === "stripe" && registration.stripe_payment_intent_id) {
+      // キャンセル規定に基づく返金判定
+      const isRefundEligible =
+        session.cancellation_days !== null &&
+        new Date(session.scheduled_at).getTime() - Date.now() >=
+          session.cancellation_days * 24 * 60 * 60 * 1000
+      if (isRefundEligible && process.env.STRIPE_SECRET_KEY) {
+        try {
+          await stripe.refunds.create({ payment_intent: registration.stripe_payment_intent_id })
+          await adminClient
+            .from("session_registrations")
+            .update({ payment_status: "refunded" })
+            .eq("id", registration.id)
+        } catch (err) {
+          console.error(`[cancelRegistration] Stripe refund failed for ${registration.id}:`, err)
+          return { error: "返金処理に失敗しました。管理者にお問い合わせください" }
+        }
+      }
     } else if (registration.payment_method === "point_card") {
       // ポイント戻し（アトミックなSQL式で競合を防ぐ）
       const { error: stampErr } = await supabase.rpc("increment_stamp", {
@@ -532,11 +597,13 @@ export async function cancelRegistration(sessionId: string) {
     }
   }
 
-  // キャンセル記録
-  await supabase
+  // キャンセル記録（adminClientでRLSをバイパス）
+  // 返金対象外の場合は payment_status = "paid" のまま cancelled_at を設定する（支払い済み・返金なし）
+  const { error: cancelWriteErr } = await adminClient
     .from("session_registrations")
     .update({ cancelled_at: new Date().toISOString() })
     .eq("id", registration.id)
+  if (cancelWriteErr) return { error: "キャンセルの記録に失敗しました" }
 
   // 定員キャンセル待ち通知: 定員ありセッションで空きが出た場合
   if (session.max_participants) {
@@ -588,7 +655,8 @@ export async function retryPayment(registrationId: string) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
 
-  const { data: registration } = await supabase
+  const retryFetch = createAdminClient()
+  const { data: registration } = await retryFetch
     .from("session_registrations")
     .select("*, session:practice_sessions(*)")
     .eq("id", registrationId)
@@ -610,12 +678,42 @@ export async function retryPayment(registrationId: string) {
   if (!adminMembership) return { error: "権限がありません" }
 
   if (registration.payment_method === "stripe") {
-    // TODO: Stripe 再決済
-    // const paymentIntent = await stripe.paymentIntents.create(...)
-    await supabase
-      .from("session_registrations")
-      .update({ payment_status: "paid" })
-      .eq("id", registrationId)
+    if (!process.env.STRIPE_SECRET_KEY) {
+      return { error: "Stripe未設定環境では再決済できません" }
+    }
+    const retryAdmin = createAdminClient()
+    const { data: swimmer } = await retryAdmin
+      .from("profiles")
+      .select("stripe_customer_id, stripe_payment_method_id")
+      .eq("id", registration.swimmer_id)
+      .single()
+    if (!swimmer?.stripe_customer_id || !swimmer?.stripe_payment_method_id) {
+      return { error: "カード情報が登録されていません" }
+    }
+    const retrySession = registration.session as { member_price: number; guest_price: number; team_id: string }
+    const amount = registration.is_member ? retrySession.member_price : retrySession.guest_price
+    try {
+      const pi = await stripe.paymentIntents.create({
+        amount,
+        currency: "jpy",
+        customer: swimmer.stripe_customer_id,
+        payment_method: swimmer.stripe_payment_method_id,
+        off_session: true,
+        confirm: true,
+        metadata: {
+          session_id: registration.session_id,
+          registration_id: registrationId,
+          swimmer_id: registration.swimmer_id,
+        },
+      })
+      await retryAdmin
+        .from("session_registrations")
+        .update({ payment_status: "paid", stripe_payment_intent_id: pi.id })
+        .eq("id", registrationId)
+    } catch (err) {
+      console.error(`[retryPayment] Stripe charge failed for ${registrationId}:`, err)
+      return { error: "再決済に失敗しました" }
+    }
   }
 
   revalidatePath("/sessions")
