@@ -210,31 +210,50 @@ export async function confirmSession(sessionId: string) {
         continue
       }
       const amount = reg.is_member ? session.member_price : session.guest_price
-      try {
-        const pi = await stripe.paymentIntents.create({
-          amount,
-          currency: "jpy",
-          customer: swimmer.stripe_customer_id,
-          payment_method: swimmer.stripe_payment_method_id,
-          off_session: true,
-          confirm: true,
-          metadata: { session_id: sessionId, registration_id: reg.id, swimmer_id: reg.swimmer_id },
-        })
+      // Step 1: PI作成（confirm前）— 課金はまだ発生しない
+      const pi = await stripe.paymentIntents.create({
+        amount,
+        currency: "jpy",
+        customer: swimmer.stripe_customer_id,
+        payment_method: swimmer.stripe_payment_method_id,
+        off_session: true,
+        metadata: { session_id: sessionId, registration_id: reg.id, swimmer_id: reg.swimmer_id },
+      }).catch(() => null)
+      if (!pi) {
         await confirmAdmin
           .from("session_registrations")
-          .update({ payment_status: "paid", stripe_payment_intent_id: pi.id })
+          .update({ payment_status: "failed" })
+          .eq("id", reg.id)
+        paymentErrors.push(`${reg.id}: stripe payment intent creation failed`)
+        continue
+      }
+
+      // Step 2: PI idをDBに保存（confirmより先）— webhookが後から拾える状態にする
+      const { error: piSaveErr } = await confirmAdmin
+        .from("session_registrations")
+        .update({ stripe_payment_intent_id: pi.id })
+        .eq("id", reg.id)
+      if (piSaveErr) {
+        // DB保存失敗 → 未請求PIを取り消してスキップ（ユーザーへの課金なし）
+        await stripe.paymentIntents.cancel(pi.id).catch(() => null)
+        paymentErrors.push(`${reg.id}: failed to save payment intent id`)
+        continue
+      }
+
+      // Step 3: 確定（ここで実際に課金）— 失敗してもwebhookがDBを更新できる
+      try {
+        await stripe.paymentIntents.confirm(pi.id, { off_session: true })
+        await confirmAdmin
+          .from("session_registrations")
+          .update({ payment_status: "paid" })
           .eq("id", reg.id)
       } catch (err) {
-        console.error(`[confirmSession] Stripe charge failed for ${reg.id}:`, err)
-        const piId = (err as { payment_intent?: { id?: string } })?.payment_intent?.id
+        console.error(`[confirmSession] Stripe confirm failed for ${reg.id}:`, err)
         await confirmAdmin
           .from("session_registrations")
-          .update({
-            payment_status: "failed",
-            ...(piId ? { stripe_payment_intent_id: piId } : {}),
-          })
+          .update({ payment_status: "failed" })
           .eq("id", reg.id)
-        paymentErrors.push(`${reg.id}: stripe charge failed`)
+        paymentErrors.push(`${reg.id}: stripe confirm failed`)
       }
     } else if (reg.payment_method === "point_card") {
       // ポイントカード消費
@@ -316,9 +335,15 @@ export async function cancelSession(sessionId: string) {
           try {
             await stripe.refunds.create({ payment_intent: reg.stripe_payment_intent_id })
           } catch (err) {
-            console.error(`[cancelSession] Stripe refund failed for ${reg.id}:`, err)
-            refundErrors.push(`${reg.id}: stripe refund failed`)
-            continue
+            const stripeErr = err as { code?: string }
+            if (stripeErr.code === "charge_already_refunded") {
+              // 前回の返金はStripeで成功していたがDB更新が失敗していたケース → DB更新に進む
+              console.warn(`[cancelSession] Refund already processed for ${reg.id}, syncing DB status`)
+            } else {
+              console.error(`[cancelSession] Stripe refund failed for ${reg.id}:`, err)
+              refundErrors.push(`${reg.id}: stripe refund failed`)
+              continue
+            }
           }
           const { error: refErr } = await cancelAdmin
             .from("session_registrations")
@@ -703,26 +728,44 @@ export async function retryPayment(registrationId: string) {
     }
     const retrySession = registration.session as { member_price: number; guest_price: number; team_id: string; session_status: string }
     const amount = registration.is_member ? retrySession.member_price : retrySession.guest_price
+    // Step 1: PI作成（confirm前）
+    const pi = await stripe.paymentIntents.create({
+      amount,
+      currency: "jpy",
+      customer: swimmer.stripe_customer_id,
+      payment_method: swimmer.stripe_payment_method_id,
+      off_session: true,
+      metadata: {
+        session_id: registration.session_id,
+        registration_id: registrationId,
+        swimmer_id: registration.swimmer_id,
+      },
+    }).catch(() => null)
+    if (!pi) return { error: "再決済の準備に失敗しました" }
+
+    // Step 2: PI idをDBに保存（webhookが後から拾えるようにconfirmより先）
+    const { error: piSaveErr } = await retryAdmin
+      .from("session_registrations")
+      .update({ stripe_payment_intent_id: pi.id })
+      .eq("id", registrationId)
+    if (piSaveErr) {
+      await stripe.paymentIntents.cancel(pi.id).catch(() => null)
+      return { error: "再決済の準備中にエラーが発生しました" }
+    }
+
+    // Step 3: 確定（ここで実際に課金）
     try {
-      const pi = await stripe.paymentIntents.create({
-        amount,
-        currency: "jpy",
-        customer: swimmer.stripe_customer_id,
-        payment_method: swimmer.stripe_payment_method_id,
-        off_session: true,
-        confirm: true,
-        metadata: {
-          session_id: registration.session_id,
-          registration_id: registrationId,
-          swimmer_id: registration.swimmer_id,
-        },
-      })
+      await stripe.paymentIntents.confirm(pi.id, { off_session: true })
       await retryAdmin
         .from("session_registrations")
-        .update({ payment_status: "paid", stripe_payment_intent_id: pi.id })
+        .update({ payment_status: "paid" })
         .eq("id", registrationId)
     } catch (err) {
-      console.error(`[retryPayment] Stripe charge failed for ${registrationId}:`, err)
+      console.error(`[retryPayment] Stripe confirm failed for ${registrationId}:`, err)
+      await retryAdmin
+        .from("session_registrations")
+        .update({ payment_status: "failed" })
+        .eq("id", registrationId)
       return { error: "再決済に失敗しました" }
     }
   }
