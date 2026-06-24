@@ -639,21 +639,37 @@ BEGIN
   -- チーム1（年会費 5000円）
   -- test3 は point_card 会員なので年会費なし
   INSERT INTO membership_fees (team_id, swimmer_id, type, period, amount, status, paid_at) VALUES
-    (v_team1, v_user1, 'annual', extract(year from now())::text, 5000, 'paid',   now() - interval '90 days'),
-    (v_team1, v_user2, 'annual', extract(year from now())::text, 5000, 'paid',   now() - interval '60 days'),
-    (v_team1, v_user4, 'annual', extract(year from now())::text, 5000, 'unpaid', NULL);
+    -- user1: 2025・2026 年会費 済み
+    (v_team1, v_user1, 'annual', (extract(year from now()) - 1)::text, 5000, 'paid', now() - interval '1 year' - interval '80 days'),
+    (v_team1, v_user1, 'annual', extract(year from now())::text,       5000, 'paid', now() - interval '90 days'),
+    -- user2: 2025・2026 年会費 済み
+    (v_team1, v_user2, 'annual', (extract(year from now()) - 1)::text, 5000, 'paid', now() - interval '1 year' - interval '55 days'),
+    (v_team1, v_user2, 'annual', extract(year from now())::text,       5000, 'paid', now() - interval '60 days'),
+    -- user4: 2025・2026 年会費 済み（2026は直近納付）
+    (v_team1, v_user4, 'annual', (extract(year from now()) - 1)::text, 5000, 'paid', now() - interval '1 year' - interval '10 days'),
+    (v_team1, v_user4, 'annual', extract(year from now())::text,       5000, 'paid', now() - interval '15 days');
 
   -- チーム2（年会費 6000円 / 月謝 3000円）
   INSERT INTO membership_fees (team_id, swimmer_id, type, period, amount, status, paid_at) VALUES
-    (v_team2, v_user1, 'annual',  extract(year from now())::text, 6000, 'paid',   now() - interval '120 days'),
-    (v_team2, v_user2, 'annual',  extract(year from now())::text, 6000, 'unpaid', NULL),
-    (v_team2, v_user3, 'monthly', to_char(now(), 'YYYY-MM'),      3000, 'paid',   now() - interval '5 days'),
-    (v_team2, v_user4, 'annual',  extract(year from now())::text, 6000, 'paid',   now() - interval '45 days');
+    -- user1: 2025・2026 年会費 済み
+    (v_team2, v_user1, 'annual', (extract(year from now()) - 1)::text, 6000, 'paid', now() - interval '1 year' - interval '110 days'),
+    (v_team2, v_user1, 'annual', extract(year from now())::text,       6000, 'paid', now() - interval '120 days'),
+    -- user2: 2025・2026 年会費 済み
+    (v_team2, v_user2, 'annual', (extract(year from now()) - 1)::text, 6000, 'paid', now() - interval '1 year' - interval '70 days'),
+    (v_team2, v_user2, 'annual', extract(year from now())::text,       6000, 'paid', now() - interval '75 days'),
+    -- user3: 月謝 4ヶ月分 済み（3月〜6月）
+    (v_team2, v_user3, 'monthly', to_char(now() - interval '3 months', 'YYYY-MM'), 3000, 'paid', now() - interval '3 months' - interval '2 days'),
+    (v_team2, v_user3, 'monthly', to_char(now() - interval '2 months', 'YYYY-MM'), 3000, 'paid', now() - interval '2 months' - interval '2 days'),
+    (v_team2, v_user3, 'monthly', to_char(now() - interval '1 month',  'YYYY-MM'), 3000, 'paid', now() - interval '1 month'  - interval '2 days'),
+    (v_team2, v_user3, 'monthly', to_char(now(), 'YYYY-MM'),                        3000, 'paid', now() - interval '5 days'),
+    -- user4: 2025・2026 年会費 済み
+    (v_team2, v_user4, 'annual', (extract(year from now()) - 1)::text, 6000, 'paid', now() - interval '1 year' - interval '40 days'),
+    (v_team2, v_user4, 'annual', extract(year from now())::text,       6000, 'paid', now() - interval '45 days');
 
   RAISE NOTICE '=== シード完了（Phase 3）===';
   RAISE NOTICE 'チーム1: マウントリバー水泳クラブ (ID: %)', v_team1;
   RAISE NOTICE 'チーム2: 東京マスターズ水泳クラブ (ID: %)', v_team2;
-  RAISE NOTICE 'セッション: 12件 / 参加登録: 20件 / お知らせ: 4件 / 会費: 7件 / 回数券: 1件';
+  RAISE NOTICE 'セッション: 12件 / 参加登録: 20件 / お知らせ: 4件 / 会費: 16件 / 回数券: 1件';
 END $$;
 
 -- ============================================================
