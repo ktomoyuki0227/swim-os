@@ -130,9 +130,9 @@ export default function PricePage() {
         </div>
 
         <div className="text-center">
-          <Link href="/instructors">
+          <Link href="/register">
             <Button size="lg" className="bg-blue-500 px-12 hover:bg-blue-600">
-              コーチを探して予約する
+              無料で登録する
             </Button>
           </Link>
         </div>

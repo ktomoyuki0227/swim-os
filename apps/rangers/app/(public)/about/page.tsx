@@ -74,9 +74,9 @@ export default function AboutPage() {
             あなたのペースで、好きな場所・好きな時間に上達できます。
           </p>
           <div className="flex justify-center gap-3">
-            <Link href="/instructors">
+            <Link href="/register">
               <Button size="lg" className="bg-blue-500 hover:bg-blue-600">
-                コーチを探す
+                無料で登録する
               </Button>
             </Link>
             <Link href="/register">

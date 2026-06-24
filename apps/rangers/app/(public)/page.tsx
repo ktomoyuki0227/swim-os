@@ -337,18 +337,13 @@ export default async function HomePage() {
       {coaches.length > 0 && (
         <section className="bg-[#f2f7fa] px-4 py-16 sm:py-20">
           <div className="mx-auto max-w-5xl">
-            <div className="mb-8 flex items-end justify-between">
-              <div>
-                <h2 className="text-2xl font-bold text-[#1a2332] sm:text-3xl">パーソナルレッスン</h2>
-                <p className="mt-1 text-sm text-[#5c6a7a]">専門コーチがあなたの目標に合わせて指導</p>
-              </div>
-              <Link href="/instructors" className="hidden text-sm font-medium text-[#005F8C] hover:text-[#004E73] sm:block">
-                すべて見る →
-              </Link>
+            <div className="mb-8">
+              <h2 className="text-2xl font-bold text-[#1a2332] sm:text-3xl">パーソナルレッスン</h2>
+              <p className="mt-1 text-sm text-[#5c6a7a]">専門コーチがあなたの目標に合わせて指導</p>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               {coaches.map((coach) => (
-                <Link key={coach.id} href={`/instructors/${coach.id}`}>
+                <Link key={coach.id} href={`/profiles/${coach.id}`}>
                   <div className="group flex gap-4 rounded-2xl border border-[#dce3ea] bg-white p-5 transition hover:border-[#005F8C] hover:shadow-sm">
                     <div className="shrink-0">
                       {coach.avatar_url ? (
@@ -391,11 +386,6 @@ export default async function HomePage() {
                   </div>
                 </Link>
               ))}
-            </div>
-            <div className="mt-6 text-center sm:hidden">
-              <Link href="/instructors" className="text-sm font-medium text-[#005F8C]">
-                すべて見る →
-              </Link>
             </div>
           </div>
         </section>
