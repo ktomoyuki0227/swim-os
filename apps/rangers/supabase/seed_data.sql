@@ -650,10 +650,182 @@ BEGIN
     (v_team2, v_user3, 'monthly', to_char(now(), 'YYYY-MM'),      3000, 'paid',   now() - interval '5 days'),
     (v_team2, v_user4, 'annual',  extract(year from now())::text, 6000, 'paid',   now() - interval '45 days');
 
-  RAISE NOTICE '=== シード完了 ===';
+  RAISE NOTICE '=== シード完了（Phase 3）===';
   RAISE NOTICE 'チーム1: マウントリバー水泳クラブ (ID: %)', v_team1;
   RAISE NOTICE 'チーム2: 東京マスターズ水泳クラブ (ID: %)', v_team2;
-  RAISE NOTICE 'プロフィール: 全フィールド設定済み（onboarding_completed_at含む）';
   RAISE NOTICE 'セッション: 12件 / 参加登録: 20件 / お知らせ: 4件 / 会費: 7件 / 回数券: 1件';
-  RAISE NOTICE '⚠️  Stripe カード: SQL では設定不可。デモ時は UI から登録してください。';
+END $$;
+
+-- ============================================================
+-- PHASE 4: 過去の確定済みセッション + 支払い履歴 + 通知
+-- ============================================================
+-- 支払い履歴ページ（/payments）をリッチに見せるため、
+-- 過去に開催確定・支払い済みのセッションと、
+-- 大きな支払いに対する通知を追加する。
+-- ※ このブロックは何度実行しても idempotent になるよう通知のみ事前削除する
+-- ============================================================
+DO $$
+DECLARE
+  v_user1  uuid := '530b3d24-ca9c-4cf5-b9e9-a6966a913730';  -- 山田 健太
+  v_user2  uuid := '9d30728f-96e9-4415-9823-97040111ad22';  -- 鈴木 太郎
+  v_user3  uuid := '3e281812-1e3d-4522-91ca-690aa7d9d14a';  -- 佐藤 花子
+  v_user4  uuid := '8e538fba-2637-4abf-aa9f-5b784cb2f561';  -- 田中 新太郎
+  v_team1  uuid := 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';  -- マウントリバー
+  v_team2  uuid := 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';  -- 東京マスターズ
+  v_ps1_a  uuid;
+  v_ps1_b  uuid;
+  v_ps2_a  uuid;
+  v_ps2_b  uuid;
+BEGIN
+
+  -- 通知クリーンアップ（再実行時の重複防止）
+  DELETE FROM notifications
+  WHERE user_id IN (v_user1, v_user2, v_user3, v_user4)
+    AND type = 'payment_charged';
+
+  -- ==========================================================
+  -- チーム1 過去セッション A: 水曜朝練（3ヶ月前 / confirmed）
+  -- 参加: user2 stripe paid / user3 point_card paid / user4 stripe paid
+  -- ==========================================================
+  INSERT INTO practice_sessions (
+    team_id, coach_id, title, description, content, type,
+    scheduled_at, location, member_price, guest_price,
+    allow_point_card, is_external, session_status, status
+  ) VALUES (
+    v_team1, v_user1,
+    '水曜朝練 - クロール技術練習',
+    'クロールのフォーム改善に重点を置いた定期練習。',
+    'アップ 400m / キック練習 4×50m / プル練習 4×100m / ダウン 200m',
+    'practice',
+    (now() - interval '3 months')::date + time '07:00',
+    '甲府市民プール',
+    1000, 1500,
+    true, false, 'confirmed', 'published'
+  ) RETURNING id INTO v_ps1_a;
+
+  INSERT INTO session_registrations
+    (session_id, swimmer_id, is_member, payment_method, payment_status, registered_at)
+  VALUES
+    (v_ps1_a, v_user2, true, 'stripe',     'paid', now() - interval '3 months' - interval '2 days'),
+    (v_ps1_a, v_user3, true, 'point_card', 'paid', now() - interval '3 months' - interval '1 day'),
+    (v_ps1_a, v_user4, true, 'stripe',     'paid', now() - interval '3 months' - interval '2 days');
+
+  -- ==========================================================
+  -- チーム1 過去セッション B: 土曜スピード練習（6週前 / confirmed）
+  -- 参加: user2 stripe paid / user4 cash paid
+  -- ==========================================================
+  INSERT INTO practice_sessions (
+    team_id, coach_id, title, description, content, type,
+    scheduled_at, location, member_price, guest_price,
+    allow_point_card, is_external, session_status, status
+  ) VALUES (
+    v_team1, v_user1,
+    '土曜スピード練習',
+    '大会シーズンに向けた強化練習。スピード系セット中心。',
+    'アップ 600m / スプリント 8×25m / メインセット 3×100m / ダウン 300m',
+    'practice',
+    (now() - interval '6 weeks')::date + time '09:00',
+    '甲府市民プール',
+    1000, 1500,
+    true, false, 'confirmed', 'published'
+  ) RETURNING id INTO v_ps1_b;
+
+  INSERT INTO session_registrations
+    (session_id, swimmer_id, is_member, payment_method, payment_status, registered_at)
+  VALUES
+    (v_ps1_b, v_user2, true, 'stripe', 'paid', now() - interval '6 weeks' - interval '3 days'),
+    (v_ps1_b, v_user4, true, 'cash',   'paid', now() - interval '6 weeks' - interval '2 days');
+
+  -- ==========================================================
+  -- チーム2 過去セッション A: 月曜朝練（2ヶ月前 / confirmed）
+  -- 参加: user2 cash paid / user3 cash paid
+  -- ==========================================================
+  INSERT INTO practice_sessions (
+    team_id, coach_id, title, description, content, type,
+    scheduled_at, location, member_price, guest_price,
+    allow_point_card, is_external, session_status, status
+  ) VALUES (
+    v_team2, v_user1,
+    '月曜朝練 - 持久力強化',
+    '週始めの定期練習。距離をしっかり泳いで持久力を養います。',
+    'アップ 600m / キック 6×50m / メインセット 2×400m / ダウン 200m',
+    'practice',
+    (now() - interval '2 months')::date + time '06:30',
+    '辰巳国際水泳場',
+    1200, 2000,
+    false, false, 'confirmed', 'published'
+  ) RETURNING id INTO v_ps2_a;
+
+  INSERT INTO session_registrations
+    (session_id, swimmer_id, is_member, payment_method, payment_status, registered_at)
+  VALUES
+    (v_ps2_a, v_user2, true, 'cash', 'paid', now() - interval '2 months' - interval '2 days'),
+    (v_ps2_a, v_user3, true, 'cash', 'paid', now() - interval '2 months' - interval '1 day');
+
+  -- ==========================================================
+  -- チーム2 過去セッション B: 木曜夜練（3週前 / confirmed）
+  -- 参加: user2 stripe paid / user4 stripe paid
+  -- ==========================================================
+  INSERT INTO practice_sessions (
+    team_id, coach_id, title, description, content, type,
+    scheduled_at, location, member_price, guest_price,
+    allow_point_card, is_external, session_status, status
+  ) VALUES (
+    v_team2, v_user1,
+    '木曜夜練 - スプリント特化',
+    '短距離スピードを徹底強化。50m・100mのタイムアップを目指します。',
+    'アップ 500m / スプリント 10×25m / メインセット 5×100m / ダウン 300m',
+    'practice',
+    (now() - interval '3 weeks')::date + time '19:30',
+    '辰巳国際水泳場',
+    1200, 2000,
+    false, false, 'confirmed', 'published'
+  ) RETURNING id INTO v_ps2_b;
+
+  INSERT INTO session_registrations
+    (session_id, swimmer_id, is_member, payment_method, payment_status, registered_at)
+  VALUES
+    (v_ps2_b, v_user2, true, 'stripe', 'paid', now() - interval '3 weeks' - interval '2 days'),
+    (v_ps2_b, v_user4, true, 'stripe', 'paid', now() - interval '3 weeks' - interval '1 day');
+
+  -- ==========================================================
+  -- 支払い通知（¥3,000以上の年会費・月謝を対象 / is_read = false）
+  -- → ベルバッジに件数が表示される
+  -- ==========================================================
+  INSERT INTO notifications
+    (user_id, type, title, body, team_id, link, is_read, created_at)
+  VALUES
+    -- user1: マウントリバー年会費 ¥5,000（90日前）
+    (v_user1, 'payment_charged',
+     '年会費のお支払いが完了しました',
+     'マウントリバー水泳クラブの年会費 ¥5,000 のお支払いが確認されました。',
+     v_team1, '/payments', false, now() - interval '90 days'),
+
+    -- user1: 東京マスターズ年会費 ¥6,000（120日前）
+    (v_user1, 'payment_charged',
+     '年会費のお支払いが完了しました',
+     '東京マスターズ水泳クラブの年会費 ¥6,000 のお支払いが確認されました。',
+     v_team2, '/payments', false, now() - interval '120 days'),
+
+    -- user2: マウントリバー年会費 ¥5,000（60日前）
+    (v_user2, 'payment_charged',
+     '年会費のお支払いが完了しました',
+     'マウントリバー水泳クラブの年会費 ¥5,000 のお支払いが確認されました。',
+     v_team1, '/payments', false, now() - interval '60 days'),
+
+    -- user3: 東京マスターズ月謝 ¥3,000（5日前）
+    (v_user3, 'payment_charged',
+     '月謝のお支払いが完了しました',
+     '東京マスターズ水泳クラブの月謝 ¥3,000 のお支払いが確認されました。',
+     v_team2, '/payments', false, now() - interval '5 days'),
+
+    -- user4: 東京マスターズ年会費 ¥6,000（45日前）
+    (v_user4, 'payment_charged',
+     '年会費のお支払いが完了しました',
+     '東京マスターズ水泳クラブの年会費 ¥6,000 のお支払いが確認されました。',
+     v_team2, '/payments', false, now() - interval '45 days');
+
+  RAISE NOTICE '=== PHASE 4 完了 ===';
+  RAISE NOTICE '過去確定セッション: チーム1×2 + チーム2×2 = 計4件追加';
+  RAISE NOTICE '支払い通知（payment_charged / 未読）: user1×2 / user2×1 / user3×1 / user4×1 = 計5件';
 END $$;
