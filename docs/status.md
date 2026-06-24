@@ -1,5 +1,5 @@
 # 作業ステータス
-最終更新: 2026-06-22
+最終更新: 2026-06-24（夜）
 
 ---
 
@@ -41,14 +41,270 @@
 | Supabase Auth/DB | ✅ 本番接続済み |
 | Supabase Storage | ✅ avatars バケット作成済み |
 | Stripe テストモード | ✅ 接続済み |
-| Stripe Webhook | 🔲 Secret 未設定（Vercel 環境変数） |
-| Stripe Connect | 🔲 未実装 |
+| Stripe Webhook | ✅ 登録済み・STRIPE_WEBHOOK_SECRET Vercel 設定済み（7イベント） |
+| Stripe Connect | ✅ 実装完了（UI + API ルート + webhook） |
 | LINE OAuth | 🔲 スタブのみ |
 | Resend | 🔲 未導入 |
 
 ---
 
+## 直近でやったこと（2026-06-24）
+
+### Stripe Connect / Subscription Phase 4 完了 ✅
+
+2回のレビューで計9件の不具合を修正し、全完了。
+
+**Migration 適用（本番 DB）**
+- `00042_stripe_connect.sql`: teams に stripe_account_id / stripe_onboarding_completed 追加、transfer_records・platform_settings テーブル作成
+- `00043_expand_subscription_status.sql`: team_members.subscription_status の CHECK 制約を Stripe 全ステータス（incomplete / incomplete_expired / trialing）に拡張
+
+**修正した不具合（9件）**
+- HIGH-4: `callback/route.ts` に auth チェック追加（未認証ユーザーのフラグ操作を防止）
+- HIGH-3: `getOrCreateConnectAccount` の TOCTOU 競合対策（`.is("stripe_account_id", null)` 条件付き UPDATE）
+- HIGH-1: `confirmSession` / `retryPayment` の `transfer_records` INSERT 失敗時にエラーログ追加
+- HIGH-2: `cancelMonthlySubscription` の DB 更新失敗時にエラーログ追加
+- MEDIUM-2: `getPlatformFeePercent` の `parseFloat` を `Number.isFinite` でバリデーション
+- MEDIUM-3: `handleInvoicePaid` に `amount_paid === 0` ガード（セットアップインボイスの 0円レコード防止）
+- LOW-2（HIGH相当）: `subscription_status` CHECK 制約拡張（migration 00043）
+- 1回目レビューで修正: `handleSubscriptionUpdated` の `cancel_at_period_end` ハンドリング / connect/onboarding エラーリダイレクト先修正
+
+**Stripe Dashboard**
+- Webhook エンドポイント登録（7イベント・API バージョン 公開プレビュー版）
+- `STRIPE_WEBHOOK_SECRET` Vercel 環境変数更新・再デプロイ完了
+
+**TypeScript ソースエラー: 0件確認済み**
+
+---
+
+### `/payments` 支払い履歴ページ 実装完了 ✅
+
+**変更ファイル**
+- `app/(app)/payments/page.tsx`: タイトルを「お支払い設定」→「お支払い」に変更。カード設定セクション＋支払い履歴セクションの複合ページに刷新
+- `app/(app)/payments/payment-history-filters.tsx`（新規）: グループ・種別フィルター（URL searchParams ベース・Client Component）
+
+**支払い履歴の内容**
+- セッション参加費（`session_registrations` × `practice_sessions` × `teams`）
+- 年会費・月謝（`membership_fees` × `teams`）
+- デフォルト最新順（自然と pending/未払いが上に並ぶ）
+- 除外: 無料参加（payment_status = "free"）・決済前キャンセル（pending + cancelled_at あり）
+- フィルター: グループ・種別（セッション参加費 / 年会費 / 月謝）
+- ステータスバッジ: 開催待ち（黄）/ 支払済（緑）/ 決済失敗（赤）/ 返金済（グレー）/ 未払い（黄）
+
+---
+
+## 直近でやったこと（2026-06-23 最終2）
+
+### `/instructors` 関連ルート完全削除 ✅
+
+**削除したファイル（3ファイル + 空ディレクトリ）**
+- `app/(public)/instructors/page.tsx` — コーチ一覧ページ
+- `app/(public)/instructors/[id]/page.tsx` — 個別コーチプロフィールページ
+- `components/instructor/schedule-request-dialog.tsx` — 上記でのみ使用
+
+**更新したファイル（8ファイル）**
+- `actions/messages.ts`: 不要な `revalidatePath('/instructors/...')` を削除
+- `lib/supabase/middleware.ts`: public ページリストから `/instructors` を除外
+- `app/sitemap.ts`: `/instructors` エントリを削除
+- `app/(public)/about/page.tsx`: `/instructors` → `/register`
+- `app/(public)/price/page.tsx`: `/instructors` → `/register`
+- `app/(app)/messages/page.tsx`: `/instructors` リンク削除・テキスト修正
+- `app/(app)/messages/[userId]/page.tsx`: `/instructors/[id]` → `/profiles/[id]`
+- `app/(public)/page.tsx`: コーチカード `/instructors/[id]` → `/profiles/[id]`、一覧リンク2箇所削除
+
+コードベース全体で `instructors` の残存参照ゼロを確認済み。
+
+---
+
+## 直近でやったこと（2026-06-23 最終）
+
+### メンバー詳細モーダル + 公開プロフィールページ ✅（1-H UI改善 + 1-N）
+
+**••• メニュー再設計（`member-list.tsx`）**
+- 「詳細・編集」「削除」の2ボタン構成に統一（詳細/編集の分離を廃止）
+- 削除に確認モーダル（DeleteConfirmModal）を実装 — window.confirm 廃止
+- ドロップダウンを `position: fixed` + `getBoundingClientRect()` 方式に変更（Card の overflow-hidden クリッピング問題を根本解消）
+- scroll イベントリスナー（capture phase）でスクロール時に自動クローズ
+
+**メンバー詳細モーダル（`member-detail-modal.tsx` 新規）**
+- タブ構成: 詳細（読み取り専用）| 編集（フォーム）
+- 詳細タブ: メンバー情報・基本情報・緊急連絡先・水泳情報・登録情報を全表示
+- メールアドレスを詳細タブ初回表示時にオンデマンド取得（`getMemberEmail` Server Action）
+  - `emailFetchedRef = useRef(false)` でループ防止（無限再フェッチバグを修正）
+- 編集タブ: 会員種別・回数券残数・タグ・ロールを編集可能
+- `edit-member-modal.tsx` を削除（dead code 確認済み）
+
+**公開プロフィールページ（`/profiles/[id]`、`back-button.tsx` 新規）**
+- ログイン必須（未ログイン → `/login?next=/profiles/${id}` にリダイレクト）
+- 表示内容: アバター・名前・フリガナ・career・bio・achievements・specialties・target_ages・prefectures・swim_disciplines・swimming_goals・participation_styles
+- `BackButton` Client Component: `window.history.back()` + `router.push("/teams")` フォールバック（React の `javascript:` URL ブロックを回避）
+
+**公開チームビュー改善（`public-team-view.tsx`）**
+- コーチカードを `coachId` がある場合のみ `<Link href="/profiles/[id]">` でクリッカブルに
+- coachId が null の場合は `<div>` にフォールバック（壊れたリンク防止）
+
+**プロフィールページ改善（`/profile/page.tsx`）**
+- セクション名: "コーチ・指導員プロフィール" → "公開プロフィール"
+- サブテキスト: "任意・コーチ登録がある方向け" → "他のユーザーに公開されます"
+- 「公開プレビューを見る →」リンク追加（`<Link>` 使用、全画面リロードなし）
+
+**バグ修正**
+- `admin-action-buttons.tsx`: 招待コード再生成後の `window.location.reload()` → `router.refresh()` に変更（`useRouter` インポート追加）
+- `member-detail-modal.tsx`: 未使用の `import { useRouter }` + `const router = useRouter()` を削除
+
+---
+
+## 直近でやったこと（2026-06-23 管理者UIブラッシュアップ）
+
+### チーム詳細ページ（管理者ビュー）UI改善 ✅（1-UI1）
+
+**Console TypeError 修正（`actions/notifications.ts`）**
+- `createNotificationInternal` に誤って付いていた `export` を削除
+- "use server" モジュールから意図せず export された複雑な型の関数が Turbopack で "Failed to fetch" を引き起こしていた問題を修正
+- コメント「Server Action として export しない」の通りにコードを修正
+
+**`app/teams/[id]/page.tsx` 管理者ビュー改善**
+
+1. タブ数を 6 → 4 に削減
+   - メンバー / セッション / お知らせ / 申請 の4タブに統一
+   - 招待・設定はアイコンボタン化してタブから除外
+
+2. ヘッダー再設計
+   - 「← グループ一覧」（左） + 招待🔗・設定⚙️ アイコンボタン（右）のアクションバー
+   - グループ名 + アクティブバッジをインライン表示、紹介文を直下フル幅に配置
+   - 統計を 3カードグリッド → 1行インラインバー（👥N人 | 📅N件 | 支払い N/N ████）に変更
+
+3. 招待・設定をモーダル化（`admin-action-buttons.tsx` 新規作成）
+   - `<Link href="?tab=invite/settings">` → `<button onClick>` でモーダル表示に変更
+   - 招待モーダル: QRコード + 招待リンクコピー・再生成
+   - 設定モーダル: 料金体系・練習情報の確認 + 「グループ情報を編集」ボタン
+   - バックドロップクリック / × ボタンで閉じる（モバイル: 下からスライドアップ）
+
+4. 招待モーダルのコンパクト化
+   - Card 2枚を廃止、QR 180px → 128px に縮小
+   - スクロールなしで全項目が画面内に収まるよう調整（max-w-sm 化）
+
+**新規ファイル**
+- `app/(app)/teams/[id]/admin-action-buttons.tsx`: 招待・設定ボタン + 各モーダルを管理する Client Component
+
+---
+
+## 直近でやったこと（2026-06-23 最新）
+
+### 1-I アバター必須化 ✅ 確認済み（実装済みを確認）
+
+`onboarding/page.tsx:362` の `step1Valid` に `!!avatarFile` が含まれており、UI でも「プロフィール写真（必須）」表示済み。チェック追加のみ。
+
+### グループへの問い合わせ機能（1-L）✅ 実装完了
+
+公開グループページに「問い合わせる」ボタンを追加し、管理者に通知が届くフローを実装。
+
+**新規ファイル**
+- `actions/inquiries.ts`: sendInquiry Server Action（UUID バリデーション・既存メンバーガード・通知挿入エラーログ）
+- `components/teams/contact-button.tsx`: 問い合わせモーダル Client Component（ESC キー・背景クリック対応・aria-modal・背景スクロールロック）
+
+**既存ファイル修正**
+- `components/teams/public-team-view.tsx`: isLoggedIn prop 追加、固定CTA に ContactButton を追加、2ボタン分の高さに合わせてパディングを動的化（hasBottomNav ? pb-52 : pb-44）
+- `app/teams/[id]/page.tsx`: isLoggedIn を PublicTeamView に渡すよう修正
+- `app/(app)/notifications/page.tsx`: inquiry_received アイコン追加、link フィールドがあればカードを Next.js Link で包んでクリッカブルに変更（「→ 確認する」ラベル付与）
+- `actions/inquiries.ts`: link フィールドに `/teams/${teamId}` を設定
+- `actions/join-requests.ts`: 全通知に link を追加（join_request_received: ?tab=requests、approved/rejected: チームページ）
+
+commits: `c6fc414`, `8779703` → main プッシュ済み
+
+---
+
+## 直近でやったこと（2026-06-23）
+
+### グループ紹介の入力項目追加（1-K）✅ 全完了
+
+練習頻度・練習曜日・主な使用プールの3フィールドをグループ作成・編集・公開・詳細ページ全てに反映。
+
+**DB（`supabase/migrations/00033_add_practice_info_to_teams.sql`）**
+- `practice_frequency text` / `practice_days text[] DEFAULT '{}'` / `main_pool text` を teams テーブルに追加
+- Supabase CLI で本番 DB に適用済み
+
+**型定義・バリデーション**
+- `types/database.ts`: `PRACTICE_FREQUENCIES` / `PRACTICE_DAYS` 定数追加、Team interface に3フィールド追加
+- `lib/validations.ts`: `teamSchema` / `teamUpdateSchema` 両方に追加（ホワイトリスト `.refine()` 付き）
+- `teamUpdateSchema` の `practice_frequency` / `main_pool` に `.nullable()` 追加（クリア操作対応）
+
+**Server Actions（`actions/teams.ts`）**
+- `createTeam`: 3フィールドを INSERT に追加
+- `updateTeam`: 3フィールドを `teamUpdateSchema` 経由でUPDATE。DB更新を `adminClient` に変更（RLS `with check` の自己参照バグを回避）
+- `getTeam` / `getPublicTeam`: 3フィールドを SELECT に追加（`getPublicTeam` は `invite_code` 除外済み）
+- `uploadTeamImage`: `adminClient` に変更（Storage RLS によるアップロード失敗を修正）
+
+**フロントエンド**
+- `app/(app)/teams/new/page.tsx`: practice_frequency select / practice_days 丸ボタン複数選択 / main_pool テキスト入力 UI追加。ステップインジケーターを中央揃えに修正（`flex justify-center` + コネクター固定幅 `w-16`）
+- `app/(app)/teams/[id]/edit/edit-team-form.tsx`: 同UI追加・既存値の初期表示対応。送信時に `|| null`（クリア操作対応）
+- `components/teams/public-team-view.tsx`: 3フィールドの条件付き表示追加
+- `app/teams/[id]/page.tsx`: settings タブの練習情報セクションを `CardContent` 内に移動（レイアウト一貫性修正）
+
+---
+
 ## 直近でやったこと（2026-06-22）
+
+### セッションタグ拡張（1-J）✅ 全完了
+
+swimmer_type（スイマータイプ）・swim_disciplines（水泳カテゴリ）を SYSTEM_TAGS に追加し、全フロー（オンボーディング・メンバー編集・セッション作成）に反映。
+
+**型定義・定数追加（`types/database.ts`）**
+- `SWIMMER_TYPES = ["選手", "マスターズ"] as const`
+- `SWIM_DISCIPLINES = ["競泳", "シンクロ", "オープンウォーター", "飛び込み", "水球"] as const`
+- `SYSTEM_TAGS` に swimmer_type_player / swimmer_type_masters / discipline_* 7件追加
+- `Profile` interface に `swimmer_type: string | null` / `swim_disciplines: string[]` 追加
+
+**オンボーディング（`app/(auth)/onboarding/page.tsx` + `actions/onboarding.ts`）**
+- Step 1 に スイマータイプ（単一選択）・水泳カテゴリ（複数選択）UIを追加
+- `completeOnboarding` にサーバーサイドホワイトリストバリデーション追加
+
+**メンバー管理（`edit-member-modal.tsx` + `actions/teams.ts`）**
+- `profileToTagIds` / `tagIdsToProfile` に swimmer_type・swim_disciplines を追加
+- `updateMemberProfileTags` にホワイトリストバリデーション追加（SWIMMER_TYPES / SWIM_DISCIPLINES）
+- `filter(Boolean)` → `filter((v): v is string => !!v)` 型安全修正
+
+**メンバー表示（`app/(app)/teams/[id]/member-list.tsx`）**
+- `hasDetails` 判定に swimmer_type / swim_disciplines を追加
+- タグ表示に 紺色バッジ（bg-[#f0f4ff]）でスイマータイプ・水泳カテゴリを表示
+
+**セッション作成（`app/(app)/sessions/new/new-session-form.tsx`）**
+- タグフィルタ useEffect に `swimmer_type_*` / `discipline_*` ブランチを追加（labelMap で日本語変換）
+- `untaggedCount` の判定に swimmer_type / swim_disciplines を追加
+
+**二重管理解消（`actions/teams.ts`）**
+- `SYSTEM_TAG_SPECIALTIES` / `SYSTEM_TAG_GOALS` のハードコードを `SYSTEM_TAGS.filter()` 派生に置き換え
+- 型注釈 `string[]` を明示して tsc エラー解消
+
+**ビルド健全化**
+- `.next/` キャッシュ削除 → `tsc --noEmit` がソースファイルエラー完全ゼロに
+
+commits: `d1ba2b0`, `801aabc`, `a9bf734`, `7838dc2` → main プッシュ済み
+
+---
+
+### シードデータ全面再構築 ✅
+
+**`apps/rangers/supabase/seed_data.sql` を全4アカウント対応版に完全書き直し**
+
+設計方針:
+- test1-4 のロール・会費タイプがすべて異なるように配置（新規登録体験は当日ライブで実施）
+- チーム1（マウントリバー）: 年会費 + 回数券 / チーム2（東京マスターズ）: 年会費 + 月謝
+- セッション12件（open/confirmed/cancelled/draft + practice/event/meeting/competition）
+- 参加登録15件（cash/point_card・pending/paid/free バリエーション）
+- 会費7件・お知らせ4件・回数券購入履歴1件
+
+ロール配置:
+| アカウント | チーム1（マウントリバー） | チーム2（東京マスターズ） |
+|-----------|----------------------|----------------------|
+| test1 山田健太 | admin / annual | admin / annual |
+| test2 鈴木太郎 | admin / annual | member / annual |
+| test3 佐藤花子 | member / point_card（残5） | member / monthly |
+| test4 田中新太郎 | member / annual | admin / annual |
+
+Supabase CLI で本番 DB に適用済み（マウントリバー7件・東京マスターズ5件確認）
+commit `ef3185b` → main プッシュ済み
+
+---
 
 ### クリーンアップ ✅
 
@@ -271,15 +527,55 @@ TypeScript: `tsc --noEmit` クリーン確認済み（.next/ 自動生成ファ�
 
 ---
 
+## 直近でやったこと（2026-06-23 後半）
+
+### 参加申請フロー 実装完了 ✅
+
+公開グループページからの参加を「管理者承認制」に刷新。
+
+**DB マイグレーション（3本）**
+- `00034_add_join_requests.sql`: join_requests テーブル。pending重複申請防止の部分ユニークインデックス。RLS: 申請者は自分の申請を参照/挿入可、管理者は自チームへの申請を参照/更新可
+- `00035_add_notifications.sql`: notifications テーブル（is_read boolean、team_id、metadata jsonb）。挿入はservice_roleのみ（RLS）
+- `00036_add_point_card_price.sql`: teams.point_card_price integer カラム追加
+- → **3本とも `npx supabase db push --linked` で本番 DB に適用済み**
+  - 00035 は「notifications テーブルが既に存在」エラーのため、`CREATE TABLE` から `ALTER TABLE ... ADD COLUMN IF NOT EXISTS` + idempotent `DO $$` ブロックに書き直してから適用
+
+**Server Actions**
+- `actions/join-requests.ts`（新規）: requestJoinTeam / requestJoinTeamAction / approveJoinRequest / rejectJoinRequest / getTeamJoinRequests / getMyJoinRequest
+- `actions/notifications.ts`: markNotificationsRead 追加、createNotificationInternal に team_id/metadata 対応
+
+**フロントエンド**
+- `app/(app)/teams/[id]/join/page.tsx`: teamId ベースに刷新。ログイン済み → 申請中確認 → JoinForm 表示フロー
+- `app/(app)/teams/[id]/join/join-form.tsx`: useActionState 対応、会員種別ごとの金額表示、申請成功ステート
+- `app/(app)/teams/[id]/join-requests-tab.tsx`（新規）: 管理者用申請一覧。承認/見送りボタン
+- `app/teams/[id]/page.tsx`: 管理者ビューに「申請」タブ追加（getTeamJoinRequests 並列取得）。非メンバーブランチで getMyJoinRequest を取得して joinRequestStatus を PublicTeamView に渡す
+- `components/teams/public-team-view.tsx`: joinRequestStatus prop 追加。pending の場合は CTA を「参加申請中（承認待ち）」表示に変更
+- `components/navigation.tsx`: (app)/layout.tsx から unreadCount を受け取れるように対応済み（prop は元から存在）
+- `app/(app)/layout.tsx`: getUnreadNotificationCount() を並列取得して Navigation に渡す（ベルアイコンのバッジ）
+- `app/(app)/notifications/page.tsx`: join_request_received / join_request_approved / join_request_rejected のアイコン追加
+- `app/(app)/notifications/mark-all-read-button.tsx`（新規）: 一括既読ボタン
+
+**動作確認済み（end-to-end）**
+- 申請者: 探すページ → チーム詳細 → 参加申請 → 申請成功ステート表示
+- 管理者: ベルアイコンにバッジ表示 → 通知クリックで内容確認 → 申請タブで承認/見送り
+- 公開チームビュー: pending 時 CTA が「参加申請中（承認待ち）」に変化
+
+**ダッシュボードチームカード画像修正**
+- 原因: seed データで設定していた picsum.photos URL がリダイレクトを挟むため Next.js Image が拒否し続けた
+- 最終修正: 画像生成 MCP（Gemini）でチームロゴ + カバー画像を4枚生成 → Supabase Storage `teams/seed/` にアップロード → DB の avatar_url / cover_image_url を Supabase Storage URL に更新
+- `next.config.ts` は Supabase Storage（`*.supabase.co`）のみに戻してクリーンな状態に
+- 対象ファイル: `apps/rangers/next.config.ts`、`apps/rangers/supabase/seed_data.sql`
+- commit: `8c07b3c`
+
+---
+
 ## 次にやること
 
 ### P1（近日中）
 
-1. **セッションタグ拡張**（1-J）
-   - `SYSTEM_TAGS` に `swimmer_type`（選手/マスターズ）と `swim_discipline`（競泳/シンクロ等）を追加
-   - セッション作成フォーム・メンバータグUIに反映
-
-3. **会費・回数券の改善**（1-F、内容要確認）
+1. **年会費・月謝会員のセッション参加費免除フラグ**（1-M）
+   - `teams` に `fee_members_exempt_session` フラグ追加
+   - グループ設定・セッション参加時の料金計算に反映
 
 ---
 
@@ -288,7 +584,8 @@ TypeScript: `tsc --noEmit` クリーン確認済み（.next/ 自動生成ファ�
 - チーム乱用防止の方針（Hydoor と要相談: 制限 or 申請制 or 課金）
 - 課金開始タイミング（Hydoor と要相談）
 - キャンセルポリシー未確定（長畑さん・長畑さんのお父様・レイカさんと要相談）
-- Stripe Webhook Secret 未設定（Vercel 環境変数）
+- `transfer_records` INSERT 失敗時の補完手段なし（ログで検知→手動対応）
+- `getOrCreateStripeProduct` はチームリネーム時に Stripe 上の Product 名を更新しない（管理画面で手動更新が必要）
 - テストコードなし（Vitest 未導入）
 
 ---
