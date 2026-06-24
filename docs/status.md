@@ -48,6 +48,74 @@
 
 ---
 
+## 直近でやったこと（2026-06-24 夜）
+
+### RLS バグ修正 → 非コーチユーザーの支払い履歴が表示されない問題を解消 ✅
+
+**根本原因**
+- `get_my_team_ids()` / `get_my_admin_team_ids()` が `STABLE` と宣言されていたため、RLS ポリシー評価コンテキストで `SET LOCAL row_security = off` が拒否されていた。
+- コーチ（mountain river の coach_id）は `coach_id = auth.uid()` で teams を直接参照できるため影響を受けず、**非コーチの鈴木・佐藤・田中の支払い履歴のみゼロ表示**になっていた。
+
+**修正**
+- `supabase/migrations/00046_fix_rls_functions_volatile.sql`: 両関数を `STABLE` → `VOLATILE` に変更
+- 本番 DB に `npx supabase db push --linked` で適用済み
+- commit `b4d5d2e` → main
+
+### デモ用シードデータ拡充 ✅
+
+- 鈴木太郎: チーム1・2 の 2025/2026 年会費（全 PAID）
+- 佐藤花子: 東京マスターズ月謝を 1件→4件（2026年3〜6月分）に増加
+- 田中新太郎: チーム1・2 の 2025/2026 年会費（全 PAID）
+- commit `b4d5d2e` → main
+
+### 支払い発生時の payment_charged 通知 ✅
+
+以下の全フローに通知を追加（本番コードに実装済み・シードデータにも反映済み）:
+
+| トリガー | 送信先 | 実装場所 |
+|---------|-------|---------|
+| 管理者が「開催確定」→ Stripe 課金成功 | 参加者本人 | `confirmSession()` |
+| 管理者が「開催確定」→ 回数券消費 | 参加者本人 | `confirmSession()` |
+| 月謝 Subscription Invoice 決済完了 | 本人 | Webhook `handleInvoicePaid()` |
+| 管理者が会費を「支払済」に変更 | 当該会員 | `updateFeeStatus()` |
+| 決済失敗後のリトライ成功 | 参加者本人 | `retryPayment()` |
+
+- シードデータ PHASE 4 にも session payment + 回数券通知を直接挿入
+- commits `177701a`, `acc7874`, `60f017b` → main
+
+---
+
+## 直近でやったこと（2026-06-24 深夜）
+
+### 年会費・月謝会員のセッション参加費免除（1-M）✅ 実装・レビュー・プッシュ完了
+
+**DB（`supabase/migrations/00044_fee_members_exempt_session.sql`）**
+- `teams.fee_members_exempt_session boolean NOT NULL DEFAULT false` 追加
+- ※ 本番 DB への適用は要 `npx supabase db push --linked`（ともくん操作待ち）
+
+**Server Action（`actions/sessions.ts` - `registerForSession`）**
+- session SELECT を `select("*, team:teams(fee_members_exempt_session)")` の JOIN 形式に変更（余計なクエリを削除）
+- `isExempt` を JOIN したチームデータと membership_type から計算（membership: annual | monthly のみ）
+- `effectivePaymentMethod`: exempt 時は `"cash"` で上書き（クライアント送信値を無視）
+- DB 書き込み: `payment_method = effectivePaymentMethod`, `payment_status = isExempt ? "free" : "pending"` に統一
+- `confirmSession` は `payment_status = "pending"` のみ処理なので exempt 登録は自然にスキップ（コメント追加）
+
+**UI（セッション詳細ページ、RegisterButton、チーム編集・作成フォーム）**
+- `app/(app)/teams/[id]/sessions/[sid]/page.tsx`: membership_type 取得・isExempt 計算・料金表示分岐・登録済みカードの支払い方法表示修正・isExempt を RegisterButton に渡す
+- `register-button.tsx`: isExempt prop 追加。exempt + 競技フォームなし → ワンタップで無料参加。exempt + 支払い選択表示時は「無料で参加する」単一ボタン
+- `edit-team-form.tsx` / `new/page.tsx`: `feeExempt` ステート追加・Toggle UI（年会費 or 月謝が有効な時のみ表示）・年会費と月謝を両方 OFF にしたら feeExempt を false にリセット
+- `app/(app)/sessions/[id]/page.tsx`（インストラクター向け）: 参加費列で `payment_status === "free"` を「免除」表示に修正
+
+**コードレビューで修正した問題（4件）**
+- effectivePaymentMethod を追加して payment_method と payment_status の不整合を解消
+- JOIN で team データを取得してクエリ数を 3 → 2 に削減
+- exempt 時の RegisterButton フローを修正（競技フォームなしの場合にワンタップ登録）
+- feeExempt のリセットロジック追加（料金タイプ OFF 時のデータ整合性保護）
+
+**commits: `8c07b3c..210874d` → main プッシュ済み（34コミット）**
+
+---
+
 ## 直近でやったこと（2026-06-24）
 
 ### Stripe Connect / Subscription Phase 4 完了 ✅
@@ -573,9 +641,8 @@ TypeScript: `tsc --noEmit` クリーン確認済み（.next/ 自動生成ファ�
 
 ### P1（近日中）
 
-1. **年会費・月謝会員のセッション参加費免除フラグ**（1-M）
-   - `teams` に `fee_members_exempt_session` フラグ追加
-   - グループ設定・セッション参加時の料金計算に反映
+1. **次の機能実装**
+   - 特に未定。ともくんと要相談
 
 ---
 
