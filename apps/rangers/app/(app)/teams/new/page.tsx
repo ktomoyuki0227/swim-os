@@ -44,6 +44,7 @@ export default function NewTeamPage() {
   const [hasAnnualFee, setHasAnnualFee] = useState(false)
   const [hasMonthlyFee, setHasMonthlyFee] = useState(false)
   const [hasPointCard, setHasPointCard] = useState(false)
+  const [feeExempt, setFeeExempt] = useState(false)
 
   // Step 1 state
   const [step1, setStep1] = useState<Step1Data>({
@@ -176,6 +177,7 @@ export default function NewTeamPage() {
       point_card_price: hasPointCard ? (Number.isNaN(pointCardPriceVal) ? undefined : pointCardPriceVal) : undefined,
       contact_email: step1.contact_email || undefined,
       contact_phone: step1.contact_phone || undefined,
+      fee_members_exempt_session: feeExempt,
     }
 
     startTransition(async () => {
@@ -610,7 +612,10 @@ export default function NewTeamPage() {
                   <input
                     type="checkbox"
                     checked={hasAnnualFee}
-                    onChange={(e) => setHasAnnualFee(e.target.checked)}
+                    onChange={(e) => {
+                      setHasAnnualFee(e.target.checked)
+                      if (!e.target.checked && !hasMonthlyFee) setFeeExempt(false)
+                    }}
                     className="h-4 w-4 rounded border-[#dce3ea] accent-[#005F8C]"
                   />
                   <div>
@@ -645,7 +650,10 @@ export default function NewTeamPage() {
                   <input
                     type="checkbox"
                     checked={hasMonthlyFee}
-                    onChange={(e) => setHasMonthlyFee(e.target.checked)}
+                    onChange={(e) => {
+                      setHasMonthlyFee(e.target.checked)
+                      if (!e.target.checked && !hasAnnualFee) setFeeExempt(false)
+                    }}
                     className="h-4 w-4 rounded border-[#dce3ea] accent-[#005F8C]"
                   />
                   <div>
@@ -673,6 +681,22 @@ export default function NewTeamPage() {
                   </div>
                 )}
               </div>
+
+              {/* 会費会員の参加費免除 */}
+              {(hasAnnualFee || hasMonthlyFee) && (
+                <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-[#005F8C]/20 bg-[#005F8C]/5 p-3 hover:border-[#005F8C]/40">
+                  <input
+                    type="checkbox"
+                    checked={feeExempt}
+                    onChange={(e) => setFeeExempt(e.target.checked)}
+                    className="h-4 w-4 rounded border-[#dce3ea] accent-[#005F8C]"
+                  />
+                  <div>
+                    <p className="text-sm font-medium text-[#1a2332]">年会費・月謝会員のセッション参加費を免除</p>
+                    <p className="text-xs text-[#8d99a8]">年会費または月謝を支払っているメンバーはセッション参加費が無料になる</p>
+                  </div>
+                </label>
+              )}
 
               {/* 回数券 */}
               <div className="space-y-3">

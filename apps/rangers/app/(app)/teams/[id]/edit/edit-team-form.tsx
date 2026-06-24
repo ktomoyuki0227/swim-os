@@ -1,11 +1,12 @@
 "use client"
 
-import { useState, useTransition, useRef } from "react"
+import { useState, useTransition, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
 import { updateTeam, uploadTeamImage } from "@/actions/teams"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -38,16 +39,29 @@ interface Team {
   point_card_price: number | null
   contact_email: string | null
   contact_phone: string | null
+  stripe_account_id: string | null
+  stripe_onboarding_completed: boolean
+  fee_members_exempt_session: boolean
 }
 
 interface EditTeamFormProps {
   team: Team
+  stripeEnabled: boolean
+  connectStatus: "success" | "pending" | "error" | null
 }
 
-export function EditTeamForm({ team }: EditTeamFormProps) {
+export function EditTeamForm({ team, stripeEnabled, connectStatus }: EditTeamFormProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
+  const [isConnecting, setIsConnecting] = useState(false)
   const { showToast } = useToast()
+
+  useEffect(() => {
+    if (connectStatus === "success") showToast("Stripe Connect の設定が完了しました", "success")
+    else if (connectStatus === "pending") showToast("Stripe オンボーディングが未完了です。再度「設定を開始」してください", "error")
+    else if (connectStatus === "error") showToast("Stripe Connect の設定中にエラーが発生しました", "error")
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const [isRecruiting, setIsRecruiting] = useState(team.is_recruiting)
   const [isActive, setIsActive] = useState((team.status ?? "active") === "active")
@@ -56,6 +70,7 @@ export function EditTeamForm({ team }: EditTeamFormProps) {
   const [hasAnnualFee, setHasAnnualFee] = useState(team.has_annual_fee)
   const [hasMonthlyFee, setHasMonthlyFee] = useState(team.has_monthly_fee)
   const [hasPointCard, setHasPointCard] = useState(team.has_point_card)
+  const [feeExempt, setFeeExempt] = useState(team.fee_members_exempt_session)
 
   // Image state
   const [coverPreview, setCoverPreview] = useState<string | null>(team.cover_image_url)
@@ -80,6 +95,23 @@ export function EditTeamForm({ team }: EditTeamFormProps) {
     } else {
       setIconFile(file)
       setIconPreview(preview)
+    }
+  }
+
+  const handleConnect = async () => {
+    setIsConnecting(true)
+    try {
+      const res = await fetch("/api/stripe/connect/onboarding", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ teamId: team.id }),
+      })
+      if (!res.ok) throw new Error("onboarding request failed")
+      const { url } = await res.json()
+      window.location.href = url
+    } catch {
+      showToast("Stripe 設定の開始に失敗しました", "error")
+      setIsConnecting(false)
     }
   }
 
@@ -148,6 +180,7 @@ export function EditTeamForm({ team }: EditTeamFormProps) {
         point_card_price: hasPointCard ? (Number.isNaN(pointCardPriceVal) ? undefined : pointCardPriceVal) : undefined,
         contact_email: (data.get("contact_email") as string) || null,
         contact_phone: (data.get("contact_phone") as string) || null,
+        fee_members_exempt_session: feeExempt,
       }
 
       if (newCoverUrl) payload.cover_image_url = newCoverUrl
@@ -507,7 +540,10 @@ export function EditTeamForm({ team }: EditTeamFormProps) {
                 <input
                   type="checkbox"
                   checked={hasAnnualFee}
-                  onChange={(e) => setHasAnnualFee(e.target.checked)}
+                  onChange={(e) => {
+                    setHasAnnualFee(e.target.checked)
+                    if (!e.target.checked && !hasMonthlyFee) setFeeExempt(false)
+                  }}
                   className="h-4 w-4 rounded border-[#dce3ea] accent-[#005F8C]"
                 />
                 <div>
@@ -543,7 +579,10 @@ export function EditTeamForm({ team }: EditTeamFormProps) {
                 <input
                   type="checkbox"
                   checked={hasMonthlyFee}
-                  onChange={(e) => setHasMonthlyFee(e.target.checked)}
+                  onChange={(e) => {
+                    setHasMonthlyFee(e.target.checked)
+                    if (!e.target.checked && !hasAnnualFee) setFeeExempt(false)
+                  }}
                   className="h-4 w-4 rounded border-[#dce3ea] accent-[#005F8C]"
                 />
                 <div>
@@ -572,6 +611,22 @@ export function EditTeamForm({ team }: EditTeamFormProps) {
                 </div>
               )}
             </div>
+
+            {/* 会費会員の参加費免除 */}
+            {(hasAnnualFee || hasMonthlyFee) && (
+              <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-[#005F8C]/20 bg-[#005F8C]/5 p-3 hover:border-[#005F8C]/40">
+                <input
+                  type="checkbox"
+                  checked={feeExempt}
+                  onChange={(e) => setFeeExempt(e.target.checked)}
+                  className="h-4 w-4 rounded border-[#dce3ea] accent-[#005F8C]"
+                />
+                <div>
+                  <p className="text-sm font-medium text-[#1a2332]">年会費・月謝会員のセッション参加費を免除</p>
+                  <p className="text-xs text-[#8d99a8]">年会費または月謝を支払っているメンバーはセッション参加費が無料になる</p>
+                </div>
+              </label>
+            )}
 
             {/* 回数券 */}
             <div className="space-y-3">
@@ -703,6 +758,64 @@ export function EditTeamForm({ team }: EditTeamFormProps) {
           </Button>
         </div>
       </form>
+
+      {/* Stripe Connect — 決済送金設定（Stripe 設定済み時のみ表示） */}
+      {stripeEnabled && (
+        <Card className="border-[#dce3ea]">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base font-semibold text-[#1a2332]">
+              Stripe Connect（売上受取設定）
+            </CardTitle>
+            <p className="text-xs text-[#5c6a7a]">
+              セッション参加費の売上をこのグループの Stripe アカウントに自動送金します。設定するとプラットフォーム手数料を差し引いた金額がグループに入金されます。
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between gap-4 rounded-xl border border-[#dce3ea] p-3">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#005F8C]/10 text-lg">
+                  💳
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-[#1a2332]">Connect ステータス</p>
+                  <div className="mt-0.5">
+                    {team.stripe_onboarding_completed ? (
+                      <Badge className="bg-[#eaf7f0] text-[#0f8a4f] border-transparent">設定完了</Badge>
+                    ) : team.stripe_account_id ? (
+                      <Badge className="bg-[#fdf6e3] text-[#b8860b] border-transparent">審査・設定中</Badge>
+                    ) : (
+                      <Badge className="bg-[#edf0f4] text-[#5c6a7a] border-transparent">未設定</Badge>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <Button
+                type="button"
+                onClick={handleConnect}
+                disabled={isConnecting}
+                variant={team.stripe_onboarding_completed ? "outline" : "default"}
+                className={
+                  team.stripe_onboarding_completed
+                    ? "rounded-full border-[#dce3ea] text-[#5c6a7a] shrink-0"
+                    : "rounded-full bg-[#005F8C] hover:bg-[#004E73] shrink-0"
+                }
+                style={{ minHeight: "44px" }}
+              >
+                {isConnecting
+                  ? "移動中..."
+                  : team.stripe_account_id
+                  ? "設定を続ける"
+                  : "設定を開始"}
+              </Button>
+            </div>
+            {team.stripe_onboarding_completed && (
+              <p className="text-xs text-[#8d99a8]">
+                Stripe ダッシュボードから売上・入金状況を確認できます。設定を変更する場合は「設定を続ける」から Stripe 管理画面にアクセスしてください。
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }
