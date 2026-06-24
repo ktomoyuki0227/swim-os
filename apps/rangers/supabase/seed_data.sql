@@ -839,9 +839,45 @@ BEGIN
     (v_user4, 'payment_charged',
      '年会費のお支払いが完了しました',
      '東京マスターズ水泳クラブの年会費 ¥6,000 のお支払いが確認されました。',
-     v_team2, '/payments', false, now() - interval '45 days');
+     v_team2, '/payments', false, now() - interval '45 days'),
+
+    -- ── セッション参加費（Stripe）通知 ──
+    -- ps1_a（水曜朝練, 3ヶ月前）: user2・user4 stripe ¥1,000
+    (v_user2, 'payment_charged',
+     '「水曜朝練 - クロール技術練習」の参加費が決済されました',
+     '¥1,000が引き落とされました',
+     v_team1, '/payments', false, now() - interval '3 months' - interval '1 day'),
+
+    (v_user4, 'payment_charged',
+     '「水曜朝練 - クロール技術練習」の参加費が決済されました',
+     '¥1,000が引き落とされました',
+     v_team1, '/payments', false, now() - interval '3 months' - interval '1 day'),
+
+    -- ps1_b（土曜スピード練習, 6週前）: user2 stripe ¥1,000
+    (v_user2, 'payment_charged',
+     '「土曜スピード練習」の参加費が決済されました',
+     '¥1,000が引き落とされました',
+     v_team1, '/payments', false, now() - interval '6 weeks' - interval '1 day'),
+
+    -- ps2_b（木曜夜練, 3週前）: user2・user4 stripe ¥1,200
+    (v_user2, 'payment_charged',
+     '「木曜夜練 - スプリント特化」の参加費が決済されました',
+     '¥1,200が引き落とされました',
+     v_team2, '/payments', false, now() - interval '3 weeks' - interval '1 day'),
+
+    (v_user4, 'payment_charged',
+     '「木曜夜練 - スプリント特化」の参加費が決済されました',
+     '¥1,200が引き落とされました',
+     v_team2, '/payments', false, now() - interval '3 weeks' - interval '1 day'),
+
+    -- ── 回数券使用通知 ──
+    -- ps1_a（水曜朝練, 3ヶ月前）: user3 point_card
+    (v_user3, 'payment_charged',
+     '「水曜朝練 - クロール技術練習」の回数券を使用しました',
+     '回数券1枚が使用されました',
+     v_team1, '/payments', false, now() - interval '3 months' - interval '1 day');
 
   RAISE NOTICE '=== PHASE 4 完了 ===';
   RAISE NOTICE '過去確定セッション: チーム1×2 + チーム2×2 = 計4件追加';
-  RAISE NOTICE '支払い通知（payment_charged / 未読）: user1×2 / user2×1 / user3×1 / user4×1 = 計5件';
+  RAISE NOTICE '支払い通知（payment_charged / 未読）: 会費5件 + セッション参加費5件 + 回数券1件 = 計11件';
 END $$;
