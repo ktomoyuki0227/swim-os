@@ -877,6 +877,16 @@ export async function retryPayment(registrationId: string) {
           console.error(`[retryPayment] transfer_records insert failed for PI ${pi.id}:`, trErr)
         }
       }
+      // 再決済成功通知（本人へ）
+      const retrySessionTyped = registration.session as { title: string; team_id: string }
+      await retryAdmin.from("notifications").insert({
+        user_id: registration.swimmer_id,
+        type: "payment_charged",
+        title: `「${retrySessionTyped.title}」の参加費が決済されました`,
+        body: `¥${amount.toLocaleString()}が引き落とされました`,
+        team_id: retrySessionTyped.team_id,
+        link: "/payments",
+      })
     } catch (err) {
       console.error(`[retryPayment] Stripe confirm failed for ${registrationId}:`, err)
       await retryAdmin
