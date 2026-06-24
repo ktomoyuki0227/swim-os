@@ -319,6 +319,13 @@ export function NewSessionForm({
       if (!form.scheduled_at) return "日時を入力してください"
       if (!form.location.trim()) return "場所を入力してください"
     }
+    if (step === 2) {
+      if (form.registration_deadline && form.scheduled_at) {
+        const deadline = new Date(form.registration_deadline)
+        const scheduled = new Date(form.scheduled_at)
+        if (deadline >= scheduled) return "申込締切は開始日時より前に設定してください"
+      }
+    }
     return null
   }
 
@@ -1025,6 +1032,22 @@ export function NewSessionForm({
                 </div>
               </div>
             </div>
+
+            {form.type === "competition" && competitionFields.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-xs font-semibold text-[#8d99a8] uppercase tracking-wide">エントリー項目</p>
+                <div className="rounded-xl bg-[#f7fafc] px-4 py-3 text-sm space-y-1.5">
+                  {competitionFields.map((f, i) => (
+                    <div key={i} className="flex items-center gap-2">
+                      <span className="text-[#1a2332]">{f.label || "（未入力）"}</span>
+                      {f.required && (
+                        <span className="rounded-full bg-[#fdecea] px-1.5 py-0.5 text-[10px] font-medium text-[#c0392b]">必須</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="space-y-2">
               <p className="text-xs font-semibold text-[#8d99a8] uppercase tracking-wide">配信対象</p>
