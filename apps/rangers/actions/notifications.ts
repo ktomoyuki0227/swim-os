@@ -92,6 +92,7 @@ async function createNotificationInternal(
     type: string
     title: string
     body?: string
+    link?: string
     team_id?: string
     metadata?: Record<string, unknown>
   }
@@ -103,6 +104,7 @@ async function createNotificationInternal(
     type: data.type,
     title: data.title,
     body: data.body ?? null,
+    link: data.link ?? null,
     team_id: data.team_id ?? null,
     metadata: data.metadata ?? {},
   })
