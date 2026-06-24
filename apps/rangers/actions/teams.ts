@@ -276,7 +276,7 @@ export async function getTeamMembers(teamId: string) {
   if (!adminMembership) return { data: [], error: "権限がありません" }
   const { data, error } = await admin
     .from("team_members")
-    .select("*, swimmer:profiles(id, name, avatar_url, furigana, gender, birthday, address, emergency_contact, emergency_contact_name, emergency_contact_relation, masters_registered, masters_number, jsa_registered, jsa_number, specialties, prefectures, swimming_goals, participation_styles, level, swimmer_type, swim_disciplines)")
+    .select("*, swimmer:profiles(id, name, avatar_url, furigana, gender, birthday, phone, address, emergency_contact, emergency_contact_name, emergency_contact_relation, masters_registered, masters_number, jsa_registered, jsa_number, specialties, prefectures, swimming_goals, participation_styles, level, swimmer_type, swim_disciplines)")
     .eq("team_id", teamId)
     .eq("status", "active")
     .order("joined_at", { ascending: true })
@@ -285,6 +285,26 @@ export async function getTeamMembers(teamId: string) {
   return { data: data || [] }
 }
 
+export async function getMemberEmail(teamId: string, swimmerId: string): Promise<{ email?: string; error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "ログインが必要です" }
+
+  const admin = createAdminClient()
+  const { data: adminMembership } = await admin
+    .from("team_members")
+    .select("id")
+    .eq("team_id", teamId)
+    .eq("swimmer_id", user.id)
+    .eq("role", "admin")
+    .eq("status", "active")
+    .single()
+  if (!adminMembership) return { error: "権限がありません" }
+
+  const { data: authUser, error } = await admin.auth.admin.getUserById(swimmerId)
+  if (error || !authUser?.user?.email) return { error: "メールアドレスを取得できませんでした" }
+  return { email: authUser.user.email }
+}
 
 export async function removeMember(teamId: string, swimmerId: string) {
   const supabase = await createClient()

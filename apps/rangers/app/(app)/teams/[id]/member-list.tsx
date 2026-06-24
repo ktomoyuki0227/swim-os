@@ -6,7 +6,7 @@ import { removeMember } from "@/actions/teams"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/components/toast"
-import { EditMemberModal } from "./edit-member-modal"
+import { MemberDetailModal } from "./member-detail-modal"
 import type { TeamMemberWithProfile } from "@/types/database"
 
 
@@ -29,34 +29,62 @@ function getMembershipLabel(member: TeamMemberWithProfile): string {
 
 function MemberMenu({
   swimmerId,
+  memberName,
   isAdmin,
   isRemoving,
-  onEdit,
+  onOpen,
   onRemove,
 }: {
   swimmerId: string
+  memberName: string
   isAdmin: boolean
   isRemoving: boolean
-  onEdit: (id: string) => void
-  onRemove: (id: string) => void
+  onOpen: (id: string) => void
+  onRemove: (id: string, name: string) => void
 }) {
   const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
+  const [menuPos, setMenuPos] = useState({ top: 0, right: 0 })
+  const btnRef = useRef<HTMLButtonElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  const handleOpen = () => {
+    if (btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect()
+      setMenuPos({
+        top: rect.bottom + 4,
+        right: window.innerWidth - rect.right,
+      })
+    }
+    setOpen((v) => !v)
+  }
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
+      if (
+        menuRef.current && !menuRef.current.contains(e.target as Node) &&
+        btnRef.current && !btnRef.current.contains(e.target as Node)
+      ) {
         setOpen(false)
       }
     }
-    if (open) document.addEventListener("mousedown", handleClickOutside)
-    return () => document.removeEventListener("mousedown", handleClickOutside)
+    function handleScroll() {
+      setOpen(false)
+    }
+    if (open) {
+      document.addEventListener("mousedown", handleClickOutside)
+      document.addEventListener("scroll", handleScroll, true)
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside)
+      document.removeEventListener("scroll", handleScroll, true)
+    }
   }, [open])
 
   return (
-    <div ref={ref} className="relative shrink-0">
+    <div className="relative shrink-0">
       <button
-        onClick={() => setOpen((v) => !v)}
+        ref={btnRef}
+        onClick={handleOpen}
         disabled={isRemoving}
         className="flex h-7 w-7 items-center justify-center rounded-full text-[#8d99a8] transition-colors hover:bg-[#f2f7fa] hover:text-[#5c6a7a] disabled:opacity-50"
         aria-label="メニューを開く"
@@ -65,21 +93,25 @@ function MemberMenu({
       </button>
 
       {open && (
-        <div className="absolute right-0 top-8 z-10 min-w-[120px] overflow-hidden rounded-xl border border-[#dce3ea] bg-white shadow-lg">
+        <div
+          ref={menuRef}
+          className="fixed z-50 min-w-[140px] overflow-hidden rounded-xl border border-[#dce3ea] bg-white shadow-lg"
+          style={{ top: menuPos.top, right: menuPos.right }}
+        >
           <button
             onClick={() => {
               setOpen(false)
-              onEdit(swimmerId)
+              onOpen(swimmerId)
             }}
             className="flex w-full items-center px-4 py-2.5 text-sm text-[#1a2332] transition-colors hover:bg-[#f2f7fa]"
           >
-            編集
+            詳細・編集
           </button>
           {!isAdmin && (
             <button
               onClick={() => {
                 setOpen(false)
-                onRemove(swimmerId)
+                onRemove(swimmerId, memberName)
               }}
               className="flex w-full items-center px-4 py-2.5 text-sm text-red-600 transition-colors hover:bg-red-50"
             >
@@ -88,6 +120,54 @@ function MemberMenu({
           )}
         </div>
       )}
+    </div>
+  )
+}
+
+function DeleteConfirmModal({
+  memberName,
+  isRemoving,
+  onConfirm,
+  onCancel,
+}: {
+  memberName: string
+  isRemoving: boolean
+  onConfirm: () => void
+  onCancel: () => void
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center sm:items-center"
+      style={{ backgroundColor: "rgba(0,0,0,0.45)" }}
+      onClick={(e) => { if (e.target === e.currentTarget) onCancel() }}
+    >
+      <div className="w-full max-w-sm rounded-t-2xl border border-[#dce3ea] bg-white shadow-xl sm:rounded-2xl">
+        <div className="px-5 py-5">
+          <p className="font-semibold text-[#1a2332]">メンバーを削除しますか？</p>
+          <p className="mt-1.5 text-sm text-[#5c6a7a]">
+            <span className="font-medium text-[#1a2332]">{memberName}</span> をグループから削除します。この操作は取り消せません。
+          </p>
+        </div>
+        <div className="flex gap-2 border-t border-[#dce3ea] px-5 py-4">
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={isRemoving}
+            className="flex-1 rounded-full border border-[#dce3ea] py-2.5 text-sm font-medium text-[#5c6a7a] transition-colors hover:border-[#005F8C] disabled:opacity-50"
+          >
+            キャンセル
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={isRemoving}
+            className="flex-1 rounded-full bg-red-600 py-2.5 text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-50"
+            style={{ minHeight: "44px" }}
+          >
+            {isRemoving ? "削除中..." : "削除する"}
+          </button>
+        </div>
+      </div>
     </div>
   )
 }
@@ -113,19 +193,25 @@ export function MemberList({
 }: MemberListProps) {
   const router = useRouter()
   const [removingId, setRemovingId] = useState<string | null>(null)
-  const [editingMember, setEditingMember] = useState<TeamMemberWithProfile | null>(null)
+  const [detailMember, setDetailMember] = useState<TeamMemberWithProfile | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null)
   const { showToast } = useToast()
 
-  const handleEdit = (swimmerId: string) => {
+  const openMember = (swimmerId: string) => {
     const found = members.find((m) => m.swimmer?.id === swimmerId) ?? null
-    setEditingMember(found)
+    setDetailMember(found)
   }
 
-  const handleRemove = async (swimmerId: string) => {
-    if (!confirm("このメンバーをグループから削除しますか？")) return
-    setRemovingId(swimmerId)
-    const result = await removeMember(teamId, swimmerId)
+  const openDelete = (swimmerId: string, name: string) => {
+    setDeleteTarget({ id: swimmerId, name })
+  }
+
+  const handleConfirmRemove = async () => {
+    if (!deleteTarget) return
+    setRemovingId(deleteTarget.id)
+    const result = await removeMember(teamId, deleteTarget.id)
     setRemovingId(null)
+    setDeleteTarget(null)
     if (result.error) {
       showToast(result.error, "error")
     } else {
@@ -215,10 +301,11 @@ export function MemberList({
                   {swimmer?.id && (
                     <MemberMenu
                       swimmerId={swimmer.id}
+                      memberName={swimmer.name || "不明"}
                       isAdmin={isAdmin}
                       isRemoving={removingId === swimmer.id}
-                      onEdit={handleEdit}
-                      onRemove={handleRemove}
+                      onOpen={openMember}
+                      onRemove={openDelete}
                     />
                   )}
                 </div>
@@ -288,17 +375,26 @@ export function MemberList({
       })}
     </div>
 
-    {editingMember && (
-      <EditMemberModal
-        member={editingMember}
+    {detailMember && (
+      <MemberDetailModal
+        member={detailMember}
         teamId={teamId}
         currentUserId={currentUserId}
         hasAnnualFee={hasAnnualFee}
         hasMonthlyFee={hasMonthlyFee}
         hasPointCard={hasPointCard}
         pointCardCount={pointCardCount}
-        onClose={() => setEditingMember(null)}
-        onSuccess={() => { setEditingMember(null); router.refresh() }}
+        onClose={() => setDetailMember(null)}
+        onSuccess={() => { setDetailMember(null); router.refresh() }}
+      />
+    )}
+
+    {deleteTarget && (
+      <DeleteConfirmModal
+        memberName={deleteTarget.name}
+        isRemoving={removingId === deleteTarget.id}
+        onConfirm={handleConfirmRemove}
+        onCancel={() => setDeleteTarget(null)}
       />
     )}
     </>
