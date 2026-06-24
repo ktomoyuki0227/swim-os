@@ -73,7 +73,7 @@ export default async function MessageThreadPage({ params }: MessageThreadPagePro
         <div>
           <p className="font-medium">{partner.name}</p>
           <Link
-              href={`/instructors/${partner.id}`}
+              href={`/profiles/${partner.id}`}
               className="text-xs text-blue-600 hover:underline"
             >
               プロフィールを見る

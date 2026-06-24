@@ -62,8 +62,6 @@ export async function sendScheduleRequest(formData: FormData) {
     return { error: "リクエストの送信に失敗しました" }
   }
 
-  revalidatePath(`/instructors/${instructorId}`)
-
   return { success: true }
 }
 

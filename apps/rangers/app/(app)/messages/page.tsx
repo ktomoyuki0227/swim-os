@@ -42,11 +42,8 @@ export default async function MessagesPage() {
           </div>
           <p className="font-medium">まだメッセージはありません</p>
           <p className="text-sm text-muted-foreground">
-            コーチのプロフィールからメッセージを送ってみましょう
+            グループ管理者からのメッセージがここに表示されます
           </p>
-          <Link href="/instructors" className="text-sm text-blue-600 hover:underline">
-            コーチを探す
-          </Link>
         </div>
       </div>
     )
