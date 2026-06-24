@@ -52,7 +52,10 @@ export function SessionActions({
   }
 
   const handleCancel = async () => {
-    if (!confirm("このセッションを中止しますか？\n決済済みの参加者には自動返金されます。")) return
+    const cancelMsg = currentStatus === "confirmed"
+      ? "このセッションを中止しますか？\n決済済みの参加者には自動返金されます。"
+      : "このセッションを中止しますか？"
+    if (!confirm(cancelMsg)) return
     setIsCancelling(true)
     const result = await cancelSession(sessionId)
     if (result.error) {
@@ -83,8 +86,12 @@ export function SessionActions({
     setIsRetrying(true)
     let successCount = 0
     for (const regId of failedRegistrationIds) {
-      const result = await retryPayment(regId)
-      if (result.success) successCount++
+      try {
+        const result = await retryPayment(regId)
+        if (result.success) successCount++
+      } catch {
+        // 個別失敗はスキップして次へ
+      }
     }
     showToast(
       `${successCount}/${failedRegistrationIds.length}件の再決済が完了しました`,
