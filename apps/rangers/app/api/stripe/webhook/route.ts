@@ -102,6 +102,18 @@ async function handleInvoicePaid(invoice: Stripe.Invoice) {
     throw error
   }
 
+  // 月謝決済通知（新規 INSERT 成功時のみ。二重通知防止のため unique_violation は除外）
+  if (!error) {
+    await admin.from("notifications").insert({
+      user_id: swimmer_id,
+      type: "payment_charged",
+      title: `${period.replace("-", "年")}月の月謝が引き落とされました`,
+      body: `¥${invoice.amount_paid.toLocaleString()}が引き落とされました`,
+      team_id,
+      link: "/payments",
+    })
+  }
+
   // subscription_status を active に同期
   await admin
     .from("team_members")

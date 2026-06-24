@@ -82,7 +82,7 @@ export async function updateFeeStatus(
   const admin = createAdminClient()
   const { data: fee } = await admin
     .from("membership_fees")
-    .select("team_id")
+    .select("team_id, swimmer_id, amount, type, period")
     .eq("id", feeId)
     .single()
   if (!fee) return { error: "会費レコードが見つかりません" }
@@ -111,6 +111,21 @@ export async function updateFeeStatus(
     .eq("id", feeId)
 
   if (error) return { error: "支払い状況の更新に失敗しました" }
+
+  // 支払い確認通知（本人へ）
+  if (status === "paid") {
+    const label = fee.type === "annual"
+      ? `年会費 ${fee.period}年`
+      : `月謝 ${fee.period.replace("-", "年")}月`
+    await admin.from("notifications").insert({
+      user_id: fee.swimmer_id,
+      type: "payment_charged",
+      title: `${label}のお支払いが確認されました`,
+      body: `¥${fee.amount.toLocaleString()}のお支払いを受領しました`,
+      team_id: fee.team_id,
+      link: "/payments",
+    })
+  }
 
   revalidatePath("/fees")
   return { success: true }

@@ -280,6 +280,15 @@ export async function confirmSession(sessionId: string) {
           .from("session_registrations")
           .update({ payment_status: "paid" })
           .eq("id", reg.id)
+        // 参加費決済通知（本人へ）
+        await confirmAdmin.from("notifications").insert({
+          user_id: reg.swimmer_id,
+          type: "payment_charged",
+          title: `「${session.title}」の参加費が決済されました`,
+          body: `¥${amount.toLocaleString()}が引き落とされました`,
+          team_id: session.team_id,
+          link: "/payments",
+        })
         // Connect 送金記録（webhook の payment_intent.succeeded で succeeded に更新される）
         if (connectFees && connectTeam?.stripe_account_id) {
           const { error: trErr } = await confirmAdmin.from("transfer_records").insert({
@@ -319,7 +328,19 @@ export async function confirmSession(sessionId: string) {
         .from("session_registrations")
         .update({ payment_status: "paid" })
         .eq("id", reg.id)
-      if (payErr) paymentErrors.push(`${reg.id}: point_card status update failed`)
+      if (payErr) {
+        paymentErrors.push(`${reg.id}: point_card status update failed`)
+      } else {
+        // 回数券使用通知（本人へ）
+        await confirmAdmin.from("notifications").insert({
+          user_id: reg.swimmer_id,
+          type: "payment_charged",
+          title: `「${session.title}」の回数券を使用しました`,
+          body: "回数券1枚が使用されました",
+          team_id: session.team_id,
+          link: "/payments",
+        })
+      }
     }
     // cash はそのまま（当日回収）
   }
