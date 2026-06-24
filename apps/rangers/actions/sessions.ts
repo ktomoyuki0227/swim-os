@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { sessionSchema, sessionUpdateSchema } from "@/lib/validations"
 import type { PaymentMethod, CompetitionField } from "@/types/database"
+import { getPlatformFeePercent, calculateFees } from "@/lib/stripe-connect"
 
 export async function createSession(teamId: string, data: unknown) {
   const parsed = sessionSchema.safeParse(data)
@@ -80,7 +81,7 @@ export async function updateSession(sessionId: string, data: unknown) {
   const updateAdmin = createAdminClient()
   const { data: session } = await updateAdmin
     .from("practice_sessions")
-    .select("team_id")
+    .select("team_id, session_status")
     .eq("id", sessionId)
     .single()
   if (!session) return { error: "セッションが見つかりません" }
@@ -95,10 +96,18 @@ export async function updateSession(sessionId: string, data: unknown) {
     .single()
   if (!adminMembership) return { error: "権限がありません" }
 
+  // 開催確定済みセッションの料金変更を禁止
+  // （確定後は Stripe PI の決済済み金額と乖離するため）
+  const updateData = { ...parsed.data }
+  if (session.session_status === "confirmed") {
+    delete updateData.member_price
+    delete updateData.guest_price
+  }
+
   // adminClientでRLSをバイパスして更新（user clientだとサイレントブロックの可能性あり）
   const { error } = await updateAdmin
     .from("practice_sessions")
-    .update(parsed.data)
+    .update(updateData)
     .eq("id", sessionId)
 
   if (error) return { error: "セッションの更新に失敗しました" }
@@ -181,7 +190,10 @@ export async function confirmSession(sessionId: string) {
 
   const confirmAdmin = createAdminClient()
 
-  // 参加登録者を取得（pending のみ: 再実行しても二重課金しない）
+  // 参加登録者を取得（pending のみ）
+  // - 再実行しても二重課金しない
+  // - payment_status = "free"（年会費・月謝免除）は課金不要のため除外
+  // - paid / failed / refunded も除外
   const { data: registrations } = await confirmAdmin
     .from("session_registrations")
     .select("*")
@@ -190,6 +202,16 @@ export async function confirmSession(sessionId: string) {
     .is("cancelled_at", null)
 
   if (!registrations) return { error: "参加者情報の取得に失敗しました" }
+
+  // Stripe Connect: チームの Connected Account 情報を取得
+  const connectTeam = session.team as {
+    stripe_account_id: string | null
+    stripe_onboarding_completed: boolean
+  } | null
+  const hasConnect = !!(connectTeam?.stripe_account_id && connectTeam?.stripe_onboarding_completed)
+  const feePercent = hasConnect && process.env.STRIPE_SECRET_KEY
+    ? await getPlatformFeePercent()
+    : 0
 
   // 決済処理（会員種別ごとに処理）
   const paymentErrors: string[] = []
@@ -213,6 +235,10 @@ export async function confirmSession(sessionId: string) {
         continue
       }
       const amount = reg.is_member ? session.member_price : session.guest_price
+      // Connect 手数料（チームが Connect 設定済みの場合のみ計算）
+      const connectFees = hasConnect && connectTeam?.stripe_account_id
+        ? calculateFees(amount, feePercent)
+        : null
       // Step 1: PI作成（confirm前）— 課金はまだ発生しない
       const pi = await stripe.paymentIntents.create({
         amount,
@@ -221,6 +247,10 @@ export async function confirmSession(sessionId: string) {
         payment_method: swimmer.stripe_payment_method_id,
         off_session: true,
         metadata: { session_id: sessionId, registration_id: reg.id, swimmer_id: reg.swimmer_id },
+        ...(connectFees && connectTeam?.stripe_account_id ? {
+          application_fee_amount: connectFees.platformFee,
+          transfer_data: { destination: connectTeam.stripe_account_id },
+        } : {}),
       }).catch(() => null)
       if (!pi) {
         await confirmAdmin
@@ -250,6 +280,23 @@ export async function confirmSession(sessionId: string) {
           .from("session_registrations")
           .update({ payment_status: "paid" })
           .eq("id", reg.id)
+        // Connect 送金記録（webhook の payment_intent.succeeded で succeeded に更新される）
+        if (connectFees && connectTeam?.stripe_account_id) {
+          const { error: trErr } = await confirmAdmin.from("transfer_records").insert({
+            team_id: session.team_id,
+            session_id: sessionId,
+            registration_id: reg.id,
+            stripe_payment_intent_id: pi.id,
+            amount,
+            platform_fee: connectFees.platformFee,
+            net_amount: connectFees.netAmount,
+            status: "pending",
+          })
+          if (trErr) {
+            // 送金記録の欠損は監査上問題のため警告ログを残す（決済自体は成功済み）
+            console.error(`[confirmSession] transfer_records insert failed for PI ${pi.id}:`, trErr)
+          }
+        }
       } catch (err) {
         console.error(`[confirmSession] Stripe confirm failed for ${reg.id}:`, err)
         await confirmAdmin
@@ -259,8 +306,8 @@ export async function confirmSession(sessionId: string) {
         paymentErrors.push(`${reg.id}: stripe confirm failed`)
       }
     } else if (reg.payment_method === "point_card") {
-      // ポイントカード消費
-      const { error: rpcErr } = await supabase.rpc("decrement_stamp", {
+      // ポイントカード消費（adminClientでRLSをバイパス）
+      const { error: rpcErr } = await confirmAdmin.rpc("decrement_stamp", {
         p_session_id: sessionId,
         p_swimmer_id: reg.swimmer_id,
       })
@@ -355,8 +402,8 @@ export async function cancelSession(sessionId: string) {
             .eq("id", reg.id)
           if (refErr) refundErrors.push(`${reg.id}: refunded status update failed`)
         } else if (reg.payment_method === "point_card") {
-          // ポイント戻し
-          const { error: rpcErr } = await supabase.rpc("increment_stamp", {
+          // ポイント戻し（adminClientでRLSをバイパス）
+          const { error: rpcErr } = await cancelAdmin.rpc("increment_stamp", {
             p_session_id: sessionId,
             p_swimmer_id: reg.swimmer_id,
           })
@@ -476,9 +523,10 @@ export async function registerForSession(
   const adminClient = createAdminClient()
 
   // セッション情報を取得（adminClientでRLS自己参照をバイパス）
+  // team: チームのfee_members_exempt_sessionを同時に取得して余分なクエリを避ける
   const { data: session } = await adminClient
     .from("practice_sessions")
-    .select("*")
+    .select("*, team:teams(fee_members_exempt_session)")
     .eq("id", sessionId)
     .single()
 
@@ -494,6 +542,15 @@ export async function registerForSession(
     .single()
 
   const isMember = !!membership
+
+  // 年会費・月謝会員の参加費免除判定（サーバー側で完結 — クライアントは操作不可）
+  const isExempt =
+    !!(session.team as { fee_members_exempt_session?: boolean } | null)?.fee_members_exempt_session &&
+    isMember &&
+    (membership?.membership_type === "annual" || membership?.membership_type === "monthly")
+
+  // 免除の場合は支払方法を cash に固定（クライアントが誤った値を送っても上書きする）
+  const effectivePaymentMethod = isExempt ? "cash" : paymentMethod
 
   // 非外部セッションはグループメンバーのみ参加可
   if (!session.is_external && !isMember) {
@@ -518,8 +575,8 @@ export async function registerForSession(
     }
   }
 
-  // ポイントカード残数チェック
-  if (paymentMethod === "point_card") {
+  // ポイントカード残数チェック（免除の場合は effectivePaymentMethod = "cash" なのでスキップされる）
+  if (effectivePaymentMethod === "point_card") {
     if (!membership || membership.membership_type !== "point_card") {
       return { error: "ポイントカード会員ではありません" }
     }
@@ -547,8 +604,8 @@ export async function registerForSession(
       .from("session_registrations")
       .update({
         cancelled_at: null,
-        payment_method: paymentMethod,
-        payment_status: "pending",
+        payment_method: effectivePaymentMethod,
+        payment_status: isExempt ? "free" : "pending",
         stripe_payment_intent_id: null,
         is_member: isMember,
         competition_entry: competitionEntry || null,
@@ -557,13 +614,13 @@ export async function registerForSession(
 
     if (error) return { error: "参加登録に失敗しました" }
   } else {
-    // 新規登録
-    const { error } = await supabase.from("session_registrations").insert({
+    // 新規登録（adminClientでRLSをバイパス）
+    const { error } = await adminClient.from("session_registrations").insert({
       session_id: sessionId,
       swimmer_id: user.id,
       is_member: isMember,
       payment_method: paymentMethod,
-      payment_status: "pending",
+      payment_status: isExempt ? "free" : "pending",
       competition_entry: competitionEntry || null,
     })
 
@@ -618,8 +675,8 @@ export async function cancelRegistration(sessionId: string) {
       }
       // isRefundEligible = false の場合は payment_status = "paid" のまま（支払い済み・返金なし）
     } else if (registration.payment_method === "point_card") {
-      // ポイント戻し（アトミックなSQL式で競合を防ぐ）
-      const { error: stampErr } = await supabase.rpc("increment_stamp", {
+      // ポイント戻し（adminClientでRLSをバイパス・アトミックなSQL式で競合を防ぐ）
+      const { error: stampErr } = await adminClient.rpc("increment_stamp", {
         p_session_id: sessionId,
         p_swimmer_id: user.id,
       })
@@ -732,6 +789,19 @@ export async function retryPayment(registrationId: string) {
     }
     const retrySession = registration.session as { member_price: number; guest_price: number; team_id: string; session_status: string }
     const amount = registration.is_member ? retrySession.member_price : retrySession.guest_price
+
+    // Connect 設定を確認（再決済時も同様に送金）
+    const { data: retryTeam } = await retryAdmin
+      .from("teams")
+      .select("stripe_account_id, stripe_onboarding_completed")
+      .eq("id", retrySession.team_id)
+      .single()
+    const retryHasConnect = !!(retryTeam?.stripe_account_id && retryTeam?.stripe_onboarding_completed)
+    const retryFeePercent = retryHasConnect ? await getPlatformFeePercent() : 0
+    const retryConnectFees = retryHasConnect && retryTeam?.stripe_account_id
+      ? calculateFees(amount, retryFeePercent)
+      : null
+
     // Step 1: PI作成（confirm前）
     const pi = await stripe.paymentIntents.create({
       amount,
@@ -744,6 +814,10 @@ export async function retryPayment(registrationId: string) {
         registration_id: registrationId,
         swimmer_id: registration.swimmer_id,
       },
+      ...(retryConnectFees && retryTeam?.stripe_account_id ? {
+        application_fee_amount: retryConnectFees.platformFee,
+        transfer_data: { destination: retryTeam.stripe_account_id },
+      } : {}),
     }).catch(() => null)
     if (!pi) return { error: "再決済の準備に失敗しました" }
 
@@ -766,6 +840,22 @@ export async function retryPayment(registrationId: string) {
         .from("session_registrations")
         .update({ payment_status: "paid" })
         .eq("id", registrationId)
+      // Connect 送金記録
+      if (retryConnectFees && retryTeam?.stripe_account_id) {
+        const { error: trErr } = await retryAdmin.from("transfer_records").insert({
+          team_id: retrySession.team_id,
+          session_id: registration.session_id,
+          registration_id: registrationId,
+          stripe_payment_intent_id: pi.id,
+          amount,
+          platform_fee: retryConnectFees.platformFee,
+          net_amount: retryConnectFees.netAmount,
+          status: "pending",
+        })
+        if (trErr) {
+          console.error(`[retryPayment] transfer_records insert failed for PI ${pi.id}:`, trErr)
+        }
+      }
     } catch (err) {
       console.error(`[retryPayment] Stripe confirm failed for ${registrationId}:`, err)
       await retryAdmin

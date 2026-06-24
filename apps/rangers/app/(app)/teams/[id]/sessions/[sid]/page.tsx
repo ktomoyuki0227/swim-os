@@ -35,16 +35,24 @@ export default async function MemberSessionPage({ params }: SessionPageProps) {
 
   // メンバーか確認
   let isMember = false
+  let membershipType: string | null = null
   if (user) {
     const { data: membership } = await supabase
       .from("team_members")
-      .select("id")
+      .select("id, membership_type")
       .eq("team_id", session.team_id)
       .eq("swimmer_id", user.id)
       .eq("status", "active")
       .single()
     isMember = !!membership
+    membershipType = membership?.membership_type ?? null
   }
+
+  const teamInfo = session.team as { fee_members_exempt_session?: boolean } | null
+  const isExempt =
+    !!teamInfo?.fee_members_exempt_session &&
+    isMember &&
+    (membershipType === "annual" || membershipType === "monthly")
 
   // 自分の登録状況を確認
   let myRegistration: Record<string, unknown> | null = null
@@ -138,7 +146,7 @@ export default async function MemberSessionPage({ params }: SessionPageProps) {
             <div className="flex items-center justify-between px-4 py-3">
               <span className="text-sm text-[#5c6a7a]">参加費（メンバー）</span>
               <span className="text-sm font-bold text-[#005F8C]">
-                ¥{(session.member_price || 0).toLocaleString()}
+                {isExempt ? "無料（会費会員）" : `¥${(session.member_price || 0).toLocaleString()}`}
               </span>
             </div>
           ) : (
@@ -188,7 +196,9 @@ export default async function MemberSessionPage({ params }: SessionPageProps) {
               <div>
                 <p className="font-medium text-[#0f8a4f]">参加登録済み</p>
                 <p className="text-xs text-[#5c6a7a]">
-                  {myRegistration.payment_method === "cash"
+                  {myRegistration.payment_status === "free"
+                    ? "参加費免除（会費会員）"
+                    : myRegistration.payment_method === "cash"
                     ? "当日現金払い"
                     : myRegistration.payment_method === "point_card"
                     ? "回数券"
@@ -213,6 +223,7 @@ export default async function MemberSessionPage({ params }: SessionPageProps) {
           allowPointCard={session.allow_point_card || false}
           isCompetition={isCompetition}
           competitionFields={competitionFields}
+          isExempt={isExempt}
         />
       ) : (
         <div className="rounded-xl border border-[#dce3ea] bg-[#f2f7fa] p-4 text-center text-sm text-[#5c6a7a]">

@@ -17,7 +17,6 @@ const PAYMENT_METHOD_LABELS: Record<string, string> = {
   stripe: "カード",
   cash: "現金",
   point_card: "回数券",
-  free: "無料",
 }
 
 const PAYMENT_STATUS_LABELS: Record<string, { label: string; className: string }> = {
@@ -354,7 +353,9 @@ export default async function SessionDetailPage({ params }: SessionDetailPagePro
                       <p className="text-xs text-[#5c6a7a]">
                         {reg.is_member ? "メンバー" : "ゲスト"}
                         {" · "}
-                        {PAYMENT_METHOD_LABELS[reg.payment_method as string] || reg.payment_method as string}
+                        {reg.payment_status === "free"
+                          ? "免除"
+                          : PAYMENT_METHOD_LABELS[reg.payment_method as string] || reg.payment_method as string}
                       </p>
                     </div>
                     <Badge className={`text-xs ${payStatus.className}`}>
