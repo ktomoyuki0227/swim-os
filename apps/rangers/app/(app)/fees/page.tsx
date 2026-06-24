@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button"
 import { FeeActions } from "./fee-actions"
 import { FeeFilters } from "./fee-filters"
 import { StampSection } from "./stamp-section"
+import { SubscriptionSection } from "./subscription-section"
 
 interface FeesPageProps {
   searchParams: Promise<{ team?: string; type?: string; period?: string }>
@@ -131,6 +132,31 @@ export default async function FeesPage({ searchParams }: FeesPageProps) {
     )
   }
 
+  // 月謝タブ: Stripe Subscription 管理用のメンバー一覧を取得
+  const stripeEnabled = !!process.env.STRIPE_SECRET_KEY
+  type MonthlyMember = {
+    swimmer_id: string
+    stripe_subscription_id: string | null
+    subscription_status: string | null
+    swimmer: { name: string | null } | null
+  }
+  let monthlyMembers: MonthlyMember[] = []
+  if (selectedTeamId && selectedType === "monthly" && teamFeeFlags.has_monthly_fee && stripeEnabled) {
+    const { data: members } = await admin
+      .from("team_members")
+      .select("swimmer_id, stripe_subscription_id, subscription_status, swimmer:profiles(name)")
+      .eq("team_id", selectedTeamId)
+      .eq("status", "active")
+      .eq("membership_type", "monthly")
+    // Supabase joins return the related row as an array; normalize to single object
+    monthlyMembers = (members || []).map((m) => ({
+      swimmer_id: m.swimmer_id,
+      stripe_subscription_id: m.stripe_subscription_id ?? null,
+      subscription_status: m.subscription_status ?? null,
+      swimmer: Array.isArray(m.swimmer) ? (m.swimmer[0] ?? null) : (m.swimmer ?? null),
+    }))
+  }
+
   // 年会費・月謝タブ
   let fees: Record<string, unknown>[] = []
   if (selectedTeamId && hasAnyFeeType) {
@@ -201,6 +227,19 @@ export default async function FeesPage({ searchParams }: FeesPageProps) {
                   </CardContent>
                 </Card>
               </div>
+
+              {/* Stripe Subscription 管理（月謝タブ・Stripe 設定済み時のみ） */}
+              {selectedType === "monthly" && stripeEnabled && (
+                <div className="space-y-3">
+                  <h2 className="text-base font-semibold text-[#1a2332]">
+                    Stripe Subscription 管理
+                  </h2>
+                  <p className="text-xs text-[#8d99a8]">
+                    月謝会員ごとに自動引き落とし（Subscription）を開始・停止できます。
+                  </p>
+                  <SubscriptionSection teamId={selectedTeamId} members={monthlyMembers} />
+                </div>
+              )}
 
               {/* Fee list */}
               <div className="space-y-3">
