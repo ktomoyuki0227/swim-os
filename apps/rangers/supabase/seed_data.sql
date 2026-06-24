@@ -1,10 +1,12 @@
--- Rangers デモデータ（全4アカウント対応版）
+-- ============================================================
+-- Rangers デモデータ（完全版 v2 — 2026-06-24）
 -- 実行方法: npx supabase db query --linked --file supabase/seed_data.sql
+-- ============================================================
 --
 -- アカウント構成と体験できるロール:
---   test1@example.com (山田 健太) — 両チームの admin（コーチ視点フル体験）
---   test2@example.com (鈴木 太郎) — チーム1 admin / チーム2 member（管理者・メンバー両方）
---   test3@example.com (佐藤 花子) — チーム1 point_card / チーム2 monthly（会費バリエーション）
+--   test1@example.com (山田 健太)   — 両チームの admin（コーチ視点フル体験）
+--   test2@example.com (鈴木 太郎)   — チーム1 admin / チーム2 member（管理者・メンバー両方）
+--   test3@example.com (佐藤 花子)   — チーム1 point_card / チーム2 monthly（会費バリエーション）
 --   test4@example.com (田中 新太郎) — チーム1 annual member / チーム2 admin（両視点）
 --
 -- チーム構成:
@@ -13,10 +15,16 @@
 --
 -- データ量:
 --   セッション: チーム1×7件 + チーム2×5件 = 計12件
---   参加登録: 計15件（pending/paid/free/point_card バリエーション）
+--   参加登録: 計20件（pending/paid/free/point_card バリエーション）
 --   お知らせ: 各2件 = 計4件
 --   会費: チーム1×3件 + チーム2×4件 = 計7件（paid/unpaid/monthly）
 --   回数券購入履歴: 1件
+--
+-- ⚠️ Stripe カード登録について:
+--   stripe_payment_method_id は Stripe API（SetupIntent フロー）が必要なため
+--   SQL では設定できません。デモ時は「カードが登録されていません」と表示されます。
+--   実際のカード登録はオンボーディングまたは /payments ページから行ってください。
+--   セッション参加費の支払い方法は cash / point_card で登録しています。
 
 -- ============================================================
 -- PHASE 1: クリーンアップ（test1 がコーチの全チームを対象）
@@ -46,7 +54,7 @@ BEGIN
 END $$;
 
 -- ============================================================
--- PHASE 2: プロフィール更新（4アカウント）
+-- PHASE 2: プロフィール更新（4アカウント — 全フィールド設定）
 -- ============================================================
 DO $$
 DECLARE
@@ -55,47 +63,140 @@ DECLARE
   v_user3  uuid := '3e281812-1e3d-4522-91ca-690aa7d9d14a';
   v_user4  uuid := '8e538fba-2637-4abf-aa9f-5b784cb2f561';
 BEGIN
-  -- test1: 山田 健太（上級 / コーチ）
+
+  -- ──────────────────────────────────────────────────────────
+  -- test1: 山田 健太（上級 / コーチ / マスターズ大会常連）
+  -- 体験: 両チームの admin 視点、コーチとしてのフル操作
+  -- ──────────────────────────────────────────────────────────
   UPDATE profiles SET
-    name                 = '山田 健太',
-    level                = '上級',
-    specialties          = ARRAY['クロール', 'バタフライ', 'マスターズ水泳'],
-    swimming_goals       = ARRAY['競技・タイム向上', 'マスターズ大会出場'],
-    participation_styles = ARRAY['チーム練習', '大会・記録会'],
-    prefectures          = ARRAY['山梨県']
+    name                      = '山田 健太',
+    furigana                  = 'ヤマダ ケンタ',
+    gender                    = 'male',
+    birthday                  = '1975-03-15',
+    phone                     = '09011112222',
+    address                   = '山梨県甲府市丸の内1-1-1 ハイツ甲府101',
+    emergency_contact         = '09033334444',
+    emergency_contact_name    = '山田 幸子',
+    emergency_contact_relation = '配偶者',
+    swimwear_size             = 'M',
+    masters_registered        = true,
+    masters_number            = 'M-2005-001234',
+    jsa_registered            = true,
+    jsa_number                = 'JSA-1998-005678',
+    level                     = '上級',
+    swimmer_type              = 'マスターズ',
+    swim_disciplines          = ARRAY['競泳'],
+    specialties               = ARRAY['クロール', 'バタフライ', '個人メドレー', 'マスターズ水泳'],
+    swimming_goals            = ARRAY['競技・タイム向上', 'マスターズ大会出場'],
+    participation_styles      = ARRAY['チーム練習', '大会・記録会', '合宿・遠征'],
+    prefectures               = ARRAY['山梨県', '東京都'],
+    bio                       = '甲府市出身。20代から水泳を本格的に始め、マスターズ水泳大会に毎年出場。得意種目はクロールと個人メドレー。チームの仲間と一緒に楽しみながら記録を追いかけています。',
+    career                    = '1998年より水泳指導を開始。山梨県水泳協会公認コーチ資格取得。マウントリバー水泳クラブ代表として15年以上にわたりチームを運営。',
+    achievements              = '2018年 全日本マスターズ水泳選手権 50m クロール 第3位（55〜59歳区分）\n2022年 山梨マスターズ記録会 200m 個人メドレー 優勝\n指導実績: マスターズ大会出場延べ80名以上',
+    target_ages               = ARRAY['大人（19歳〜）', 'シニア（60歳〜）'],
+    onboarding_completed_at   = now() - interval '2 years'
   WHERE id = v_user1;
 
-  -- test2: 鈴木 太郎（中級 / admin兼メンバー）
+  -- ──────────────────────────────────────────────────────────
+  -- test2: 鈴木 太郎（中級 / チーム1 admin・チーム2 member）
+  -- 体験: 管理者と一般メンバー両方の視点を切り替えられる
+  -- ──────────────────────────────────────────────────────────
   UPDATE profiles SET
-    name                 = '鈴木 太郎',
-    level                = '中級',
-    specialties          = ARRAY['クロール', '平泳ぎ', 'マスターズ水泳'],
-    swimming_goals       = ARRAY['マスターズ大会出場', '健康維持'],
-    participation_styles = ARRAY['チーム練習', 'パーソナルレッスン'],
-    prefectures          = ARRAY['東京都']
+    name                      = '鈴木 太郎',
+    furigana                  = 'スズキ タロウ',
+    gender                    = 'male',
+    birthday                  = '1982-07-22',
+    phone                     = '09055556666',
+    address                   = '東京都新宿区西新宿2-3-4 グランドビュー305',
+    emergency_contact         = '09077778888',
+    emergency_contact_name    = '鈴木 恵子',
+    emergency_contact_relation = '配偶者',
+    swimwear_size             = 'L',
+    masters_registered        = true,
+    masters_number            = 'M-2010-007890',
+    jsa_registered            = false,
+    jsa_number                = NULL,
+    level                     = '中級',
+    swimmer_type              = 'マスターズ',
+    swim_disciplines          = ARRAY['競泳'],
+    specialties               = ARRAY['クロール', '平泳ぎ', 'マスターズ水泳'],
+    swimming_goals            = ARRAY['マスターズ大会出場', '健康維持'],
+    participation_styles      = ARRAY['チーム練習', 'パーソナルレッスン', '大会・記録会'],
+    prefectures               = ARRAY['東京都', '神奈川県'],
+    bio                       = '東京都在住。学生時代は水泳部に所属し、社会人になってからブランクがありましたが、40歳を機に復帰。現在は週2回の練習を欠かさず、タイム改善を目標に頑張っています。',
+    career                    = '大学水泳部出身（平泳ぎ専門）。20年のブランクを経て2010年にマスターズ水泳に参加。現在はクロールにも挑戦中。',
+    achievements              = '2021年 東京マスターズ記録会 100m 平泳ぎ 自己ベスト更新',
+    target_ages               = ARRAY['大人（19歳〜）'],
+    onboarding_completed_at   = now() - interval '1 year'
   WHERE id = v_user2;
 
-  -- test3: 佐藤 花子（初級 / point_card・monthly 会員）
+  -- ──────────────────────────────────────────────────────────
+  -- test3: 佐藤 花子（初級 / チーム1 point_card・チーム2 monthly）
+  -- 体験: 回数券・月謝という異なる会費タイプの確認
+  -- ──────────────────────────────────────────────────────────
   UPDATE profiles SET
-    name                 = '佐藤 花子',
-    level                = '初級',
-    specialties          = ARRAY['平泳ぎ', 'バタフライ'],
-    swimming_goals       = ARRAY['健康維持', '楽しみ・趣味'],
-    participation_styles = ARRAY['チーム練習'],
-    prefectures          = ARRAY['千葉県']
+    name                      = '佐藤 花子',
+    furigana                  = 'サトウ ハナコ',
+    gender                    = 'female',
+    birthday                  = '1990-11-05',
+    phone                     = '09012341234',
+    address                   = '千葉県千葉市中央区中央4-5-6 サニーハイツ201',
+    emergency_contact         = '04356789012',
+    emergency_contact_name    = '佐藤 明子',
+    emergency_contact_relation = '母',
+    swimwear_size             = 'S',
+    masters_registered        = false,
+    masters_number            = NULL,
+    jsa_registered            = false,
+    jsa_number                = NULL,
+    level                     = '初級',
+    swimmer_type              = NULL,
+    swim_disciplines          = ARRAY['競泳'],
+    specialties               = ARRAY['平泳ぎ', 'バタフライ'],
+    swimming_goals            = ARRAY['健康維持', '楽しみ・趣味'],
+    participation_styles      = ARRAY['チーム練習'],
+    prefectures               = ARRAY['千葉県'],
+    bio                       = '健康維持のために水泳を始めました。平泳ぎが得意です。週1〜2回のペースで楽しく続けることが目標です。みなさんと一緒に上達していけたら嬉しいです！',
+    career                    = '2020年に水泳教室に通い始め、現在はチーム練習に参加中。初心者ながら着実に上達中。',
+    achievements              = NULL,
+    target_ages               = NULL,
+    onboarding_completed_at   = now() - interval '6 months'
   WHERE id = v_user3;
 
-  -- test4: 田中 新太郎（中級 / annual・admin バリエーション）
+  -- ──────────────────────────────────────────────────────────
+  -- test4: 田中 新太郎（中級 / チーム1 member・チーム2 admin）
+  -- 体験: チーム2でのコーチ視点（管理機能の全操作）
+  -- ──────────────────────────────────────────────────────────
   UPDATE profiles SET
-    name                 = '田中 新太郎',
-    level                = '中級',
-    specialties          = ARRAY['クロール', '背泳ぎ'],
-    swimming_goals       = ARRAY['健康維持', '水泳再開（ブランクあり）'],
-    participation_styles = ARRAY['チーム練習', '自主練'],
-    prefectures          = ARRAY['神奈川県']
+    name                      = '田中 新太郎',
+    furigana                  = 'タナカ シンタロウ',
+    gender                    = 'male',
+    birthday                  = '1978-04-30',
+    phone                     = '09098765432',
+    address                   = '神奈川県横浜市西区みなとみらい1-2-3 タワーマンション1501',
+    emergency_contact         = '09087654321',
+    emergency_contact_name    = '田中 道子',
+    emergency_contact_relation = '配偶者',
+    swimwear_size             = 'L',
+    masters_registered        = true,
+    masters_number            = 'M-2015-003456',
+    jsa_registered            = false,
+    jsa_number                = NULL,
+    level                     = '中級',
+    swimmer_type              = 'マスターズ',
+    swim_disciplines          = ARRAY['競泳'],
+    specialties               = ARRAY['クロール', '背泳ぎ'],
+    swimming_goals            = ARRAY['健康維持', '水泳再開（ブランクあり）', 'マスターズ大会出場'],
+    participation_styles      = ARRAY['チーム練習', '自主練'],
+    prefectures               = ARRAY['神奈川県'],
+    bio                       = '学生時代は競泳をやっていましたが、10年以上のブランクを経て水泳に復帰。現在はマスターズ大会を目標に練習中。クロールと背泳ぎを中心に取り組んでいます。',
+    career                    = '高校・大学で競泳に打ち込む（背泳ぎ専門）。社会人を経て2015年にマスターズ水泳へ復帰。東京マスターズ水泳クラブのコーチ資格取得（2020年）。',
+    achievements              = '2023年 東京マスターズ記録会 50m 背泳ぎ 第2位（45〜49歳区分）',
+    target_ages               = ARRAY['大人（19歳〜）', 'シニア（60歳〜）'],
+    onboarding_completed_at   = now() - interval '3 months'
   WHERE id = v_user4;
 
-  RAISE NOTICE 'プロフィール更新完了';
+  RAISE NOTICE 'プロフィール更新完了（全フィールド設定済み）';
 END $$;
 
 -- ============================================================
@@ -112,7 +213,7 @@ DECLARE
   v_team1  uuid := 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
   v_team2  uuid := 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
 
-  -- セッションID
+  -- セッションID（チーム1: v_s1_x / チーム2: v_s2_x）
   v_s1_1 uuid; v_s1_2 uuid; v_s1_3 uuid; v_s1_4 uuid;
   v_s1_5 uuid; v_s1_6 uuid; v_s1_7 uuid;
   v_s2_1 uuid; v_s2_2 uuid; v_s2_3 uuid; v_s2_4 uuid; v_s2_5 uuid;
@@ -120,7 +221,7 @@ BEGIN
 
   -- ==========================================================
   -- チーム1: マウントリバー水泳クラブ
-  -- 料金体系: セッション参加費 + 年会費 + 回数券
+  -- 料金体系: セッション参加費（現金/回数券） + 年会費
   -- ==========================================================
   INSERT INTO teams (
     id, coach_id, name, description, avatar_url, cover_image_url,
@@ -128,18 +229,22 @@ BEGIN
     annual_fee_amount, monthly_fee_amount,
     cancellation_days, point_card_count, point_card_price,
     has_session_fee, has_annual_fee, has_monthly_fee, has_point_card,
-    activity_area, status
+    activity_area, status,
+    practice_frequency, practice_days, main_pool,
+    contact_email, contact_phone
   ) VALUES (
     v_team1, v_user1,
     'マウントリバー水泳クラブ',
-    '山梨県甲府市を拠点とするマスターズ水泳チーム。毎週水・土曜日に甲府市民プールで練習。大会参加にも積極的なチームです。',
+    '山梨県甲府市を拠点とするマスターズ水泳チーム。毎週水・土曜日に甲府市民プールで練習。大会参加にも積極的なチームです。初心者から上級者まで歓迎！',
     'https://jeosqnkeyiwapeeujrml.supabase.co/storage/v1/object/public/teams/seed/mountriver-icon.jpg',
     'https://jeosqnkeyiwapeeujrml.supabase.co/storage/v1/object/public/teams/seed/mountriver-cover.jpg',
     1000, 1500,
     5000, NULL,
     3, 10, 9000,
     true, true, false, true,
-    '山梨県甲府市', 'active'
+    '山梨県甲府市', 'active',
+    '週2回', ARRAY['水', '土'], '甲府市民プール（山梨県甲府市北口）',
+    'info@mountriver-swim.example.jp', '0552011234'
   );
 
   -- チーム1 メンバー（4パターン: admin×2 / annual / point_card）
@@ -151,7 +256,7 @@ BEGIN
 
   -- ==========================================================
   -- チーム2: 東京マスターズ水泳クラブ
-  -- 料金体系: セッション参加費 + 年会費 + 月謝
+  -- 料金体系: セッション参加費（現金） + 年会費 + 月謝
   -- ==========================================================
   INSERT INTO teams (
     id, coach_id, name, description, avatar_url, cover_image_url,
@@ -159,18 +264,22 @@ BEGIN
     annual_fee_amount, monthly_fee_amount,
     cancellation_days, point_card_count, point_card_price,
     has_session_fee, has_annual_fee, has_monthly_fee, has_point_card,
-    activity_area, status
+    activity_area, status,
+    practice_frequency, practice_days, main_pool,
+    contact_email, contact_phone
   ) VALUES (
     v_team2, v_user1,
     '東京マスターズ水泳クラブ',
-    '東京都江東区を拠点とするマスターズ水泳チーム。辰巳国際水泳場で月・木・日に活動中。初心者から競技者まで幅広く受け入れています。',
+    '東京都江東区を拠点とするマスターズ水泳チーム。辰巳国際水泳場で月・木・日に活動中。初心者から競技者まで幅広く受け入れています。月例記録会も毎月開催！',
     'https://jeosqnkeyiwapeeujrml.supabase.co/storage/v1/object/public/teams/seed/tokyomasters-icon.jpg',
     'https://jeosqnkeyiwapeeujrml.supabase.co/storage/v1/object/public/teams/seed/tokyomasters-cover.jpg',
     1200, 2000,
     6000, 3000,
     2, 10, 10000,
     true, true, true, false,
-    '東京都江東区', 'active'
+    '東京都江東区', 'active',
+    '週3回', ARRAY['月', '木', '日'], '辰巳国際水泳場（東京都江東区辰巳2-2-1）',
+    'contact@tokyo-masters-swim.example.jp', '0335551234'
   );
 
   -- チーム2 メンバー（admin×2 / annual / monthly — test2とtest4のロールが逆になる設計）
@@ -229,7 +338,7 @@ BEGIN
     '["level_intermediate","level_advanced"]'::jsonb, true, false, 'open', 'published'
   ) RETURNING id INTO v_s1_2;
 
-  -- S1-3: 個人メドレー特訓（confirmed / +14日 / 種目: メドレー）
+  -- S1-3: 個人メドレー特訓（confirmed / +14日）
   INSERT INTO practice_sessions (
     id, team_id, coach_id, title, description, content, type,
     scheduled_at, location, member_price, guest_price,
@@ -251,7 +360,7 @@ BEGIN
     '["stroke_medley"]'::jsonb, true, false, 'confirmed', 'published'
   ) RETURNING id INTO v_s1_3;
 
-  -- S1-4: 夏季強化合宿 Day1（open / +30日 / 外部公開 / event / 複数日）
+  -- S1-4: 夏季強化合宿 Day1（open / +30日 / 外部公開 / event）
   INSERT INTO practice_sessions (
     id, team_id, coach_id, title, description, content, type,
     scheduled_at, end_at, location, meeting_point,
@@ -296,7 +405,7 @@ BEGIN
     '["stroke_butterfly"]'::jsonb, false, true, 'open', 'published'
   ) RETURNING id INTO v_s1_5;
 
-  -- S1-6: 過去のキャンセルセッション（cancelled / -7日）
+  -- S1-6: キャンセルされた過去のセッション（cancelled / -7日）
   INSERT INTO practice_sessions (
     id, team_id, coach_id, title, description, content, type,
     scheduled_at, location, member_price, guest_price,
@@ -421,7 +530,7 @@ BEGIN
     '[]'::jsonb, false, true, 'open', 'published'
   ) RETURNING id INTO v_s2_4;
 
-  -- S2-5: 下書きセッション（draft）
+  -- S2-5: 下書きセッション（draft — コーチ視点でのみ見える）
   INSERT INTO practice_sessions (
     id, team_id, coach_id, title, description, content, type,
     scheduled_at, location, member_price, guest_price,
@@ -440,7 +549,9 @@ BEGIN
   ) RETURNING id INTO v_s2_5;
 
   -- ==========================================================
-  -- 参加登録（15件 / payment_method・status バリエーション）
+  -- 参加登録（20件 / payment_method・status バリエーション）
+  -- ⚠️ payment_method は 'cash' または 'point_card' のみ
+  --   （'stripe' は実際の Stripe API 連携が必要なため除外）
   -- ==========================================================
 
   -- チーム1 S1-1 水曜朝練（open）: user2 pending cash / user3 paid point_card / user4 pending cash
@@ -455,15 +566,21 @@ BEGIN
     (v_s1_2, v_user4, true, 'cash', 'pending');
 
   -- チーム1 S1-3 個人メドレー（confirmed）: 全員参加・支払い済み
+  --   コーチ（user1）は free / メンバーは paid
   INSERT INTO session_registrations (session_id, swimmer_id, is_member, payment_method, payment_status) VALUES
     (v_s1_3, v_user1, true, 'cash',       'free'),
     (v_s1_3, v_user2, true, 'cash',       'paid'),
     (v_s1_3, v_user3, true, 'point_card', 'paid'),
     (v_s1_3, v_user4, true, 'cash',       'paid');
 
-  -- チーム1 S1-6 キャンセルセッション: user2 が参加していた
+  -- チーム1 S1-4 夏季合宿（open）: user2 pending / user4 pending（合宿参加申込）
   INSERT INTO session_registrations (session_id, swimmer_id, is_member, payment_method, payment_status) VALUES
-    (v_s1_6, v_user2, true, 'cash', 'pending');
+    (v_s1_4, v_user2, true,  'cash', 'pending'),
+    (v_s1_4, v_user4, true,  'cash', 'pending');
+
+  -- チーム1 S1-6 キャンセルセッション: user2 が参加していた（cancelled & pending → 支払い履歴に表示されない）
+  INSERT INTO session_registrations (session_id, swimmer_id, is_member, payment_method, payment_status, cancelled_at) VALUES
+    (v_s1_6, v_user2, true, 'cash', 'pending', now() - interval '7 days');
 
   -- チーム1 S1-7 チームミーティング（無料）: user2・user3・user4 参加
   INSERT INTO session_registrations (session_id, swimmer_id, is_member, payment_method, payment_status) VALUES
@@ -476,15 +593,15 @@ BEGIN
     (v_s2_1, v_user2, true, 'cash', 'pending'),
     (v_s2_1, v_user3, true, 'cash', 'pending');
 
-  -- チーム2 S2-2 木曜夜練（confirmed）: user1 free / user2・user3 paid
+  -- チーム2 S2-2 木曜夜練（confirmed）: user1 free / user2・user4 paid
   INSERT INTO session_registrations (session_id, swimmer_id, is_member, payment_method, payment_status) VALUES
     (v_s2_2, v_user1, true, 'cash', 'free'),
     (v_s2_2, v_user2, true, 'cash', 'paid'),
-    (v_s2_2, v_user3, true, 'cash', 'paid');
+    (v_s2_2, v_user4, true, 'cash', 'paid');
 
   -- ==========================================================
   -- 回数券購入履歴（test3 / チーム1）
-  -- 10スタンプ購入、5スタンプ使用 → 残り5
+  -- 10スタンプ購入、5スタンプ使用 → 残り5（team_membersと対応）
   -- ==========================================================
   INSERT INTO stamp_purchases (team_id, swimmer_id, card_count, stamp_count, amount, purchased_at)
   VALUES (v_team1, v_user3, 1, 10, 9000, now() - interval '3 months');
@@ -516,10 +633,11 @@ BEGIN
      '/teams/' || v_team2::text || '/sessions/' || v_s2_4::text);
 
   -- ==========================================================
-  -- 会費データ（paid / unpaid / monthly バリエーション）
+  -- 会費データ（paid / unpaid バリエーション）
   -- ==========================================================
 
-  -- チーム1（年会費 5000円）— test3 は point_card 会員なので年会費なし
+  -- チーム1（年会費 5000円）
+  -- test3 は point_card 会員なので年会費なし
   INSERT INTO membership_fees (team_id, swimmer_id, type, period, amount, status, paid_at) VALUES
     (v_team1, v_user1, 'annual', extract(year from now())::text, 5000, 'paid',   now() - interval '90 days'),
     (v_team1, v_user2, 'annual', extract(year from now())::text, 5000, 'paid',   now() - interval '60 days'),
@@ -535,5 +653,7 @@ BEGIN
   RAISE NOTICE '=== シード完了 ===';
   RAISE NOTICE 'チーム1: マウントリバー水泳クラブ (ID: %)', v_team1;
   RAISE NOTICE 'チーム2: 東京マスターズ水泳クラブ (ID: %)', v_team2;
-  RAISE NOTICE 'メンバー: 各4名 / セッション: 12件 / 参加登録: 15件 / お知らせ: 4件 / 会費: 7件';
+  RAISE NOTICE 'プロフィール: 全フィールド設定済み（onboarding_completed_at含む）';
+  RAISE NOTICE 'セッション: 12件 / 参加登録: 20件 / お知らせ: 4件 / 会費: 7件 / 回数券: 1件';
+  RAISE NOTICE '⚠️  Stripe カード: SQL では設定不可。デモ時は UI から登録してください。';
 END $$;
