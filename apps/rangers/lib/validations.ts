@@ -78,6 +78,7 @@ export const teamSchema = z.object({
   point_card_price: z.number().int().min(0).optional(),
   contact_email: z.string().max(254).optional(),
   contact_phone: z.string().max(20).optional(),
+  fee_members_exempt_session: z.boolean().default(false),
 })
 
 export const sessionSchema = z.object({
@@ -145,6 +146,7 @@ export const teamUpdateSchema = z.object({
   status: z.enum(["active", "inactive"]).optional(),
   contact_email: z.string().max(254).nullable().optional(),
   contact_phone: z.string().max(20).nullable().optional(),
+  fee_members_exempt_session: z.boolean().optional(),
 })
 
 // セッション更新用（全フィールド optional）

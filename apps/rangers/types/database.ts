@@ -260,6 +260,8 @@ export type FeeType = "annual" | "monthly"
 export type FeeStatus = "unpaid" | "paid" | "failed"
 export type StampPaymentStatus = "paid" | "unpaid" | "failed"
 export type StampPaymentMethod = "cash" | "stripe"
+export type SubscriptionStatus = "active" | "past_due" | "canceled" | "unpaid"
+export type TransferStatus = "pending" | "succeeded" | "failed" | "reversed"
 
 export interface Team {
   id: string
@@ -287,6 +289,10 @@ export interface Team {
   main_pool: string | null
   stripe_monthly_price_id: string | null
   stripe_annual_price_id: string | null
+  stripe_product_id: string | null
+  stripe_account_id: string | null
+  stripe_onboarding_completed: boolean
+  fee_members_exempt_session: boolean
   status: TeamStatus
   created_at: string
 }
@@ -299,6 +305,7 @@ export interface TeamMember {
   membership_type: MembershipType
   stamp_remaining: number
   stripe_subscription_id: string | null
+  subscription_status: SubscriptionStatus | null
   status: TeamStatus
   joined_at: string
 }
@@ -401,6 +408,8 @@ export interface MembershipFee {
   amount: number
   payment_method: "stripe" | "cash"
   stripe_payment_intent_id: string | null
+  stripe_subscription_id: string | null
+  stripe_invoice_id: string | null
   status: FeeStatus
   paid_at: string | null
   note: string | null
@@ -433,6 +442,9 @@ export type NotificationType =
   | "join_request_received"
   | "join_request_approved"
   | "join_request_rejected"
+  | "waitlist_available"
+  | "payment_failed"
+  | "inquiry_received"
 
 export interface Notification {
   id: string
@@ -514,5 +526,26 @@ export interface SystemTag {
   category: string
   label: string
   sort_order: number
+}
+
+export interface TransferRecord {
+  id: string
+  team_id: string
+  session_id: string | null
+  registration_id: string | null
+  stripe_payment_intent_id: string
+  stripe_transfer_id: string | null
+  amount: number
+  platform_fee: number
+  net_amount: number
+  status: TransferStatus
+  created_at: string
+}
+
+export interface PlatformSetting {
+  key: string
+  value: string
+  description: string | null
+  updated_at: string
 }
 
