@@ -33,19 +33,28 @@ export default async function MemberSessionPage({ params }: SessionPageProps) {
 
   const session = sessionResult.data
 
-  // メンバーか確認
+  // メンバーか確認 & カード登録状況を取得
   let isMember = false
   let membershipType: string | null = null
+  let hasCard = false
   if (user) {
-    const { data: membership } = await supabase
-      .from("team_members")
-      .select("id, membership_type")
-      .eq("team_id", session.team_id)
-      .eq("swimmer_id", user.id)
-      .eq("status", "active")
-      .single()
+    const [{ data: membership }, { data: profileData }] = await Promise.all([
+      supabase
+        .from("team_members")
+        .select("id, membership_type")
+        .eq("team_id", session.team_id)
+        .eq("swimmer_id", user.id)
+        .eq("status", "active")
+        .single(),
+      supabase
+        .from("profiles")
+        .select("stripe_payment_method_id")
+        .eq("id", user.id)
+        .single(),
+    ])
     isMember = !!membership
     membershipType = membership?.membership_type ?? null
+    hasCard = !!profileData?.stripe_payment_method_id
   }
 
   const teamInfo = session.team as { fee_members_exempt_session?: boolean } | null
@@ -224,6 +233,7 @@ export default async function MemberSessionPage({ params }: SessionPageProps) {
           isCompetition={isCompetition}
           competitionFields={competitionFields}
           isExempt={isExempt}
+          hasCard={hasCard}
         />
       ) : (
         <div className="rounded-xl border border-[#dce3ea] bg-[#f2f7fa] p-4 text-center text-sm text-[#5c6a7a]">
