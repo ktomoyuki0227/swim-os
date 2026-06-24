@@ -6,7 +6,7 @@ import { createClient, createAdminClient } from "@/lib/supabase/server"
 import { getTeam, getTeamMembers, getTeamFeeStats, getPublicTeam } from "@/actions/teams"
 import { getTeamSessions } from "@/actions/sessions"
 import { getTeamAnnouncements } from "@/actions/announcements"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Navigation } from "@/components/navigation"
@@ -14,7 +14,7 @@ import { ToastProvider } from "@/components/toast"
 import { PublicHeader } from "@/components/layout/public-header"
 import { PublicFooter } from "@/components/layout/public-footer"
 import { PublicTeamView } from "@/components/teams/public-team-view"
-import { InviteSection } from "@/app/(app)/teams/[id]/invite-section"
+import { AdminActionButtons } from "@/app/(app)/teams/[id]/admin-action-buttons"
 import { MemberList } from "@/app/(app)/teams/[id]/member-list"
 import { AnnouncementsSection } from "@/app/(app)/teams/[id]/announcements-section"
 import { MarkReadButton } from "@/app/(app)/teams/[id]/mark-read-button"
@@ -146,8 +146,6 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
       { id: "sessions", label: "セッション" },
       { id: "announcements", label: `お知らせ (${announcements.length})` },
       { id: "requests", label: joinRequests.length > 0 ? `申請 (${joinRequests.length})` : "申請" },
-      { id: "invite", label: "招待" },
-      { id: "settings", label: "設定" },
     ]
 
     return (
@@ -156,71 +154,61 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
         <main className="mx-auto w-full max-w-5xl flex-1 overflow-x-hidden px-4 py-6 pb-24 md:pb-6">
           <div className="space-y-6">
             {/* Header */}
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h1 className="text-2xl font-bold text-[#1a2332]">{team.name}</h1>
-                {team.description && (
-                  <p className="mt-1 text-sm text-[#5c6a7a]">{team.description}</p>
-                )}
+            <div>
+              {/* アクションバー */}
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <Link href="/teams" className="text-sm text-[#5c6a7a] hover:text-[#1a2332]">
+                  ← グループ一覧
+                </Link>
+                <AdminActionButtons team={team} />
               </div>
-              <Badge
-                className={
-                  team.status === "active"
-                    ? "border-transparent bg-[#eaf7f0] text-[#0f8a4f]"
-                    : "border-transparent bg-[#edf0f4] text-[#5c6a7a]"
-                }
-              >
-                {team.status === "active" ? "アクティブ" : "非アクティブ"}
-              </Badge>
+              {/* グループ名 + バッジ（インライン） */}
+              <div className="flex items-center gap-2.5">
+                <h1 className="text-2xl font-bold text-[#1a2332]">{team.name}</h1>
+                <Badge
+                  className={
+                    team.status === "active"
+                      ? "border-transparent bg-[#eaf7f0] text-[#0f8a4f]"
+                      : "border-transparent bg-[#edf0f4] text-[#5c6a7a]"
+                  }
+                >
+                  {team.status === "active" ? "アクティブ" : "非アクティブ"}
+                </Badge>
+              </div>
+              {team.description && (
+                <p className="mt-1 text-sm text-[#5c6a7a]">{team.description}</p>
+              )}
             </div>
 
-            {/* Stats row */}
-            <div className="grid grid-cols-3 gap-2">
-              <Card className="border-[#dce3ea]">
-                <CardContent className="flex h-full flex-col items-center px-3 pb-1.5 pt-2">
-                  <div className="flex flex-1 items-center justify-center">
-                    <p className="text-lg font-bold text-[#005F8C]">{members.length}</p>
-                  </div>
-                  <p className="text-[11px] text-[#5c6a7a]">メンバー</p>
-                </CardContent>
-              </Card>
-              <Card className="border-[#dce3ea]">
-                <CardContent className="flex h-full flex-col items-center px-3 pb-1.5 pt-2">
-                  <div className="flex flex-1 items-center justify-center">
-                    <p className="text-lg font-bold text-[#005F8C]">{sessions.length}</p>
-                  </div>
-                  <p className="text-[11px] text-[#5c6a7a]">予定セッション</p>
-                </CardContent>
-              </Card>
-              <Card className="border-[#dce3ea]">
-                <CardContent className="flex h-full flex-col items-center px-3 pb-1.5 pt-2">
-                  <div className="flex flex-1 items-center justify-center">
-                    <div className="relative flex items-center justify-center" style={{ width: 36, height: 36 }}>
-                      <svg width="36" height="36" viewBox="0 0 36 36">
-                        <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#edf0f4" strokeWidth="4" />
-                        {paidPct > 0 && (
-                          <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#0f8a4f" strokeWidth="4"
-                            strokeDasharray={`${paidPct} 100`} strokeDashoffset="25" />
-                        )}
-                        {subUnpaidPct > 0 && (
-                          <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#dc2626" strokeWidth="4"
-                            strokeDasharray={`${subUnpaidPct} 100`} strokeDashoffset={25 - paidPct} />
-                        )}
-                        {stampUnpaidPct > 0 && (
-                          <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#d97706" strokeWidth="4"
-                            strokeDasharray={`${stampUnpaidPct} 100`} strokeDashoffset={25 - paidPct - subUnpaidPct} />
-                        )}
-                      </svg>
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <span className="text-[7px] font-bold leading-none text-[#1a2332]">
-                          {hasFeeStats ? `${feeStats.paid}/${feeStats.total}` : "-"}
-                        </span>
-                      </div>
+            {/* Stats inline bar */}
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-[#dce3ea] bg-white px-4 py-3 text-sm shadow-sm">
+              <div className="flex items-center gap-1.5">
+                <span>👥</span>
+                <span className="font-semibold text-[#1a2332]">{members.length}</span>
+                <span className="text-[#5c6a7a]">人</span>
+              </div>
+              <div className="h-4 w-px bg-[#dce3ea]" />
+              <div className="flex items-center gap-1.5">
+                <span>📅</span>
+                <span className="font-semibold text-[#1a2332]">{sessions.length}</span>
+                <span className="text-[#5c6a7a]">件</span>
+              </div>
+              {hasFeeStats && (
+                <>
+                  <div className="h-4 w-px bg-[#dce3ea]" />
+                  <div className="flex flex-1 items-center gap-2">
+                    <span className="shrink-0 text-[#5c6a7a]">支払い</span>
+                    <span className="shrink-0 font-semibold text-[#1a2332]">
+                      {feeStats.paid}/{feeStats.total}
+                    </span>
+                    <div className="relative flex h-1.5 min-w-[60px] flex-1 overflow-hidden rounded-full bg-[#edf0f4]">
+                      <div className="absolute left-0 h-full rounded-full bg-[#0f8a4f]" style={{ width: `${paidPct}%` }} />
+                      <div className="absolute h-full rounded-full bg-[#dc2626]" style={{ left: `${paidPct}%`, width: `${subUnpaidPct}%` }} />
+                      <div className="absolute h-full rounded-full bg-[#d97706]" style={{ left: `${paidPct + subUnpaidPct}%`, width: `${stampUnpaidPct}%` }} />
                     </div>
                   </div>
-                  <p className="text-[11px] text-[#5c6a7a]">支払い状況</p>
-                </CardContent>
-              </Card>
+                </>
+              )}
             </div>
 
             {/* Tabs */}
@@ -326,121 +314,6 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
               <JoinRequestsTab teamId={id} initialRequests={joinRequests} />
             )}
 
-            {tab === "invite" && (
-              <InviteSection team={team} />
-            )}
-
-            {tab === "settings" && (
-              <div className="space-y-4">
-                <Card className="border-[#dce3ea]">
-                  <CardHeader>
-                    <CardTitle className="text-base text-[#1a2332]">グループ設定</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    {/* 有効な料金体系バッジ */}
-                    <div className="flex flex-wrap gap-1.5 pb-1">
-                      {team.has_session_fee && (
-                        <span className="rounded-full bg-[#e8f2f8] px-2.5 py-0.5 text-xs text-[#005F8C]">参加費</span>
-                      )}
-                      {team.has_annual_fee && (
-                        <span className="rounded-full bg-[#e8f2f8] px-2.5 py-0.5 text-xs text-[#005F8C]">年会費</span>
-                      )}
-                      {team.has_monthly_fee && (
-                        <span className="rounded-full bg-[#e8f2f8] px-2.5 py-0.5 text-xs text-[#005F8C]">月謝</span>
-                      )}
-                      {team.has_point_card && (
-                        <span className="rounded-full bg-[#e8f2f8] px-2.5 py-0.5 text-xs text-[#005F8C]">回数券</span>
-                      )}
-                      {!team.has_session_fee && !team.has_annual_fee && !team.has_monthly_fee && !team.has_point_card && (
-                        <span className="text-xs text-[#8d99a8]">料金体系なし</span>
-                      )}
-                    </div>
-                    {team.has_session_fee && (
-                      <>
-                        <div className="flex justify-between text-sm">
-                          <span className="text-[#5c6a7a]">デフォルト参加費（メンバー）</span>
-                          <span className="font-medium text-[#1a2332]">
-                            ¥{(team.default_member_price || 0).toLocaleString()}
-                          </span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="text-[#5c6a7a]">デフォルト参加費（ゲスト）</span>
-                          <span className="font-medium text-[#1a2332]">
-                            ¥{(team.default_guest_price || 0).toLocaleString()}
-                          </span>
-                        </div>
-                      </>
-                    )}
-                    {team.has_annual_fee && team.annual_fee_amount && (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-[#5c6a7a]">年会費</span>
-                        <span className="font-medium text-[#1a2332]">
-                          ¥{team.annual_fee_amount.toLocaleString()}
-                        </span>
-                      </div>
-                    )}
-                    {team.has_monthly_fee && team.monthly_fee_amount && (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-[#5c6a7a]">月謝</span>
-                        <span className="font-medium text-[#1a2332]">
-                          ¥{team.monthly_fee_amount.toLocaleString()}
-                        </span>
-                      </div>
-                    )}
-                    {team.has_session_fee && (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-[#5c6a7a]">キャンセル期限</span>
-                        <span className="font-medium text-[#1a2332]">
-                          {team.cancellation_days}日前まで
-                        </span>
-                      </div>
-                    )}
-                    {/* 練習情報 */}
-                    {(team.practice_frequency || (team.practice_days ?? []).length > 0 || team.main_pool) && (
-                      <div className="border-t border-[#f0f3f7] pt-3 space-y-2">
-                        <p className="text-xs font-medium text-[#8d99a8]">練習情報</p>
-                        {team.main_pool && (
-                          <div className="flex justify-between text-sm">
-                            <span className="text-[#5c6a7a]">主な使用プール</span>
-                            <span className="font-medium text-[#1a2332]">{team.main_pool}</span>
-                          </div>
-                        )}
-                        {team.practice_frequency && (
-                          <div className="flex justify-between text-sm">
-                            <span className="text-[#5c6a7a]">練習頻度</span>
-                            <span className="font-medium text-[#1a2332]">{team.practice_frequency}</span>
-                          </div>
-                        )}
-                        {(team.practice_days ?? []).length > 0 && (
-                          <div className="flex justify-between items-center text-sm">
-                            <span className="text-[#5c6a7a]">練習曜日</span>
-                            <div className="flex gap-1">
-                              {(team.practice_days ?? []).map((day: string) => (
-                                <span
-                                  key={day}
-                                  className="flex h-6 w-6 items-center justify-center rounded-full bg-[#e8f2f8] text-[10px] font-medium text-[#005F8C]"
-                                >
-                                  {day}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-                <Link href={`/teams/${id}/edit`}>
-                  <Button
-                    variant="outline"
-                    className="w-full rounded-full border-[#005F8C] text-[#005F8C]"
-                    style={{ minHeight: "48px" }}
-                  >
-                    グループ情報を編集
-                  </Button>
-                </Link>
-              </div>
-            )}
           </div>
         </main>
       </ToastProvider>

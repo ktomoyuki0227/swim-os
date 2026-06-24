@@ -52,6 +52,7 @@ const SESSION_TYPE_LABEL: Record<string, string> = {
 export function PublicTeamView({ data, hasBottomNav = false, joinRequestStatus = null, isLoggedIn = false }: PublicTeamViewProps) {
   const { team, coach, memberCount, sessions } = data
 
+  const coachId = (coach?.id as string) ?? null
   const coachName = (coach?.name as string) ?? null
   const coachAvatarUrl = (coach?.avatar_url as string) ?? null
   const coachCareer = (coach?.career as string) ?? null
@@ -206,23 +207,49 @@ export function PublicTeamView({ data, hasBottomNav = false, joinRequestStatus =
           {coachName && (
             <div className="mt-5 border-t border-[#f0f3f7] pt-4">
               <p className="mb-2 text-xs font-medium text-[#8d99a8]">管理者・コーチ</p>
-              <div className="flex items-center gap-3">
-                <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full bg-[#dce3ea]">
-                  {coachAvatarUrl ? (
-                    <Image src={coachAvatarUrl} alt={coachName} fill className="object-cover" />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center text-sm font-semibold text-[#005F8C]">
-                      {coachName[0]}
-                    </div>
-                  )}
+              {coachId ? (
+                <Link
+                  href={`/profiles/${coachId}`}
+                  className="flex items-center gap-3 rounded-xl p-2 -mx-2 transition-colors hover:bg-[#f5f8fa]"
+                >
+                  <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full bg-[#dce3ea]">
+                    {coachAvatarUrl ? (
+                      <Image src={coachAvatarUrl} alt={coachName} fill className="object-cover" />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-sm font-semibold text-[#005F8C]">
+                        {coachName[0]}
+                      </div>
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-[#1a2332]">{coachName}</p>
+                    {coachCareer && (
+                      <p className="text-xs text-[#8d99a8]">{coachCareer}</p>
+                    )}
+                  </div>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8d99a8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 18l6-6-6-6" />
+                  </svg>
+                </Link>
+              ) : (
+                <div className="flex items-center gap-3 px-2">
+                  <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full bg-[#dce3ea]">
+                    {coachAvatarUrl ? (
+                      <Image src={coachAvatarUrl} alt={coachName} fill className="object-cover" />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-sm font-semibold text-[#005F8C]">
+                        {coachName[0]}
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-[#1a2332]">{coachName}</p>
+                    {coachCareer && (
+                      <p className="text-xs text-[#8d99a8]">{coachCareer}</p>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-semibold text-[#1a2332]">{coachName}</p>
-                  {coachCareer && (
-                    <p className="text-xs text-[#8d99a8]">{coachCareer}</p>
-                  )}
-                </div>
-              </div>
+              )}
             </div>
           )}
         </div>
