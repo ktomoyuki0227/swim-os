@@ -92,13 +92,13 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
   }
 
   // ① セッション参加履歴（RLS: registrations_select_own で自分の分のみ取得）
+  // ネスト JOIN の RLS 問題を避けるため team_id のみ取得し、チームは後で一括取得する
   const { data: sessionRegs } = await supabase
     .from("session_registrations")
     .select(
       `id, payment_status, payment_method, registered_at, is_member, cancelled_at,
        session:practice_sessions(
-         id, title, scheduled_at, member_price, guest_price,
-         team:teams(id, name)
+         id, title, scheduled_at, member_price, guest_price, team_id
        )`
     )
     .eq("swimmer_id", user.id)
@@ -107,9 +107,24 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
   // ② 会費履歴（RLS: fees_select_own で自分の分のみ取得）
   const { data: membershipFees } = await supabase
     .from("membership_fees")
-    .select(`id, type, period, amount, status, paid_at, created_at, team_id, team:teams(id, name)`)
+    .select(`id, type, period, amount, status, paid_at, created_at, team_id`)
     .eq("swimmer_id", user.id)
     .order("created_at", { ascending: false })
+
+  // ③ チーム情報を一括取得（ネスト JOIN を避け RLS 問題を回避）
+  const teamIdSet = new Set<string>()
+  for (const reg of sessionRegs ?? []) {
+    const session = Array.isArray(reg.session) ? (reg.session[0] ?? null) : reg.session
+    const teamId = session?.team_id as string | null
+    if (teamId) teamIdSet.add(teamId)
+  }
+  for (const fee of membershipFees ?? []) {
+    if (fee.team_id) teamIdSet.add(fee.team_id)
+  }
+  const { data: teamsData } = teamIdSet.size > 0
+    ? await supabase.from("teams").select("id, name").in("id", Array.from(teamIdSet))
+    : { data: [] as { id: string; name: string }[] }
+  const teamById = new Map((teamsData ?? []).map((t) => [t.id, t.name]))
 
   // ——— 統合リストを作成 ———
 
@@ -123,15 +138,17 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
 
     const session = Array.isArray(reg.session) ? (reg.session[0] ?? null) : reg.session
     if (!session) continue
-    const team = Array.isArray(session.team) ? (session.team[0] ?? null) : session.team
-    if (!team) continue
+    const teamId = session.team_id as string | null
+    if (!teamId) continue
+    const teamName = teamById.get(teamId)
+    if (!teamName) continue
 
     items.push({
       id: reg.id,
       itemType: "session",
       label: session.title ?? "セッション",
-      teamId: team.id,
-      teamName: team.name,
+      teamId,
+      teamName,
       amount: reg.is_member ? (session.member_price ?? 0) : (session.guest_price ?? 0),
       status: reg.payment_status,
       paymentMethod: reg.payment_method,
@@ -140,8 +157,10 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
   }
 
   for (const fee of membershipFees ?? []) {
-    const team = Array.isArray(fee.team) ? (fee.team[0] ?? null) : fee.team
-    if (!team) continue
+    const teamId = fee.team_id
+    if (!teamId) continue
+    const teamName = teamById.get(teamId)
+    if (!teamName) continue
 
     const label =
       fee.type === "annual"
@@ -152,8 +171,8 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
       id: fee.id,
       itemType: fee.type as "annual" | "monthly",
       label,
-      teamId: fee.team_id,
-      teamName: team.name,
+      teamId,
+      teamName,
       amount: fee.amount,
       status: fee.status,
       paymentMethod: "stripe",
