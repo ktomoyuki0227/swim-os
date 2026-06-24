@@ -30,12 +30,82 @@ export async function getOrCreateStripeCustomer(
     metadata: { supabase_user_id: userId },
   })
 
-  await admin
+  // stripe_customer_id がまだ null の行のみ更新（並行リクエストによる二重作成を防ぐ）
+  const { data: saved } = await admin
     .from("profiles")
     .update({ stripe_customer_id: customer.id })
     .eq("id", userId)
+    .is("stripe_customer_id", null)
+    .select("stripe_customer_id")
+    .maybeSingle()
+
+  if (!saved) {
+    // 別リクエストが先に書き込んだ場合: 今作成した Customer を削除して既存値を返す
+    await stripe.customers.del(customer.id).catch(() => null)
+    const { data: existing } = await admin
+      .from("profiles")
+      .select("stripe_customer_id")
+      .eq("id", userId)
+      .single()
+    return existing?.stripe_customer_id ?? customer.id
+  }
 
   return customer.id
+}
+
+/**
+ * チームの Stripe Product を取得または新規作成する。
+ * Product ID は teams.stripe_product_id に保存する。
+ */
+export async function getOrCreateStripeProduct(
+  teamId: string,
+  teamName: string,
+  existingProductId: string | null
+): Promise<string> {
+  if (existingProductId) return existingProductId
+
+  const product = await stripe.products.create({
+    name: `月謝 - ${teamName}`,
+    metadata: { team_id: teamId },
+  })
+
+  const admin = createAdminClient()
+  await admin.from("teams").update({ stripe_product_id: product.id }).eq("id", teamId)
+
+  return product.id
+}
+
+/**
+ * チームの月謝 Stripe Price を取得または新規作成する。
+ * 金額が変わった場合は新しい Price を作成して teams.stripe_monthly_price_id を更新する。
+ */
+export async function getOrCreateMonthlyPrice(
+  teamId: string,
+  amount: number,
+  productId: string,
+  existingPriceId: string | null
+): Promise<string> {
+  // 既存の Price がある場合は金額確認
+  if (existingPriceId) {
+    const existingPrice = await stripe.prices.retrieve(existingPriceId).catch(() => null)
+    if (existingPrice && existingPrice.unit_amount === amount && existingPrice.active) {
+      return existingPriceId
+    }
+  }
+
+  // 新しい Price を作成
+  const price = await stripe.prices.create({
+    product: productId,
+    unit_amount: amount,
+    currency: "jpy",
+    recurring: { interval: "month" },
+    metadata: { team_id: teamId },
+  })
+
+  const admin = createAdminClient()
+  await admin.from("teams").update({ stripe_monthly_price_id: price.id }).eq("id", teamId)
+
+  return price.id
 }
 
 /**
