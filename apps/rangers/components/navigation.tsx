@@ -11,6 +11,7 @@ interface NavigationProps {
   userName: string
   avatarUrl?: string | null
   unreadCount?: number
+  inactiveRoutes?: string[]
 }
 
 const navLinks = [
@@ -59,7 +60,7 @@ const navLinks = [
   },
 ]
 
-export function Navigation({ userName, avatarUrl, unreadCount = 0 }: NavigationProps) {
+export function Navigation({ userName, avatarUrl, unreadCount = 0, inactiveRoutes = [] }: NavigationProps) {
   const pathname = usePathname()
   const router = useRouter()
 
@@ -93,8 +94,12 @@ export function Navigation({ userName, avatarUrl, unreadCount = 0 }: NavigationP
     .slice(0, 2)
     .toUpperCase()
 
-  const isActive = (href: string) =>
-    pathname === href || (href !== "/" && pathname.startsWith(href + "/"))
+  const isActive = (href: string) => {
+    if (inactiveRoutes.includes(href)) return false
+    // /teams/[id]/join は非メンバーの申請ページなのでグループとして扱わない
+    if (href === "/teams" && pathname.endsWith("/join")) return false
+    return pathname === href || (href !== "/" && pathname.startsWith(href + "/"))
+  }
 
   return (
     <>
