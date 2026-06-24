@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState, useTransition } from "react"
+import Link from "next/link"
 import Image from "next/image"
 import {
   uploadAvatar,
@@ -293,6 +294,7 @@ export default function ProfilePage() {
   const [isAvatarPending, startAvatarTransition] = useTransition()
   const [profile, setProfile] = useState<Profile | null>(null)
   const [email, setEmail] = useState("")
+  const [userId, setUserId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [editingSection, setEditingSection] = useState<EditingSection>(null)
   const [avatarMenuOpen, setAvatarMenuOpen] = useState(false)
@@ -331,7 +333,7 @@ export default function ProfilePage() {
   const [selectedSwimmerType, setSelectedSwimmerType] = useState<string>("")
   const [swimDisciplines, setSwimDisciplines] = useState<string[]>([])
 
-  // コーチ・指導員プロフィール
+  // 公開プロフィール
   const [bio, setBio] = useState("")
   const [career, setCareer] = useState("")
   const [achievements, setAchievements] = useState("")
@@ -386,6 +388,7 @@ export default function ProfilePage() {
         setAvatarUrl(prof.avatar_url)
       }
       if (data.user?.email) setEmail(data.user.email)
+      if (data.user?.id) setUserId(data.user.id)
     }).catch(() => {
       showToast("プロフィールの読み込みに失敗しました", "error")
     }).finally(() => setIsLoading(false))
@@ -1000,16 +1003,13 @@ export default function ProfilePage() {
         </CardContent>
       </Card>
 
-      {/* コーチ・指導員プロフィール */}
+      {/* 公開プロフィール */}
       <Card className={`border-[#dce3ea] transition-shadow ${editingSection === "public" ? "ring-2 ring-[#005F8C]/20" : ""}`}>
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between gap-2">
             <div className="min-w-0">
-              <CardTitle className="text-base text-[#1a2332]">
-                <span className="inline-block">コーチ・指導員</span>
-                <span className="inline-block">プロフィール</span>
-              </CardTitle>
-              <p className="mt-0.5 text-[11px] text-[#8d99a8]">任意・コーチ登録がある方向け</p>
+              <CardTitle className="text-base text-[#1a2332]">公開プロフィール</CardTitle>
+              <p className="mt-0.5 text-[11px] text-[#8d99a8]">他のユーザーに公開されます</p>
             </div>
             <div className="flex shrink-0 items-center gap-2">
               <PrivacyBadge type="public" />
@@ -1017,6 +1017,17 @@ export default function ProfilePage() {
               {editingSection === "public" && <span className="text-xs font-medium text-[#005F8C]">編集中</span>}
             </div>
           </div>
+          {editingSection === null && userId && (
+            <Link
+              href={`/profiles/${userId}`}
+              className="mt-2 inline-flex items-center gap-1 text-xs text-[#005F8C] hover:underline"
+            >
+              公開プレビューを見る
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 18l6-6-6-6" />
+              </svg>
+            </Link>
+          )}
         </CardHeader>
         <CardContent>
           {isLoading ? (

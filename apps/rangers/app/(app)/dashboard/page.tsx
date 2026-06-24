@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic"
 
 import Link from "next/link"
+import Image from "next/image"
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { getMyTeams } from "@/actions/teams"
@@ -251,14 +252,21 @@ export default async function DashboardPage() {
                 >
                   {/* 左: グループ画像 */}
                   <div
-                    className="flex w-2/5 shrink-0 items-center justify-center text-lg font-bold text-white"
+                    className="relative w-2/5 shrink-0 overflow-hidden"
                     style={{ backgroundColor: color }}
                   >
                     {avatarUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={avatarUrl} alt={team.name as string} className="h-full w-full object-cover" />
+                      <Image
+                        src={avatarUrl}
+                        alt={team.name as string}
+                        fill
+                        className="object-cover"
+                        sizes="64px"
+                      />
                     ) : (
-                      (team.name as string)?.[0] || "T"
+                      <div className="flex h-full w-full items-center justify-center text-lg font-bold text-white">
+                        {(team.name as string)?.[0] || "T"}
+                      </div>
                     )}
                   </div>
                   {/* 右: グループ名 + バッジ */}

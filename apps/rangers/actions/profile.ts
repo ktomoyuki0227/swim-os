@@ -132,3 +132,19 @@ export async function getProfile() {
 
   return data
 }
+
+export async function getPublicProfile(profileId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "ログインが必要です", data: null }
+
+  const admin = createAdminClient()
+  const { data, error } = await admin
+    .from("profiles")
+    .select("id, name, avatar_url, bio, career, achievements, specialties, target_ages, rating_avg, review_count, prefectures, level, swimming_goals, swimmer_type, swim_disciplines, participation_styles")
+    .eq("id", profileId)
+    .single()
+
+  if (error || !data) return { error: "プロフィールが見つかりません", data: null }
+  return { data, error: null }
+}
