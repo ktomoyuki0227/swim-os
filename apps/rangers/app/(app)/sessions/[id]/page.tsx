@@ -4,6 +4,7 @@ import { getSession, getSessionRegistrations, getPriceViewers } from "@/actions/
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { SessionActions } from "./session-actions"
+import { CashCollectionPanel } from "./cash-collection"
 
 const SESSION_TYPE_LABELS: Record<string, string> = {
   practice: "練習",
@@ -29,10 +30,12 @@ const PAYMENT_STATUS_LABELS: Record<string, { label: string; className: string }
 
 interface SessionDetailPageProps {
   params: Promise<{ id: string }>
+  searchParams: Promise<{ filter?: string }>
 }
 
-export default async function SessionDetailPage({ params }: SessionDetailPageProps) {
+export default async function SessionDetailPage({ params, searchParams }: SessionDetailPageProps) {
   const { id } = await params
+  const { filter } = await searchParams
 
   const [sessionResult, registrationsResult, priceViewsResult] = await Promise.all([
     getSession(id),
@@ -53,6 +56,11 @@ export default async function SessionDetailPage({ params }: SessionDetailPagePro
 
   const activeRegistrations = registrations.filter((r) => !r.cancelled_at)
   const cancelledRegistrations = registrations.filter((r) => r.cancelled_at)
+
+  const cashRegistrations = activeRegistrations.filter((r) => r.payment_method === "cash" && r.payment_status !== "free")
+  const hasCashRegistrations = cashRegistrations.length > 0
+  const isCashFilter = filter === "cash"
+  const displayedRegistrations = isCashFilter ? activeRegistrations.filter((r) => r.payment_method === "cash") : activeRegistrations
 
   const totalRevenue = activeRegistrations
     .filter((r) => r.payment_status === "paid")
@@ -326,18 +334,53 @@ export default async function SessionDetailPage({ params }: SessionDetailPagePro
 
       {/* Participants list */}
       <div>
-        <h2 className="mb-3 text-base font-semibold text-[#1a2332]">
-          参加者一覧 ({activeRegistrations.length}名)
-        </h2>
-        {activeRegistrations.length === 0 ? (
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <h2 className="text-base font-semibold text-[#1a2332]">
+            参加者一覧 ({activeRegistrations.length}名)
+          </h2>
+          {hasCashRegistrations && (
+            <div className="flex rounded-lg border border-[#dce3ea] bg-[#f2f7fa] p-0.5 text-xs">
+              <Link
+                href={`/sessions/${id}`}
+                className={`rounded-md px-3 py-1.5 font-medium transition-colors ${!isCashFilter ? "bg-white text-[#1a2332] shadow-sm" : "text-[#5c6a7a] hover:text-[#1a2332]"}`}
+              >
+                全員
+              </Link>
+              <Link
+                href={`/sessions/${id}?filter=cash`}
+                className={`rounded-md px-3 py-1.5 font-medium transition-colors ${isCashFilter ? "bg-white text-[#1a2332] shadow-sm" : "text-[#5c6a7a] hover:text-[#1a2332]"}`}
+              >
+                現金のみ
+              </Link>
+            </div>
+          )}
+        </div>
+
+        {isCashFilter && hasCashRegistrations && (
+          <div className="mb-3">
+            <CashCollectionPanel
+              sessionId={id}
+              registrations={displayedRegistrations.map((r) => {
+                const swimmer = r.swimmer as Record<string, unknown> | null
+                return {
+                  id: r.id as string,
+                  swimmerName: (swimmer?.name as string) || "不明",
+                  paymentStatus: r.payment_status as string,
+                }
+              })}
+            />
+          </div>
+        )}
+
+        {displayedRegistrations.length === 0 ? (
           <Card className="border-[#dce3ea]">
             <CardContent className="py-8 text-center text-sm text-[#5c6a7a]">
-              まだ参加登録がありません
+              {isCashFilter ? "現金払いの参加者はいません" : "まだ参加登録がありません"}
             </CardContent>
           </Card>
         ) : (
           <div className="space-y-2">
-            {activeRegistrations.map((reg) => {
+            {displayedRegistrations.map((reg) => {
               const swimmer = reg.swimmer as Record<string, unknown> | null
               const payStatus = PAYMENT_STATUS_LABELS[reg.payment_status as string] ?? PAYMENT_STATUS_LABELS.pending
               return (

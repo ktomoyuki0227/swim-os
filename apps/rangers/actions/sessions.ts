@@ -1083,3 +1083,54 @@ async function createSessionAnnouncement(
     link_url: `/teams/${teamId}/sessions/${session.id}`,
   })
 }
+
+// 現金払いを集金済みにマーク（管理者のみ）
+export async function markCashPaid(registrationId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "認証が必要です" }
+
+  const adminClient = createAdminClient()
+
+  const { data: reg, error: regError } = await adminClient
+    .from("session_registrations")
+    .select("session_id, swimmer_id, payment_method, payment_status, session:practice_sessions!inner(team_id, title, member_price)")
+    .eq("id", registrationId)
+    .single()
+
+  if (regError || !reg) return { error: "参加登録が見つかりません" }
+  if (reg.payment_method !== "cash") return { error: "現金払い以外は変更できません" }
+  if (reg.payment_status === "paid") return { error: "すでに集金済みです" }
+  if (reg.payment_status !== "pending") return { error: "未払いの登録のみ変更できます" }
+
+  const session = reg.session as { team_id: string; title: string; member_price: number }
+
+  const { data: member } = await adminClient
+    .from("team_members")
+    .select("role")
+    .eq("team_id", session.team_id)
+    .eq("swimmer_id", user.id)
+    .eq("status", "active")
+    .single()
+
+  if (!member || member.role !== "admin") return { error: "管理者のみ操作できます" }
+
+  const { error } = await adminClient
+    .from("session_registrations")
+    .update({ payment_status: "paid" })
+    .eq("id", registrationId)
+
+  if (error) return { error: "更新に失敗しました" }
+
+  await adminClient.from("notifications").insert({
+    user_id: reg.swimmer_id,
+    type: "payment_charged",
+    title: `「${session.title}」の現金参加費を受領しました`,
+    body: `¥${(session.member_price || 0).toLocaleString()}の集金が確認されました`,
+    team_id: session.team_id,
+    link: "/payments",
+  })
+
+  revalidatePath(`/sessions/${reg.session_id}`)
+  return { data: null }
+}
