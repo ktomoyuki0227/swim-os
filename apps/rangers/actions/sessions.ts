@@ -569,6 +569,7 @@ export async function cancelSession(sessionId: string) {
     .select("swimmer_id")
     .eq("session_id", sessionId)
     .is("cancelled_at", null)
+    .neq("swimmer_id", user.id)  // 中止操作者（管理者）自身は除外
   if (registrants && registrants.length > 0) {
     const scheduledDate = new Date(session.scheduled_at).toLocaleDateString("ja-JP", {
       month: "long",
@@ -827,6 +828,7 @@ export async function registerForSession(
     .eq("team_id", session.team_id)
     .eq("role", "admin")
     .eq("status", "active")
+    .neq("swimmer_id", user.id)  // 自分自身には送らない
   if (teamAdmins && teamAdmins.length > 0) {
     const scheduledDate = new Date(session.scheduled_at).toLocaleDateString("ja-JP", {
       month: "long",
@@ -942,6 +944,7 @@ export async function cancelRegistration(sessionId: string) {
     .eq("team_id", session.team_id)
     .eq("role", "admin")
     .eq("status", "active")
+    .neq("swimmer_id", user.id)  // 自分自身には送らない
   if (cancelAdmins && cancelAdmins.length > 0) {
     const scheduledDate = new Date(session.scheduled_at).toLocaleDateString("ja-JP", {
       month: "long",
@@ -994,6 +997,7 @@ export async function cancelRegistration(sessionId: string) {
             type: "waitlist_available",
             title: `空きが出ました: ${session.title}`,
             body: `「${session.title}」に空きが出ました。参加登録が可能です。`,
+            team_id: session.team_id,
             link: `/sessions/${sessionId}`,
           })
         }
@@ -1335,7 +1339,7 @@ export async function markCashPaid(registrationId: string) {
 
   const { data: reg, error: regError } = await adminClient
     .from("session_registrations")
-    .select("session_id, swimmer_id, payment_method, payment_status, session:practice_sessions!inner(team_id, title, member_price)")
+    .select("session_id, swimmer_id, payment_method, payment_status, is_member, session:practice_sessions!inner(team_id, title, member_price, guest_price)")
     .eq("id", registrationId)
     .single()
 
@@ -1344,7 +1348,7 @@ export async function markCashPaid(registrationId: string) {
   if (reg.payment_status === "paid") return { error: "すでに集金済みです" }
   if (reg.payment_status !== "pending") return { error: "未払いの登録のみ変更できます" }
 
-  const session = reg.session as unknown as { team_id: string; title: string; member_price: number }
+  const session = reg.session as unknown as { team_id: string; title: string; member_price: number; guest_price: number }
 
   const { data: member } = await adminClient
     .from("team_members")
@@ -1363,11 +1367,12 @@ export async function markCashPaid(registrationId: string) {
 
   if (error) return { error: "更新に失敗しました" }
 
+  const chargedAmount = reg.is_member ? (session.member_price || 0) : (session.guest_price || 0)
   await adminClient.from("notifications").insert({
     user_id: reg.swimmer_id,
     type: "payment_charged",
     title: `「${session.title}」の現金参加費を受領しました`,
-    body: `¥${(session.member_price || 0).toLocaleString()}の集金が確認されました`,
+    body: `¥${chargedAmount.toLocaleString()}の集金が確認されました`,
     team_id: session.team_id,
     link: "/payments",
   })

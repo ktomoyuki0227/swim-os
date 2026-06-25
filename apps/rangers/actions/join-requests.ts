@@ -97,6 +97,7 @@ export async function requestJoinTeam(
   }
 
   revalidatePath(`/teams/${teamId}`)
+  revalidatePath("/notifications")
   return { success: true }
 }
 
@@ -226,6 +227,7 @@ export async function approveJoinRequest(
   }
 
   revalidatePath(`/teams/${request.team_id}`)
+  revalidatePath("/notifications")
   return { success: true }
 }
 
@@ -287,6 +289,7 @@ export async function rejectJoinRequest(
   })
 
   revalidatePath(`/teams/${request.team_id}`)
+  revalidatePath("/notifications")
   return { success: true }
 }
 
