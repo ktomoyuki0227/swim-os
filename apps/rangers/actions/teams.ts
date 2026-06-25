@@ -96,6 +96,16 @@ export async function createTeam(data: unknown) {
     return { error: "グループの作成に失敗しました" }
   }
 
+  // チーム作成ウェルカム通知
+  await supabase.from("notifications").insert({
+    user_id: user.id,
+    type: "team_created",
+    title: `「${team.name}」を作成しました`,
+    body: "メンバーを招待してセッションを追加しましょう",
+    team_id: team.id,
+    link: `/teams/${team.id}`,
+  })
+
   revalidatePath("/teams")
   return { data: team }
 }
@@ -252,6 +262,32 @@ export async function joinTeamByCode(
       period: currentYear,
       amount: team.annual_fee_amount,
     })
+  }
+
+  // 参加者名を取得して管理者へ通知
+  const adminForNotif = createAdminClient()
+  const { data: joinerProfile } = await adminForNotif
+    .from("profiles")
+    .select("name")
+    .eq("id", user.id)
+    .single()
+  const { data: teamAdmins } = await adminForNotif
+    .from("team_members")
+    .select("swimmer_id")
+    .eq("team_id", team.id)
+    .eq("role", "admin")
+    .eq("status", "active")
+  if (teamAdmins && teamAdmins.length > 0) {
+    await adminForNotif.from("notifications").insert(
+      teamAdmins.map((a) => ({
+        user_id: a.swimmer_id,
+        type: "member_joined",
+        title: `${joinerProfile?.name ?? "新しいメンバー"}さんが「${team.name}」に参加しました`,
+        body: null,
+        team_id: team.id,
+        link: `/teams/${team.id}?tab=members`,
+      }))
+    )
   }
 
   revalidatePath("/teams")

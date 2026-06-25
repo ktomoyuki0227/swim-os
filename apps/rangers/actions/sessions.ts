@@ -66,6 +66,31 @@ export async function createSession(teamId: string, data: unknown) {
   // セッション作成のお知らせを自動生成
   await createSessionAnnouncement(teamId, session, "created")
 
+  // チームの全メンバー（管理者除く）に新規セッション通知
+  const { data: members } = await adminClient
+    .from("team_members")
+    .select("swimmer_id")
+    .eq("team_id", teamId)
+    .eq("status", "active")
+    .neq("role", "admin")
+  if (members && members.length > 0) {
+    const scheduledDate = new Date(session.scheduled_at).toLocaleDateString("ja-JP", {
+      month: "long",
+      day: "numeric",
+      weekday: "short",
+    })
+    await adminClient.from("notifications").insert(
+      members.map((m) => ({
+        user_id: m.swimmer_id,
+        type: "session_added",
+        title: `新しいセッションが追加されました`,
+        body: `「${session.title}」${scheduledDate}`,
+        team_id: teamId,
+        link: `/sessions/${session.id}`,
+      }))
+    )
+  }
+
   revalidatePath("/sessions")
   return { data: session }
 }
@@ -81,7 +106,7 @@ export async function updateSession(sessionId: string, data: unknown) {
   const updateAdmin = createAdminClient()
   const { data: session } = await updateAdmin
     .from("practice_sessions")
-    .select("team_id, session_status")
+    .select("team_id, session_status, title, scheduled_at, location")
     .eq("id", sessionId)
     .single()
   if (!session) return { error: "セッションが見つかりません" }
@@ -111,6 +136,34 @@ export async function updateSession(sessionId: string, data: unknown) {
     .eq("id", sessionId)
 
   if (error) return { error: "セッションの更新に失敗しました" }
+
+  // 日時・場所・タイトルが変更された場合、参加登録済みメンバーへ通知
+  const hasImportantChange =
+    (parsed.data.title && parsed.data.title !== session.title) ||
+    (parsed.data.scheduled_at &&
+      new Date(parsed.data.scheduled_at).toISOString() !== new Date(session.scheduled_at).toISOString()) ||
+    (parsed.data.location && parsed.data.location !== session.location)
+
+  if (hasImportantChange) {
+    const { data: registrants } = await updateAdmin
+      .from("session_registrations")
+      .select("swimmer_id")
+      .eq("session_id", sessionId)
+      .is("cancelled_at", null)
+    if (registrants && registrants.length > 0) {
+      const sessionTitle = parsed.data.title ?? session.title
+      await updateAdmin.from("notifications").insert(
+        registrants.map((r) => ({
+          user_id: r.swimmer_id,
+          type: "session_updated",
+          title: `「${sessionTitle}」の内容が変更されました`,
+          body: "日時・場所などの情報が更新されています。ご確認ください",
+          team_id: session.team_id,
+          link: `/sessions/${sessionId}`,
+        }))
+      )
+    }
+  }
 
   revalidatePath("/sessions")
   return { success: true }
@@ -231,6 +284,14 @@ export async function confirmSession(sessionId: string) {
           .from("session_registrations")
           .update({ payment_status: "failed" })
           .eq("id", reg.id)
+        await confirmAdmin.from("notifications").insert({
+          user_id: reg.swimmer_id,
+          type: "payment_failed",
+          title: `「${session.title}」の参加費決済に失敗しました`,
+          body: "お支払い情報が登録されていません。カード情報をご確認ください",
+          team_id: session.team_id,
+          link: "/payments",
+        })
         paymentErrors.push(`${reg.id}: no stripe customer or payment method`)
         continue
       }
@@ -257,6 +318,14 @@ export async function confirmSession(sessionId: string) {
           .from("session_registrations")
           .update({ payment_status: "failed" })
           .eq("id", reg.id)
+        await confirmAdmin.from("notifications").insert({
+          user_id: reg.swimmer_id,
+          type: "payment_failed",
+          title: `「${session.title}」の参加費決済に失敗しました`,
+          body: "決済処理中にエラーが発生しました。カード情報をご確認ください",
+          team_id: session.team_id,
+          link: "/payments",
+        })
         paymentErrors.push(`${reg.id}: stripe payment intent creation failed`)
         continue
       }
@@ -312,6 +381,14 @@ export async function confirmSession(sessionId: string) {
           .from("session_registrations")
           .update({ payment_status: "failed" })
           .eq("id", reg.id)
+        await confirmAdmin.from("notifications").insert({
+          user_id: reg.swimmer_id,
+          type: "payment_failed",
+          title: `「${session.title}」の参加費決済に失敗しました`,
+          body: "お支払いカードへの請求に失敗しました。カード情報をご確認ください",
+          team_id: session.team_id,
+          link: "/payments",
+        })
         paymentErrors.push(`${reg.id}: stripe confirm failed`)
       }
     } else if (reg.payment_method === "point_card") {
@@ -321,6 +398,18 @@ export async function confirmSession(sessionId: string) {
         p_swimmer_id: reg.swimmer_id,
       })
       if (rpcErr) {
+        await confirmAdmin
+          .from("session_registrations")
+          .update({ payment_status: "failed" })
+          .eq("id", reg.id)
+        await confirmAdmin.from("notifications").insert({
+          user_id: reg.swimmer_id,
+          type: "payment_failed",
+          title: `「${session.title}」の回数券処理に失敗しました`,
+          body: "回数券の使用処理中にエラーが発生しました。残枚数をご確認ください",
+          team_id: session.team_id,
+          link: "/payments",
+        })
         paymentErrors.push(`${reg.id}: stamp decrement failed`)
         continue
       }
@@ -340,6 +429,23 @@ export async function confirmSession(sessionId: string) {
           team_id: session.team_id,
           link: "/payments",
         })
+        // 残枚数確認 → 2枚以下なら残少通知
+        const { data: updatedMember } = await confirmAdmin
+          .from("team_members")
+          .select("stamp_remaining")
+          .eq("team_id", session.team_id)
+          .eq("swimmer_id", reg.swimmer_id)
+          .single()
+        if (updatedMember && updatedMember.stamp_remaining <= 2) {
+          await confirmAdmin.from("notifications").insert({
+            user_id: reg.swimmer_id,
+            type: "stamp_low",
+            title: "回数券の残枚数が少なくなっています",
+            body: `残り${updatedMember.stamp_remaining}枚です。お早めに追加購入をご検討ください`,
+            team_id: session.team_id,
+            link: `/teams/${session.team_id}`,
+          })
+        }
       }
     }
     // cash はそのまま（当日回収）
@@ -455,6 +561,31 @@ export async function cancelSession(sessionId: string) {
 
   // お知らせを配信
   await createSessionAnnouncement(session.team_id, session, "cancelled")
+
+  // 参加登録済みメンバーへ個別中止通知
+  const notifAdmin = createAdminClient()
+  const { data: registrants } = await notifAdmin
+    .from("session_registrations")
+    .select("swimmer_id")
+    .eq("session_id", sessionId)
+    .is("cancelled_at", null)
+  if (registrants && registrants.length > 0) {
+    const scheduledDate = new Date(session.scheduled_at).toLocaleDateString("ja-JP", {
+      month: "long",
+      day: "numeric",
+      weekday: "short",
+    })
+    await notifAdmin.from("notifications").insert(
+      registrants.map((r) => ({
+        user_id: r.swimmer_id,
+        type: "session_cancelled",
+        title: `「${session.title}」が中止になりました`,
+        body: `${scheduledDate}に予定していたセッションが中止になりました`,
+        team_id: session.team_id,
+        link: `/sessions/${sessionId}`,
+      }))
+    )
+  }
 
   revalidatePath("/sessions")
   return { success: true }
@@ -655,6 +786,82 @@ export async function registerForSession(
     }
   }
 
+  // 最小開催人数達成チェック → 管理者へ通知
+  if (session.min_participants) {
+    const { count: currentCount } = await adminClient
+      .from("session_registrations")
+      .select("id", { count: "exact" })
+      .eq("session_id", sessionId)
+      .is("cancelled_at", null)
+    if (currentCount !== null && currentCount === session.min_participants) {
+      const { data: minAdmins } = await adminClient
+        .from("team_members")
+        .select("swimmer_id")
+        .eq("team_id", session.team_id)
+        .eq("role", "admin")
+        .eq("status", "active")
+      if (minAdmins && minAdmins.length > 0) {
+        await adminClient.from("notifications").insert(
+          minAdmins.map((a) => ({
+            user_id: a.swimmer_id,
+            type: "session_min_reached",
+            title: `「${session.title}」が最小開催人数に達しました`,
+            body: `${session.min_participants}名が揃いました。開催確定できます`,
+            team_id: session.team_id,
+            link: `/sessions/${sessionId}`,
+          }))
+        )
+      }
+    }
+  }
+
+  // 参加者プロフィールを取得して管理者へ通知
+  const { data: registrantProfile } = await adminClient
+    .from("profiles")
+    .select("name")
+    .eq("id", user.id)
+    .single()
+  const { data: teamAdmins } = await adminClient
+    .from("team_members")
+    .select("swimmer_id")
+    .eq("team_id", session.team_id)
+    .eq("role", "admin")
+    .eq("status", "active")
+  if (teamAdmins && teamAdmins.length > 0) {
+    const scheduledDate = new Date(session.scheduled_at).toLocaleDateString("ja-JP", {
+      month: "long",
+      day: "numeric",
+      weekday: "short",
+    })
+    await adminClient.from("notifications").insert(
+      teamAdmins.map((a) => ({
+        user_id: a.swimmer_id,
+        type: "session_registered",
+        title: `${registrantProfile?.name ?? "メンバー"}さんが参加登録しました`,
+        body: `「${session.title}」${scheduledDate}`,
+        team_id: session.team_id,
+        link: `/sessions/${sessionId}`,
+      }))
+    )
+  }
+
+  // 参加者本人への登録確認通知（管理者は自分のチームなので省略）
+  if (!isAdmin) {
+    const scheduledDate = new Date(session.scheduled_at).toLocaleDateString("ja-JP", {
+      month: "long",
+      day: "numeric",
+      weekday: "short",
+    })
+    await adminClient.from("notifications").insert({
+      user_id: user.id,
+      type: "session_registered",
+      title: "参加登録が完了しました",
+      body: `「${session.title}」${scheduledDate}`,
+      team_id: session.team_id,
+      link: `/sessions/${sessionId}`,
+    })
+  }
+
   revalidatePath(`/teams`)
   return { success: true }
 }
@@ -722,6 +929,36 @@ export async function cancelRegistration(sessionId: string) {
     .update(cancelUpdate)
     .eq("id", registration.id)
   if (cancelWriteErr) return { error: "キャンセルの記録に失敗しました" }
+
+  // 管理者へキャンセル通知
+  const { data: cancellerProfile } = await adminClient
+    .from("profiles")
+    .select("name")
+    .eq("id", user.id)
+    .single()
+  const { data: cancelAdmins } = await adminClient
+    .from("team_members")
+    .select("swimmer_id")
+    .eq("team_id", session.team_id)
+    .eq("role", "admin")
+    .eq("status", "active")
+  if (cancelAdmins && cancelAdmins.length > 0) {
+    const scheduledDate = new Date(session.scheduled_at).toLocaleDateString("ja-JP", {
+      month: "long",
+      day: "numeric",
+      weekday: "short",
+    })
+    await adminClient.from("notifications").insert(
+      cancelAdmins.map((a) => ({
+        user_id: a.swimmer_id,
+        type: "session_cancelled_by_member",
+        title: `${cancellerProfile?.name ?? "メンバー"}さんがキャンセルしました`,
+        body: `「${session.title}」${scheduledDate}`,
+        team_id: session.team_id,
+        link: `/sessions/${sessionId}`,
+      }))
+    )
+  }
 
   // 定員キャンセル待ち通知: 定員ありセッションで空きが出た場合
   if (session.max_participants) {
@@ -1107,7 +1344,7 @@ export async function markCashPaid(registrationId: string) {
   if (reg.payment_status === "paid") return { error: "すでに集金済みです" }
   if (reg.payment_status !== "pending") return { error: "未払いの登録のみ変更できます" }
 
-  const session = reg.session as { team_id: string; title: string; member_price: number }
+  const session = reg.session as unknown as { team_id: string; title: string; member_price: number }
 
   const { data: member } = await adminClient
     .from("team_members")

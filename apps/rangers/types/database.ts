@@ -439,11 +439,27 @@ export interface StampPurchaseWithProfile extends StampPurchase {
 }
 
 export type NotificationType =
+  // チーム関連
+  | "team_created"
+  | "member_joined"
   | "join_request_received"
   | "join_request_approved"
   | "join_request_rejected"
+  // セッション関連
+  | "session_added"
+  | "session_registered"
+  | "session_cancelled"
+  | "session_cancelled_by_member"
+  | "session_min_reached"
+  | "session_updated"
+  | "session_reminder"
   | "waitlist_available"
+  // 支払い関連
+  | "payment_charged"
   | "payment_failed"
+  | "stamp_low"
+  | "fee_reminder"
+  // その他
   | "inquiry_received"
 
 export interface Notification {

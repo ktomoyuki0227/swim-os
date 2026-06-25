@@ -199,6 +199,32 @@ export async function approveJoinRequest(
     metadata: {},
   })
 
+  // 他の管理者へ新メンバー参加通知（承認した管理者自身は除く）
+  const { data: joinerProfile } = await admin
+    .from("profiles")
+    .select("name")
+    .eq("id", request.swimmer_id)
+    .single()
+  const { data: otherAdmins } = await admin
+    .from("team_members")
+    .select("swimmer_id")
+    .eq("team_id", request.team_id)
+    .eq("role", "admin")
+    .eq("status", "active")
+    .neq("swimmer_id", user.id)
+  if (otherAdmins && otherAdmins.length > 0) {
+    await admin.from("notifications").insert(
+      otherAdmins.map((a) => ({
+        user_id: a.swimmer_id,
+        type: "member_joined",
+        title: `${joinerProfile?.name ?? "新しいメンバー"}さんが「${team.name}」に参加しました`,
+        body: null,
+        team_id: request.team_id,
+        link: `/teams/${request.team_id}?tab=members`,
+      }))
+    )
+  }
+
   revalidatePath(`/teams/${request.team_id}`)
   return { success: true }
 }
