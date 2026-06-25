@@ -556,7 +556,7 @@ export async function registerForSession(
   // メンバーシップ確認（adminClientでRLSをバイパス）
   const { data: membership } = await adminClient
     .from("team_members")
-    .select("id, membership_type, stamp_remaining")
+    .select("id, role, membership_type, stamp_remaining")
     .eq("team_id", session.team_id)
     .eq("swimmer_id", user.id)
     .eq("status", "active")
@@ -564,11 +564,15 @@ export async function registerForSession(
 
   const isMember = !!membership
 
+  // 管理者は自チームのセッションに無料で参加（ロールベースで判定）
+  const isAdmin = membership?.role === "admin"
+
   // 年会費・月謝会員の参加費免除判定（サーバー側で完結 — クライアントは操作不可）
   const isExempt =
-    !!(session.team as { fee_members_exempt_session?: boolean } | null)?.fee_members_exempt_session &&
+    isAdmin ||
+    (!!(session.team as { fee_members_exempt_session?: boolean } | null)?.fee_members_exempt_session &&
     isMember &&
-    (membership?.membership_type === "annual" || membership?.membership_type === "monthly")
+    (membership?.membership_type === "annual" || membership?.membership_type === "monthly"))
 
   // 免除の場合は支払方法を cash に固定（クライアントが誤った値を送っても上書きする）
   const effectivePaymentMethod = isExempt ? "cash" : paymentMethod
@@ -640,7 +644,7 @@ export async function registerForSession(
       session_id: sessionId,
       swimmer_id: user.id,
       is_member: isMember,
-      payment_method: paymentMethod,
+      payment_method: effectivePaymentMethod,
       payment_status: isExempt ? "free" : "pending",
       competition_entry: competitionEntry || null,
     })

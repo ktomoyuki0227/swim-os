@@ -489,12 +489,13 @@ export async function getTeamFeeStats(teamId: string) {
   if (!adminMembership) return { error: "権限がありません" }
   const currentYear = new Date().getFullYear().toString()
 
-  // 全アクティブメンバーを取得
+  // 全アクティブメンバーを取得（管理者は会費不要のため除外）
   const { data: members } = await admin
     .from("team_members")
-    .select("swimmer_id, membership_type")
+    .select("swimmer_id, membership_type, role")
     .eq("team_id", teamId)
     .eq("status", "active")
+    .neq("role", "admin")
 
   if (!members || members.length === 0) {
     return { data: { paid: 0, subscriptionUnpaid: 0, stampUnpaid: 0, total: 0 } }
