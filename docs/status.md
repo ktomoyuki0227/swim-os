@@ -1,5 +1,5 @@
 # 作業ステータス
-最終更新: 2026-06-24（夜）
+最終更新: 2026-06-27
 
 ---
 
@@ -634,6 +634,77 @@ TypeScript: `tsc --noEmit` クリーン確認済み（.next/ 自動生成ファ�
 - `next.config.ts` は Supabase Storage（`*.supabase.co`）のみに戻してクリーンな状態に
 - 対象ファイル: `apps/rangers/next.config.ts`、`apps/rangers/supabase/seed_data.sql`
 - commit: `8c07b3c`
+
+---
+
+## 直近でやったこと（2026-06-27）
+
+### 通知システム 最終監査・バグ修正・品質整備 ✅
+
+**バグ修正（致命的）**
+- `createTeam()` の `team_created` 通知が RLS によりサイレントに失敗していた問題を修正
+  - 原因: notifications テーブルは RLS 有効 + INSERT ポリシーなし（service_role のみ INSERT 可）
+  - 旧: `supabase.from("notifications").insert(...)` → 新: `createAdminClient().from("notifications").insert(...)`
+  - 全コードベースでの notifications INSERT が adminClient に統一された
+
+**UI 改善: typeIcons マップの全タイプ網羅**
+- 旧: 10件（うち4件は stale キー: session_confirmed / deadline_reached / new_member / announcement）
+- 新: 18件（全 NotificationType を網羅・stale エントリ削除）
+  - 新規追加: team_created / member_joined / session_added / session_registered / session_cancelled_by_member / session_min_reached / session_updated / session_reminder / waitlist_available / payment_failed / stamp_low / fee_reminder
+  - カラーコーディング: 緑（成功・確定）/ 青（情報）/ 赤（キャンセル・失敗）/ アンバー（注意・リマインダー）
+
+**revalidatePath("/notifications") の追加（計10箇所）**
+- `sessions.ts`: createSession / updateSession / confirmSession / cancelSession / registerForSession / cancelRegistration / retryPayment / markCashPaid（8箇所）
+- `teams.ts`: createTeam / joinTeamByCode（2箇所）
+- join-requests.ts は既に全3関数で対応済みを確認
+
+**最終監査結果（全項目クリア）**
+- NotificationType 全18値が DB・TypeScript・UI アイコン・pg_cron すべてで整合 ✓
+- RLS: SELECT/UPDATE は本人のみ、INSERT は service_role のみ ✓
+- ナビゲーションバッジ: `(app)/layout.tsx` が `getUnreadNotificationCount()` を並列取得して渡す ✓
+- cron 重複防止: fee_reminder（月次）/ session_reminder（日次）ともに CONTINUE WHEN EXISTS で保護 ✓
+
+---
+
+## 直近でやったこと（2026-06-26）
+
+### 通知システム 全タイプ実装 + デモデータ整合 ✅
+
+**通知タイプ実装（actions/*.ts + migration）**
+
+全12タイプを実装（実装場所一覧）:
+
+| タイプ | トリガー | 実装場所 |
+|--------|---------|---------|
+| team_created | チーム作成時 | `createTeam()` |
+| member_joined | メンバー参加時（コード/承認） | `joinTeamByCode()` / `approveJoinRequest()` |
+| session_added | セッション作成・公開時 | `createSession()` |
+| session_registered | メンバーがセッション登録時 | `registerForSession()` |
+| session_min_reached | 最小参加人数達成時 | `registerForSession()` |
+| session_updated | セッション内容変更時 | `updateSession()` |
+| session_cancelled | セッションキャンセル時 | `cancelSession()` |
+| session_cancelled_by_member | メンバーが登録キャンセル時 | `cancelRegistration()` |
+| session_reminder | 前日（クーロン 18:00 JST） | migration 00047 pg_cron |
+| payment_charged | 決済発生全フロー | 各action |
+| fee_reminder | 月謝未払い（クーロン 毎月1日） | migration 00047 pg_cron |
+| join_request_received | 参加申請受信時 | `requestJoinTeam()` |
+
+**コードレビューで修正した不具合（7件）**
+- CRITICAL: pg_cron の重複防止を UNIQUE 制約（無効）→ CONTINUE WHEN EXISTS に変更
+- HIGH: pg_cron ジョブが冪等でない → cron.unschedule ガードを追加
+- HIGH: 管理者が自分への session_registered 通知を受信していた → `.neq()` フィルター追加
+- MEDIUM: session_cancelled_by_member でも管理者自己通知 → 同様に修正
+- MEDIUM: cancelSession で削除した管理者自身にもsession_cancelled が届いた → 修正
+- MEDIUM: waitlist_available に team_id が欠落していた → 追加
+- MEDIUM: revalidatePath("/notifications") が join-requests 系3関数に未記載 → 追加
+- LOW: markCashPaid のゲスト/メンバー料金が常にmember_price → is_member で分岐
+
+**デモデータ v4（seed_data.sql 完全書き直し）**
+- 過去セッション削減: 佐藤13→9 / 鈴木10→6 / 山田8→5
+- stamp_remaining を 5 → 7 に修正（10枚購入 - 過去2枚 - 確定済1枚 = 残7）
+- 通知 50件 → 全9タイプ網羅・時系列整合・6/20以降は is_read=false
+
+commits: `5a7aef6`, `60f017b`, `acc7874`, `177701a`, `b4d5d2e` → main
 
 ---
 

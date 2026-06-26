@@ -92,6 +92,7 @@ export async function createSession(teamId: string, data: unknown) {
   }
 
   revalidatePath("/sessions")
+  revalidatePath("/notifications")
   return { data: session }
 }
 
@@ -166,6 +167,7 @@ export async function updateSession(sessionId: string, data: unknown) {
   }
 
   revalidatePath("/sessions")
+  revalidatePath("/notifications")
   return { success: true }
 }
 
@@ -462,6 +464,7 @@ export async function confirmSession(sessionId: string) {
   await createSessionAnnouncement(session.team_id, session, "confirmed")
 
   revalidatePath("/sessions")
+  revalidatePath("/notifications")
   if (paymentErrors.length > 0) {
     return { success: true, failedPayments: paymentErrors.length }
   }
@@ -589,6 +592,7 @@ export async function cancelSession(sessionId: string) {
   }
 
   revalidatePath("/sessions")
+  revalidatePath("/notifications")
   return { success: true }
 }
 
@@ -865,6 +869,7 @@ export async function registerForSession(
   }
 
   revalidatePath(`/teams`)
+  revalidatePath("/notifications")
   return { success: true }
 }
 
@@ -1006,6 +1011,7 @@ export async function cancelRegistration(sessionId: string) {
   }
 
   revalidatePath("/teams")
+  revalidatePath("/notifications")
   return { success: true }
 }
 
@@ -1143,6 +1149,7 @@ export async function retryPayment(registrationId: string) {
   }
 
   revalidatePath("/sessions")
+  revalidatePath("/notifications")
   return { success: true }
 }
 
@@ -1378,5 +1385,6 @@ export async function markCashPaid(registrationId: string) {
   })
 
   revalidatePath(`/sessions/${reg.session_id}`)
+  revalidatePath("/notifications")
   return { data: null }
 }

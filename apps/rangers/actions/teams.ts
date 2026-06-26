@@ -96,8 +96,8 @@ export async function createTeam(data: unknown) {
     return { error: "グループの作成に失敗しました" }
   }
 
-  // チーム作成ウェルカム通知
-  await supabase.from("notifications").insert({
+  // チーム作成ウェルカム通知（RLS で INSERT が blocked されるため adminClient を使用）
+  await createAdminClient().from("notifications").insert({
     user_id: user.id,
     type: "team_created",
     title: `「${team.name}」を作成しました`,
@@ -107,6 +107,7 @@ export async function createTeam(data: unknown) {
   })
 
   revalidatePath("/teams")
+  revalidatePath("/notifications")
   return { data: team }
 }
 
@@ -291,6 +292,7 @@ export async function joinTeamByCode(
   }
 
   revalidatePath("/teams")
+  revalidatePath("/notifications")
   return { data: team }
 }
 
