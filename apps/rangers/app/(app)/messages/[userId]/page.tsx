@@ -54,7 +54,7 @@ export default async function MessageThreadPage({ params }: MessageThreadPagePro
     <div className="mx-auto flex max-w-2xl flex-col" style={{ height: "calc(100vh - 80px)" }}>
       {/* ヘッダー */}
       <div className="flex items-center gap-3 border-b px-4 py-3">
-        <Link href="/messages" className="rounded-md p-1 hover:bg-muted">
+        <Link href="/messages" className="rounded-md p-1 hover:bg-[#f2f7fa]">
           <ArrowLeft className="h-5 w-5" />
         </Link>
         {partner.avatar_url ? (
@@ -66,7 +66,7 @@ export default async function MessageThreadPage({ params }: MessageThreadPagePro
             className="rounded-full object-cover"
           />
         ) : (
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-100 text-sm font-medium text-blue-600">
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#005F8C]/10 text-sm font-medium text-[#005F8C]">
             {partner.name[0]}
           </div>
         )}
@@ -74,7 +74,7 @@ export default async function MessageThreadPage({ params }: MessageThreadPagePro
           <p className="font-medium">{partner.name}</p>
           <Link
               href={`/profiles/${partner.id}`}
-              className="text-xs text-blue-600 hover:underline"
+              className="text-xs text-[#005F8C] hover:underline"
             >
               プロフィールを見る
             </Link>
@@ -84,7 +84,7 @@ export default async function MessageThreadPage({ params }: MessageThreadPagePro
       {/* メッセージ一覧 */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {(messages ?? []).length === 0 && (
-          <p className="py-8 text-center text-sm text-muted-foreground">
+          <p className="py-8 text-center text-sm text-[#8d99a8]">
             まだメッセージはありません
           </p>
         )}
@@ -105,7 +105,7 @@ export default async function MessageThreadPage({ params }: MessageThreadPagePro
                     className="mb-1 rounded-full object-cover"
                   />
                 ) : (
-                  <div className="mb-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-medium text-blue-600">
+                  <div className="mb-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#005F8C]/10 text-xs font-medium text-[#005F8C]">
                     {partner.name[0]}
                   </div>
                 )
@@ -114,13 +114,13 @@ export default async function MessageThreadPage({ params }: MessageThreadPagePro
                 <div
                   className={`rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
                     isMine
-                      ? "rounded-br-sm bg-blue-500 text-white"
-                      : "rounded-bl-sm bg-muted text-foreground"
+                      ? "rounded-br-sm bg-[#005F8C] text-white"
+                      : "rounded-bl-sm bg-[#f2f7fa] text-[#1a2332]"
                   }`}
                 >
                   {msg.content}
                 </div>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-[#8d99a8]">
                   {new Date(msg.created_at).toLocaleTimeString("ja-JP", {
                     hour: "2-digit",
                     minute: "2-digit",

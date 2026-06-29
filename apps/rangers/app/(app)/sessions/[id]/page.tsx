@@ -88,7 +88,7 @@ export default async function SessionDetailPage({ params, searchParams }: Sessio
         </Link>
         <div className="mt-2 flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-xl font-bold text-[#1a2332]">{session.title}</h1>
+            <h1 className="text-lg font-semibold text-[#1a2332]">{session.title}</h1>
             <p className="text-sm text-[#5c6a7a]">
               {SESSION_TYPE_LABELS[session.type]} · {(team?.name as string) || ""}
             </p>
@@ -194,12 +194,12 @@ export default async function SessionDetailPage({ params, searchParams }: Sessio
           )
           const isBelowMin = cancelRule && count < (cancelRule.cancel_below ?? 0)
           return (
-            <div className={`rounded-xl border px-4 py-3 ${isBelowMin ? "border-[#E8614D]/30 bg-[#E8614D]/5" : "border-[#005F8C]/20 bg-[#005F8C]/5"}`}>
-              <p className={`text-xs font-semibold ${isBelowMin ? "text-[#E8614D]" : "text-[#005F8C]"}`}>
+            <div className={`rounded-[10px] border px-4 py-3 ${isBelowMin ? "border-[#c0392b]/30 bg-[#fdecea]" : "border-[#005F8C]/20 bg-[#005F8C]/5"}`}>
+              <p className={`text-xs font-semibold ${isBelowMin ? "text-[#c0392b]" : "text-[#005F8C]"}`}>
                 コース判定
               </p>
               <div className="mt-1 flex items-center gap-4">
-                <span className={`text-sm font-medium ${isBelowMin ? "text-[#E8614D]" : "text-[#1a2332]"}`}>
+                <span className={`text-sm font-medium ${isBelowMin ? "text-[#c0392b]" : "text-[#1a2332]"}`}>
                   現在 {count}名 →{" "}
                   {isBelowMin
                     ? `最低催行人数 ${cancelRule!.cancel_below}名 未満（中止検討）`
@@ -210,12 +210,12 @@ export default async function SessionDetailPage({ params, searchParams }: Sessio
               </div>
               <div className="mt-1 flex flex-wrap gap-2">
                 {thresholds.filter((r) => r.courses !== undefined).map((r, i) => (
-                  <span key={i} className={`rounded-full px-2 py-0.5 text-xs ${count >= (r.min ?? 0) && count <= (r.max ?? Infinity) ? "bg-[#005F8C] text-white" : "bg-[#f2f7fa] text-[#5c6a7a]"}`}>
+                  <span key={i} className={`rounded-full px-1 py-0.5 text-xs ${count >= (r.min ?? 0) && count <= (r.max ?? Infinity) ? "bg-[#005F8C] text-white" : "bg-[#f2f7fa] text-[#5c6a7a]"}`}>
                     {r.min}〜{r.max}名: {r.courses}コース
                   </span>
                 ))}
                 {cancelRule && (
-                  <span className={`rounded-full px-2 py-0.5 text-xs ${isBelowMin ? "bg-[#E8614D] text-white" : "bg-[#f2f7fa] text-[#5c6a7a]"}`}>
+                  <span className={`rounded-full px-1 py-0.5 text-xs ${isBelowMin ? "bg-[#c0392b] text-white" : "bg-[#f2f7fa] text-[#5c6a7a]"}`}>
                     {cancelRule.cancel_below}名未満: 中止
                   </span>
                 )}
@@ -225,7 +225,7 @@ export default async function SessionDetailPage({ params, searchParams }: Sessio
         }
 
         return (
-          <div className="rounded-xl border border-[#b8860b]/30 bg-[#fdf6e3] px-4 py-3">
+          <div className="rounded-[10px] border border-[#b8860b]/30 bg-[#fdf6e3] px-4 py-3">
             <div className="flex items-start gap-2">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 shrink-0 text-[#b8860b]">
                 <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
@@ -452,7 +452,7 @@ export default async function SessionDetailPage({ params, searchParams }: Sessio
                 return (
                   <div key={pv.id as string} className="flex items-center justify-between px-4 py-2.5">
                     <div className="flex items-center gap-2">
-                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[#E8614D]/10 text-[10px] font-semibold text-[#E8614D]">
+                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[#c0392b]/10 text-xs font-semibold text-[#c0392b]">
                         {(viewer?.name as string)?.[0] || "?"}
                       </div>
                       <span className="text-sm text-[#1a2332]">{(viewer?.name as string) || "不明"}</span>

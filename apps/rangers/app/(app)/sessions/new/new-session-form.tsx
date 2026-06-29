@@ -97,7 +97,7 @@ function StepIndicator({ current }: { current: number }) {
                   i + 1
                 )}
               </div>
-              <span className={`text-[10px] font-medium whitespace-nowrap ${active ? "text-[#005F8C]" : "text-[#8d99a8]"}`}>
+              <span className={`text-xs font-medium whitespace-nowrap ${active ? "text-[#005F8C]" : "text-[#8d99a8]"}`}>
                 {step.label}
               </span>
             </div>
@@ -448,7 +448,7 @@ export function NewSessionForm({
         <Card className="border-[#dce3ea]">
           <CardContent className="space-y-4 pt-5">
             <div className="space-y-1.5">
-              <Label htmlFor="title">タイトル <span className="text-[#E8614D]">*</span></Label>
+              <Label htmlFor="title">タイトル <span className="text-[#c0392b]">*</span></Label>
               <Input
                 id="title"
                 value={form.title}
@@ -493,7 +493,7 @@ export function NewSessionForm({
             <div className={`grid gap-4 ${form.type === "camp" ? "sm:grid-cols-2" : ""}`}>
               <div className="space-y-1.5">
                 <Label htmlFor="scheduled_at">
-                  {form.type === "camp" ? "開始日時" : "日時"} <span className="text-[#E8614D]">*</span>
+                  {form.type === "camp" ? "開始日時" : "日時"} <span className="text-[#c0392b]">*</span>
                 </Label>
                 <Input
                   id="scheduled_at"
@@ -518,7 +518,7 @@ export function NewSessionForm({
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="location">場所 <span className="text-[#E8614D]">*</span></Label>
+              <Label htmlFor="location">場所 <span className="text-[#c0392b]">*</span></Label>
               <Input
                 id="location"
                 value={form.location}
@@ -599,7 +599,7 @@ export function NewSessionForm({
               className={`flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-sm transition-colors ${
                 form.allow_point_card
                   ? "border-[#005F8C]/30 bg-[#e8f2f8] text-[#005F8C]"
-                  : "border-[#dce3ea] bg-[#f7fafc] text-[#5c6a7a]"
+                  : "border-[#dce3ea] bg-[#f2f7fa] text-[#5c6a7a]"
               }`}
             >
               <div className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 transition-colors ${
@@ -620,7 +620,7 @@ export function NewSessionForm({
               className={`flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-sm transition-colors ${
                 form.is_external
                   ? "border-[#005F8C]/30 bg-[#e8f2f8] text-[#005F8C]"
-                  : "border-[#dce3ea] bg-[#f7fafc] text-[#5c6a7a]"
+                  : "border-[#dce3ea] bg-[#f2f7fa] text-[#5c6a7a]"
               }`}
             >
               <div className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 transition-colors ${
@@ -752,7 +752,7 @@ export function NewSessionForm({
                     <button
                       type="button"
                       onClick={() => setCompetitionFields(competitionFields.filter((_, i) => i !== idx))}
-                      className="text-[#E8614D] hover:text-[#c0392b]"
+                      className="text-[#c0392b] hover:text-[#c0392b]"
                     >
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
@@ -805,10 +805,10 @@ export function NewSessionForm({
             <Card className="border-[#dce3ea]">
               <CardContent className="space-y-4 pt-4">
                 <p className="text-xs font-semibold text-[#5c6a7a]">タグで絞り込む</p>
-                <p className="text-[10px] text-[#8d99a8] leading-relaxed">タグを選ぶほどチェックが絞られます</p>
+                <p className="text-xs text-[#8d99a8] leading-relaxed">タグを選ぶほどチェックが絞られます</p>
                 {Object.entries(tagsByCategory).map(([category, tags]) => (
                   <div key={category}>
-                    <p className="mb-2 text-[10px] font-medium text-[#8d99a8]">{category}</p>
+                    <p className="mb-2 text-xs font-medium text-[#8d99a8]">{category}</p>
                     <div className="flex flex-wrap gap-1.5">
                       {tags.map((tag) => (
                         <button
@@ -835,7 +835,7 @@ export function NewSessionForm({
                   <button
                     type="button"
                     onClick={() => setSelectedTags([])}
-                    className="text-xs text-[#E8614D] hover:underline"
+                    className="text-xs text-[#c0392b] hover:underline"
                   >
                     リセット（全員選択に戻す）
                   </button>
@@ -851,7 +851,7 @@ export function NewSessionForm({
                       メンバー一覧（{selectedMemberIds.length}/{teamMembers.length}人 選択中）
                     </p>
                     {untaggedCount > 0 && (
-                      <p className="mt-0.5 text-[10px] text-[#8d99a8]">※ タグ未設定 {untaggedCount}人あり</p>
+                      <p className="mt-0.5 text-xs text-[#8d99a8]">※ タグ未設定 {untaggedCount}人あり</p>
                     )}
                   </div>
                   <button
@@ -897,7 +897,7 @@ export function NewSessionForm({
                             )
                           }
                           className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors ${
-                            isChecked ? "bg-[#e8f2f8]" : "opacity-50 hover:opacity-80 hover:bg-[#f7fafc]"
+                            isChecked ? "bg-[#e8f2f8]" : "opacity-50 hover:opacity-80 hover:bg-[#f2f7fa]"
                           }`}
                         >
                           <div className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 transition-colors ${
@@ -915,7 +915,7 @@ export function NewSessionForm({
                           <div className="min-w-0 flex-1">
                             <p className="truncate text-sm font-medium text-[#1a2332]">{swimmer.name as string}</p>
                             {memberTagLabels.length > 0 && (
-                              <p className="truncate text-[10px] text-[#8d99a8]">{memberTagLabels.join(" · ")}</p>
+                              <p className="truncate text-xs text-[#8d99a8]">{memberTagLabels.join(" · ")}</p>
                             )}
                           </div>
                         </button>
@@ -937,7 +937,7 @@ export function NewSessionForm({
 
             <div className="space-y-2">
               <p className="text-xs font-semibold text-[#8d99a8] uppercase tracking-wide">基本情報</p>
-              <div className="rounded-xl bg-[#f7fafc] px-4 py-3 text-sm space-y-2">
+              <div className="rounded-xl bg-[#f2f7fa] px-4 py-3 text-sm space-y-2">
                 <div className="flex gap-2">
                   <span className="w-24 shrink-0 text-[#8d99a8]">タイトル</span>
                   <span className="font-medium text-[#1a2332]">{form.title}</span>
@@ -983,7 +983,7 @@ export function NewSessionForm({
 
             <div className="space-y-2">
               <p className="text-xs font-semibold text-[#8d99a8] uppercase tracking-wide">参加費</p>
-              <div className="rounded-xl bg-[#f7fafc] px-4 py-3 text-sm space-y-2">
+              <div className="rounded-xl bg-[#f2f7fa] px-4 py-3 text-sm space-y-2">
                 <div className="flex gap-2">
                   <span className="w-24 shrink-0 text-[#8d99a8]">メンバー</span>
                   <span className="text-[#1a2332]">¥{parseInt(form.member_price || "0").toLocaleString()}</span>
@@ -1001,7 +1001,7 @@ export function NewSessionForm({
 
             <div className="space-y-2">
               <p className="text-xs font-semibold text-[#8d99a8] uppercase tracking-wide">詳細設定</p>
-              <div className="rounded-xl bg-[#f7fafc] px-4 py-3 text-sm space-y-2">
+              <div className="rounded-xl bg-[#f2f7fa] px-4 py-3 text-sm space-y-2">
                 {form.registration_deadline && (
                   <div className="flex gap-2">
                     <span className="w-24 shrink-0 text-[#8d99a8]">申込締切</span>
@@ -1036,12 +1036,12 @@ export function NewSessionForm({
             {form.type === "competition" && competitionFields.length > 0 && (
               <div className="space-y-2">
                 <p className="text-xs font-semibold text-[#8d99a8] uppercase tracking-wide">エントリー項目</p>
-                <div className="rounded-xl bg-[#f7fafc] px-4 py-3 text-sm space-y-1.5">
+                <div className="rounded-xl bg-[#f2f7fa] px-4 py-3 text-sm space-y-1.5">
                   {competitionFields.map((f, i) => (
                     <div key={i} className="flex items-center gap-2">
                       <span className="text-[#1a2332]">{f.label || "（未入力）"}</span>
                       {f.required && (
-                        <span className="rounded-full bg-[#fdecea] px-1.5 py-0.5 text-[10px] font-medium text-[#c0392b]">必須</span>
+                        <span className="rounded-full bg-[#fdecea] px-1.5 py-0.5 text-xs font-medium text-[#c0392b]">必須</span>
                       )}
                     </div>
                   ))}
@@ -1051,7 +1051,7 @@ export function NewSessionForm({
 
             <div className="space-y-2">
               <p className="text-xs font-semibold text-[#8d99a8] uppercase tracking-wide">配信対象</p>
-              <div className="rounded-xl bg-[#f7fafc] px-4 py-3 text-sm space-y-2">
+              <div className="rounded-xl bg-[#f2f7fa] px-4 py-3 text-sm space-y-2">
                 {selectedTags.length > 0 && (
                   <div className="flex gap-2">
                     <span className="w-24 shrink-0 text-[#8d99a8]">タグ絞込</span>

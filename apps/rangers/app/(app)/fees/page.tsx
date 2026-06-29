@@ -92,7 +92,7 @@ export default async function FeesPage({ searchParams }: FeesPageProps) {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-[#1a2332]">会費管理</h1>
+          <h1 className="text-lg font-semibold text-[#1a2332]">会費管理</h1>
         </div>
 
         {adminTeams.length === 0 ? (
@@ -176,7 +176,7 @@ export default async function FeesPage({ searchParams }: FeesPageProps) {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-[#1a2332]">会費管理</h1>
+        <h1 className="text-lg font-semibold text-[#1a2332]">会費管理</h1>
       </div>
 
       {adminTeams.length === 0 ? (
@@ -328,7 +328,7 @@ function NoFeeTypeMessage({ teamId }: { teamId: string }) {
             variant="outline"
             size="sm"
             className="rounded-full border-[#dce3ea] text-[#005F8C]"
-            style={{ minHeight: "40px" }}
+            style={{ minHeight: "44px" }}
           >
             グループを編集
           </Button>

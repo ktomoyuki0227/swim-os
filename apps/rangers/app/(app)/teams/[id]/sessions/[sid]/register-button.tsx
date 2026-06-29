@@ -76,7 +76,7 @@ export function RegisterButton({
               <div key={field.key} className="space-y-1">
                 <Label className="text-xs">
                   {field.label}
-                  {field.required && <span className="text-[#E8614D]"> *</span>}
+                  {field.required && <span className="text-[#c0392b]"> *</span>}
                 </Label>
                 <Input
                   value={entryData[field.key] || ""}
@@ -179,8 +179,8 @@ export function RegisterButton({
                   disabled={isLoading}
                   className="flex w-full items-center gap-3 rounded-xl border border-[#dce3ea] bg-white p-4 text-left transition-all hover:border-[#005F8C] disabled:opacity-60"
                 >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#E8614D]/10">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E8614D" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#c0392b]/10">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#c0392b" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                       <rect x="2" y="5" width="20" height="14" rx="2" />
                       <line x1="2" y1="10" x2="22" y2="10" />
                     </svg>

@@ -6,19 +6,19 @@ import { MailCheck } from "lucide-react"
 export default function RegisterConfirmPage() {
   return (
     <div className="w-full max-w-md">
-      <Card className="w-full border-white/10 bg-white/95 shadow-2xl backdrop-blur-sm">
+      <Card className="w-full border-[#dce3ea] bg-white shadow-lg">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-blue-50">
-            <MailCheck className="h-7 w-7 text-blue-500" />
+          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-[#005F8C]/[0.08]">
+            <MailCheck className="h-7 w-7 text-[#005F8C]" />
           </div>
-          <CardTitle className="text-2xl text-blue-600">確認メールを送信しました</CardTitle>
+          <CardTitle className="text-2xl text-[#005F8C]">確認メールを送信しました</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4 text-center">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-[#5c6a7a]">
             ご登録いただいたメールアドレスに確認メールを送信しました。
             メール内のリンクをクリックして、アカウントを有効化してください。
           </p>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-[#5c6a7a]">
             メールが届かない場合は、迷惑メールフォルダもご確認ください。
           </p>
           <Link href="/login">
@@ -28,7 +28,7 @@ export default function RegisterConfirmPage() {
           </Link>
         </CardContent>
       </Card>
-      <p className="mt-6 text-center text-sm text-slate-400">
+      <p className="mt-6 text-center text-sm text-[#8d99a8]">
         Rangers · マスターズ水泳レッスン予約
       </p>
     </div>

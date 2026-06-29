@@ -150,7 +150,7 @@ export function SessionActions({
           onClick={handleCancel}
           disabled={isConfirming || isCancelling || isDeleting}
           variant="outline"
-          className="flex-1 rounded-full border-[#E8614D] text-[#E8614D] hover:bg-[#E8614D]/5"
+          className="flex-1 rounded-full border-[#c0392b] text-[#c0392b] hover:bg-[#c0392b]/5"
           style={{ minHeight: "48px" }}
         >
           {isCancelling ? "処理中..." : "セッションを中止"}
@@ -163,7 +163,7 @@ export function SessionActions({
           onClick={handleRetryAll}
           disabled={isRetrying}
           variant="outline"
-          className="w-full rounded-full border-red-400 text-red-600 hover:bg-red-50"
+          className="w-full rounded-full border-[#c0392b] text-[#c0392b] hover:bg-[#fdecea]"
           style={{ minHeight: "44px" }}
         >
           {isRetrying ? "再決済中..." : `決済失敗 ${failedRegistrationIds.length}件を再試行`}
@@ -226,7 +226,7 @@ export function SessionActions({
         type="button"
         onClick={handleDelete}
         disabled={isDeleting || isConfirming || isCancelling}
-        className="w-full rounded-full border border-dashed border-[#E8614D]/40 py-2.5 text-sm text-[#E8614D]/60 hover:border-[#E8614D] hover:text-[#E8614D] disabled:opacity-40"
+        className="w-full rounded-full border border-dashed border-[#c0392b]/40 py-3 text-sm text-[#c0392b]/60 hover:border-[#c0392b] hover:text-[#c0392b] disabled:opacity-40"
       >
         {isDeleting ? "削除中..." : "セッションを削除"}
       </button>

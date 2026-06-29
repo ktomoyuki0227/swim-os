@@ -637,6 +637,43 @@ TypeScript: `tsc --noEmit` クリーン確認済み（.next/ 自動生成ファ�
 
 ---
 
+## 直近でやったこと（2026-06-29）
+
+### DESIGN.md 準拠 UI/UX 全面修正 ✅
+
+全ページ・全コンポーネントのカラー・スペーシング・タイポグラフィ・角丸・アイコンを DESIGN.md のデザイントークンに統一。
+
+**修正範囲（56ファイル）**
+
+- アプリページ: dashboard / profile / notifications / teams / search / payments / fees / sessions / messages（一覧・スレッド）
+- 認証ページ: login / register / register/sent / register/confirm / forgot-password / reset-password / onboarding / onboarding/complete
+- 公開ページ: about / price / faq / coach-recruit / profiles/[id]
+- コンポーネント: navigation / toast / session-calendar / schedule-section / session-tabs / public-team-view / public-footer / message-input / contact-info-button
+- teams サブページ: new / edit / join / join-requests-tab / member-list / member-detail-modal / admin-action-buttons / invite-section / cancel-button / register-button / price-reveal / cash-collection / session-actions
+
+**主な修正パターン**
+
+| パターン | 内容 |
+|----------|------|
+| `#E8614D` → `#c0392b` | アプリ内のアクセント色を status-error に統一（LP・TEAM_COLORS除外） |
+| Tailwind デフォルト色 → DESIGN.md トークン | blue-*/red-*/green-*/gray-*/slate-* を全廃止 |
+| `text-muted-foreground` / `bg-muted` → 明示的カラー | ページコンポーネントで CSS 変数依存を解消 |
+| DESIGN.md 外 HEX → 正規トークン | #dc2626→#c0392b, #3b5bdb→#005F8C, #b0bac6→#8d99a8, #f5f8fa→#f2f7fa 等 |
+| `text-[10px]` / `text-[11px]` → `text-xs` | 12px下限ルール準拠（通知バッジ・LP除外） |
+| `strokeWidth="2"` → `1.8` | 20px以上アイコンの strokeWidth 統一 |
+| `shadow-2xl` → `shadow-lg` | DESIGN.md シャドウ体系に統一 |
+| 見出し → heading-sm (18px/600) | 各ページタイトルを統一 |
+| エンプティステート正規化 | 48px アイコンラッパー + body-strong タイトル + caption 説明 |
+| 角丸 → DESIGN.md 値 | rounded-xl→rounded-[14px], rounded-lg→rounded-[10px] 等 |
+
+**除外（意図的）**
+- LP ページ `(public)/page.tsx` — 独自デザイン
+- shadcn/ui コンポーネント（button/card/badge等） — テーマ変数経由
+- TEAM_COLORS 配列の `#E8614D` — チーム識別色
+- 通知バッジの `text-[10px]` — 16px円内のため例外
+
+---
+
 ## 直近でやったこと（2026-06-27）
 
 ### 通知システム 最終監査・バグ修正・品質整備 ✅

@@ -113,7 +113,7 @@ function MemberMenu({
                 setOpen(false)
                 onRemove(swimmerId, memberName)
               }}
-              className="flex w-full items-center px-4 py-2.5 text-sm text-red-600 transition-colors hover:bg-red-50"
+              className="flex w-full items-center px-4 py-2.5 text-sm text-[#c0392b] transition-colors hover:bg-[#fdecea]"
             >
               削除
             </button>
@@ -161,7 +161,7 @@ function DeleteConfirmModal({
             type="button"
             onClick={onConfirm}
             disabled={isRemoving}
-            className="flex-1 rounded-full bg-red-600 py-2.5 text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-50"
+            className="flex-1 rounded-full bg-[#c0392b] py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#a93226] disabled:opacity-50"
             style={{ minHeight: "44px" }}
           >
             {isRemoving ? "削除中..." : "削除する"}
@@ -275,7 +275,7 @@ export function MemberList({
                   {!!swimmer?.furigana && (
                     <p className="text-xs text-[#8d99a8]">{swimmer.furigana}</p>
                   )}
-                  <p className="text-[11px] text-[#8d99a8]">
+                  <p className="text-xs text-[#8d99a8]">
                     参加 {new Date(member.joined_at).toLocaleDateString("ja-JP", { year: "numeric", month: "short", day: "numeric" })}
                   </p>
                 </div>
@@ -283,17 +283,17 @@ export function MemberList({
                 {/* バッジ・メニュー（右寄せ） */}
                 <div className="flex shrink-0 items-center gap-1.5">
                   {isAdmin && (
-                    <Badge className="border-transparent bg-[#e8f2f8] px-1.5 py-0 text-[10px] text-[#005F8C]">
+                    <Badge className="border-transparent bg-[#e8f2f8] px-1.5 py-0 text-xs text-[#005F8C]">
                       管理者
                     </Badge>
                   )}
                   <Badge
                     className={
                       isLowStamp
-                        ? "border-transparent bg-[#fef2f2] px-1.5 py-0 text-[10px] text-[#dc2626]"
+                        ? "border-transparent bg-[#fdecea] px-1.5 py-0 text-xs text-[#c0392b]"
                         : isPointCard
-                          ? "border-transparent bg-[#fdf6e3] px-1.5 py-0 text-[10px] text-[#b8860b]"
-                          : "border-transparent bg-[#eaf7f0] px-1.5 py-0 text-[10px] text-[#0f8a4f]"
+                          ? "border-transparent bg-[#fdf6e3] px-1.5 py-0 text-xs text-[#b8860b]"
+                          : "border-transparent bg-[#eaf7f0] px-1.5 py-0 text-xs text-[#0f8a4f]"
                     }
                   >
                     {membershipLabel}
@@ -318,32 +318,32 @@ export function MemberList({
                   {(levelStars || (swimmer?.specialties ?? []).length > 0 || (swimmer?.swimming_goals ?? []).length > 0 || !!swimmer?.swimmer_type || (swimmer?.swim_disciplines ?? []).length > 0) && (
                     <div className="flex flex-wrap items-center gap-1">
                       {levelStars && swimmer?.level && (
-                        <span className="mr-1 text-[11px] font-medium text-[#8d99a8]">{levelStars} {swimmer.level}</span>
+                        <span className="mr-1 text-xs font-medium text-[#8d99a8]">{levelStars} {swimmer.level}</span>
                       )}
                       {swimmer?.specialties?.map((s) => (
-                        <span key={s} className="rounded-full bg-[#e8f2f8] px-2 py-0.5 text-[10px] text-[#005F8C]">
+                        <span key={s} className="rounded-full bg-[#e8f2f8] px-2 py-0.5 text-xs text-[#005F8C]">
                           {s}
                         </span>
                       ))}
                       {swimmer?.swimming_goals?.map((g) => (
-                        <span key={g} className="rounded-full bg-[#f0faf5] px-2 py-0.5 text-[10px] text-[#0f8a4f]">
+                        <span key={g} className="rounded-full bg-[#eaf7f0] px-2 py-0.5 text-xs text-[#0f8a4f]">
                           {g}
                         </span>
                       ))}
                       {swimmer?.swimmer_type && (
-                        <span className="rounded-full bg-[#f0f4ff] px-2 py-0.5 text-[10px] text-[#3b5bdb]">
+                        <span className="rounded-full bg-[#e8f2f8] px-2 py-0.5 text-xs text-[#005F8C]">
                           {swimmer.swimmer_type}
                         </span>
                       )}
                       {swimmer?.swim_disciplines?.map((d) => (
-                        <span key={d} className="rounded-full bg-[#f0f4ff] px-2 py-0.5 text-[10px] text-[#3b5bdb]">
+                        <span key={d} className="rounded-full bg-[#e8f2f8] px-2 py-0.5 text-xs text-[#005F8C]">
                           {d}
                         </span>
                       ))}
                     </div>
                   )}
                   {/* 個人情報 */}
-                  <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-[#8d99a8]">
+                  <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-[#8d99a8]">
                     {!!swimmer?.gender && (
                       <span>
                         {swimmer.gender === "male" ? "男性" : swimmer.gender === "female" ? "女性" : "その他"}

@@ -56,7 +56,7 @@ export function MessageInput({ receiverId }: MessageInputProps) {
       <button
         type="submit"
         disabled={isPending || !content.trim()}
-        className="flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-xl bg-blue-500 text-white transition-colors hover:bg-blue-600 disabled:opacity-50"
+        className="flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-[14px] bg-[#005F8C] text-white transition-colors hover:bg-[#004E73] disabled:opacity-50"
         aria-label="送信"
       >
         <Send className="h-4 w-4" />

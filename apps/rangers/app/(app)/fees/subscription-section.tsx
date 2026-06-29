@@ -100,7 +100,7 @@ function MemberSubscriptionCard({
       return <Badge className="bg-[#fdf6e3] text-[#b8860b] border-transparent">支払い遅延</Badge>
     }
     if (status === "unpaid") {
-      return <Badge className="bg-[#fde9e7] text-[#E8614D] border-transparent">未払い</Badge>
+      return <Badge className="bg-[#fdecea] text-[#c0392b] border-transparent">未払い</Badge>
     }
     return <Badge className="bg-[#edf0f4] text-[#5c6a7a] border-transparent">{status}</Badge>
   }
@@ -135,7 +135,7 @@ function MemberSubscriptionCard({
             variant="outline"
             onClick={handleCancel}
             disabled={isPending}
-            className="rounded-full border-[#E8614D] text-[#E8614D] hover:bg-[#E8614D]/10 shrink-0"
+            className="rounded-full border-[#c0392b] text-[#c0392b] hover:bg-[#c0392b]/10 shrink-0"
             style={{ minHeight: "36px" }}
           >
             {isPending ? "処理中..." : "停止"}

@@ -143,7 +143,7 @@ export function Navigation({ userName, avatarUrl, unreadCount = 0, inactiveRoute
                 <path d="M13.73 21a2 2 0 0 1-3.46 0" />
               </svg>
               {unreadCount > 0 && (
-                <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#E8614D] text-[10px] font-bold text-white">
+                <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#c0392b] text-[10px] font-bold text-white">
                   {unreadCount > 9 ? "9+" : unreadCount}
                 </span>
               )}
@@ -182,7 +182,7 @@ export function Navigation({ userName, avatarUrl, unreadCount = 0, inactiveRoute
                   <button
                     type="button"
                     onClick={handleLogout}
-                    className="flex w-full items-center gap-2.5 px-4 py-3 text-sm text-[#E8614D] hover:bg-[#fff5f4]"
+                    className="flex w-full items-center gap-2.5 px-4 py-3 text-sm text-[#c0392b] hover:bg-[#fdecea]"
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
@@ -207,7 +207,7 @@ export function Navigation({ userName, avatarUrl, unreadCount = 0, inactiveRoute
               key={link.href}
               href={link.href}
               className={cn(
-                "flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px] font-medium transition-colors",
+                "flex flex-1 flex-col items-center gap-0.5 py-2 text-xs font-medium transition-colors",
                 isActive(link.href)
                   ? "text-[#005F8C]"
                   : "text-[#8d99a8]"

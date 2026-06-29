@@ -60,7 +60,7 @@ export function SessionTabs({ registeredUpcoming, allUpcoming, pastSessions }: P
             {t.label}
             {t.count > 0 && (
               <span
-                className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold
+                className={`rounded-full px-1.5 py-0.5 text-xs font-semibold
                   ${tab === t.key ? "bg-[#005F8C]/10 text-[#005F8C]" : "bg-[#dce3ea] text-[#5c6a7a]"}`}
               >
                 {t.count}
@@ -88,13 +88,13 @@ export function SessionTabs({ registeredUpcoming, allUpcoming, pastSessions }: P
                     className="flex w-14 shrink-0 flex-col items-center rounded-xl py-2"
                     style={{ backgroundColor: `${session.team_color}18` }}
                   >
-                    <span className="text-[10px] font-medium" style={{ color: session.team_color }}>
+                    <span className="text-xs font-medium" style={{ color: session.team_color }}>
                       {new Date(session.scheduled_at).toLocaleDateString("ja-JP", { month: "short" })}
                     </span>
                     <span className="text-xl font-bold leading-tight" style={{ color: session.team_color }}>
                       {new Date(session.scheduled_at).getDate()}
                     </span>
-                    <span className="text-[10px]" style={{ color: session.team_color }}>
+                    <span className="text-xs" style={{ color: session.team_color }}>
                       {new Date(session.scheduled_at).toLocaleDateString("ja-JP", { weekday: "short" })}
                     </span>
                   </div>

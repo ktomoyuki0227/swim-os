@@ -35,13 +35,13 @@ export default async function MessagesPage() {
   if (partnerIds.size === 0) {
     return (
       <div className="mx-auto max-w-2xl">
-        <h1 className="mb-6 text-2xl font-bold">メッセージ</h1>
+        <h1 className="mb-6 text-lg font-semibold text-[#1a2332]">メッセージ</h1>
         <div className="flex flex-col items-center gap-3 py-16 text-center">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted">
-            <MessageCircle className="h-8 w-8 text-muted-foreground" />
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[rgba(0,95,140,0.08)]">
+            <MessageCircle className="h-6 w-6 text-[#8d99a8]" />
           </div>
-          <p className="font-medium">まだメッセージはありません</p>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base font-semibold text-[#1a2332]">まだメッセージはありません</p>
+          <p className="text-sm text-[#5c6a7a]">
             グループ管理者からのメッセージがここに表示されます
           </p>
         </div>
@@ -76,11 +76,11 @@ export default async function MessagesPage() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <h1 className="mb-6 text-2xl font-bold">メッセージ</h1>
-      <div className="divide-y rounded-xl border bg-card">
+      <h1 className="mb-6 text-lg font-semibold text-[#1a2332]">メッセージ</h1>
+      <div className="divide-y divide-[#e8edf2] rounded-[14px] border border-[#dce3ea] bg-white">
         {(partners ?? []).map((partner) => (
           <Link key={partner.id} href={`/messages/${partner.id}`}>
-            <div className="flex items-center gap-4 px-4 py-4 transition-colors hover:bg-muted/40">
+            <div className="flex items-center gap-4 px-4 py-4 transition-colors hover:bg-[#f2f7fa]">
               {partner.avatar_url ? (
                 <Image
                   src={partner.avatar_url}
@@ -90,27 +90,27 @@ export default async function MessagesPage() {
                   className="rounded-full object-cover"
                 />
               ) : (
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 font-medium text-blue-600">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#005F8C]/10 font-semibold text-[#005F8C]">
                   {partner.name[0]}
                 </div>
               )}
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between">
-                  <p className="font-medium">{partner.name}</p>
+                  <p className="font-medium text-[#1a2332]">{partner.name}</p>
                   {latestMessages[partner.id] && (
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-[#8d99a8]">
                       {new Date(latestMessages[partner.id].created_at).toLocaleDateString("ja-JP")}
                     </p>
                   )}
                 </div>
                 {latestMessages[partner.id] && (
-                  <p className="truncate text-sm text-muted-foreground">
+                  <p className="truncate text-sm text-[#5c6a7a]">
                     {latestMessages[partner.id].content}
                   </p>
                 )}
               </div>
               {(unreadCounts[partner.id] ?? 0) > 0 && (
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-500 text-xs font-bold text-white">
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#005F8C] text-xs font-bold text-white">
                   {unreadCounts[partner.id]}
                 </span>
               )}

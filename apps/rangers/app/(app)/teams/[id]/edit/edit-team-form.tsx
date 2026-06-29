@@ -216,7 +216,7 @@ export function EditTeamForm({ team, stripeEnabled, connectStatus }: EditTeamFor
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-1.5">
-              <Label htmlFor="name">グループ名 <span className="text-[#E8614D]">*</span></Label>
+              <Label htmlFor="name">グループ名 <span className="text-[#c0392b]">*</span></Label>
               <Input
                 id="name"
                 name="name"
@@ -381,7 +381,7 @@ export function EditTeamForm({ team, stripeEnabled, connectStatus }: EditTeamFor
             <div className="space-y-2">
               <Label>グループイメージ画像（ヒーロー）</Label>
               <div
-                className="relative w-full overflow-hidden rounded-xl border border-dashed border-[#dce3ea] bg-[#f5f8fa] cursor-pointer hover:border-[#005F8C]/50 transition-colors"
+                className="relative w-full overflow-hidden rounded-xl border border-dashed border-[#dce3ea] bg-[#f2f7fa] cursor-pointer hover:border-[#005F8C]/50 transition-colors"
                 style={{ aspectRatio: "16/5" }}
                 onClick={() => coverInputRef.current?.click()}
               >
@@ -396,7 +396,7 @@ export function EditTeamForm({ team, stripeEnabled, connectStatus }: EditTeamFor
                   <div className="flex h-full w-full flex-col items-center justify-center gap-1">
                     <span className="text-2xl">🖼</span>
                     <p className="text-xs text-[#8d99a8]">クリックして画像を選択</p>
-                    <p className="text-[10px] text-[#b0bac6]">JPEG / PNG / WebP・5MB以下</p>
+                    <p className="text-xs text-[#8d99a8]">JPEG / PNG / WebP・5MB以下</p>
                   </div>
                 )}
               </div>
@@ -426,7 +426,7 @@ export function EditTeamForm({ team, stripeEnabled, connectStatus }: EditTeamFor
               <Label>グループアイコン（丸アイコン）</Label>
               <div className="flex items-center gap-4">
                 <div
-                  className="relative h-20 w-20 shrink-0 cursor-pointer overflow-hidden rounded-full border border-dashed border-[#dce3ea] bg-[#f5f8fa] hover:border-[#005F8C]/50 transition-colors"
+                  className="relative h-20 w-20 shrink-0 cursor-pointer overflow-hidden rounded-full border border-dashed border-[#dce3ea] bg-[#f2f7fa] hover:border-[#005F8C]/50 transition-colors"
                   onClick={() => iconInputRef.current?.click()}
                 >
                   {iconPreview ? (
@@ -451,7 +451,7 @@ export function EditTeamForm({ team, stripeEnabled, connectStatus }: EditTeamFor
                   >
                     画像を選択
                   </button>
-                  <p className="mt-1 text-[10px] text-[#b0bac6]">JPEG / PNG / WebP・5MB以下</p>
+                  <p className="mt-1 text-xs text-[#8d99a8]">JPEG / PNG / WebP・5MB以下</p>
                   {iconPreview && (
                     <button
                       type="button"

@@ -83,13 +83,13 @@ export default function FaqPage() {
       {/* ヒーロー */}
       <section className="bg-gradient-to-b from-sky-50 to-white py-20 text-center">
         <div className="mx-auto max-w-2xl px-4">
-          <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-blue-500">
+          <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-[#005F8C]">
             FAQ
           </p>
           <h1 className="mb-4 text-4xl font-bold tracking-tight sm:text-5xl">よくある質問</h1>
-          <p className="text-muted-foreground">
+          <p className="text-[#5c6a7a]">
             解決しない場合は{" "}
-            <Link href="/messages" className="text-blue-600 hover:underline">
+            <Link href="/messages" className="text-[#005F8C] hover:underline">
               サポートへお問い合わせ
             </Link>{" "}
             ください
@@ -103,7 +103,7 @@ export default function FaqPage() {
           {faqs.map((section) => (
             <section key={section.category}>
               <div className="mb-5 flex items-center gap-3">
-                <div className="h-6 w-1 rounded-full bg-blue-500" />
+                <div className="h-6 w-1 rounded-full bg-[#005F8C]" />
                 <h2 className="text-lg font-bold">{section.category}</h2>
               </div>
               <div className="space-y-2">
@@ -114,12 +114,12 @@ export default function FaqPage() {
                   >
                     <summary className="flex cursor-pointer list-none items-center justify-between px-6 py-4 font-medium">
                       <span>{item.q}</span>
-                      <span className="ml-4 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-sm font-bold text-muted-foreground transition-transform group-open:rotate-45">
+                      <span className="ml-4 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#f2f7fa]text-sm font-bold text-[#5c6a7a] transition-transform group-open:rotate-45">
                         +
                       </span>
                     </summary>
-                    <div className="border-t bg-muted/20 px-6 py-4">
-                      <p className="text-sm leading-relaxed text-muted-foreground">{item.a}</p>
+                    <div className="border-t bg-[#f2f7fa]/20 px-6 py-4">
+                      <p className="text-sm leading-relaxed text-[#5c6a7a]">{item.a}</p>
                     </div>
                   </details>
                 ))}
@@ -131,12 +131,12 @@ export default function FaqPage() {
         {/* お問い合わせ */}
         <div className="mt-16 rounded-2xl bg-sky-50 p-8 text-center">
           <p className="mb-1 font-semibold">解決しませんでしたか？</p>
-          <p className="mb-5 text-sm text-muted-foreground">
+          <p className="mb-5 text-sm text-[#5c6a7a]">
             サポートグループがお答えします。
           </p>
           <Link
             href="/messages"
-            className="inline-flex items-center gap-2 rounded-full bg-blue-500 px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-600"
+            className="inline-flex items-center gap-2 rounded-full bg-[#005F8C] px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#004E73]"
           >
             サポートに問い合わせる
           </Link>

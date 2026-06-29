@@ -60,7 +60,7 @@ export default function AboutPage() {
       {/* ヒーロー */}
       <section className="bg-gradient-to-b from-sky-50 to-white py-20 text-center">
         <div className="mx-auto max-w-3xl px-4">
-          <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-blue-500">
+          <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-[#005F8C]">
             How it works
           </p>
           <h1 className="mb-5 text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
@@ -68,14 +68,14 @@ export default function AboutPage() {
             <br />
             もっと身近に。
           </h1>
-          <p className="mx-auto mb-10 max-w-xl text-lg leading-relaxed text-muted-foreground">
+          <p className="mx-auto mb-10 max-w-xl text-lg leading-relaxed text-[#5c6a7a]">
             Rangers は元日本代表・競技経験豊富なコーチによる
             マンツーマン水泳指導のプラットフォームです。
             あなたのペースで、好きな場所・好きな時間に上達できます。
           </p>
           <div className="flex justify-center gap-3">
             <Link href="/register">
-              <Button size="lg" className="bg-blue-500 hover:bg-blue-600">
+              <Button size="lg" className="bg-[#005F8C] hover:bg-[#004E73]">
                 無料で登録する
               </Button>
             </Link>
@@ -91,7 +91,7 @@ export default function AboutPage() {
       {/* 6つの特徴 */}
       <section className="py-20">
         <div className="mx-auto max-w-5xl px-4">
-          <p className="mb-2 text-center text-sm font-semibold uppercase tracking-widest text-blue-500">
+          <p className="mb-2 text-center text-sm font-semibold uppercase tracking-widest text-[#005F8C]">
             Features
           </p>
           <h2 className="mb-12 text-center text-3xl font-bold tracking-tight">
@@ -113,7 +113,7 @@ export default function AboutPage() {
                   />
                 </div>
                 <h3 className="mb-2 font-semibold">{title}</h3>
-                <p className="text-sm leading-relaxed text-muted-foreground">{description}</p>
+                <p className="text-sm leading-relaxed text-[#5c6a7a]">{description}</p>
               </div>
             ))}
           </div>
@@ -123,7 +123,7 @@ export default function AboutPage() {
       {/* 利用の流れ */}
       <section className="bg-sky-50 py-20">
         <div className="mx-auto max-w-5xl px-4">
-          <p className="mb-2 text-center text-sm font-semibold uppercase tracking-widest text-blue-500">
+          <p className="mb-2 text-center text-sm font-semibold uppercase tracking-widest text-[#005F8C]">
             How to start
           </p>
           <h2 className="mb-14 text-center text-3xl font-bold tracking-tight">利用の流れ</h2>
@@ -133,18 +133,18 @@ export default function AboutPage() {
             {steps.map(({ step, title, desc }, i) => (
               <div key={step} className="flex flex-1 items-start">
                 <div className="flex-1 text-center">
-                  <div className="relative mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-blue-500 text-xl font-bold text-white shadow-md shadow-blue-200">
+                  <div className="relative mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#005F8C] text-xl font-bold text-white shadow-md shadow-[#005F8C]/20">
                     {step}
                   </div>
                   <h3 className="mb-1.5 font-semibold">{title}</h3>
-                  <p className="mx-auto max-w-[120px] text-xs leading-relaxed text-muted-foreground">
+                  <p className="mx-auto max-w-[120px] text-xs leading-relaxed text-[#5c6a7a]">
                     {desc}
                   </p>
                 </div>
                 {i < steps.length - 1 && (
                   <div className="relative mt-6 flex w-8 shrink-0 items-center justify-center">
                     <div
-                      className="step-arrow h-[2px] w-full bg-blue-200"
+                      className="step-arrow h-[2px] w-full bg-[#005F8C]/30"
                       style={{ animationDelay: `${i * 0.3}s` }}
                     />
                     <div
@@ -167,17 +167,17 @@ export default function AboutPage() {
             {steps.map(({ step, title, desc }, i) => (
               <div key={step} className="flex flex-col items-center">
                 <div className="flex w-full max-w-xs items-center gap-4 rounded-2xl bg-white px-6 py-5 shadow-sm">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-blue-500 text-lg font-bold text-white shadow-md shadow-blue-200">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#005F8C] text-lg font-bold text-white shadow-md shadow-[#005F8C]/20">
                     {step}
                   </div>
                   <div>
                     <h3 className="font-semibold">{title}</h3>
-                    <p className="text-xs leading-relaxed text-muted-foreground">{desc}</p>
+                    <p className="text-xs leading-relaxed text-[#5c6a7a]">{desc}</p>
                   </div>
                 </div>
                 {i < steps.length - 1 && (
                   <div className="flex h-10 w-px flex-col items-center justify-center">
-                    <div className="h-6 w-px bg-blue-200" />
+                    <div className="h-6 w-px bg-[#005F8C]/30" />
                     <div
                       className="h-0 w-0"
                       style={{
@@ -198,9 +198,9 @@ export default function AboutPage() {
       <section className="py-20 text-center">
         <div className="mx-auto max-w-xl px-4">
           <h2 className="mb-3 text-2xl font-bold">さっそく始めましょう</h2>
-          <p className="mb-8 text-muted-foreground">入会金・月会費は一切かかりません</p>
+          <p className="mb-8 text-[#5c6a7a]">入会金・月会費は一切かかりません</p>
           <Link href="/register">
-            <Button size="lg" className="bg-blue-500 px-12 hover:bg-blue-600">
+            <Button size="lg" className="bg-[#005F8C] px-12 hover:bg-[#004E73]">
               無料で始める
             </Button>
           </Link>

@@ -176,7 +176,7 @@ export default async function MemberSessionPage({ params }: SessionPageProps) {
           {session.registration_deadline && (
             <div className="flex items-center justify-between px-4 py-3">
               <span className="text-sm text-[#5c6a7a]">申込締切</span>
-              <span className={`text-sm font-medium ${isDeadlinePassed ? "text-[#E8614D]" : "text-[#1a2332]"}`}>
+              <span className={`text-sm font-medium ${isDeadlinePassed ? "text-[#c0392b]" : "text-[#1a2332]"}`}>
                 {new Date(session.registration_deadline).toLocaleDateString("ja-JP", {
                   month: "long",
                   day: "numeric",
@@ -199,7 +199,7 @@ export default async function MemberSessionPage({ params }: SessionPageProps) {
         <div className="space-y-3">
           <Card className="border-[#0f8a4f] bg-[#0f8a4f]/5">
             <CardContent className="flex items-center gap-3 p-4">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0f8a4f" strokeWidth="2">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0f8a4f" strokeWidth="1.8">
                 <polyline points="20 6 9 17 4 12" />
               </svg>
               <div>

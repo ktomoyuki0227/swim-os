@@ -167,13 +167,13 @@ export function ScheduleSection({ sessions, teams }: Props) {
                       className="flex w-14 shrink-0 flex-col items-center rounded-xl py-2"
                       style={{ backgroundColor: `${session.team_color}18` }}
                     >
-                      <span className="text-[10px] font-medium" style={{ color: session.team_color }}>
+                      <span className="text-xs font-medium" style={{ color: session.team_color }}>
                         {new Date(session.scheduled_at).toLocaleDateString("ja-JP", { month: "short" })}
                       </span>
                       <span className="text-xl font-bold leading-tight" style={{ color: session.team_color }}>
                         {new Date(session.scheduled_at).getDate()}
                       </span>
-                      <span className="text-[10px]" style={{ color: session.team_color }}>
+                      <span className="text-xs" style={{ color: session.team_color }}>
                         {new Date(session.scheduled_at).toLocaleDateString("ja-JP", { weekday: "short" })}
                       </span>
                     </div>

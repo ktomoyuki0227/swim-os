@@ -76,7 +76,7 @@ const stripeInputStyle = {
     fontFamily: "system-ui, sans-serif",
     "::placeholder": { color: "#8d99a8" },
   },
-  invalid: { color: "#dc2626" },
+  invalid: { color: "#c0392b" },
 }
 
 // ── TagButton: タグ選択用ボタン ──────────────────────────────────────────────
@@ -196,7 +196,7 @@ function CardSetupForm({
         </div>
       </div>
       {formError && (
-        <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600">
+        <p className="rounded-lg border border-[#c0392b]/20 bg-[#fdecea] px-3 py-2 text-xs text-[#c0392b]">
           {formError}
         </p>
       )}
@@ -213,7 +213,7 @@ function CardSetupForm({
           {showTestCards && (
             <div className="mt-3 space-y-2 rounded-lg bg-[#f2f7fa] p-3">
               <p className="text-xs font-medium text-[#1a2332]">テストカード番号</p>
-              <p className="text-[10px] text-[#8d99a8]">有効期限: 12/34　　CVC: 任意の3桁（例: 123）</p>
+              <p className="text-xs text-[#8d99a8]">有効期限: 12/34　　CVC: 任意の3桁（例: 123）</p>
               <div className="flex flex-col gap-1.5">
                 {TEST_CARDS.map((card) => (
                   <button
@@ -227,12 +227,12 @@ function CardSetupForm({
                     <div className="flex items-center justify-between gap-2">
                       <span className="font-mono text-xs font-semibold text-[#1a2332]">{card.number}</span>
                       {copiedCard === card.number ? (
-                        <span className="shrink-0 text-[10px] font-medium text-[#005F8C]">✓ コピー済み</span>
+                        <span className="shrink-0 text-xs font-medium text-[#005F8C]">✓ コピー済み</span>
                       ) : (
-                        <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
-                          card.variant === "success" ? "bg-green-100 text-green-700"
+                        <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-xs font-medium ${
+                          card.variant === "success" ? "bg-[#eaf7f0] text-[#0f8a4f]"
                           : card.variant === "warning" ? "bg-orange-100 text-orange-700"
-                          : "bg-red-100 text-red-700"
+                          : "bg-[#fdecea] text-[#c0392b]"
                         }`}>
                           {card.result}
                         </span>
@@ -241,7 +241,7 @@ function CardSetupForm({
                   </button>
                 ))}
               </div>
-              <p className="text-[10px] text-[#8d99a8]">クリックするとカード番号をクリップボードにコピーします</p>
+              <p className="text-xs text-[#8d99a8]">クリックするとカード番号をクリップボードにコピーします</p>
             </div>
           )}
         </div>
@@ -250,7 +250,7 @@ function CardSetupForm({
       <Button
         onClick={handleSubmit}
         disabled={!stripe || submitting || !allComplete}
-        className="w-full rounded-full bg-[#005F8C] text-white hover:bg-[#004a6b] disabled:opacity-40"
+        className="w-full rounded-full bg-[#005F8C] text-white hover:bg-[#004E73] disabled:opacity-40"
         style={{ minHeight: "44px" }}
       >
         {submitting ? "確認中..." : "お支払い方法を登録して完了"}
@@ -297,10 +297,10 @@ function StripeStep({ onSuccess }: { onSuccess: (paymentMethodId: string) => voi
   if (fetchError || !stripePromise || !clientSecret) {
     return (
       <div className="space-y-4">
-        <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+        <p className="rounded-lg border border-[#c0392b]/20 bg-[#fdecea] px-4 py-3 text-sm text-[#c0392b]">
           お支払い情報の読み込みに失敗しました。再度お試しください。
         </p>
-        <Button onClick={fetchIntent} className="w-full rounded-full bg-[#005F8C] text-white hover:bg-[#004a6b]" style={{ minHeight: "44px" }}>
+        <Button onClick={fetchIntent} className="w-full rounded-full bg-[#005F8C] text-white hover:bg-[#004E73]" style={{ minHeight: "44px" }}>
           再試行
         </Button>
       </div>
@@ -460,7 +460,7 @@ export default function OnboardingPage() {
               }`}>
                 {num < progressStep ? "✓" : num}
               </div>
-              <p className={`mt-1 hidden text-[10px] sm:block ${num === progressStep ? "font-medium text-[#005F8C]" : "text-[#8d99a8]"}`}>
+              <p className={`mt-1 hidden text-xs sm:block ${num === progressStep ? "font-medium text-[#005F8C]" : "text-[#8d99a8]"}`}>
                 {label}
               </p>
             </div>
@@ -490,7 +490,7 @@ export default function OnboardingPage() {
                 <button
                   type="button"
                   onClick={() => document.getElementById("avatar-upload-input")?.click()}
-                  className="relative h-24 w-24 overflow-hidden rounded-full border-2 border-dashed border-[#dce3ea] bg-[#f5f8fa] transition-colors hover:border-[#005F8C]"
+                  className="relative h-24 w-24 overflow-hidden rounded-full border-2 border-dashed border-[#dce3ea] bg-[#f2f7fa] transition-colors hover:border-[#005F8C]"
                 >
                   {avatarPreview ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -498,7 +498,7 @@ export default function OnboardingPage() {
                   ) : (
                     <div className="flex h-full w-full flex-col items-center justify-center gap-1 text-[#8d99a8]">
                       <span className="text-2xl">📷</span>
-                      <span className="text-[9px] leading-tight">タップして追加</span>
+                      <span className="text-xs leading-tight">タップして追加</span>
                     </div>
                   )}
                 </button>
@@ -517,14 +517,14 @@ export default function OnboardingPage() {
                   }}
                 />
                 <div className="flex items-center gap-2 text-xs">
-                  <span className={avatarFile ? "text-[#0f8a4f]" : "text-[#E8614D] font-medium"}>
+                  <span className={avatarFile ? "text-[#0f8a4f]" : "text-[#c0392b] font-medium"}>
                     {avatarFile ? "✓ 設定済み" : "プロフィール写真（必須）"}
                   </span>
                   {avatarPreview && (
                     <button
                       type="button"
                       onClick={() => { setAvatarFile(null); setAvatarPreview(null) }}
-                      className="text-red-400 hover:text-red-600"
+                      className="text-[#c0392b] hover:text-[#c0392b]"
                     >
                       × 削除
                     </button>
@@ -535,7 +535,7 @@ export default function OnboardingPage() {
               {/* レベル */}
               <div className="space-y-2">
                 <Label className="text-sm text-[#5c6a7a]">
-                  水泳レベル<span className="ml-0.5 text-red-500">*</span>
+                  水泳レベル<span className="ml-0.5 text-[#c0392b]">*</span>
                   <span className="ml-1.5 text-xs font-normal text-[#8d99a8]">1つ選択</span>
                 </Label>
                 <div className="flex gap-3">
@@ -559,7 +559,7 @@ export default function OnboardingPage() {
               {/* 種目・泳法 */}
               <div className="space-y-2">
                 <Label className="text-sm text-[#5c6a7a]">
-                  種目・泳法<span className="ml-0.5 text-red-500">*</span>
+                  種目・泳法<span className="ml-0.5 text-[#c0392b]">*</span>
                   <span className="ml-1.5 text-xs font-normal text-[#8d99a8]">
                     2つ以上選択（{selectedSpecialties.length}個選択中）
                   </span>
@@ -579,7 +579,7 @@ export default function OnboardingPage() {
               {/* 活動目的 */}
               <div className="space-y-2">
                 <Label className="text-sm text-[#5c6a7a]">
-                  活動目的<span className="ml-0.5 text-red-500">*</span>
+                  活動目的<span className="ml-0.5 text-[#c0392b]">*</span>
                   <span className="ml-1.5 text-xs font-normal text-[#8d99a8]">
                     1つ以上選択（{selectedGoals.length}個選択中）
                   </span>
@@ -599,7 +599,7 @@ export default function OnboardingPage() {
               {/* 活動エリア */}
               <div className="space-y-2">
                 <Label className="text-sm text-[#5c6a7a]">
-                  活動エリア<span className="ml-0.5 text-red-500">*</span>
+                  活動エリア<span className="ml-0.5 text-[#c0392b]">*</span>
                   <span className="ml-1.5 text-xs font-normal text-[#8d99a8]">
                     1つ以上選択（{selectedPrefectures.length}個選択中）
                   </span>
@@ -678,7 +678,7 @@ export default function OnboardingPage() {
             <>
               <div className="space-y-1.5">
                 <Label className="text-sm text-[#5c6a7a]">
-                  フリガナ<span className="ml-0.5 text-red-500">*</span>
+                  フリガナ<span className="ml-0.5 text-[#c0392b]">*</span>
                 </Label>
                 <Input
                   placeholder="ヤマダ ハナコ"
@@ -689,7 +689,7 @@ export default function OnboardingPage() {
               </div>
               <div className="space-y-1.5">
                 <Label className="text-sm text-[#5c6a7a]">
-                  生年月日<span className="ml-0.5 text-red-500">*</span>
+                  生年月日<span className="ml-0.5 text-[#c0392b]">*</span>
                 </Label>
                 <div className="flex gap-2">
                   <select
@@ -731,7 +731,7 @@ export default function OnboardingPage() {
               </div>
               <div className="space-y-2">
                 <Label className="text-sm text-[#5c6a7a]">
-                  性別<span className="ml-0.5 text-red-500">*</span>
+                  性別<span className="ml-0.5 text-[#c0392b]">*</span>
                 </Label>
                 <div className="flex gap-3">
                   {(["male", "female", "other"] as const).map((g) => (
@@ -758,7 +758,7 @@ export default function OnboardingPage() {
             <>
               <div className="space-y-1.5">
                 <Label className="text-sm text-[#5c6a7a]">
-                  住所<span className="ml-0.5 text-red-500">*</span>
+                  住所<span className="ml-0.5 text-[#c0392b]">*</span>
                 </Label>
                 <Textarea
                   placeholder="東京都渋谷区〇〇 1-2-3"
@@ -771,7 +771,7 @@ export default function OnboardingPage() {
               </div>
               <div className="space-y-1.5">
                 <Label className="text-sm text-[#5c6a7a]">
-                  電話番号<span className="ml-0.5 text-red-500">*</span>
+                  電話番号<span className="ml-0.5 text-[#c0392b]">*</span>
                 </Label>
                 <Input
                   type="tel"
@@ -790,7 +790,7 @@ export default function OnboardingPage() {
             <>
               <div className="space-y-1.5">
                 <Label className="text-sm text-[#5c6a7a]">
-                  緊急連絡先 氏名<span className="ml-0.5 text-red-500">*</span>
+                  緊急連絡先 氏名<span className="ml-0.5 text-[#c0392b]">*</span>
                 </Label>
                 <Input
                   placeholder="山田 一郎"
@@ -801,7 +801,7 @@ export default function OnboardingPage() {
               </div>
               <div className="space-y-1.5">
                 <Label className="text-sm text-[#5c6a7a]">
-                  続柄<span className="ml-0.5 text-red-500">*</span>
+                  続柄<span className="ml-0.5 text-[#c0392b]">*</span>
                 </Label>
                 <Input
                   placeholder="配偶者・親・兄弟など"
@@ -812,7 +812,7 @@ export default function OnboardingPage() {
               </div>
               <div className="space-y-1.5">
                 <Label className="text-sm text-[#5c6a7a]">
-                  電話番号<span className="ml-0.5 text-red-500">*</span>
+                  電話番号<span className="ml-0.5 text-[#c0392b]">*</span>
                 </Label>
                 <Input
                   type="tel"
@@ -843,7 +843,7 @@ export default function OnboardingPage() {
                 {form.masters_registered && (
                   <div className="space-y-1.5">
                     <Label className="text-sm text-[#5c6a7a]">
-                      マスターズ登録番号<span className="ml-0.5 text-red-500">*</span>
+                      マスターズ登録番号<span className="ml-0.5 text-[#c0392b]">*</span>
                     </Label>
                     <Input
                       placeholder="登録番号を入力"
@@ -868,7 +868,7 @@ export default function OnboardingPage() {
                 {form.jsa_registered && (
                   <div className="space-y-1.5">
                     <Label className="text-sm text-[#5c6a7a]">
-                      JSA登録番号<span className="ml-0.5 text-red-500">*</span>
+                      JSA登録番号<span className="ml-0.5 text-[#c0392b]">*</span>
                     </Label>
                     <Input
                       placeholder="登録番号を入力"
@@ -902,7 +902,7 @@ export default function OnboardingPage() {
               )}
               <Button
                 onClick={() => setStep((s) => s + 1)}
-                className="flex-1 rounded-full bg-[#005F8C] text-white hover:bg-[#004a6b] disabled:opacity-40"
+                className="flex-1 rounded-full bg-[#005F8C] text-white hover:bg-[#004E73] disabled:opacity-40"
                 style={{ minHeight: "44px" }}
                 disabled={isPending || !canProceed()}
               >
@@ -914,7 +914,7 @@ export default function OnboardingPage() {
       </Card>
 
       {saveError && (
-        <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-600">
+        <p className="mt-3 rounded-lg border border-[#c0392b]/20 bg-[#fdecea] px-4 py-2.5 text-sm text-[#c0392b]">
           {saveError}
         </p>
       )}

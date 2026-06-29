@@ -37,7 +37,7 @@ export function JoinForm({
       <input type="hidden" name="invite" value={inviteCode} />
 
       {state.error && (
-        <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
+        <p className="rounded-lg border border-[#c0392b]/20 bg-[#fdecea] px-3 py-2 text-sm text-[#c0392b]">
           {state.error}
         </p>
       )}

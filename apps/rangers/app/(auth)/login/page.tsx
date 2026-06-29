@@ -35,7 +35,7 @@ function LoginForm() {
 
   return (
     <div className="w-full max-w-md">
-      <Card className="w-full border-[#dce3ea] bg-white shadow-2xl">
+      <Card className="w-full border-[#dce3ea] bg-white shadow-lg">
         <CardHeader className="text-center pb-2">
           <div className="mx-auto mb-3 flex h-20 w-20 items-center justify-center">
             <Image src="/rangers-logo-背景透過.png" alt="Rangers logo" width={80} height={80} className="object-contain" />
@@ -82,7 +82,7 @@ function LoginForm() {
               <form action={formAction} className="mt-4 space-y-3">
                 {invite && <input type="hidden" name="invite" value={invite} />}
                 {state.error && (
-                  <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600">
+                  <p className="rounded-[10px] border border-[#c0392b]/20 bg-[#fdecea] px-3 py-2 text-xs text-[#c0392b]">
                     {state.error}
                   </p>
                 )}
@@ -161,7 +161,7 @@ function LoginForm() {
                           email === a.email
                             ? "border-[#005F8C] bg-white"
                             : a.highlight
-                            ? "border-[#06C755]/40 bg-[#f0fdf4]"
+                            ? "border-[#06C755]/40 bg-[#eaf7f0]"
                             : "border-[#dce3ea] bg-white"
                         }`}
                       >
@@ -169,7 +169,7 @@ function LoginForm() {
                           <p className={`font-semibold ${a.highlight ? "text-[#166534]" : "text-[#1a2332]"}`}>
                             {a.label}
                           </p>
-                          <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
+                          <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                             a.highlight
                               ? "bg-[#06C755]/10 text-[#166534]"
                               : "bg-[#005F8C]/10 text-[#005F8C]"
@@ -177,7 +177,7 @@ function LoginForm() {
                             {a.role}
                           </span>
                         </div>
-                        <p className="mt-0.5 text-[10px] text-[#8d99a8] leading-tight">{a.desc}</p>
+                        <p className="mt-0.5 text-xs text-[#8d99a8] leading-tight">{a.desc}</p>
                       </button>
                     ))}
                   </div>

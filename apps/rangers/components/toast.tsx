@@ -40,7 +40,7 @@ function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: (id: string) =
 
   const colors = {
     success: "bg-[#1a2332] text-white border-[#0f8a4f]/40",
-    error: "bg-[#1a2332] text-white border-[#E8614D]/40",
+    error: "bg-[#1a2332] text-white border-[#c0392b]/40",
     info: "bg-[#1a2332] text-white border-[#005F8C]/40",
   }
 
@@ -53,7 +53,7 @@ function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: (id: string) =
       </div>
     ),
     error: (
-      <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#E8614D]">
+      <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#c0392b]">
         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3">
           <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
         </svg>

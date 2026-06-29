@@ -72,7 +72,7 @@ export default function CoachRecruitPage() {
             グループの会員さんにさらに深く寄り添う指導の場を提供します。
           </p>
           <Link href="/login">
-            <Button size="lg" className="bg-blue-500 px-10 hover:bg-blue-600">
+            <Button size="lg" className="bg-[#005F8C] px-10 hover:bg-[#004E73]">
               コーチとして登録する
             </Button>
           </Link>
@@ -82,7 +82,7 @@ export default function CoachRecruitPage() {
       {/* Rangers の特徴 */}
       <section className="py-20">
         <div className="mx-auto max-w-5xl px-4">
-          <p className="mb-2 text-center text-sm font-semibold uppercase tracking-widest text-blue-500">
+          <p className="mb-2 text-center text-sm font-semibold uppercase tracking-widest text-[#005F8C]">
             Why Rangers
           </p>
           <h2 className="mb-12 text-center text-3xl font-bold tracking-tight">
@@ -94,9 +94,9 @@ export default function CoachRecruitPage() {
                 key={num}
                 className="rounded-2xl border bg-white p-7 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
               >
-                <div className="mb-3 text-4xl font-bold text-blue-100">{num}</div>
+                <div className="mb-3 text-4xl font-bold text-[#005F8C]/20">{num}</div>
                 <h3 className="mb-2 font-bold">{title}</h3>
-                <p className="text-sm leading-relaxed text-muted-foreground">{desc}</p>
+                <p className="text-sm leading-relaxed text-[#5c6a7a]">{desc}</p>
               </div>
             ))}
           </div>
@@ -106,7 +106,7 @@ export default function CoachRecruitPage() {
       {/* 登録の流れ */}
       <section className="bg-sky-50 py-20">
         <div className="mx-auto max-w-4xl px-4">
-          <p className="mb-2 text-center text-sm font-semibold uppercase tracking-widest text-blue-500">
+          <p className="mb-2 text-center text-sm font-semibold uppercase tracking-widest text-[#005F8C]">
             Registration
           </p>
           <h2 className="mb-14 text-center text-3xl font-bold tracking-tight">登録の流れ</h2>
@@ -116,17 +116,17 @@ export default function CoachRecruitPage() {
             {steps.map(({ step, title, desc }, i) => (
               <div key={step} className="flex flex-1 items-start">
                 <div className="flex-1 text-center">
-                  <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-blue-500 text-xl font-bold text-white shadow-md shadow-blue-200">
+                  <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#005F8C] text-xl font-bold text-white shadow-md shadow-[#005F8C]/20">
                     {step}
                   </div>
                   <h3 className="mb-1.5 font-semibold">{title}</h3>
-                  <p className="mx-auto max-w-[130px] text-xs leading-relaxed text-muted-foreground">
+                  <p className="mx-auto max-w-[130px] text-xs leading-relaxed text-[#5c6a7a]">
                     {desc}
                   </p>
                 </div>
                 {i < steps.length - 1 && (
                   <div className="relative mt-6 flex w-8 shrink-0 items-center justify-center">
-                    <div className="h-[2px] w-full bg-blue-200" />
+                    <div className="h-[2px] w-full bg-[#005F8C]/30" />
                     <div
                       className="absolute right-0 h-0 w-0"
                       style={{
@@ -146,17 +146,17 @@ export default function CoachRecruitPage() {
             {steps.map(({ step, title, desc }, i) => (
               <div key={step} className="flex flex-col items-center">
                 <div className="flex w-full max-w-xs items-center gap-4 rounded-2xl bg-white px-6 py-5 shadow-sm">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-blue-500 text-lg font-bold text-white">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#005F8C] text-lg font-bold text-white">
                     {step}
                   </div>
                   <div>
                     <p className="font-semibold">{title}</p>
-                    <p className="text-xs leading-relaxed text-muted-foreground">{desc}</p>
+                    <p className="text-xs leading-relaxed text-[#5c6a7a]">{desc}</p>
                   </div>
                 </div>
                 {i < steps.length - 1 && (
                   <div className="flex h-10 flex-col items-center justify-center">
-                    <div className="h-6 w-px bg-blue-200" />
+                    <div className="h-6 w-px bg-[#005F8C]/30" />
                     <div
                       className="h-0 w-0"
                       style={{
@@ -176,7 +176,7 @@ export default function CoachRecruitPage() {
       {/* 登録要件 */}
       <section className="py-20">
         <div className="mx-auto max-w-2xl px-4">
-          <p className="mb-2 text-center text-sm font-semibold uppercase tracking-widest text-blue-500">
+          <p className="mb-2 text-center text-sm font-semibold uppercase tracking-widest text-[#005F8C]">
             Requirements
           </p>
           <h2 className="mb-10 text-center text-3xl font-bold tracking-tight">登録要件</h2>
@@ -184,14 +184,14 @@ export default function CoachRecruitPage() {
             <ul className="space-y-4">
               {requirements.map((req) => (
                 <li key={req} className="flex items-start gap-3 text-sm">
-                  <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-600">
+                  <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#005F8C]/10 text-xs font-bold text-[#005F8C]">
                     ✓
                   </span>
                   {req}
                 </li>
               ))}
             </ul>
-            <p className="mt-6 text-xs text-muted-foreground">
+            <p className="mt-6 text-xs text-[#5c6a7a]">
               ※ 審査の結果、登録をお断りする場合があります。あらかじめご了承ください。
             </p>
           </div>
@@ -199,17 +199,17 @@ export default function CoachRecruitPage() {
       </section>
 
       {/* CTA */}
-      <section className="bg-blue-500 py-20 text-center text-white">
+      <section className="bg-[#005F8C] py-20 text-center text-white">
         <div className="mx-auto max-w-xl px-4">
           <h2 className="mb-3 text-2xl font-bold">まずは無料で登録しましょう</h2>
-          <p className="mb-8 text-blue-100">
+          <p className="mb-8 text-[#f7f9fb]">
             登録・審査は無料です。審査通過後にレッスンを公開できます。
           </p>
           <Link href="/login">
             <Button
               size="lg"
               variant="outline"
-              className="border-white bg-transparent px-12 text-white hover:bg-white hover:text-blue-600"
+              className="border-white bg-transparent px-12 text-white hover:bg-white hover:text-[#005F8C]"
             >
               コーチとして登録する
             </Button>

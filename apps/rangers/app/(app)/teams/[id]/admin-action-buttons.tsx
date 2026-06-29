@@ -92,7 +92,7 @@ export function AdminActionButtons({ team }: AdminActionButtonsProps) {
               <h2 className="text-sm font-semibold text-[#1a2332]">招待</h2>
               <button
                 onClick={() => setInviteOpen(false)}
-                className="flex h-7 w-7 items-center justify-center rounded-full text-[#5c6a7a] hover:bg-[#f0f3f7]"
+                className="flex h-7 w-7 items-center justify-center rounded-full text-[#5c6a7a] hover:bg-[#f2f7fa]"
                 aria-label="閉じる"
               >
                 <CloseIcon />
@@ -132,7 +132,7 @@ export function AdminActionButtons({ team }: AdminActionButtonsProps) {
                   </Button>
                 </div>
                 {regenerateError && (
-                  <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600">
+                  <p className="rounded-lg border border-[#c0392b]/20 bg-[#fdecea] px-3 py-2 text-xs text-[#c0392b]">
                     {regenerateError}
                   </p>
                 )}
@@ -151,7 +151,7 @@ export function AdminActionButtons({ team }: AdminActionButtonsProps) {
               <h2 className="text-base font-semibold text-[#1a2332]">グループ設定</h2>
               <button
                 onClick={() => setSettingsOpen(false)}
-                className="flex h-7 w-7 items-center justify-center rounded-full text-[#5c6a7a] hover:bg-[#f0f3f7]"
+                className="flex h-7 w-7 items-center justify-center rounded-full text-[#5c6a7a] hover:bg-[#f2f7fa]"
                 aria-label="閉じる"
               >
                 <CloseIcon />
@@ -248,7 +248,7 @@ export function AdminActionButtons({ team }: AdminActionButtonsProps) {
                           {(team.practice_days ?? []).map((day: string) => (
                             <span
                               key={day}
-                              className="flex h-6 w-6 items-center justify-center rounded-full bg-[#e8f2f8] text-[10px] font-medium text-[#005F8C]"
+                              className="flex h-6 w-6 items-center justify-center rounded-full bg-[#e8f2f8] text-xs font-medium text-[#005F8C]"
                             >
                               {day}
                             </span>

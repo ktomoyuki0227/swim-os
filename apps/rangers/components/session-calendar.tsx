@@ -86,7 +86,7 @@ export function SessionCalendar({ sessions }: Props) {
         {WEEKDAYS.map((d, i) => (
           <div
             key={d}
-            className={`py-1.5 text-center text-[11px] font-medium ${
+            className={`py-1.5 text-center text-xs font-medium ${
               i === 5 ? "text-[#005F8C]" : i === 6 ? "text-[#c0392b]" : "text-[#8d99a8]"
             }`}
           >
@@ -98,7 +98,7 @@ export function SessionCalendar({ sessions }: Props) {
       {/* 日付グリッド */}
       <div className="grid w-full grid-cols-7 divide-x divide-y divide-[#f2f7fa]">
         {days.map((day, i) => {
-          if (!day) return <div key={`blank-${i}`} className="aspect-square overflow-hidden bg-[#fafcfd]" />
+          if (!day) return <div key={`blank-${i}`} className="aspect-square overflow-hidden bg-[#f2f7fa]" />
           const key = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`
           const daySessions = sessionMap[key] || []
           const isToday = key === todayKey
@@ -110,13 +110,13 @@ export function SessionCalendar({ sessions }: Props) {
               key={key}
               onClick={() => setSelectedKey(key === selectedKey ? null : key)}
               className={`relative flex min-w-0 flex-col items-center overflow-hidden p-0.5 transition-colors
-                ${isSelected ? "bg-[#005F8C]" : isToday ? "bg-[#f0f6fa]" : "bg-white hover:bg-[#f7fafc]"}
+                ${isSelected ? "bg-[#005F8C]" : isToday ? "bg-[#e8f2f8]" : "bg-white hover:bg-[#f2f7fa]"}
               `}
               style={{ aspectRatio: "1" }}
             >
               {/* 日付 */}
               <span
-                className={`mt-0.5 text-[11px] font-medium leading-none
+                className={`mt-0.5 text-xs font-medium leading-none
                   ${isSelected ? "text-white" : isToday ? "font-bold text-[#005F8C]" : weekday === 5 ? "text-[#005F8C]" : weekday === 6 ? "text-[#c0392b]" : "text-[#1a2332]"}
                 `}
               >
@@ -175,12 +175,12 @@ export function SessionCalendar({ sessions }: Props) {
                   <span
                     className="h-2 w-2 shrink-0 rounded-full"
                     style={{
-                      backgroundColor: s.color || (s.session_type === "competition" ? "#E8614D" : "#005F8C"),
+                      backgroundColor: s.color || (s.session_type === "competition" ? "#c0392b" : "#005F8C"),
                     }}
                   />
                   <div className="min-w-0">
                     <p className="truncate text-xs font-medium text-[#1a2332]">{s.title}</p>
-                    <p className="truncate text-[10px] text-[#8d99a8]">
+                    <p className="truncate text-xs text-[#8d99a8]">
                       {new Date(s.scheduled_at).toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" })}
                       {s.team_name ? ` · ${s.team_name}` : ""}
                     </p>

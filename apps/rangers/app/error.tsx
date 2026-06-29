@@ -20,16 +20,16 @@ export default function Error({ error, reset }: ErrorProps) {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-4 text-center">
-      <div className="flex h-20 w-20 items-center justify-center rounded-full bg-red-50">
-        <AlertCircle className="h-10 w-10 text-red-400" aria-hidden="true" />
+      <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[#fdecea]">
+        <AlertCircle className="h-10 w-10 text-[#c0392b]" aria-hidden="true" />
       </div>
-      <p className="text-7xl font-bold text-red-100" aria-hidden="true">500</p>
+      <p className="text-7xl font-bold text-[#c0392b]/20" aria-hidden="true">500</p>
       <h1 className="text-2xl font-bold">エラーが発生しました</h1>
-      <p className="max-w-sm text-muted-foreground">
+      <p className="max-w-sm text-[#5c6a7a]">
         予期せぬエラーが発生しました。再試行するか、ホームに戻ってください。
       </p>
       {error.digest && (
-        <p className="text-xs text-muted-foreground">
+        <p className="text-xs text-[#5c6a7a]">
           エラーID: <code className="font-mono">{error.digest}</code>
         </p>
       )}

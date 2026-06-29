@@ -35,7 +35,7 @@ function StepProgress({ current }: { current: number }) {
               {num < current ? "✓" : num}
             </div>
             <p
-              className={`mt-1 hidden text-[10px] sm:block ${
+              className={`mt-1 hidden text-xs sm:block ${
                 num === current ? "font-medium text-[#005F8C]" : "text-[#8d99a8]"
               }`}
             >
@@ -70,14 +70,14 @@ function RegisterForm() {
         <form action={formAction} className="space-y-4">
           {invite && <input type="hidden" name="invite" value={invite} />}
           {state.error && (
-            <p role="alert" className="rounded-lg bg-red-50 px-4 py-2.5 text-sm text-red-600">
+            <p role="alert" className="rounded-[10px] bg-[#fdecea] px-4 py-3 text-sm text-[#c0392b]">
               {state.error}
             </p>
           )}
 
           <div>
             <label className="mb-1 block text-sm font-medium" htmlFor="name">
-              お名前<span className="ml-0.5 text-red-500">*</span>
+              お名前<span className="ml-0.5 text-[#c0392b]">*</span>
             </label>
             <input
               id="name"
@@ -87,12 +87,12 @@ function RegisterForm() {
               required
               className="w-full rounded-lg border bg-white px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#005F8C]/30"
             />
-            <p className="mt-1 text-xs text-muted-foreground">本名で登録してください</p>
+            <p className="mt-1 text-xs text-[#5c6a7a]">本名で登録してください</p>
           </div>
 
           <div>
             <label className="mb-1 block text-sm font-medium" htmlFor="email">
-              メールアドレス<span className="ml-0.5 text-red-500">*</span>
+              メールアドレス<span className="ml-0.5 text-[#c0392b]">*</span>
             </label>
             <input
               id="email"
@@ -106,7 +106,7 @@ function RegisterForm() {
 
           <div>
             <label className="mb-1 block text-sm font-medium" htmlFor="password">
-              パスワード<span className="ml-0.5 text-red-500">*</span>
+              パスワード<span className="ml-0.5 text-[#c0392b]">*</span>
             </label>
             <input
               id="password"
@@ -122,7 +122,7 @@ function RegisterForm() {
           <div className="space-y-2 pt-1">
             <label className="flex cursor-pointer items-start gap-2 text-sm">
               <input type="checkbox" name="termsAgreed" value="on" required className="mt-0.5 accent-[#005F8C]" />
-              <span className="text-muted-foreground">
+              <span className="text-[#5c6a7a]">
                 <Link href="/terms" className="text-[#005F8C] hover:underline">利用規約</Link>
                 と
                 <Link href="/privacy" className="text-[#005F8C] hover:underline">プライバシーポリシー</Link>
@@ -134,13 +134,14 @@ function RegisterForm() {
           <button
             type="submit"
             disabled={isPending}
-            className="mt-2 w-full rounded-xl bg-[#005F8C] py-3 text-sm font-bold text-white transition-colors hover:bg-[#004E73] disabled:opacity-60"
+            className="mt-2 w-full rounded-full bg-[#005F8C] py-3 text-base font-semibold text-white transition-colors hover:bg-[#004E73] disabled:opacity-50"
+            style={{ minHeight: "48px" }}
           >
             {isPending ? "登録中..." : "登録"}
           </button>
         </form>
 
-        <div className="mt-6 border-t pt-5 text-center text-sm text-muted-foreground">
+        <div className="mt-6 border-t pt-5 text-center text-sm text-[#5c6a7a]">
           すでにアカウントをお持ちの方はこちら
           <br />
           <Link href="/login" className="mt-1 inline-block text-[#005F8C] font-medium hover:underline">

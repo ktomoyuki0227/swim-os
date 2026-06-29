@@ -37,12 +37,12 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-[#1a2332]">探す</h1>
+        <h1 className="text-lg font-semibold text-[#1a2332]">探す</h1>
         <p className="mt-1 text-sm text-[#5c6a7a]">グループやセッションを見つけましょう</p>
       </div>
 
-      {/* タブ */}
-      <div className="flex gap-1 rounded-xl bg-[#f2f7fa] p-1">
+      {/* タブ（セグメントタブ） */}
+      <div className="flex gap-[2px] rounded-[14px] bg-[#f2f7fa] p-1">
         {[
           { key: "sessions", label: "セッション" },
           { key: "teams", label: "グループ" },
@@ -50,8 +50,8 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
           <Link
             key={t.key}
             href={makeTabHref(t.key)}
-            className={`flex flex-1 items-center justify-center rounded-lg px-3 py-2 text-sm font-medium transition-colors
-              ${tab === t.key ? "bg-white text-[#1a2332] shadow-sm" : "text-[#5c6a7a] hover:text-[#1a2332]"}`}
+            className={`flex min-h-[36px] flex-1 items-center justify-center rounded-[10px] px-[14px] py-2 text-sm transition-colors
+              ${tab === t.key ? "bg-white font-semibold text-[#1a2332] shadow-sm" : "font-normal text-[#5c6a7a] hover:text-[#1a2332]"}`}
           >
             {t.label}
           </Link>
@@ -79,13 +79,16 @@ async function SessionResults({ q }: { q: string }) {
 
   if (!sessions || sessions.length === 0) {
     return (
-      <Card className="border-[#dce3ea]">
-        <CardContent className="flex flex-col items-center justify-center py-12">
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#8d99a8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="11" cy="11" r="8" />
-            <line x1="21" y1="21" x2="16.65" y2="16.65" />
-          </svg>
-          <p className="mt-3 text-sm text-[#5c6a7a]">公開セッションが見つかりませんでした</p>
+      <Card className="rounded-[14px] border-[#dce3ea]">
+        <CardContent className="flex flex-col items-center justify-center px-6 py-12">
+          <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[rgba(0,95,140,0.08)]">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8d99a8" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+          </div>
+          <p className="text-base font-semibold text-[#1a2332]">セッションが見つかりません</p>
+          <p className="mt-1 text-sm text-[#5c6a7a]">条件を変更して再検索してみてください</p>
         </CardContent>
       </Card>
     )
@@ -99,21 +102,21 @@ async function SessionResults({ q }: { q: string }) {
         return (
           <Card key={session.id as string} className="border-[#dce3ea] transition-all hover:border-[#005F8C]">
             <CardContent className="flex items-center gap-4 p-4">
-              <div className="flex w-14 shrink-0 flex-col items-center rounded-xl bg-[#005F8C]/10 py-2">
-                <span className="text-[10px] font-medium text-[#005F8C]">
+              <div className="flex w-14 shrink-0 flex-col items-center rounded-[14px] bg-[#005F8C]/10 py-2">
+                <span className="text-xs font-medium text-[#005F8C]">
                   {new Date(session.scheduled_at as string).toLocaleDateString("ja-JP", { month: "short" })}
                 </span>
                 <span className="text-xl font-bold leading-tight text-[#005F8C]">
                   {new Date(session.scheduled_at as string).getDate()}
                 </span>
-                <span className="text-[10px] text-[#005F8C]">
+                <span className="text-xs text-[#005F8C]">
                   {new Date(session.scheduled_at as string).toLocaleDateString("ja-JP", { weekday: "short" })}
                 </span>
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <p className="font-medium text-[#1a2332]">{session.title as string}</p>
-                  <Badge className="bg-[#edf0f4] text-[#5c6a7a] border-transparent text-[10px]">
+                  <Badge className="bg-[#edf0f4] text-[#5c6a7a] border-transparent text-xs">
                     {SESSION_TYPE_LABELS[session.type as string] || session.type as string}
                   </Badge>
                 </div>
@@ -145,15 +148,18 @@ async function TeamResults({ q, userId }: { q: string; userId?: string }) {
 
   if (!teams || teams.length === 0) {
     return (
-      <Card className="border-[#dce3ea]">
-        <CardContent className="flex flex-col items-center justify-center py-12">
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#8d99a8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-            <circle cx="9" cy="7" r="4" />
-            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-          </svg>
-          <p className="mt-3 text-sm text-[#5c6a7a]">グループが見つかりませんでした</p>
+      <Card className="rounded-[14px] border-[#dce3ea]">
+        <CardContent className="flex flex-col items-center justify-center px-6 py-12">
+          <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[rgba(0,95,140,0.08)]">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8d99a8" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+            </svg>
+          </div>
+          <p className="text-base font-semibold text-[#1a2332]">グループが見つかりません</p>
+          <p className="mt-1 text-sm text-[#5c6a7a]">条件を変更して再検索してみてください</p>
         </CardContent>
       </Card>
     )
@@ -166,7 +172,7 @@ async function TeamResults({ q, userId }: { q: string; userId?: string }) {
         <Link key={team.id as string} href={`/teams/${team.id}`}>
           <Card className="border-[#dce3ea] transition-all hover:border-[#005F8C]">
             <CardContent className="flex items-center gap-4 p-4">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-[#005F8C]/10 text-base font-bold text-[#005F8C]">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-[14px] bg-[#005F8C]/10 text-base font-bold text-[#005F8C]">
                 {team.avatar_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={team.avatar_url as string} alt={team.name as string} className="h-full w-full object-cover" />

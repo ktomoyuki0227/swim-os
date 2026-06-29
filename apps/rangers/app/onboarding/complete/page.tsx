@@ -18,20 +18,20 @@ export default async function OnboardingCompletePage() {
     .single()
 
   return (
-    <div className="min-h-screen bg-sky-50">
+    <div className="min-h-screen bg-[#f2f7fa]">
       <header className="border-b bg-white px-6 py-4">
-        <Link href="/" className="text-lg font-bold text-blue-600">
+        <Link href="/" className="text-lg font-bold text-[#005F8C]">
           Rangers
         </Link>
       </header>
 
       <div className="flex min-h-[calc(100vh-57px)] items-center justify-center px-4 py-12">
         <div className="w-full max-w-md text-center">
-          <h1 className="mb-3 text-5xl font-bold text-blue-400">Thanks!</h1>
-          <p className="mb-2 text-lg font-semibold text-blue-500">
+          <h1 className="mb-3 text-5xl font-bold text-[#005F8C]">Thanks!</h1>
+          <p className="mb-2 text-lg font-semibold text-[#005F8C]">
             Rangers へようこそ！
           </p>
-          <p className="mb-8 text-sm text-muted-foreground">
+          <p className="mb-8 text-sm text-[#5c6a7a]">
             {profile?.name ?? ""}さんのアカウントが作成されました。
             <br />
             グループに参加するか、自分でグループを作ってはじめましょう。
@@ -40,13 +40,13 @@ export default async function OnboardingCompletePage() {
           <div className="mb-8 space-y-3">
             <Link
               href="/teams/new"
-              className="block w-full rounded-xl bg-blue-500 py-3.5 text-sm font-bold text-white transition-colors hover:bg-blue-600"
+              className="block w-full rounded-xl bg-[#005F8C] py-3.5 text-sm font-bold text-white transition-colors hover:bg-[#004E73]"
             >
               グループを作る
             </Link>
             <Link
               href="/dashboard"
-              className="block w-full rounded-xl border bg-white py-3.5 text-sm font-medium text-blue-500 transition-colors hover:bg-sky-50"
+              className="block w-full rounded-xl border bg-white py-3.5 text-sm font-medium text-[#005F8C] transition-colors hover:bg-[#e8f2f8]"
             >
               マイページへ
             </Link>
@@ -59,13 +59,13 @@ export default async function OnboardingCompletePage() {
               { num: "2", title: "グループを探す", desc: "招待リンクからグループに参加できます", href: "/dashboard" },
               { num: "3", title: "グループを作る", desc: "自分でグループを作って練習やイベントを管理しましょう", href: "/teams/new" },
             ].map(({ num, title, desc, href }) => (
-              <Link key={num} href={href} className="flex items-start gap-3 rounded-xl p-3 transition-colors hover:bg-sky-50">
-                <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-600">
+              <Link key={num} href={href} className="flex items-start gap-3 rounded-xl p-3 transition-colors hover:bg-[#e8f2f8]">
+                <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#005F8C]/10 text-xs font-bold text-[#005F8C]">
                   {num}
                 </span>
                 <div>
                   <p className="text-sm font-medium">{title}</p>
-                  <p className="text-xs text-muted-foreground">{desc}</p>
+                  <p className="text-xs text-[#5c6a7a]">{desc}</p>
                 </div>
               </Link>
             ))}

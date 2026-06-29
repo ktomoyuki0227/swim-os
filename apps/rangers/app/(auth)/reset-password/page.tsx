@@ -21,12 +21,12 @@ export default function ResetPasswordPage() {
   if (state.success) {
     return (
       <div className="w-full max-w-md">
-        <Card className="w-full border-white/10 bg-white/95 shadow-2xl backdrop-blur-sm">
+        <Card className="w-full border-[#dce3ea] bg-white shadow-lg">
           <CardHeader className="text-center">
-            <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-green-50">
-              <CheckCircle2 className="h-7 w-7 text-green-500" />
+            <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-[#eaf7f0]">
+              <CheckCircle2 className="h-7 w-7 text-[#0f8a4f]" />
             </div>
-            <CardTitle className="text-xl text-green-600">パスワードを更新しました</CardTitle>
+            <CardTitle className="text-xl text-[#0f8a4f]">パスワードを更新しました</CardTitle>
             <CardDescription>
               新しいパスワードでログインしてください。
             </CardDescription>
@@ -37,7 +37,7 @@ export default function ResetPasswordPage() {
             </Link>
           </CardContent>
         </Card>
-        <p className="mt-6 text-center text-sm text-slate-400">
+        <p className="mt-6 text-center text-sm text-[#8d99a8]">
           Rangers · マスターズ水泳レッスン予約
         </p>
       </div>
@@ -46,9 +46,9 @@ export default function ResetPasswordPage() {
 
   return (
     <div className="w-full max-w-md">
-      <Card className="w-full border-white/10 bg-white/95 shadow-2xl backdrop-blur-sm">
+      <Card className="w-full border-[#dce3ea] bg-white shadow-lg">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl text-blue-600">新しいパスワードを設定</CardTitle>
+          <CardTitle className="text-2xl text-[#005F8C]">新しいパスワードを設定</CardTitle>
           <CardDescription>
             新しいパスワードを入力してください（6文字以上）
           </CardDescription>
@@ -56,7 +56,7 @@ export default function ResetPasswordPage() {
         <CardContent>
           <form action={formAction} className="space-y-4">
             {state.error && (
-              <p role="alert" className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              <p role="alert" className="rounded-md bg-[#fdecea] px-3 py-2 text-sm text-[#c0392b]">
                 {state.error}
               </p>
             )}
@@ -87,7 +87,7 @@ export default function ResetPasswordPage() {
                 aria-invalid={mismatch}
               />
               {mismatch && (
-                <p role="alert" className="text-xs text-destructive">
+                <p role="alert" className="text-xs text-[#c0392b]">
                   パスワードが一致しません
                 </p>
               )}
@@ -102,7 +102,7 @@ export default function ResetPasswordPage() {
           </form>
         </CardContent>
       </Card>
-      <p className="mt-6 text-center text-sm text-slate-400">
+      <p className="mt-6 text-center text-sm text-[#8d99a8]">
         Rangers · マスターズ水泳レッスン予約
       </p>
     </div>

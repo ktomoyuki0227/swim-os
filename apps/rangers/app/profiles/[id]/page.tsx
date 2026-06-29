@@ -38,7 +38,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
   const participationStyles: string[] = (profile.participation_styles as string[]) ?? []
 
   return (
-    <div className="min-h-screen bg-[#f5f8fa]">
+    <div className="min-h-screen bg-[#f2f7fa]">
       <Navigation userName={myProfile?.name ?? ""} avatarUrl={myProfile?.avatar_url ?? null} />
 
       <main className="mx-auto w-full max-w-lg px-4 py-6 pb-28">
@@ -46,7 +46,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
         <BackButton />
 
         {/* プロフィールカード */}
-        <div className="rounded-2xl bg-white px-6 py-6 shadow-sm">
+        <div className="rounded-[14px] bg-white px-6 py-6 border border-[#dce3ea]">
           {/* アバター + 名前 */}
           <div className="flex items-center gap-4">
             <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-full border-2 border-[#dce3ea] bg-[#e8f2f8]">
@@ -83,12 +83,12 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
                 </span>
               ))}
               {targetAges.map((a) => (
-                <span key={a} className="rounded-full bg-[#f0faf5] px-3 py-1 text-xs font-medium text-[#0f8a4f]">
+                <span key={a} className="rounded-full bg-[#eaf7f0] px-3 py-1 text-xs font-medium text-[#0f8a4f]">
                   {a}
                 </span>
               ))}
               {swimDisciplines.map((d) => (
-                <span key={d} className="rounded-full bg-[#f0f4ff] px-3 py-1 text-xs font-medium text-[#3b5bdb]">
+                <span key={d} className="rounded-full bg-[#e8f2f8] px-3 py-1 text-xs font-medium text-[#005F8C]">
                   {d}
                 </span>
               ))}
@@ -97,7 +97,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
 
           {/* 自己紹介 */}
           {profile.bio && (
-            <div className="mt-5 border-t border-[#f0f3f7] pt-4">
+            <div className="mt-5 border-t border-[#e8edf2] pt-4">
               <p className="mb-1.5 text-xs font-medium text-[#8d99a8]">自己紹介</p>
               <p className="text-sm leading-relaxed text-[#1a2332]">{profile.bio as string}</p>
             </div>
@@ -105,7 +105,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
 
           {/* 経歴 */}
           {profile.career && (
-            <div className="mt-4 border-t border-[#f0f3f7] pt-4">
+            <div className="mt-4 border-t border-[#e8edf2] pt-4">
               <p className="mb-1.5 text-xs font-medium text-[#8d99a8]">経歴</p>
               <p className="text-sm leading-relaxed text-[#1a2332]">{profile.career as string}</p>
             </div>
@@ -113,7 +113,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
 
           {/* 実績 */}
           {profile.achievements && (
-            <div className="mt-4 border-t border-[#f0f3f7] pt-4">
+            <div className="mt-4 border-t border-[#e8edf2] pt-4">
               <p className="mb-1.5 text-xs font-medium text-[#8d99a8]">実績</p>
               <p className="text-sm leading-relaxed text-[#1a2332]">{profile.achievements as string}</p>
             </div>
@@ -121,7 +121,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
 
           {/* 活動・目的 */}
           {(swimmingGoals.length > 0 || participationStyles.length > 0) && (
-            <div className="mt-4 border-t border-[#f0f3f7] pt-4">
+            <div className="mt-4 border-t border-[#e8edf2] pt-4">
               <p className="mb-2 text-xs font-medium text-[#8d99a8]">活動スタイル</p>
               <div className="flex flex-wrap gap-1.5">
                 {swimmingGoals.map((g) => (

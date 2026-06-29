@@ -33,7 +33,7 @@ export function CancelButton({ sessionId }: CancelButtonProps) {
         onClick={handleCancel}
         disabled={isLoading}
         variant="outline"
-        className="w-full rounded-full border-[#E8614D] text-[#E8614D] hover:bg-[#E8614D]/5"
+        className="w-full rounded-full border-[#c0392b] text-[#c0392b] hover:bg-[#c0392b]/5"
         style={{ minHeight: "44px" }}
       >
         {isLoading ? "キャンセル中..." : "参加をキャンセル"}

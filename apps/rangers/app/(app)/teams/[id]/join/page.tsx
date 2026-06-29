@@ -69,7 +69,7 @@ export default async function TeamJoinPage({ params }: PageProps) {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-[#f0b429] bg-[#fffbf0] p-5 text-center">
+          <div className="rounded-2xl border border-[#b8860b]/30 bg-[#fdf6e3] p-5 text-center">
             <div className="mb-3 text-3xl">⏳</div>
             <p className="font-semibold text-[#1a2332]">参加申請中です</p>
             <p className="mt-1 text-sm text-[#5c6a7a]">

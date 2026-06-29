@@ -37,7 +37,7 @@ const STATUS_STYLES: Record<string, string> = {
   paid: "bg-[#eaf7f0] text-[#0f8a4f] border-transparent",
   pending: "bg-[#fdf6e3] text-[#b8860b] border-transparent",
   unpaid: "bg-[#fdf6e3] text-[#b8860b] border-transparent",
-  failed: "bg-red-50 text-red-600 border-transparent",
+  failed: "bg-[#fdecea] text-[#c0392b] border-transparent",
   refunded: "bg-[#edf0f4] text-[#5c6a7a] border-transparent",
 }
 
@@ -197,27 +197,27 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <h1 className="text-2xl font-bold text-[#1a2332]">お支払い</h1>
+      <h1 className="text-lg font-semibold text-[#1a2332]">お支払い</h1>
 
       {/* カード設定 */}
       <Card className="border-[#dce3ea]">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
-            <CreditCard className="h-5 w-5 text-muted-foreground" />
+            <CreditCard className="h-5 w-5 text-[#5c6a7a]" />
             登録済みクレジットカード
           </CardTitle>
         </CardHeader>
         <CardContent>
           {cardDetails ? (
             <div className="space-y-3">
-              <div className="flex items-center gap-3 rounded-lg border bg-muted/30 px-4 py-3">
-                <CheckCircle className="h-5 w-5 shrink-0 text-green-500" />
+              <div className="flex items-center gap-3 rounded-[10px] border border-[#dce3ea] bg-[#f2f7fa] px-4 py-3">
+                <CheckCircle className="h-5 w-5 shrink-0 text-[#0f8a4f]" />
                 <div>
                   <p className="text-sm font-medium">
                     {CARD_BRAND_LABELS[cardDetails.brand] ?? cardDetails.brand}{" "}
                     <span className="font-mono">•••• {cardDetails.last4}</span>
                   </p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-[#5c6a7a]">
                     有効期限: {String(cardDetails.expMonth).padStart(2, "0")}/{cardDetails.expYear}
                   </p>
                 </div>
@@ -226,7 +226,7 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
             </div>
           ) : (
             <div className="space-y-3">
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-[#5c6a7a]">
                 クレジットカードが登録されていません。グループの参加費・年会費・月謝の支払いに使用されます。
               </p>
               <UpdateCardForm hasCard={false} />

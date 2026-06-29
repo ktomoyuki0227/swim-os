@@ -59,7 +59,7 @@ export function JoinForm({
 
   if (state.success) {
     return (
-      <div className="rounded-2xl border border-[#e0f2e9] bg-[#f0faf4] p-6 text-center">
+      <div className="rounded-2xl border border-[#0f8a4f] bg-[#eaf7f0] p-6 text-center">
         <div className="mb-3 text-4xl">🎉</div>
         <p className="font-semibold text-[#0f8a4f]">参加申請を送信しました</p>
         <p className="mt-2 text-sm text-[#5c6a7a]">
@@ -74,7 +74,7 @@ export function JoinForm({
       <input type="hidden" name="team_id" value={teamId} />
 
       {state.error && (
-        <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
+        <p className="rounded-lg border border-[#c0392b]/20 bg-[#fdecea] px-3 py-2 text-sm text-[#c0392b]">
           {state.error}
         </p>
       )}

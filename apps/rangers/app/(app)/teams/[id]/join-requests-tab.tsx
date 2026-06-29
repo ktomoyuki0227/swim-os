@@ -98,7 +98,7 @@ export function JoinRequestsTab({ teamId, initialRequests }: JoinRequestsTabProp
                   <p className="text-xs text-[#8d99a8]">{swimmer.furigana}</p>
                 )}
                 <div className="mt-0.5 flex items-center gap-2">
-                  <span className="rounded-full bg-[#e8f2f8] px-2 py-0.5 text-[10px] font-medium text-[#005F8C]">
+                  <span className="rounded-full bg-[#e8f2f8] px-2 py-0.5 text-xs font-medium text-[#005F8C]">
                     {MEMBERSHIP_TYPE_LABEL[req.membership_type] ?? req.membership_type}
                   </span>
                   <span className="text-xs text-[#8d99a8]">
@@ -112,7 +112,7 @@ export function JoinRequestsTab({ teamId, initialRequests }: JoinRequestsTabProp
                 <Button
                   size="sm"
                   variant="outline"
-                  className="h-8 rounded-full border-[#E8614D] px-3 text-xs text-[#E8614D] hover:bg-[#fff5f4]"
+                  className="h-8 rounded-full border-[#c0392b] px-3 text-xs text-[#c0392b] hover:bg-[#fdecea]"
                   onClick={() => handleReject(req.id)}
                   disabled={isProcessing}
                 >

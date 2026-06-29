@@ -26,9 +26,9 @@ type EditingSection = "basic" | "swimmer" | "emergency" | "registration" | "publ
 
 function ProfileRow({ label, value, muted }: { label: string; value: string | null | undefined; muted?: boolean }) {
   return (
-    <div className="flex items-start justify-between gap-4 border-b border-[#f2f7fa] py-2.5 last:border-0">
+    <div className="flex items-start justify-between gap-4 border-b border-[#f2f7fa] py-3 last:border-0">
       <span className="min-w-[7rem] shrink-0 text-xs text-[#8d99a8]">{label}</span>
-      <span className={value && !muted ? "text-right text-sm text-[#1a2332]" : "text-right text-sm text-[#c0c8d0]"}>
+      <span className={value && !muted ? "text-right text-sm text-[#1a2332]" : "text-right text-sm text-[#8d99a8]"}>
         {value || "未設定"}
       </span>
     </div>
@@ -37,9 +37,9 @@ function ProfileRow({ label, value, muted }: { label: string; value: string | nu
 
 function ProfileBlockRow({ label, value }: { label: string; value: string | null | undefined }) {
   return (
-    <div className="border-b border-[#f2f7fa] py-2.5 last:border-0">
+    <div className="border-b border-[#f2f7fa] py-3 last:border-0">
       <span className="text-xs text-[#8d99a8]">{label}</span>
-      <p className={`mt-0.5 whitespace-pre-wrap text-sm leading-relaxed ${value ? "text-[#1a2332]" : "text-[#c0c8d0]"}`}>
+      <p className={`mt-0.5 whitespace-pre-wrap text-sm leading-relaxed ${value ? "text-[#1a2332]" : "text-[#8d99a8]"}`}>
         {value || "未設定"}
       </p>
     </div>
@@ -69,8 +69,8 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
 function PrivacyBadge({ type }: { type: "private" | "public" }) {
   if (type === "private") {
     return (
-      <span className="flex items-center gap-1 text-[11px] text-[#8d99a8]">
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <span className="flex items-center gap-1 text-xs text-[#8d99a8]">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
           <path d="M7 11V7a5 5 0 0 1 10 0v4" />
         </svg>
@@ -79,8 +79,8 @@ function PrivacyBadge({ type }: { type: "private" | "public" }) {
     )
   }
   return (
-    <span className="flex items-center gap-1 text-[11px] text-[#005F8C]">
-      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <span className="flex items-center gap-1 text-xs text-[#005F8C]">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="12" cy="12" r="10" />
         <line x1="2" y1="12" x2="22" y2="12" />
         <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
@@ -112,7 +112,7 @@ function TagGroup({
             key={item}
             type="button"
             onClick={() => toggle(item)}
-            className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${selected.includes(item) ? "border-transparent bg-[#005F8C] text-white" : "border-[#dce3ea] text-[#5c6a7a] hover:border-[#005F8C] hover:text-[#005F8C]"}`}
+            className={`rounded-full border px-[14px] py-[6px] text-sm transition-colors ${selected.includes(item) ? "border-transparent bg-[#005F8C] text-white" : "border-[#dce3ea] text-[#5c6a7a] hover:border-[#005F8C] hover:text-[#005F8C]"}`}
           >
             {item}
           </button>
@@ -130,18 +130,18 @@ function TagRow({ label, items, maxVisible = Infinity }: { label: string; items:
   const hiddenCount = Math.max(0, items.length - maxVisible)
 
   return (
-    <div className="border-b border-[#f2f7fa] py-2.5 last:border-0">
+    <div className="border-b border-[#f2f7fa] py-3 last:border-0">
       <span className="mb-1.5 block text-xs text-[#8d99a8]">{label}</span>
       {items.length > 0 ? (
         <div className="flex flex-wrap gap-1.5">
           {visible.map((item) => (
-            <span key={item} className="rounded-full bg-[#005F8C]/10 px-2.5 py-0.5 text-xs text-[#005F8C]">{item}</span>
+            <span key={item} className="rounded-full bg-[#005F8C]/10 px-[10px] py-[3px] text-xs text-[#005F8C]">{item}</span>
           ))}
           {shouldCollapse && (
             <button
               type="button"
               onClick={() => setExpanded(true)}
-              className="rounded-full border border-[#dce3ea] px-2.5 py-0.5 text-xs text-[#8d99a8] transition-colors hover:border-[#005F8C] hover:text-[#005F8C]"
+              className="text-xs text-[#005F8C] underline underline-offset-2 transition-colors hover:text-[#004E73]"
             >
               +{hiddenCount}件
             </button>
@@ -150,14 +150,14 @@ function TagRow({ label, items, maxVisible = Infinity }: { label: string; items:
             <button
               type="button"
               onClick={() => setExpanded(false)}
-              className="rounded-full border border-[#dce3ea] px-2.5 py-0.5 text-xs text-[#8d99a8] transition-colors hover:border-[#005F8C] hover:text-[#005F8C]"
+              className="text-xs text-[#005F8C] underline underline-offset-2 transition-colors hover:text-[#004E73]"
             >
               折りたたむ
             </button>
           )}
         </div>
       ) : (
-        <span className="text-sm text-[#c0c8d0]">未設定</span>
+        <span className="text-sm text-[#8d99a8]">未設定</span>
       )}
     </div>
   )
@@ -192,7 +192,7 @@ function PrefectureMultiSelect({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex h-10 w-full items-center justify-between rounded-lg border border-[#dce3ea] bg-white px-3 text-sm text-[#1a2332] hover:border-[#005F8C]/50 focus:outline-none focus:ring-2 focus:ring-[#005F8C]/30"
+        className="flex min-h-[48px] w-full items-center justify-between rounded-[10px] border border-[#dce3ea] bg-white px-4 text-sm text-[#1a2332] hover:border-[#005F8C]/50 focus:outline-none focus:ring-2 focus:ring-[#005F8C]/30"
       >
         <span className={selected.length === 0 ? "text-[#8d99a8]" : ""}>
           {selected.length === 0 ? "選択してください（複数可）" : `${selected.length}地域を選択中`}
@@ -207,18 +207,18 @@ function PrefectureMultiSelect({
       {selected.length > 0 && (
         <div className="flex flex-wrap gap-1">
           {selected.map((p) => (
-            <span key={p} className="flex items-center gap-1 rounded-full bg-[#005F8C]/10 px-2.5 py-0.5 text-xs text-[#005F8C]">
+            <span key={p} className="flex items-center gap-1 rounded-full bg-[#005F8C]/10 px-[10px] py-[3px] text-xs text-[#005F8C]">
               {p}
-              <button type="button" onClick={() => toggle(p)} className="leading-none hover:text-[#E8614D]">×</button>
+              <button type="button" onClick={() => toggle(p)} className="leading-none hover:text-[#c0392b]">×</button>
             </span>
           ))}
         </div>
       )}
       {open && (
-        <div className="rounded-xl border border-[#dce3ea] bg-white p-3">
+        <div className="rounded-[10px] border border-[#dce3ea] bg-white p-3">
           <div className="grid grid-cols-3 gap-x-2 gap-y-1 sm:grid-cols-4">
             {PREFECTURES.map((p) => (
-              <label key={p} className="flex cursor-pointer items-center gap-1.5 rounded-lg px-1 py-1 text-xs hover:bg-[#f2f7fa]">
+              <label key={p} className="flex cursor-pointer items-center gap-1.5 rounded-[6px] px-1 py-1 text-xs hover:bg-[#f2f7fa]">
                 <input
                   type="checkbox"
                   checked={selected.includes(p)}
@@ -240,7 +240,7 @@ function PencilButton({ onClick }: { onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      className="flex h-7 w-7 items-center justify-center rounded-lg text-[#8d99a8] transition-colors hover:bg-[#f2f7fa] hover:text-[#005F8C]"
+      className="flex h-11 w-11 items-center justify-center rounded-[10px] text-[#8d99a8] transition-colors hover:bg-[#f2f7fa] hover:text-[#005F8C]"
       aria-label="編集"
     >
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -261,7 +261,7 @@ function EditActions({
   isPending: boolean
 }) {
   return (
-    <div className="-mx-4 -mb-4 mt-4 border-t border-[#f2f7fa] bg-[#f7fafc] px-4 py-3">
+    <div className="-mx-4 -mb-4 mt-4 border-t border-[#e8edf2] bg-[#f2f7fa] px-4 py-3">
       <div className="flex gap-2">
         <Button
           type="button"
@@ -649,26 +649,26 @@ export default function ProfilePage() {
 
               {/* オプションメニュー */}
               {avatarMenuOpen && (
-                <div className="absolute left-1/2 top-full z-20 mt-2 w-44 -translate-x-1/2 overflow-hidden rounded-xl border border-[#dce3ea] bg-white shadow-lg">
+                <div className="absolute left-1/2 top-full z-20 mt-2 w-44 -translate-x-1/2 overflow-hidden rounded-[10px] border border-[#dce3ea] bg-white shadow-lg">
                   <button
                     type="button"
-                    className="flex w-full items-center gap-3 px-4 py-3 text-sm text-[#1a2332] hover:bg-[#f2f7fa] transition-colors"
+                    className="flex w-full items-center gap-3 px-4 min-h-[44px] text-sm text-[#1a2332] hover:bg-[#f2f7fa] transition-colors"
                     onClick={() => { setAvatarMenuOpen(false); libraryInputRef.current?.click() }}
                   >
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
                       <circle cx="8.5" cy="8.5" r="1.5"/>
                       <polyline points="21 15 16 10 5 21"/>
                     </svg>
                     フォトライブラリ
                   </button>
-                  <div className="border-t border-[#f2f7fa]" />
+                  <div className="border-t border-[#e8edf2]" />
                   <button
                     type="button"
-                    className="flex w-full items-center gap-3 px-4 py-3 text-sm text-[#1a2332] hover:bg-[#f2f7fa] transition-colors"
+                    className="flex w-full items-center gap-3 px-4 min-h-[44px] text-sm text-[#1a2332] hover:bg-[#f2f7fa] transition-colors"
                     onClick={() => { setAvatarMenuOpen(false); cameraInputRef.current?.click() }}
                   >
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
                       <circle cx="12" cy="13" r="4"/>
                     </svg>
@@ -676,13 +676,13 @@ export default function ProfilePage() {
                   </button>
                   {!isAvatarPending && avatarUrl && (
                     <>
-                      <div className="border-t border-[#f2f7fa]" />
+                      <div className="border-t border-[#e8edf2]" />
                       <button
                         type="button"
-                        className="flex w-full items-center gap-3 px-4 py-3 text-sm text-[#E8614D] hover:bg-[#fff5f4] transition-colors"
+                        className="flex w-full items-center gap-3 px-4 min-h-[44px] text-sm text-[#c0392b] hover:bg-[#fdecea] transition-colors"
                         onClick={handleDeleteAvatar}
                       >
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <polyline points="3 6 5 6 21 6"/>
                           <path d="M19 6l-1 14H6L5 6"/>
                           <path d="M10 11v6M14 11v6"/>
@@ -699,12 +699,12 @@ export default function ProfilePage() {
 
           {/* 完成度 */}
           {!isLoading && (
-            <div className="rounded-xl bg-[#f7fafc] px-4 py-3">
+            <div className="rounded-[14px] bg-[#f2f7fa] px-4 py-3">
               <div className="mb-1.5 flex items-center justify-between">
                 <span className="text-xs text-[#5c6a7a]">プロフィール完成度</span>
                 <div className="flex items-center gap-2">
                   {remainingCount > 0 && (
-                    <span className="text-[10px] text-[#8d99a8]">あと{remainingCount}項目</span>
+                    <span className="text-xs text-[#8d99a8]">あと{remainingCount}項目</span>
                   )}
                   <span className="text-xs font-semibold text-[#005F8C]">{completeness}%</span>
                 </div>
@@ -713,7 +713,7 @@ export default function ProfilePage() {
                 <div className="h-2 rounded-full bg-[#005F8C] transition-all duration-500" style={{ width: `${completeness}%` }} />
               </div>
               {completeness === 100 && (
-                <p className="mt-1.5 text-[11px] text-[#005F8C]">
+                <p className="mt-1.5 text-xs text-[#005F8C]">
                   プロフィールが完成しました！
                 </p>
               )}
@@ -740,7 +740,7 @@ export default function ProfilePage() {
             <div className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
-                  <Label htmlFor="name" className="text-sm text-[#5c6a7a]">名前 <span className="text-[#E8614D]">*</span></Label>
+                  <Label htmlFor="name" className="text-sm text-[#5c6a7a]">名前 <span className="text-[#c0392b]">*</span></Label>
                   <Input id="name" value={name} onChange={(e) => setName(e.target.value)} className="border-[#dce3ea]" />
                 </div>
                 <div className="space-y-1.5">
@@ -751,7 +751,7 @@ export default function ProfilePage() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <Label htmlFor="gender" className="text-sm text-[#5c6a7a]">性別</Label>
-                  <select id="gender" value={gender} onChange={(e) => setGender(e.target.value)} className="h-10 w-full rounded-lg border border-[#dce3ea] bg-white px-3 text-sm text-[#1a2332] focus:outline-none focus:ring-2 focus:ring-[#005F8C]/30">
+                  <select id="gender" value={gender} onChange={(e) => setGender(e.target.value)} className="min-h-[48px] w-full rounded-[10px] border border-[#dce3ea] bg-white px-4 text-sm text-[#1a2332] focus:outline-none focus:ring-2 focus:ring-[#005F8C]/30">
                     <option value="">選択</option>
                     <option value="male">男性</option>
                     <option value="female">女性</option>
@@ -765,10 +765,10 @@ export default function ProfilePage() {
               </div>
               <div className="space-y-1.5">
                 <Label className="text-sm text-[#5c6a7a]">メールアドレス</Label>
-                <div className="flex h-10 items-center rounded-lg bg-[#f7fafc] px-3 text-sm text-[#8d99a8]">
+                <div className="flex min-h-[48px] items-center rounded-[10px] bg-[#f2f7fa] px-4 text-sm text-[#8d99a8]">
                   {email}
                 </div>
-                <p className="text-[11px] text-[#8d99a8]">メールアドレスはアカウント設定から変更できます</p>
+                <p className="text-xs text-[#8d99a8]">メールアドレスはアカウント設定から変更できます</p>
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="phone" className="text-sm text-[#5c6a7a]">電話番号</Label>
@@ -870,24 +870,24 @@ export default function ProfilePage() {
             </div>
           ) : (
             <div className="space-y-1">
-              <div className="border-b border-[#f2f7fa] py-2.5">
+              <div className="border-b border-[#f2f7fa] py-3">
                 <span className="mb-1.5 block text-xs text-[#8d99a8]">レベル</span>
                 {selectedLevel ? (
-                  <span className="rounded-full bg-[#f2f7fa] px-2.5 py-0.5 text-xs text-[#5c6a7a]">{selectedLevel}</span>
+                  <span className="rounded-full bg-[#f2f7fa] px-[10px] py-[3px] text-xs text-[#5c6a7a]">{selectedLevel}</span>
                 ) : (
-                  <span className="text-sm text-[#c0c8d0]">未設定</span>
+                  <span className="text-sm text-[#8d99a8]">未設定</span>
                 )}
               </div>
               <TagRow label="活動地域" items={prefectures} maxVisible={5} />
               <TagRow label="種目・泳法" items={specialties} />
               <TagRow label="活動目的" items={swimmingGoals} />
               <TagRow label="参加スタイル" items={participationStyles} />
-              <div className="border-b border-[#f2f7fa] py-2.5">
+              <div className="border-b border-[#f2f7fa] py-3">
                 <span className="mb-1.5 block text-xs text-[#8d99a8]">スイマータイプ</span>
                 {selectedSwimmerType ? (
-                  <span className="rounded-full bg-[#f2f7fa] px-2.5 py-0.5 text-xs text-[#5c6a7a]">{selectedSwimmerType}</span>
+                  <span className="rounded-full bg-[#f2f7fa] px-[10px] py-[3px] text-xs text-[#5c6a7a]">{selectedSwimmerType}</span>
                 ) : (
-                  <span className="text-sm text-[#c0c8d0]">未設定</span>
+                  <span className="text-sm text-[#8d99a8]">未設定</span>
                 )}
               </div>
               <TagRow label="水泳カテゴリ" items={swimDisciplines} />
@@ -1009,7 +1009,7 @@ export default function ProfilePage() {
           <div className="flex items-center justify-between gap-2">
             <div className="min-w-0">
               <CardTitle className="text-base text-[#1a2332]">公開プロフィール</CardTitle>
-              <p className="mt-0.5 text-[11px] text-[#8d99a8]">他のユーザーに公開されます</p>
+              <p className="mt-0.5 text-xs text-[#8d99a8]">他のユーザーに公開されます</p>
             </div>
             <div className="flex shrink-0 items-center gap-2">
               <PrivacyBadge type="public" />
@@ -1036,15 +1036,15 @@ export default function ProfilePage() {
             <div className="space-y-4">
               <div className="space-y-1.5">
                 <Label htmlFor="bio" className="text-sm text-[#5c6a7a]">自己紹介</Label>
-                <textarea id="bio" value={bio} onChange={(e) => setBio(e.target.value)} rows={3} placeholder="指導スタイルや強みを教えてください" className="w-full resize-none rounded-lg border border-[#dce3ea] bg-white px-3 py-2 text-sm text-[#1a2332] placeholder:text-[#8d99a8] focus:outline-none focus:ring-2 focus:ring-[#005F8C]/30" />
+                <textarea id="bio" value={bio} onChange={(e) => setBio(e.target.value)} rows={3} placeholder="指導スタイルや強みを教えてください" className="w-full resize-none rounded-[10px] border border-[#dce3ea] bg-white px-4 py-3 text-sm text-[#1a2332] placeholder:text-[#8d99a8] focus:outline-none focus:ring-2 focus:ring-[#005F8C]/30" />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="career" className="text-sm text-[#5c6a7a]">経歴</Label>
-                <textarea id="career" value={career} onChange={(e) => setCareer(e.target.value)} rows={3} placeholder="例: ○○大学水泳部、指導歴10年" className="w-full resize-none rounded-lg border border-[#dce3ea] bg-white px-3 py-2 text-sm text-[#1a2332] placeholder:text-[#8d99a8] focus:outline-none focus:ring-2 focus:ring-[#005F8C]/30" />
+                <textarea id="career" value={career} onChange={(e) => setCareer(e.target.value)} rows={3} placeholder="例: ○○大学水泳部、指導歴10年" className="w-full resize-none rounded-[10px] border border-[#dce3ea] bg-white px-4 py-3 text-sm text-[#1a2332] placeholder:text-[#8d99a8] focus:outline-none focus:ring-2 focus:ring-[#005F8C]/30" />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="achievements" className="text-sm text-[#5c6a7a]">実績</Label>
-                <textarea id="achievements" value={achievements} onChange={(e) => setAchievements(e.target.value)} rows={3} placeholder="例: 全日本マスターズ優勝、指導選手の入賞" className="w-full resize-none rounded-lg border border-[#dce3ea] bg-white px-3 py-2 text-sm text-[#1a2332] placeholder:text-[#8d99a8] focus:outline-none focus:ring-2 focus:ring-[#005F8C]/30" />
+                <textarea id="achievements" value={achievements} onChange={(e) => setAchievements(e.target.value)} rows={3} placeholder="例: 全日本マスターズ優勝、指導選手の入賞" className="w-full resize-none rounded-[10px] border border-[#dce3ea] bg-white px-4 py-3 text-sm text-[#1a2332] placeholder:text-[#8d99a8] focus:outline-none focus:ring-2 focus:ring-[#005F8C]/30" />
               </div>
               <TagGroup label="指導対象年齢" items={TARGET_AGES} selected={targetAges} onChange={setTargetAges} />
               <EditActions onCancel={cancelEdit} onSave={savePublic} isPending={isPending} />

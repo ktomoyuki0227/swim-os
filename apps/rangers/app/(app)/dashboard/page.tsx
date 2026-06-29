@@ -57,12 +57,12 @@ export default async function DashboardPage() {
     return (
       <div className="space-y-6">
         {/* ウェルカムヘッダー */}
-        <div className="rounded-2xl bg-[#f2f7fa] px-5 py-6">
-          <p className="text-sm text-[#5c6a7a]">{greeting}</p>
-          <h1 className="mt-0.5 text-2xl font-bold text-[#1a2332]">
+        <div className="rounded-[14px] bg-[#f2f7fa] px-5 py-6">
+          <p className="text-sm leading-[1.5] text-[#5c6a7a]">{greeting}</p>
+          <h1 className="mt-1 text-[22px] font-semibold leading-[1.4] tracking-[-0.2px] text-[#1a2332]">
             ようこそ、{userName}さん！
           </h1>
-          <p className="mt-2 text-sm leading-relaxed text-[#5c6a7a]">
+          <p className="mt-2 text-sm leading-[1.5] text-[#5c6a7a]">
             Rangers では水泳グループの練習・大会・会費を<br className="hidden sm:inline" />
             まとめて管理できます。まずグループに参加しましょう。
           </p>
@@ -70,13 +70,13 @@ export default async function DashboardPage() {
 
         {/* はじめる */}
         <section>
-          <h2 className="mb-3 text-base font-semibold text-[#1a2332]">はじめる</h2>
+          <h2 className="mb-3 text-lg font-semibold leading-[1.4] text-[#1a2332]">はじめる</h2>
           <div className="grid grid-cols-2 gap-3">
             {/* グループを探す */}
             <Link href="/search?tab=teams">
-              <div className="flex h-full flex-col gap-3 rounded-xl border border-[#dce3ea] bg-white p-4 transition-all hover:border-[#005F8C] hover:shadow-sm">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#005F8C]/10">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#005F8C" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <div className="flex h-full flex-col gap-3 rounded-[14px] border border-[#dce3ea] bg-white p-4 transition-all hover:border-[#005F8C] hover:shadow-sm">
+                <div className="flex h-9 w-9 items-center justify-center rounded-[14px] bg-[#005F8C]/10">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#005F8C" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
                     <circle cx="9" cy="7" r="4" />
                     <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
@@ -85,16 +85,16 @@ export default async function DashboardPage() {
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-[#1a2332]">グループを探す</p>
-                  <p className="mt-0.5 text-xs text-[#8d99a8]">公開グループに参加</p>
+                  <p className="mt-0.5 text-xs text-[#5c6a7a]">公開グループに参加</p>
                 </div>
               </div>
             </Link>
 
             {/* グループを作る */}
             <Link href="/teams/new">
-              <div className="flex h-full flex-col gap-3 rounded-xl border border-[#dce3ea] bg-white p-4 transition-all hover:border-[#0f8a4f] hover:shadow-sm">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#0f8a4f]/10">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0f8a4f" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <div className="flex h-full flex-col gap-3 rounded-[14px] border border-[#dce3ea] bg-white p-4 transition-all hover:border-[#0f8a4f] hover:shadow-sm">
+                <div className="flex h-9 w-9 items-center justify-center rounded-[14px] bg-[#0f8a4f]/10">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0f8a4f" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="12" cy="12" r="10" />
                     <line x1="12" y1="8" x2="12" y2="16" />
                     <line x1="8" y1="12" x2="16" y2="12" />
@@ -102,7 +102,7 @@ export default async function DashboardPage() {
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-[#1a2332]">グループを作る</p>
-                  <p className="mt-0.5 text-xs text-[#8d99a8]">コーチ・管理者として</p>
+                  <p className="mt-0.5 text-xs text-[#5c6a7a]">コーチ・管理者として</p>
                 </div>
               </div>
             </Link>
@@ -118,8 +118,8 @@ export default async function DashboardPage() {
         {publicSessions && publicSessions.length > 0 && (
           <section>
             <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-base font-semibold text-[#1a2332]">公開中のセッション</h2>
-              <Link href="/search" className="text-sm text-[#005F8C] hover:underline">
+              <h2 className="text-lg font-semibold leading-[1.4] text-[#1a2332]">公開中のセッション</h2>
+              <Link href="/search" className="inline-flex min-h-[44px] items-center text-sm text-[#005F8C] hover:underline">
                 すべて見る →
               </Link>
             </div>
@@ -129,21 +129,21 @@ export default async function DashboardPage() {
                 return (
                   <Card key={session.id as string} className="border-[#dce3ea] transition-all hover:border-[#005F8C]">
                     <CardContent className="flex items-center gap-4 p-4">
-                      <div className="flex w-14 shrink-0 flex-col items-center rounded-xl bg-[#005F8C]/10 py-2">
-                        <span className="text-[10px] font-medium text-[#005F8C]">
+                      <div className="flex w-14 shrink-0 flex-col items-center rounded-[14px] bg-[#005F8C]/10 py-2">
+                        <span className="text-xs font-medium text-[#005F8C]">
                           {new Date(session.scheduled_at as string).toLocaleDateString("ja-JP", { month: "short" })}
                         </span>
                         <span className="text-xl font-bold leading-tight text-[#005F8C]">
                           {new Date(session.scheduled_at as string).getDate()}
                         </span>
-                        <span className="text-[10px] text-[#005F8C]">
+                        <span className="text-xs text-[#005F8C]">
                           {new Date(session.scheduled_at as string).toLocaleDateString("ja-JP", { weekday: "short" })}
                         </span>
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
                           <p className="truncate font-medium text-[#1a2332]">{session.title as string}</p>
-                          <Badge className="shrink-0 bg-[#edf0f4] text-[#5c6a7a] border-transparent text-[10px]">
+                          <Badge className="shrink-0 bg-[#edf0f4] text-[#5c6a7a] border-transparent text-xs">
                             {SESSION_TYPE_LABELS[session.type as string] || session.type as string}
                           </Badge>
                         </div>
@@ -155,11 +155,11 @@ export default async function DashboardPage() {
                           {session.location ? ` · ${session.location as string}` : ""}
                         </p>
                         {team && (
-                          <p className="text-xs text-[#8d99a8]">{team.name as string}</p>
+                          <p className="text-xs text-[#5c6a7a]">{team.name as string}</p>
                         )}
                         <p className="mt-0.5 text-sm font-semibold text-[#005F8C]">
                           ¥{(session.guest_price as number || 0).toLocaleString()}
-                          <span className="text-xs font-normal text-[#8d99a8]">（ゲスト）</span>
+                          <span className="text-xs font-normal text-[#5c6a7a]">（ゲスト）</span>
                         </p>
                       </div>
                     </CardContent>
@@ -229,9 +229,9 @@ export default async function DashboardPage() {
       {/* あなたのグループ */}
       <section>
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-base font-semibold text-[#1a2332]">あなたのグループ</h2>
+          <h2 className="text-lg font-semibold leading-[1.4] text-[#1a2332]">あなたのグループ</h2>
           {allTeams.length > 4 && (
-            <Link href="/teams" className="text-sm text-[#005F8C] hover:underline">
+            <Link href="/teams" className="inline-flex min-h-[44px] items-center text-sm text-[#005F8C] hover:underline">
               すべて見る →
             </Link>
           )}
@@ -247,7 +247,7 @@ export default async function DashboardPage() {
             return (
               <Link key={team.id as string} href={href} className="block shrink-0 w-40">
                 <div
-                  className="flex h-[72px] overflow-hidden rounded-xl border bg-white transition-all hover:shadow-sm"
+                  className="flex h-[72px] overflow-hidden rounded-[14px] border bg-white transition-all hover:shadow-sm"
                   style={{ borderColor: `${color}40` }}
                 >
                   {/* 左: グループ画像 */}
@@ -270,12 +270,12 @@ export default async function DashboardPage() {
                     )}
                   </div>
                   {/* 右: グループ名 + バッジ */}
-                  <div className="flex min-w-0 flex-1 flex-col justify-center gap-1 px-2.5">
+                  <div className="flex min-w-0 flex-1 flex-col justify-center gap-1 px-3">
                     <p className="line-clamp-2 text-xs font-semibold leading-tight text-[#1a2332]">
                       {team.name as string}
                     </p>
                     <span
-                      className="inline-flex w-fit items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium"
+                      className="inline-flex w-fit items-center rounded-full px-1.5 py-0.5 text-xs font-medium"
                       style={
                         isAdmin
                           ? { backgroundColor: `${color}18`, color }
@@ -293,13 +293,13 @@ export default async function DashboardPage() {
           {/* 1グループのみのとき: 「グループを探す」プレースホルダー */}
           {allTeams.length === 1 && (
             <Link href="/search?tab=teams" className="block shrink-0 w-40">
-              <div className="flex h-[72px] items-center justify-center rounded-xl border border-dashed border-[#dce3ea] bg-[#f7fafc] transition-colors hover:bg-[#eef3f7]">
+              <div className="flex h-[72px] items-center justify-center rounded-[14px] border border-dashed border-[#dce3ea] bg-[#f2f7fa] transition-colors hover:bg-[#edf0f4]">
                 <div className="flex flex-col items-center gap-1">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8d99a8" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8d99a8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="11" cy="11" r="8" />
                     <line x1="21" y1="21" x2="16.65" y2="16.65" />
                   </svg>
-                  <p className="text-[11px] text-[#5c6a7a]">グループを探す</p>
+                  <p className="text-xs text-[#5c6a7a]">グループを探す</p>
                 </div>
               </div>
             </Link>

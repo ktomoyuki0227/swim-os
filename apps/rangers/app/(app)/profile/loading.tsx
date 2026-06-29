@@ -15,7 +15,7 @@ export default function ProfileLoading() {
             <Skeleton className="h-3 w-40" />
           </div>
           {/* アカウント情報 */}
-          <div className="rounded-lg bg-muted/50 px-4 py-3 space-y-3">
+          <div className="rounded-lg bg-[#f2f7fa] px-4 py-3 space-y-3">
             <div className="flex items-center justify-between">
               <Skeleton className="h-4 w-28" />
               <Skeleton className="h-4 w-40" />

@@ -203,7 +203,7 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
                     </span>
                     <div className="relative flex h-1.5 min-w-[60px] flex-1 overflow-hidden rounded-full bg-[#edf0f4]">
                       <div className="absolute left-0 h-full rounded-full bg-[#0f8a4f]" style={{ width: `${paidPct}%` }} />
-                      <div className="absolute h-full rounded-full bg-[#dc2626]" style={{ left: `${paidPct}%`, width: `${subUnpaidPct}%` }} />
+                      <div className="absolute h-full rounded-full bg-[#c0392b]" style={{ left: `${paidPct}%`, width: `${subUnpaidPct}%` }} />
                       <div className="absolute h-full rounded-full bg-[#d97706]" style={{ left: `${paidPct + subUnpaidPct}%`, width: `${stampUnpaidPct}%` }} />
                     </div>
                   </div>
@@ -421,13 +421,13 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
                     <Card className="border-[#dce3ea] transition-all hover:border-[#005F8C]">
                       <CardContent className="flex items-center gap-4 p-4">
                         <div className="flex w-14 shrink-0 flex-col items-center rounded-xl bg-[#005F8C]/10 py-2">
-                          <span className="text-[10px] font-medium text-[#005F8C]">
+                          <span className="text-xs font-medium text-[#005F8C]">
                             {new Date(session.scheduled_at as string).toLocaleDateString("ja-JP", { month: "short" })}
                           </span>
                           <span className="text-xl font-bold leading-tight text-[#005F8C]">
                             {new Date(session.scheduled_at as string).getDate()}
                           </span>
-                          <span className="text-[10px] text-[#005F8C]">
+                          <span className="text-xs text-[#005F8C]">
                             {new Date(session.scheduled_at as string).toLocaleDateString("ja-JP", { weekday: "short" })}
                           </span>
                         </div>
@@ -450,15 +450,15 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
                               session.registration_deadline &&
                               new Date(session.registration_deadline as string) < new Date()
                             if (session.session_status === "confirmed") {
-                              return <Badge className="bg-[#eaf7f0] text-[#0f8a4f] border-transparent text-[10px]">開催確定</Badge>
+                              return <Badge className="bg-[#eaf7f0] text-[#0f8a4f] border-transparent text-xs">開催確定</Badge>
                             }
                             if (isDeadlinePassed) {
-                              return <Badge className="bg-[#edf0f4] text-[#5c6a7a] border-transparent text-[10px]">締切済</Badge>
+                              return <Badge className="bg-[#edf0f4] text-[#5c6a7a] border-transparent text-xs">締切済</Badge>
                             }
-                            return <Badge className="bg-[#e8f2f8] text-[#005F8C] border-transparent text-[10px]">受付中</Badge>
+                            return <Badge className="bg-[#e8f2f8] text-[#005F8C] border-transparent text-xs">受付中</Badge>
                           })()}
                           {registeredSessionIds.has(session.id as string) && (
-                            <Badge className="bg-[#eaf7f0] text-[#0f8a4f] border-transparent text-[10px]">参加予定</Badge>
+                            <Badge className="bg-[#eaf7f0] text-[#0f8a4f] border-transparent text-xs">参加予定</Badge>
                           )}
                         </div>
                       </CardContent>

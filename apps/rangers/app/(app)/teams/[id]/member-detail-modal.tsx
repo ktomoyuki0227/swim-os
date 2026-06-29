@@ -299,7 +299,7 @@ export function MemberDetailModal({
         {/* 詳細タブ */}
         {activeTab === "detail" && (
           <div className="flex-1 overflow-y-auto px-5 py-4">
-            <div className="divide-y divide-[#f0f3f7]">
+            <div className="divide-y divide-[#e8edf2]">
               {/* メンバー情報 */}
               <div className="pb-3">
                 <p className="mb-2 text-xs font-medium text-[#8d99a8]">メンバー情報</p>
