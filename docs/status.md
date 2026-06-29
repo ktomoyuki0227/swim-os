@@ -749,8 +749,12 @@ commits: `5a7aef6`, `60f017b`, `acc7874`, `177701a`, `b4d5d2e` → main
 
 ### P1（近日中）
 
-1. **次の機能実装**
-   - 特に未定。ともくんと要相談
+1. **ページ単位の UI/UX ブラッシュアップ**（DESIGN.md トークン統一は完了済み）
+   - 他のアプリの同種ページを参考にしながら、1ページずつ丁寧に見た目・使いやすさを改善
+   - 対象: 全アプリページ（dashboard → teams → sessions → profile → payments → fees → auth → public の順を推奨）
+   - 方針: コンポーネントの種類・配置の変更も OK（ユーザー体験が向上するなら積極的に提案）
+   - LP ページ `(public)/page.tsx` はアプリ内とは別扱い（独自デザイン）
+   - DESIGN.md を必ず参照すること（`apps/rangers/DESIGN.md`）
 
 ---
 
