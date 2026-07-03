@@ -4,13 +4,14 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { markAnnouncementRead } from "@/actions/announcements"
 
-export function MarkReadButton({ announcementId }: { announcementId: string }) {
+export function MarkReadButton({ announcementId, onRead }: { announcementId: string; onRead?: () => void }) {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
 
   const handleClick = async () => {
     setIsLoading(true)
     await markAnnouncementRead(announcementId)
+    onRead?.()
     router.refresh()
     setIsLoading(false)
   }

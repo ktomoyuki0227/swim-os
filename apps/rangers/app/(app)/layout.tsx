@@ -2,6 +2,7 @@ import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { Navigation } from "@/components/navigation"
 import { ToastProvider } from "@/components/toast"
+import { PageTransition } from "@/components/page-transition"
 import { getUnreadNotificationCount } from "@/actions/notifications"
 import { getOrCreateStripeCustomer } from "@/lib/stripe-helpers"
 
@@ -50,7 +51,9 @@ export default async function AppLayout({
   return (
     <ToastProvider>
       <Navigation userName={profile.name} avatarUrl={profile.avatar_url} unreadCount={unreadResult.count} />
-      <main className="mx-auto w-full max-w-5xl flex-1 overflow-x-hidden px-4 py-6 pb-24 md:pb-6">{children}</main>
+      <main className="mx-auto w-full max-w-5xl flex-1 overflow-x-hidden px-4 py-6 pb-24 md:pb-6">
+        <PageTransition>{children}</PageTransition>
+      </main>
     </ToastProvider>
   )
 }

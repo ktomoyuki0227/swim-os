@@ -12,7 +12,6 @@ interface ErrorProps {
 
 export default function Error({ error, reset }: ErrorProps) {
   useEffect(() => {
-    // 開発環境のみコンソール出力（本番では外部ロギングサービスに送る）
     if (process.env.NODE_ENV === "development") {
       console.error(error)
     }

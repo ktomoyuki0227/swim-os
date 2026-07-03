@@ -129,7 +129,7 @@ export default async function DashboardPage() {
                 return (
                   <Card key={session.id as string} className="border-[#dce3ea] transition-all hover:border-[#005F8C]">
                     <CardContent className="flex items-center gap-4 p-4">
-                      <div className="flex w-14 shrink-0 flex-col items-center rounded-[14px] bg-[#005F8C]/10 py-2">
+                      <div className="flex w-14 shrink-0 flex-col items-center rounded-[6px] bg-[#005F8C]/10 py-2">
                         <span className="text-xs font-medium text-[#005F8C]">
                           {new Date(session.scheduled_at as string).toLocaleDateString("ja-JP", { month: "short" })}
                         </span>
@@ -225,10 +225,10 @@ export default async function DashboardPage() {
   }))
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* あなたのグループ */}
       <section>
-        <div className="mb-3 flex items-center justify-between">
+        <div className="mb-2 flex items-center justify-between">
           <h2 className="text-lg font-semibold leading-[1.4] text-[#1a2332]">あなたのグループ</h2>
           {allTeams.length > 4 && (
             <Link href="/teams" className="inline-flex min-h-[44px] items-center text-sm text-[#005F8C] hover:underline">
@@ -245,14 +245,11 @@ export default async function DashboardPage() {
             const avatarUrl = team.avatar_url as string | null
 
             return (
-              <Link key={team.id as string} href={href} className="block shrink-0 w-40">
-                <div
-                  className="flex h-[72px] overflow-hidden rounded-[14px] border bg-white transition-all hover:shadow-sm"
-                  style={{ borderColor: `${color}40` }}
-                >
-                  {/* 左: グループ画像 */}
+              <Link key={team.id as string} href={href} className="block shrink-0 w-[136px]">
+                <div className="overflow-hidden rounded-[14px] border border-[#dce3ea] bg-white transition-all hover:border-[#005F8C] hover:shadow-[0_1px_4px_rgba(0,0,0,0.06)]">
+                  {/* 上: グループ画像 + ロールバッジ */}
                   <div
-                    className="relative w-2/5 shrink-0 overflow-hidden"
+                    className="relative h-[56px] w-full overflow-hidden"
                     style={{ backgroundColor: color }}
                   >
                     {avatarUrl ? (
@@ -261,29 +258,29 @@ export default async function DashboardPage() {
                         alt={team.name as string}
                         fill
                         className="object-cover"
-                        sizes="64px"
+                        sizes="136px"
                       />
                     ) : (
-                      <div className="flex h-full w-full items-center justify-center text-lg font-bold text-white">
+                      <div className="flex h-full w-full items-center justify-center text-2xl font-bold text-white">
                         {(team.name as string)?.[0] || "T"}
                       </div>
                     )}
-                  </div>
-                  {/* 右: グループ名 + バッジ */}
-                  <div className="flex min-w-0 flex-1 flex-col justify-center gap-1 px-3">
-                    <p className="line-clamp-2 text-xs font-semibold leading-tight text-[#1a2332]">
-                      {team.name as string}
-                    </p>
                     <span
-                      className="inline-flex w-fit items-center rounded-full px-1.5 py-0.5 text-xs font-medium"
+                      className="absolute right-1.5 top-1.5 rounded-full px-2 py-0.5 text-xs font-semibold backdrop-blur-sm"
                       style={
                         isAdmin
-                          ? { backgroundColor: `${color}18`, color }
-                          : { backgroundColor: "#f2f7fa", color: "#5c6a7a" }
+                          ? { backgroundColor: "rgba(255,255,255,0.85)", color }
+                          : { backgroundColor: "rgba(255,255,255,0.85)", color: "#5c6a7a" }
                       }
                     >
                       {isAdmin ? "管理者" : "メンバー"}
                     </span>
+                  </div>
+                  {/* 下: グループ名 */}
+                  <div className="px-2.5 py-2">
+                    <p className="line-clamp-2 text-xs font-semibold leading-snug text-[#1a2332]">
+                      {team.name as string}
+                    </p>
                   </div>
                 </div>
               </Link>
@@ -292,15 +289,15 @@ export default async function DashboardPage() {
 
           {/* 1グループのみのとき: 「グループを探す」プレースホルダー */}
           {allTeams.length === 1 && (
-            <Link href="/search?tab=teams" className="block shrink-0 w-40">
-              <div className="flex h-[72px] items-center justify-center rounded-[14px] border border-dashed border-[#dce3ea] bg-[#f2f7fa] transition-colors hover:bg-[#edf0f4]">
-                <div className="flex flex-col items-center gap-1">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8d99a8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <Link href="/search?tab=teams" className="block shrink-0 w-[136px]">
+              <div className="flex h-[100px] flex-col items-center justify-center gap-2 rounded-[14px] border border-dashed border-[#dce3ea] bg-[#f2f7fa] transition-colors hover:bg-[#edf0f4]">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[rgba(0,95,140,0.08)]">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8d99a8" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="11" cy="11" r="8" />
                     <line x1="21" y1="21" x2="16.65" y2="16.65" />
                   </svg>
-                  <p className="text-xs text-[#5c6a7a]">グループを探す</p>
                 </div>
+                <p className="text-sm font-medium text-[#5c6a7a]">グループを探す</p>
               </div>
             </Link>
           )}

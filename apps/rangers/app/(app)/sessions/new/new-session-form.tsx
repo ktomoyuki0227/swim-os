@@ -73,13 +73,14 @@ const DEFAULT_FORM: FormData = {
 
 function StepIndicator({ current }: { current: number }) {
   return (
-    <div className="flex items-center gap-0">
+    <div className="flex items-center justify-between">
       {STEPS.map((step, i) => {
         const done = i < current
         const active = i === current
+        const isLast = i === STEPS.length - 1
         return (
-          <div key={i} className="flex flex-1 items-center">
-            <div className="flex flex-col items-center gap-1">
+          <div key={i} className={`flex items-center ${isLast ? "" : "flex-1"}`}>
+            <div className="flex w-10 shrink-0 flex-col items-center gap-1">
               <div
                 className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold transition-colors ${
                   done
@@ -97,12 +98,12 @@ function StepIndicator({ current }: { current: number }) {
                   i + 1
                 )}
               </div>
-              <span className={`text-xs font-medium whitespace-nowrap ${active ? "text-[#005F8C]" : "text-[#8d99a8]"}`}>
+              <span className={`text-[10px] font-medium ${active ? "text-[#005F8C]" : "text-[#8d99a8]"}`}>
                 {step.label}
               </span>
             </div>
-            {i < STEPS.length - 1 && (
-              <div className={`mx-1 mb-4 h-0.5 flex-1 transition-colors ${done ? "bg-[#005F8C]" : "bg-[#dce3ea]"}`} />
+            {!isLast && (
+              <div className={`mb-4 h-0.5 flex-1 transition-colors ${done ? "bg-[#005F8C]" : "bg-[#dce3ea]"}`} />
             )}
           </div>
         )

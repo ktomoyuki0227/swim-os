@@ -17,10 +17,16 @@ import { PublicTeamView } from "@/components/teams/public-team-view"
 import { AdminActionButtons } from "@/app/(app)/teams/[id]/admin-action-buttons"
 import { MemberList } from "@/app/(app)/teams/[id]/member-list"
 import { AnnouncementsSection } from "@/app/(app)/teams/[id]/announcements-section"
-import { MarkReadButton } from "@/app/(app)/teams/[id]/mark-read-button"
 import { JoinRequestsTab } from "@/app/(app)/teams/[id]/join-requests-tab"
 import { getTeamJoinRequests, getMyJoinRequest } from "@/actions/join-requests"
 import { ContactInfoButton } from "@/components/teams/contact-info-button"
+import { AdminTeamActions } from "@/app/(app)/teams/[id]/admin-team-actions"
+import { TeamDescription } from "@/app/(app)/teams/[id]/team-description"
+import { MemberAnnouncementsSheet } from "@/app/(app)/teams/[id]/member-announcements-sheet"
+import { MemberSessionList } from "@/app/(app)/teams/[id]/member-session-list"
+import { MemberPreviewBar } from "@/app/(app)/teams/[id]/member-preview-bar"
+import { BackLink } from "@/components/back-link"
+import Image from "next/image"
 
 interface TeamPageProps {
   params: Promise<{ id: string }>
@@ -135,184 +141,165 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
     }>
 
     const joinRequests = joinRequestsResult.data || []
-    const feeStats = feeStatsResult.data ?? { paid: 0, subscriptionUnpaid: 0, stampUnpaid: 0, total: 0 }
-    const hasFeeStats = feeStats.total > 0
-    const paidPct = hasFeeStats ? (feeStats.paid / feeStats.total) * 100 : 0
-    const subUnpaidPct = hasFeeStats ? (feeStats.subscriptionUnpaid / feeStats.total) * 100 : 0
-    const stampUnpaidPct = hasFeeStats ? (feeStats.stampUnpaid / feeStats.total) * 100 : 0
 
-    const tabs = [
-      { id: "members", label: `メンバー (${members.length})` },
-      { id: "sessions", label: "セッション" },
-      { id: "announcements", label: `お知らせ (${announcements.length})` },
-      { id: "requests", label: joinRequests.length > 0 ? `申請 (${joinRequests.length})` : "申請" },
-    ]
+    const adminMembers = members.filter((m: Record<string, unknown>) => m.role === "admin")
+    const previewMembers = members.slice(0, 3)
 
     return (
       <ToastProvider>
         <Navigation userName={profile.name} avatarUrl={profile.avatar_url} />
-        <main className="mx-auto w-full max-w-5xl flex-1 overflow-x-hidden px-4 py-6 pb-24 md:pb-6">
-          <div className="space-y-6">
-            {/* Header */}
+        <main className="mx-auto w-full max-w-5xl flex-1 overflow-x-hidden px-4 py-4 pb-24 md:pb-6">
+          <div className="space-y-4">
+
+            {/* ── トップバー ── */}
+            <div className="flex items-center justify-between">
+              <BackLink
+                href="/teams"
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-[#dce3ea] bg-white transition-colors hover:bg-[#f2f7fa]"
+                aria-label="戻る"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1a2332" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="15 18 9 12 15 6" />
+                </svg>
+              </BackLink>
+              <span className="text-sm text-[#5c6a7a]">グループ</span>
+              <AdminActionButtons team={team} />
+            </div>
+
+            {/* ── グループ名 + 説明 ── */}
             <div>
-              {/* アクションバー */}
-              <div className="mb-3 flex items-center justify-between gap-2">
-                <Link href="/teams" className="text-sm text-[#5c6a7a] hover:text-[#1a2332]">
-                  ← グループ一覧
-                </Link>
-                <AdminActionButtons team={team} />
-              </div>
-              {/* グループ名 + バッジ（インライン） */}
-              <div className="flex items-center gap-2.5">
-                <h1 className="text-2xl font-bold text-[#1a2332]">{team.name}</h1>
-                <Badge
-                  className={
-                    team.status === "active"
-                      ? "border-transparent bg-[#eaf7f0] text-[#0f8a4f]"
-                      : "border-transparent bg-[#edf0f4] text-[#5c6a7a]"
-                  }
-                >
-                  {team.status === "active" ? "アクティブ" : "非アクティブ"}
-                </Badge>
-              </div>
+              <h1 className="text-xl font-bold text-[#1a2332]">{team.name}</h1>
               {team.description && (
-                <p className="mt-1 text-sm text-[#5c6a7a]">{team.description}</p>
-              )}
-            </div>
-
-            {/* Stats inline bar */}
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-[#dce3ea] bg-white px-4 py-3 text-sm shadow-sm">
-              <div className="flex items-center gap-1.5">
-                <span>👥</span>
-                <span className="font-semibold text-[#1a2332]">{members.length}</span>
-                <span className="text-[#5c6a7a]">人</span>
-              </div>
-              <div className="h-4 w-px bg-[#dce3ea]" />
-              <div className="flex items-center gap-1.5">
-                <span>📅</span>
-                <span className="font-semibold text-[#1a2332]">{sessions.length}</span>
-                <span className="text-[#5c6a7a]">件</span>
-              </div>
-              {hasFeeStats && (
-                <>
-                  <div className="h-4 w-px bg-[#dce3ea]" />
-                  <div className="flex flex-1 items-center gap-2">
-                    <span className="shrink-0 text-[#5c6a7a]">支払い</span>
-                    <span className="shrink-0 font-semibold text-[#1a2332]">
-                      {feeStats.paid}/{feeStats.total}
-                    </span>
-                    <div className="relative flex h-1.5 min-w-[60px] flex-1 overflow-hidden rounded-full bg-[#edf0f4]">
-                      <div className="absolute left-0 h-full rounded-full bg-[#0f8a4f]" style={{ width: `${paidPct}%` }} />
-                      <div className="absolute h-full rounded-full bg-[#c0392b]" style={{ left: `${paidPct}%`, width: `${subUnpaidPct}%` }} />
-                      <div className="absolute h-full rounded-full bg-[#d97706]" style={{ left: `${paidPct + subUnpaidPct}%`, width: `${stampUnpaidPct}%` }} />
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* Tabs */}
-            <div className="border-b border-[#dce3ea]">
-              <div className="flex gap-0 overflow-x-auto">
-                {tabs.map((t) => (
-                  <Link
-                    key={t.id}
-                    href={`/teams/${id}?tab=${t.id}`}
-                    className={`whitespace-nowrap border-b-2 px-4 py-2.5 text-sm font-medium transition-colors ${
-                      tab === t.id
-                        ? "border-[#005F8C] text-[#005F8C]"
-                        : "border-transparent text-[#5c6a7a] hover:text-[#1a2332]"
-                    }`}
-                  >
-                    {t.label}
-                  </Link>
-                ))}
-              </div>
-            </div>
-
-            {/* Tab content */}
-            {tab === "members" && (
-              <MemberList
-                teamId={id}
-                members={members}
-                currentUserId={user.id}
-                hasAnnualFee={team.has_annual_fee ?? false}
-                hasMonthlyFee={team.has_monthly_fee ?? false}
-                hasPointCard={team.has_point_card ?? false}
-                pointCardCount={team.point_card_count ?? 0}
-              />
-            )}
-
-            {tab === "sessions" && (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-base font-semibold text-[#1a2332]">セッション</h2>
-                  <Link href={`/sessions/new?team=${id}`}>
-                    <Button
-                      size="sm"
-                      className="rounded-full bg-[#005F8C] hover:bg-[#004E73]"
-                      style={{ minHeight: "44px" }}
-                    >
-                      + 作成
-                    </Button>
-                  </Link>
+                <div className="mt-2">
+                  <TeamDescription text={team.description} />
                 </div>
-                {sessions.length === 0 ? (
-                  <Card className="border-[#dce3ea]">
-                    <CardContent className="flex flex-col items-center justify-center py-10">
-                      <p className="text-sm text-[#5c6a7a]">予定されているセッションはありません</p>
-                      <Link href={`/sessions/new?team=${id}`} className="mt-3">
-                        <Button variant="outline" size="sm" className="rounded-full border-[#005F8C] text-[#005F8C]">
-                          セッションを作成する
-                        </Button>
-                      </Link>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  <div className="flex flex-col gap-3">
-                    {sessions.map((session: Record<string, unknown>) => (
-                      <Link key={session.id as string} href={`/sessions/${session.id}`}>
-                        <Card className="border-[#dce3ea] transition-all hover:border-[#005F8C]">
-                          <CardContent className="flex items-center justify-between p-4">
-                            <div>
-                              <p className="font-medium text-[#1a2332]">{session.title as string}</p>
-                              <p className="text-sm text-[#5c6a7a]">
-                                {new Date(session.scheduled_at as string).toLocaleDateString("ja-JP", {
-                                  month: "long",
-                                  day: "numeric",
-                                  weekday: "short",
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                })}
-                                {session.location ? ` · ${session.location as string}` : ""}
-                              </p>
-                            </div>
-                            <Badge
-                              className={
-                                session.session_status === "confirmed"
-                                  ? "border-transparent bg-[#eaf7f0] text-[#0f8a4f]"
-                                  : "border-transparent bg-[#e8f2f8] text-[#005F8C]"
-                              }
-                            >
-                              {session.session_status === "confirmed" ? "確定" : "受付中"}
-                            </Badge>
-                          </CardContent>
-                        </Card>
-                      </Link>
-                    ))}
+              )}
+            </div>
 
+            {/* ── メンバープレビュー（1つの角丸バー） ── */}
+            <div className="inline-flex items-center gap-2.5 rounded-full bg-[#f2f7fa] py-1.5 pl-2 pr-4">
+              <div className="flex -space-x-1.5">
+                {previewMembers.map((m: Record<string, unknown>, i: number) => {
+                  const swimmer = m.swimmer as Record<string, unknown> | null
+                  const avatarUrl = swimmer?.avatar_url as string | null
+                  const name = (swimmer?.name as string) || ""
+                  return (
+                    <div
+                      key={m.id as string}
+                      className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-full border-2 border-[#f2f7fa] bg-[#005F8C]/10 text-[10px] font-semibold text-[#005F8C]"
+                      style={{ zIndex: 3 - i }}
+                    >
+                      {avatarUrl ? (
+                        <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        name[0] || "?"
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+              <span className="text-sm font-medium text-[#1a2332]">{members.length}人のメンバー</span>
+            </div>
+
+            {/* ── アクションボタン + ウィザード ── */}
+            <AdminTeamActions
+              teamId={id}
+              members={members}
+              currentUserId={user.id}
+              announcements={announcements}
+              joinRequests={joinRequests}
+              hasAnnualFee={team.has_annual_fee ?? false}
+              hasMonthlyFee={team.has_monthly_fee ?? false}
+              hasPointCard={team.has_point_card ?? false}
+              pointCardCount={team.point_card_count ?? 0}
+            />
+
+            {/* ── 主催者 ── */}
+            {adminMembers.length > 0 && (
+              <div className="rounded-[14px] border border-[#dce3ea] bg-white px-4 py-3">
+                <p className="mb-2 text-xs font-semibold text-[#5c6a7a]">主催者</p>
+                <div className="flex items-center gap-3">
+                  <div className="flex -space-x-1.5">
+                    {adminMembers.slice(0, 3).map((m: Record<string, unknown>, i: number) => {
+                      const swimmer = m.swimmer as Record<string, unknown> | null
+                      const avatarUrl = swimmer?.avatar_url as string | null
+                      const name = (swimmer?.name as string) || ""
+                      return (
+                        <div
+                          key={m.id as string}
+                          className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border-2 border-white bg-[#005F8C]/10 text-xs font-semibold text-[#005F8C]"
+                          style={{ zIndex: 3 - i }}
+                        >
+                          {avatarUrl ? (
+                            <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+                          ) : (
+                            name[0] || "?"
+                          )}
+                        </div>
+                      )
+                    })}
                   </div>
-                )}
+                  <p className="text-sm font-semibold text-[#1a2332]">
+                    {((adminMembers[0] as Record<string, unknown>).swimmer as Record<string, unknown> | null)?.name as string || ""}
+                    {adminMembers.length > 1 && (
+                      <span className="font-normal text-[#5c6a7a]"> 他{adminMembers.length - 1}人</span>
+                    )}
+                  </p>
+                </div>
               </div>
             )}
 
-            {tab === "announcements" && (
-              <AnnouncementsSection teamId={id} announcements={announcements} />
-            )}
-
-            {tab === "requests" && (
-              <JoinRequestsTab teamId={id} initialRequests={joinRequests} />
-            )}
+            {/* ── デフォルト: セッション一覧 ── */}
+            <div>
+              <h2 className="mb-3 text-[18px] font-semibold leading-[1.4] text-[#1a2332]">セッション</h2>
+              {sessions.length === 0 ? (
+                <div className="flex flex-col items-center py-12 px-6">
+                  <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[rgba(0,95,140,0.08)]">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8d99a8" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                      <line x1="16" y1="2" x2="16" y2="6" />
+                      <line x1="8" y1="2" x2="8" y2="6" />
+                      <line x1="3" y1="10" x2="21" y2="10" />
+                    </svg>
+                  </div>
+                  <p className="text-base font-semibold text-[#1a2332]">予定されているセッションはありません</p>
+                  <p className="mt-1 text-sm text-[#5c6a7a]">セッションを作成して、メンバーに共有しましょう</p>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  {sessions.map((session: Record<string, unknown>) => (
+                    <Link key={session.id as string} href={`/sessions/${session.id}`}>
+                      <Card className="border-[#dce3ea] transition-all hover:border-[#005F8C]">
+                        <CardContent className="flex items-center justify-between p-4">
+                          <div>
+                            <p className="font-medium text-[#1a2332]">{session.title as string}</p>
+                            <p className="text-sm text-[#5c6a7a]">
+                              {new Date(session.scheduled_at as string).toLocaleDateString("ja-JP", {
+                                month: "long",
+                                day: "numeric",
+                                weekday: "short",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                              {session.location ? ` · ${session.location as string}` : ""}
+                            </p>
+                          </div>
+                          <Badge
+                            className={
+                              session.session_status === "confirmed"
+                                ? "border-transparent bg-[#eaf7f0] text-[#0f8a4f]"
+                                : "border-transparent bg-[#e8f2f8] text-[#005F8C]"
+                            }
+                          >
+                            {session.session_status === "confirmed" ? "確定" : "受付中"}
+                          </Badge>
+                        </CardContent>
+                      </Card>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
 
           </div>
         </main>
@@ -321,33 +308,44 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
   }
 
   // ─── メンバービュー ────────────────────────────────────────────────
-  const [teamResult, sessionsResult, announcementsResult] = await Promise.all([
+  const [teamResult, sessionsResult, announcementsResult, memberPreviewResult] = await Promise.all([
     getTeam(id),
     getTeamSessions(id),
     getTeamAnnouncements(id),
+    // メンバープレビュー用（管理者権限不要な軽量クエリ）
+    adminClient
+      .from("team_members")
+      .select("id, swimmer:profiles(id, name, avatar_url)")
+      .eq("team_id", id)
+      .eq("status", "active")
+      .order("joined_at", { ascending: true })
+      .limit(50),
   ])
 
   if (teamResult.error || !teamResult.data) notFound()
 
   const team = teamResult.data
-  const sessions = ((sessionsResult.data || []) as Record<string, unknown>[])
-    .filter(
-      (s) =>
-        s.session_status !== "cancelled" &&
-        new Date(s.scheduled_at as string) > new Date()
-    )
+  const allMembers = memberPreviewResult.data || []
+  const allSessions = ((sessionsResult.data || []) as Record<string, unknown>[])
+    .filter((s) => s.session_status !== "cancelled")
     .sort(
       (a, b) =>
         new Date(a.scheduled_at as string).getTime() -
         new Date(b.scheduled_at as string).getTime()
     )
-  const announcements = (announcementsResult.data || []) as Record<string, unknown>[]
+  const announcements = (announcementsResult.data || []) as Array<{
+    id: string
+    title: string
+    body: string | null
+    created_at: string
+    is_read: boolean
+  }>
   const unreadCount = announcements.filter((a) => !a.is_read).length
 
   // 自分の参加済みセッション ID を取得
   let registeredSessionIds = new Set<string>()
-  if (sessions.length > 0) {
-    const sessionIds = sessions.map((s) => s.id as string)
+  if (allSessions.length > 0) {
+    const sessionIds = allSessions.map((s) => s.id as string)
     const { data: regs } = await supabase
       .from("session_registrations")
       .select("session_id")
@@ -357,22 +355,41 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
     registeredSessionIds = new Set((regs || []).map((r) => r.session_id))
   }
 
-  const memberTabs = [
-    { id: "sessions", label: `セッション (${sessions.length})` },
-    { id: "announcements", label: `お知らせ${unreadCount > 0 ? ` (${unreadCount})` : ""}` },
-  ]
+  const previewMembers = allMembers.slice(0, 3)
+
+  // MemberSessionList に渡すデータ
+  const sessionItems = allSessions.map((s) => ({
+    id: s.id as string,
+    title: s.title as string,
+    scheduled_at: s.scheduled_at as string,
+    location: s.location as string | null,
+    type: s.type as string,
+    session_status: s.session_status as string,
+    member_price: (s.member_price as number) || 0,
+    registration_deadline: (s.registration_deadline as string | null),
+    is_registered: registeredSessionIds.has(s.id as string),
+  }))
 
   return (
     <ToastProvider>
       <Navigation userName={profile.name} avatarUrl={profile.avatar_url} />
-      <main className="mx-auto w-full max-w-5xl flex-1 overflow-x-hidden px-4 py-6 pb-24 md:pb-6">
-        <div className="space-y-6">
-          {/* Header */}
-          <div>
-            <div className="flex items-center justify-between">
-              <Link href="/teams" className="text-sm text-[#5c6a7a] hover:text-[#1a2332]">
-                ← グループ
-              </Link>
+      <main className="mx-auto w-full max-w-5xl flex-1 overflow-x-hidden px-4 py-4 pb-24 md:pb-6">
+        <div className="space-y-4">
+
+          {/* ── トップバー ── */}
+          <div className="flex items-center justify-between">
+            <BackLink
+              href="/teams"
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-[#dce3ea] bg-white transition-colors hover:bg-[#f2f7fa]"
+              aria-label="戻る"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1a2332" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+            </BackLink>
+            <span className="text-sm text-[#5c6a7a]">グループ</span>
+            <div className="flex items-center gap-2">
+              <MemberAnnouncementsSheet announcements={announcements} unreadCount={unreadCount} />
               {(team.contact_email || team.contact_phone) && (
                 <ContactInfoButton
                   teamId={team.id}
@@ -382,128 +399,27 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
                 />
               )}
             </div>
-            <h1 className="mt-2 text-xl font-bold text-[#1a2332]">{team.name}</h1>
+          </div>
+
+          {/* ── グループ名 + 説明 ── */}
+          <div>
+            <h1 className="text-xl font-bold text-[#1a2332]">{team.name}</h1>
             {team.description && (
-              <p className="mt-1 text-sm text-[#5c6a7a]">{team.description}</p>
+              <div className="mt-2">
+                <TeamDescription text={team.description} />
+              </div>
             )}
           </div>
 
-          {/* Tabs */}
-          <div className="border-b border-[#dce3ea]">
-            <div className="flex gap-0">
-              {memberTabs.map((t) => (
-                <Link
-                  key={t.id}
-                  href={`/teams/${id}?tab=${t.id}`}
-                  className={`whitespace-nowrap border-b-2 px-4 py-2.5 text-sm font-medium transition-colors ${
-                    tab === t.id
-                      ? "border-[#005F8C] text-[#005F8C]"
-                      : "border-transparent text-[#5c6a7a] hover:text-[#1a2332]"
-                  }`}
-                >
-                  {t.label}
-                </Link>
-              ))}
-            </div>
-          </div>
+          {/* ── メンバープレビュー（タップでメンバー一覧） ── */}
+          <MemberPreviewBar members={(allMembers || []).map((m: Record<string, unknown>) => ({
+            id: m.id as string,
+            swimmer: Array.isArray(m.swimmer) ? (m.swimmer[0] as { id: string; name: string; avatar_url: string | null } | undefined) ?? null : m.swimmer as { id: string; name: string; avatar_url: string | null } | null,
+          }))} />
 
-          {tab === "sessions" && (
-            <div className="flex flex-col gap-3">
-              {sessions.length === 0 ? (
-                <Card className="border-[#dce3ea]">
-                  <CardContent className="py-10 text-center text-sm text-[#5c6a7a]">
-                    今後のセッションはありません
-                  </CardContent>
-                </Card>
-              ) : (
-                sessions.map((session) => (
-                  <Link key={session.id as string} href={`/teams/${id}/sessions/${session.id}`}>
-                    <Card className="border-[#dce3ea] transition-all hover:border-[#005F8C]">
-                      <CardContent className="flex items-center gap-4 p-4">
-                        <div className="flex w-14 shrink-0 flex-col items-center rounded-xl bg-[#005F8C]/10 py-2">
-                          <span className="text-xs font-medium text-[#005F8C]">
-                            {new Date(session.scheduled_at as string).toLocaleDateString("ja-JP", { month: "short" })}
-                          </span>
-                          <span className="text-xl font-bold leading-tight text-[#005F8C]">
-                            {new Date(session.scheduled_at as string).getDate()}
-                          </span>
-                          <span className="text-xs text-[#005F8C]">
-                            {new Date(session.scheduled_at as string).toLocaleDateString("ja-JP", { weekday: "short" })}
-                          </span>
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="font-medium text-[#1a2332]">{session.title as string}</p>
-                          <p className="text-xs text-[#5c6a7a]">
-                            {new Date(session.scheduled_at as string).toLocaleTimeString("ja-JP", {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                            {session.location ? ` · ${session.location as string}` : ""}
-                          </p>
-                          <p className="mt-0.5 text-xs font-medium text-[#005F8C]">
-                            ¥{((session.member_price as number) || 0).toLocaleString()}
-                          </p>
-                        </div>
-                        <div className="flex shrink-0 flex-col items-end gap-1">
-                          {(() => {
-                            const isDeadlinePassed =
-                              session.registration_deadline &&
-                              new Date(session.registration_deadline as string) < new Date()
-                            if (session.session_status === "confirmed") {
-                              return <Badge className="bg-[#eaf7f0] text-[#0f8a4f] border-transparent text-xs">開催確定</Badge>
-                            }
-                            if (isDeadlinePassed) {
-                              return <Badge className="bg-[#edf0f4] text-[#5c6a7a] border-transparent text-xs">締切済</Badge>
-                            }
-                            return <Badge className="bg-[#e8f2f8] text-[#005F8C] border-transparent text-xs">受付中</Badge>
-                          })()}
-                          {registeredSessionIds.has(session.id as string) && (
-                            <Badge className="bg-[#eaf7f0] text-[#0f8a4f] border-transparent text-xs">参加予定</Badge>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </Link>
-                ))
-              )}
-            </div>
-          )}
+          {/* ── セッション一覧（今後/過去切り替え） ── */}
+          <MemberSessionList teamId={id} sessions={sessionItems} />
 
-          {tab === "announcements" && (
-            <div className="space-y-3">
-              {announcements.length === 0 ? (
-                <Card className="border-[#dce3ea]">
-                  <CardContent className="py-10 text-center text-sm text-[#5c6a7a]">
-                    お知らせはありません
-                  </CardContent>
-                </Card>
-              ) : (
-                announcements.map((announcement) => (
-                  <Card
-                    key={announcement.id as string}
-                    className={`border-[#dce3ea] ${!announcement.is_read ? "border-l-4 border-l-[#005F8C]" : ""}`}
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex-1">
-                          <p className="font-medium text-[#1a2332]">{announcement.title as string}</p>
-                          {announcement.body ? (
-                            <p className="mt-1 text-sm text-[#5c6a7a]">{announcement.body as string}</p>
-                          ) : null}
-                          <p className="mt-2 text-xs text-[#8d99a8]">
-                            {new Date(announcement.created_at as string).toLocaleDateString("ja-JP")}
-                          </p>
-                        </div>
-                        {!announcement.is_read && (
-                          <MarkReadButton announcementId={announcement.id as string} />
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))
-              )}
-            </div>
-          )}
         </div>
       </main>
     </ToastProvider>

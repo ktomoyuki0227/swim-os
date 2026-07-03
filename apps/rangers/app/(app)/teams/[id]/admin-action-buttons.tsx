@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { createPortal } from "react-dom"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { QRCodeSVG } from "qrcode.react"
@@ -25,6 +26,8 @@ export function AdminActionButtons({ team }: AdminActionButtonsProps) {
   const router = useRouter()
   const [inviteOpen, setInviteOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => { setMounted(true) }, [])
 
   // 招待モーダル用のローカル state
   const [copied, setCopied] = useState(false)
@@ -63,8 +66,9 @@ export function AdminActionButtons({ team }: AdminActionButtonsProps) {
           title="招待"
         >
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+            <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+            <polyline points="16 6 12 2 8 6" />
+            <line x1="12" y1="2" x2="12" y2="15" />
           </svg>
         </button>
 
@@ -83,7 +87,7 @@ export function AdminActionButtons({ team }: AdminActionButtonsProps) {
       </div>
 
       {/* 招待モーダル */}
-      {inviteOpen && (
+      {mounted && inviteOpen && createPortal(
         <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
           <div className="absolute inset-0 bg-black/50" onClick={() => setInviteOpen(false)} />
           <div className="relative z-10 w-full max-w-sm rounded-t-2xl bg-white sm:rounded-2xl">
@@ -139,11 +143,12 @@ export function AdminActionButtons({ team }: AdminActionButtonsProps) {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* 設定モーダル */}
-      {settingsOpen && (
+      {mounted && settingsOpen && createPortal(
         <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
           <div className="absolute inset-0 bg-black/50" onClick={() => setSettingsOpen(false)} />
           <div className="relative z-10 w-full max-w-lg overflow-y-auto rounded-t-2xl bg-white sm:rounded-2xl" style={{ maxHeight: "85vh" }}>
@@ -271,7 +276,8 @@ export function AdminActionButtons({ team }: AdminActionButtonsProps) {
               </Link>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   )

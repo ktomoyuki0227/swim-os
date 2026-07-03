@@ -63,11 +63,18 @@ export function JoinRequestsTab({ teamId, initialRequests }: JoinRequestsTabProp
 
   if (requests.length === 0) {
     return (
-      <Card className="border-[#dce3ea]">
-        <CardContent className="flex flex-col items-center justify-center py-10">
-          <p className="text-sm text-[#5c6a7a]">現在、参加申請はありません</p>
-        </CardContent>
-      </Card>
+      <div className="flex flex-col items-center py-12 px-6">
+        <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[rgba(0,95,140,0.08)]">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8d99a8" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <line x1="19" y1="8" x2="19" y2="14" />
+            <line x1="22" y1="11" x2="16" y2="11" />
+          </svg>
+        </div>
+        <p className="text-base font-semibold text-[#1a2332]">参加申請はありません</p>
+        <p className="mt-1 text-sm text-[#5c6a7a]">メンバーからの申請が届くと表示されます</p>
+      </div>
     )
   }
 
@@ -79,8 +86,8 @@ export function JoinRequestsTab({ teamId, initialRequests }: JoinRequestsTabProp
 
         return (
           <Card key={req.id} className="border-[#dce3ea]">
-            <CardContent className="flex items-center gap-4 p-4">
-              {/* アバター */}
+            <CardContent className="flex items-center gap-3 p-4">
+              {/* 左: アバター */}
               <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full bg-[#dce3ea]">
                 {swimmer?.avatar_url ? (
                   <Image src={swimmer.avatar_url} alt={swimmer.name ?? ""} fill className="object-cover" sizes="40px" />
@@ -91,9 +98,9 @@ export function JoinRequestsTab({ teamId, initialRequests }: JoinRequestsTabProp
                 )}
               </div>
 
-              {/* 申請者情報 */}
+              {/* 中央: 名前・情報 */}
               <div className="min-w-0 flex-1">
-                <p className="font-medium text-[#1a2332]">{swimmer?.name ?? "不明"}</p>
+                <p className="text-sm font-medium text-[#1a2332]">{swimmer?.name ?? "不明"}</p>
                 {swimmer?.furigana && (
                   <p className="text-xs text-[#8d99a8]">{swimmer.furigana}</p>
                 )}
@@ -107,24 +114,24 @@ export function JoinRequestsTab({ teamId, initialRequests }: JoinRequestsTabProp
                 </div>
               </div>
 
-              {/* 承認/拒否ボタン */}
-              <div className="flex shrink-0 gap-2">
+              {/* 右: ボタン縦並び */}
+              <div className="flex shrink-0 flex-col gap-1.5">
                 <Button
                   size="sm"
-                  variant="outline"
-                  className="h-8 rounded-full border-[#c0392b] px-3 text-xs text-[#c0392b] hover:bg-[#fdecea]"
-                  onClick={() => handleReject(req.id)}
-                  disabled={isProcessing}
-                >
-                  見送る
-                </Button>
-                <Button
-                  size="sm"
-                  className="h-8 rounded-full bg-[#005F8C] px-3 text-xs hover:bg-[#004E73]"
+                  className="h-8 rounded-full bg-[#005F8C] px-4 text-xs hover:bg-[#004E73]"
                   onClick={() => handleApprove(req.id)}
                   disabled={isProcessing}
                 >
                   承認
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-8 rounded-full border-[#dce3ea] px-4 text-xs text-[#5c6a7a] hover:bg-[#f2f7fa]"
+                  onClick={() => handleReject(req.id)}
+                  disabled={isProcessing}
+                >
+                  見送る
                 </Button>
               </div>
             </CardContent>
