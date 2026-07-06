@@ -3,10 +3,10 @@
 import { useState, useTransition, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
-import Link from "next/link"
 import { updateTeam, uploadTeamImage } from "@/actions/teams"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { BackLink } from "@/components/back-link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -192,7 +192,7 @@ export function EditTeamForm({ team, stripeEnabled, connectStatus }: EditTeamFor
       } else {
         showToast("グループ情報を更新しました", "success")
         setTimeout(() => {
-          router.push(`/teams/${team.id}?tab=settings`)
+          router.push(`/teams/${team.id}`)
         }, 800)
       }
     })
@@ -201,12 +201,17 @@ export function EditTeamForm({ team, stripeEnabled, connectStatus }: EditTeamFor
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div className="flex items-center gap-3">
-        <Link href={`/teams/${team.id}?tab=settings`} className="text-sm text-[#5c6a7a] hover:text-[#1a2332]">
-          ← 設定に戻る
-        </Link>
+        <BackLink
+          href={`/teams/${team.id}`}
+          className="flex h-10 w-10 items-center justify-center rounded-full border border-[#dce3ea] bg-white transition-colors hover:bg-[#f2f7fa]"
+          aria-label="戻る"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1a2332" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+        </BackLink>
+        <h1 className="text-xl font-bold text-[#1a2332]">グループ情報を編集</h1>
       </div>
-
-      <h1 className="text-2xl font-bold text-[#1a2332]">グループ情報を編集</h1>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* 基本情報 */}
@@ -477,233 +482,150 @@ export function EditTeamForm({ team, stripeEnabled, connectStatus }: EditTeamFor
           </CardContent>
         </Card>
 
-        {/* 料金体系 */}
-        <Card className="border-[#dce3ea]">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base font-semibold text-[#1a2332]">料金体系</CardTitle>
-            <p className="text-xs text-[#5c6a7a]">このグループで利用する料金体系を選択してください。</p>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* セッション参加費 */}
-            <div className="space-y-3">
-              <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-[#dce3ea] p-3 hover:border-[#005F8C]/40">
-                <input
-                  type="checkbox"
-                  checked={hasSessionFee}
-                  onChange={(e) => setHasSessionFee(e.target.checked)}
-                  className="h-4 w-4 rounded border-[#dce3ea] accent-[#005F8C]"
-                />
-                <div>
-                  <p className="text-sm font-medium text-[#1a2332]">セッション参加費あり</p>
-                  <p className="text-xs text-[#8d99a8]">練習・イベントごとに参加費を徴収する</p>
+        {/* ── セッション参加費 ── */}
+        <div>
+          <div className="mb-2 flex items-center gap-2">
+            <span className="text-base">💰</span>
+            <h3 className="text-sm font-semibold text-[#1a2332]">セッション参加費</h3>
+          </div>
+          <div className="space-y-2">
+            <div className={`overflow-hidden rounded-[14px] border transition-colors ${hasSessionFee ? "border-[#005F8C]/30" : "border-[#dce3ea]"}`}>
+              <div className="flex items-center gap-3 px-4 py-3">
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-[#1a2332]">参加費を設定する</p>
+                  <p className="text-xs text-[#5c6a7a]">練習・イベントごとに料金を徴収</p>
                 </div>
-              </label>
-              {hasSessionFee && (
-                <div className="ml-4 grid gap-3 sm:grid-cols-2">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="default_member_price">参加費（メンバー）</Label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#5c6a7a]">¥</span>
-                      <Input
-                        id="default_member_price"
-                        name="default_member_price"
-                        type="number"
-                        min="0"
-                        step="100"
-                        defaultValue={team.default_member_price ?? 0}
-                        className="border-[#dce3ea] pl-7"
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="default_guest_price">参加費（ゲスト）</Label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#5c6a7a]">¥</span>
-                      <Input
-                        id="default_guest_price"
-                        name="default_guest_price"
-                        type="number"
-                        min="0"
-                        step="100"
-                        defaultValue={team.default_guest_price ?? 0}
-                        className="border-[#dce3ea] pl-7"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* 年会費 */}
-            <div className="space-y-3">
-              <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-[#dce3ea] p-3 hover:border-[#005F8C]/40">
-                <input
-                  type="checkbox"
-                  checked={hasAnnualFee}
-                  onChange={(e) => {
-                    setHasAnnualFee(e.target.checked)
-                    if (!e.target.checked && !hasMonthlyFee) setFeeExempt(false)
-                  }}
-                  className="h-4 w-4 rounded border-[#dce3ea] accent-[#005F8C]"
-                />
-                <div>
-                  <p className="text-sm font-medium text-[#1a2332]">年会費あり</p>
-                  <p className="text-xs text-[#8d99a8]">年1回の会費を徴収する</p>
-                </div>
-              </label>
-              {hasAnnualFee && (
-                <div className="ml-4">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="annual_fee_amount">年会費金額</Label>
-                    <div className="relative w-40">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#5c6a7a]">¥</span>
-                      <Input
-                        id="annual_fee_amount"
-                        name="annual_fee_amount"
-                        type="number"
-                        min="0"
-                        step="100"
-                        defaultValue={team.annual_fee_amount ?? ""}
-                        placeholder="0"
-                        className="border-[#dce3ea] pl-7"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* 月謝 */}
-            <div className="space-y-3">
-              <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-[#dce3ea] p-3 hover:border-[#005F8C]/40">
-                <input
-                  type="checkbox"
-                  checked={hasMonthlyFee}
-                  onChange={(e) => {
-                    setHasMonthlyFee(e.target.checked)
-                    if (!e.target.checked && !hasAnnualFee) setFeeExempt(false)
-                  }}
-                  className="h-4 w-4 rounded border-[#dce3ea] accent-[#005F8C]"
-                />
-                <div>
-                  <p className="text-sm font-medium text-[#1a2332]">月謝あり</p>
-                  <p className="text-xs text-[#8d99a8]">毎月の月謝を徴収する</p>
-                </div>
-              </label>
-              {hasMonthlyFee && (
-                <div className="ml-4">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="monthly_fee_amount">月謝金額</Label>
-                    <div className="relative w-40">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#5c6a7a]">¥</span>
-                      <Input
-                        id="monthly_fee_amount"
-                        name="monthly_fee_amount"
-                        type="number"
-                        min="0"
-                        step="100"
-                        defaultValue={team.monthly_fee_amount ?? ""}
-                        placeholder="0"
-                        className="border-[#dce3ea] pl-7"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* 会費会員の参加費免除 */}
-            {(hasAnnualFee || hasMonthlyFee) && (
-              <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-[#005F8C]/20 bg-[#005F8C]/5 p-3 hover:border-[#005F8C]/40">
-                <input
-                  type="checkbox"
-                  checked={feeExempt}
-                  onChange={(e) => setFeeExempt(e.target.checked)}
-                  className="h-4 w-4 rounded border-[#dce3ea] accent-[#005F8C]"
-                />
-                <div>
-                  <p className="text-sm font-medium text-[#1a2332]">年会費・月謝会員のセッション参加費を免除</p>
-                  <p className="text-xs text-[#8d99a8]">年会費または月謝を支払っているメンバーはセッション参加費が無料になる</p>
-                </div>
-              </label>
-            )}
-
-            {/* 回数券 */}
-            <div className="space-y-3">
-              <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-[#dce3ea] p-3 hover:border-[#005F8C]/40">
-                <input
-                  type="checkbox"
-                  checked={hasPointCard}
-                  onChange={(e) => setHasPointCard(e.target.checked)}
-                  className="h-4 w-4 rounded border-[#dce3ea] accent-[#005F8C]"
-                />
-                <div>
-                  <p className="text-sm font-medium text-[#1a2332]">回数券あり</p>
-                  <p className="text-xs text-[#8d99a8]">スタンプカード方式で回数管理をする</p>
-                </div>
-              </label>
-              {hasPointCard && (
-                <div className="ml-4 grid gap-3 sm:grid-cols-2">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="point_card_count">1枚あたりの回数</Label>
-                    <Input
-                      id="point_card_count"
-                      name="point_card_count"
-                      type="number"
-                      min="1"
-                      max="100"
-                      defaultValue={team.point_card_count ?? 10}
-                      className="border-[#dce3ea]"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="point_card_price">
-                      回数券の価格
-                      <span className="ml-1 text-xs font-normal text-[#8d99a8]">（任意）</span>
-                    </Label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#5c6a7a]">¥</span>
-                      <Input
-                        id="point_card_price"
-                        name="point_card_price"
-                        type="number"
-                        min="0"
-                        step="100"
-                        defaultValue={team.point_card_price ?? ""}
-                        placeholder="未設定"
-                        className="border-[#dce3ea] pl-7"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* キャンセルポリシー */}
-        <Card className="border-[#dce3ea]">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base font-semibold text-[#1a2332]">キャンセルポリシー</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-1.5">
-              <Label htmlFor="cancellation_days">無料キャンセル期限（当日から何日前まで）</Label>
-              <div className="flex items-center gap-2">
-                <Input
-                  id="cancellation_days"
-                  name="cancellation_days"
-                  type="number"
-                  min="0"
-                  max="30"
-                  defaultValue={team.cancellation_days ?? 3}
-                  className="w-24 border-[#dce3ea]"
-                />
-                <span className="text-sm text-[#5c6a7a]">日前まで無料キャンセル可</span>
+                <button type="button" onClick={() => setHasSessionFee(!hasSessionFee)}
+                  className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${hasSessionFee ? "bg-[#005F8C]" : "bg-[#dce3ea]"}`}>
+                  <span className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${hasSessionFee ? "translate-x-5" : "translate-x-0"}`} />
+                </button>
               </div>
+              {hasSessionFee && (
+                <div className="border-t border-[#dce3ea]/50 bg-[#f2f7fa]/50 px-4 py-3 space-y-3">
+                  <div className="grid gap-3 grid-cols-2">
+                    <div className="space-y-1">
+                      <Label htmlFor="default_member_price" className="text-xs">メンバー料金</Label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#5c6a7a]">¥</span>
+                        <Input id="default_member_price" name="default_member_price" type="number" min="0" step="100" defaultValue={team.default_member_price ?? 0} className="border-[#dce3ea] pl-7" />
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="default_guest_price" className="text-xs">ゲスト料金</Label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#5c6a7a]">¥</span>
+                        <Input id="default_guest_price" name="default_guest_price" type="number" min="0" step="100" defaultValue={team.default_guest_price ?? 0} className="border-[#dce3ea] pl-7" />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="cancellation_days" className="text-xs">キャンセル期限</Label>
+                    <div className="flex items-center gap-2">
+                      <Input id="cancellation_days" name="cancellation_days" type="number" min="0" max="30" defaultValue={team.cancellation_days ?? 3} className="w-16 border-[#dce3ea]" />
+                      <span className="text-xs text-[#5c6a7a]">日前まで無料キャンセル可</span>
+                    </div>
+                  </div>
+                  <div className="border-t border-[#dce3ea]/30 pt-3">
+                    <label className="flex cursor-pointer items-center gap-2.5">
+                      <input type="checkbox" checked={hasPointCard} onChange={(e) => setHasPointCard(e.target.checked)} className="h-4 w-4 rounded border-[#dce3ea] accent-[#005F8C]" />
+                      <p className="text-xs font-medium text-[#1a2332]">回数券での支払いを受け付ける</p>
+                    </label>
+                    {hasPointCard && (
+                      <div className="mt-2 ml-6 grid gap-3 grid-cols-2">
+                        <div className="space-y-1">
+                          <Label htmlFor="point_card_count" className="text-xs">1枚の回数</Label>
+                          <Input id="point_card_count" name="point_card_count" type="number" min="1" max="100" defaultValue={team.point_card_count ?? 10} className="border-[#dce3ea]" />
+                        </div>
+                        <div className="space-y-1">
+                          <Label htmlFor="point_card_price" className="text-xs">販売価格（任意）</Label>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#5c6a7a]">¥</span>
+                            <Input id="point_card_price" name="point_card_price" type="number" min="0" step="100" defaultValue={team.point_card_price ?? ""} placeholder="未設定" className="border-[#dce3ea] pl-7" />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
+
+        <div className="h-px bg-[#e8edf2]" />
+
+        {/* ── メンバーシップ ── */}
+        <div>
+          <div className="mb-1 flex items-center gap-2">
+            <span className="text-base">👥</span>
+            <h3 className="text-sm font-semibold text-[#1a2332]">メンバーシップ</h3>
+          </div>
+          <p className="mb-2 text-xs text-[#5c6a7a]">継続的な会費を設定する場合に有効にしてください</p>
+          <div className="space-y-2">
+            <div className={`overflow-hidden rounded-[14px] border transition-colors ${hasAnnualFee ? "border-[#005F8C]/30" : "border-[#dce3ea]"}`}>
+              <div className="flex items-center gap-3 px-4 py-3">
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-[#1a2332]">年会費</p>
+                  <p className="text-xs text-[#5c6a7a]">年1回の会費を徴収</p>
+                </div>
+                <button type="button" onClick={() => { setHasAnnualFee(!hasAnnualFee); if (hasAnnualFee && !hasMonthlyFee) setFeeExempt(false) }}
+                  className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${hasAnnualFee ? "bg-[#005F8C]" : "bg-[#dce3ea]"}`}>
+                  <span className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${hasAnnualFee ? "translate-x-5" : "translate-x-0"}`} />
+                </button>
+              </div>
+              {hasAnnualFee && (
+                <div className="border-t border-[#dce3ea]/50 bg-[#f2f7fa]/50 px-4 py-3">
+                  <div className="space-y-1">
+                    <Label htmlFor="annual_fee_amount" className="text-xs">金額</Label>
+                    <div className="relative w-40">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#5c6a7a]">¥</span>
+                      <Input id="annual_fee_amount" name="annual_fee_amount" type="number" min="0" step="100" defaultValue={team.annual_fee_amount ?? ""} placeholder="0" className="border-[#dce3ea] pl-7" />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className={`overflow-hidden rounded-[14px] border transition-colors ${hasMonthlyFee ? "border-[#005F8C]/30" : "border-[#dce3ea]"}`}>
+              <div className="flex items-center gap-3 px-4 py-3">
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-[#1a2332]">月謝</p>
+                  <p className="text-xs text-[#5c6a7a]">毎月の月謝を徴収</p>
+                </div>
+                <button type="button" onClick={() => { setHasMonthlyFee(!hasMonthlyFee); if (hasMonthlyFee && !hasAnnualFee) setFeeExempt(false) }}
+                  className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${hasMonthlyFee ? "bg-[#005F8C]" : "bg-[#dce3ea]"}`}>
+                  <span className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${hasMonthlyFee ? "translate-x-5" : "translate-x-0"}`} />
+                </button>
+              </div>
+              {hasMonthlyFee && (
+                <div className="border-t border-[#dce3ea]/50 bg-[#f2f7fa]/50 px-4 py-3">
+                  <div className="space-y-1">
+                    <Label htmlFor="monthly_fee_amount" className="text-xs">金額</Label>
+                    <div className="relative w-40">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#5c6a7a]">¥</span>
+                      <Input id="monthly_fee_amount" name="monthly_fee_amount" type="number" min="0" step="100" defaultValue={team.monthly_fee_amount ?? ""} placeholder="0" className="border-[#dce3ea] pl-7" />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {(hasAnnualFee || hasMonthlyFee) && hasSessionFee && (
+              <div className={`overflow-hidden rounded-[14px] border transition-colors ${feeExempt ? "border-[#0f8a4f]/30 bg-[#eaf7f0]/30" : "border-[#dce3ea]"}`}>
+                <div className="flex items-center gap-3 px-4 py-3">
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-[#1a2332]">会員特典: 参加費免除</p>
+                    <p className="text-xs text-[#5c6a7a]">会費を払っているメンバーはセッション参加費が無料に</p>
+                  </div>
+                  <button type="button" onClick={() => setFeeExempt(!feeExempt)}
+                    className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${feeExempt ? "bg-[#0f8a4f]" : "bg-[#dce3ea]"}`}>
+                    <span className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${feeExempt ? "translate-x-5" : "translate-x-0"}`} />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
 
         {/* グループのステータス */}
         <Card className="border-[#dce3ea]">
@@ -738,7 +660,7 @@ export function EditTeamForm({ team, stripeEnabled, connectStatus }: EditTeamFor
         </Card>
 
         <div className="flex gap-3">
-          <Link href={`/teams/${team.id}?tab=settings`} className="flex-1">
+          <BackLink href={`/teams/${team.id}`} className="flex-1">
             <Button
               type="button"
               variant="outline"
@@ -747,7 +669,7 @@ export function EditTeamForm({ team, stripeEnabled, connectStatus }: EditTeamFor
             >
               キャンセル
             </Button>
-          </Link>
+          </BackLink>
           <Button
             type="submit"
             disabled={isPending || imageUploading}

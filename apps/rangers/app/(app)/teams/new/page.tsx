@@ -3,7 +3,6 @@
 import { useState, useTransition, useRef } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
-import Link from "next/link"
 import { createTeam, uploadTeamImage } from "@/actions/teams"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -11,25 +10,74 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/components/toast"
+import { BackLink } from "@/components/back-link"
 import { PRACTICE_FREQUENCIES, PRACTICE_DAYS } from "@/types/database"
 
-interface Step1Data {
+const STEPS = [
+  { label: "基本情報" },
+  { label: "詳細設定" },
+  { label: "画像" },
+  { label: "料金設定" },
+]
+
+interface FormData {
   name: string
   description: string
-  activity_area: string
   is_recruiting: boolean
+  activity_area: string
+  main_pool: string
   practice_frequency: string
   practice_days: string[]
-  main_pool: string
   contact_email: string
   contact_phone: string
 }
 
-interface Step2Data {
+interface ImageData {
   coverFile: File | null
   iconFile: File | null
   coverPreview: string | null
   iconPreview: string | null
+}
+
+function StepIndicator({ current }: { current: number }) {
+  return (
+    <div className="flex items-center justify-between">
+      {STEPS.map((s, i) => {
+        const done = i < current
+        const active = i === current
+        const isLast = i === STEPS.length - 1
+        return (
+          <div key={i} className={`flex items-center ${isLast ? "" : "flex-1"}`}>
+            <div className="flex w-10 shrink-0 flex-col items-center gap-1">
+              <div
+                className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold transition-colors ${
+                  done
+                    ? "bg-[#005F8C] text-white"
+                    : active
+                    ? "border-2 border-[#005F8C] bg-white text-[#005F8C]"
+                    : "border-2 border-[#dce3ea] bg-white text-[#8d99a8]"
+                }`}
+              >
+                {done ? (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                ) : (
+                  i + 1
+                )}
+              </div>
+              <span className={`text-[10px] font-medium ${active ? "text-[#005F8C]" : "text-[#8d99a8]"}`}>
+                {s.label}
+              </span>
+            </div>
+            {!isLast && (
+              <div className={`mb-4 h-0.5 flex-1 transition-colors ${done ? "bg-[#005F8C]" : "bg-[#dce3ea]"}`} />
+            )}
+          </div>
+        )
+      })}
+    </div>
+  )
 }
 
 export default function NewTeamPage() {
@@ -37,106 +85,96 @@ export default function NewTeamPage() {
   const [isPending, startTransition] = useTransition()
   const { showToast } = useToast()
 
-  const [step, setStep] = useState<1 | 2 | 3>(1)
+  const [step, setStep] = useState(0)
 
-  // Fee flags state
+  // Form state
+  const [form, setForm] = useState<FormData>({
+    name: "",
+    description: "",
+    is_recruiting: true,
+    activity_area: "",
+    main_pool: "",
+    practice_frequency: "",
+    practice_days: [],
+    contact_email: "",
+    contact_phone: "",
+  })
+
+  // Image state
+  const [images, setImages] = useState<ImageData>({
+    coverFile: null, iconFile: null, coverPreview: null, iconPreview: null,
+  })
+  const [uploading, setUploading] = useState(false)
+  const [coverImageUrl, setCoverImageUrl] = useState<string | null>(null)
+  const [iconImageUrl, setIconImageUrl] = useState<string | null>(null)
+  const coverInputRef = useRef<HTMLInputElement>(null)
+  const iconInputRef = useRef<HTMLInputElement>(null)
+
+  // Fee state
   const [hasSessionFee, setHasSessionFee] = useState(true)
   const [hasAnnualFee, setHasAnnualFee] = useState(false)
   const [hasMonthlyFee, setHasMonthlyFee] = useState(false)
   const [hasPointCard, setHasPointCard] = useState(false)
   const [feeExempt, setFeeExempt] = useState(false)
 
-  // Step 1 state
-  const [step1, setStep1] = useState<Step1Data>({
-    name: "",
-    description: "",
-    activity_area: "",
-    is_recruiting: true,
-    practice_frequency: "",
-    practice_days: [],
-    main_pool: "",
-    contact_email: "",
-    contact_phone: "",
-  })
-
-  // Step 2 state
-  const [step2, setStep2] = useState<Step2Data>({
-    coverFile: null,
-    iconFile: null,
-    coverPreview: null,
-    iconPreview: null,
-  })
-  const [uploading, setUploading] = useState(false)
-
-  // Uploaded URLs (set after upload)
-  const [coverImageUrl, setCoverImageUrl] = useState<string | null>(null)
-  const [iconImageUrl, setIconImageUrl] = useState<string | null>(null)
-
-  const coverInputRef = useRef<HTMLInputElement>(null)
-  const iconInputRef = useRef<HTMLInputElement>(null)
-
+  // --- Handlers ---
   const handleStep1Next = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    const form = e.currentTarget
-    const data = new FormData(form)
-    setStep1({
-      name: data.get("name") as string,
-      description: (data.get("description") as string) || "",
-      activity_area: (data.get("activity_area") as string) || "",
-      is_recruiting: step1.is_recruiting,
-      practice_frequency: (data.get("practice_frequency") as string) || "",
-      practice_days: step1.practice_days,
-      main_pool: (data.get("main_pool") as string) || "",
-      contact_email: (data.get("contact_email") as string) || "",
-      contact_phone: (data.get("contact_phone") as string) || "",
-    })
+    const fd = new FormData(e.currentTarget)
+    setForm((prev) => ({
+      ...prev,
+      name: fd.get("name") as string,
+      description: (fd.get("description") as string) || "",
+    }))
+    setStep(1)
+  }
+
+  const handleStep2Next = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    const fd = new FormData(e.currentTarget)
+    setForm((prev) => ({
+      ...prev,
+      activity_area: (fd.get("activity_area") as string) || "",
+      main_pool: (fd.get("main_pool") as string) || "",
+      practice_frequency: (fd.get("practice_frequency") as string) || "",
+      contact_email: (fd.get("contact_email") as string) || "",
+      contact_phone: (fd.get("contact_phone") as string) || "",
+    }))
     setStep(2)
   }
 
-  const handleFileSelect = (
-    e: React.ChangeEvent<HTMLInputElement>,
-    type: "cover" | "icon"
-  ) => {
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>, type: "cover" | "icon") => {
     const file = e.target.files?.[0]
     if (!file) return
     const preview = URL.createObjectURL(file)
     if (type === "cover") {
-      setStep2((prev) => ({ ...prev, coverFile: file, coverPreview: preview }))
+      setImages((prev) => ({ ...prev, coverFile: file, coverPreview: preview }))
     } else {
-      setStep2((prev) => ({ ...prev, iconFile: file, iconPreview: preview }))
+      setImages((prev) => ({ ...prev, iconFile: file, iconPreview: preview }))
     }
   }
 
-  const handleStep2Next = async () => {
+  const handleStep3Next = async () => {
     setUploading(true)
     try {
       let newCoverUrl: string | null = null
       let newIconUrl: string | null = null
-
-      if (step2.coverFile) {
+      if (images.coverFile) {
         const fd = new FormData()
-        fd.append("file", step2.coverFile)
+        fd.append("file", images.coverFile)
         fd.append("type", "cover")
         const result = await uploadTeamImage(fd)
-        if (result.error) {
-          showToast(result.error, "error")
-          return
-        }
+        if (result.error) { showToast(result.error, "error"); return }
         newCoverUrl = result.url ?? null
       }
-
-      if (step2.iconFile) {
+      if (images.iconFile) {
         const fd = new FormData()
-        fd.append("file", step2.iconFile)
+        fd.append("file", images.iconFile)
         fd.append("type", "icon")
         const result = await uploadTeamImage(fd)
-        if (result.error) {
-          showToast(result.error, "error")
-          return
-        }
+        if (result.error) { showToast(result.error, "error"); return }
         newIconUrl = result.url ?? null
       }
-
       setCoverImageUrl(newCoverUrl)
       setIconImageUrl(newIconUrl)
       setStep(3)
@@ -145,38 +183,36 @@ export default function NewTeamPage() {
     }
   }
 
-  const handleStep3Submit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    const form = e.currentTarget
-    const data = new FormData(form)
-
-    const annualFeeVal = parseInt(data.get("annual_fee_amount") as string)
-    const monthlyFeeVal = parseInt(data.get("monthly_fee_amount") as string)
-    const pointCardPriceVal = parseInt(data.get("point_card_price") as string)
+    const fd = new FormData(e.currentTarget)
+    const annualFeeVal = parseInt(fd.get("annual_fee_amount") as string)
+    const monthlyFeeVal = parseInt(fd.get("monthly_fee_amount") as string)
+    const pointCardPriceVal = parseInt(fd.get("point_card_price") as string)
 
     const payload = {
-      name: step1.name,
-      description: step1.description || undefined,
-      activity_area: step1.activity_area || undefined,
-      is_recruiting: step1.is_recruiting,
-      practice_frequency: step1.practice_frequency || undefined,
-      practice_days: step1.practice_days,
-      main_pool: step1.main_pool || undefined,
+      name: form.name,
+      description: form.description || undefined,
+      activity_area: form.activity_area || undefined,
+      is_recruiting: form.is_recruiting,
+      practice_frequency: form.practice_frequency || undefined,
+      practice_days: form.practice_days,
+      main_pool: form.main_pool || undefined,
       cover_image_url: coverImageUrl || undefined,
       avatar_url: iconImageUrl || undefined,
       has_session_fee: hasSessionFee,
       has_annual_fee: hasAnnualFee,
       has_monthly_fee: hasMonthlyFee,
       has_point_card: hasPointCard,
-      default_member_price: hasSessionFee ? (parseInt(data.get("default_member_price") as string) || 0) : 0,
-      default_guest_price: hasSessionFee ? (parseInt(data.get("default_guest_price") as string) || 0) : 0,
+      default_member_price: hasSessionFee ? (parseInt(fd.get("default_member_price") as string) || 0) : 0,
+      default_guest_price: hasSessionFee ? (parseInt(fd.get("default_guest_price") as string) || 0) : 0,
       annual_fee_amount: hasAnnualFee ? (Number.isNaN(annualFeeVal) ? undefined : annualFeeVal) : undefined,
       monthly_fee_amount: hasMonthlyFee ? (Number.isNaN(monthlyFeeVal) ? undefined : monthlyFeeVal) : undefined,
-      cancellation_days: parseInt(data.get("cancellation_days") as string) || 3,
-      point_card_count: hasPointCard ? (parseInt(data.get("point_card_count") as string) || 10) : undefined,
+      cancellation_days: parseInt(fd.get("cancellation_days") as string) || 3,
+      point_card_count: hasPointCard ? (parseInt(fd.get("point_card_count") as string) || 10) : undefined,
       point_card_price: hasPointCard ? (Number.isNaN(pointCardPriceVal) ? undefined : pointCardPriceVal) : undefined,
-      contact_email: step1.contact_email || undefined,
-      contact_phone: step1.contact_phone || undefined,
+      contact_email: form.contact_email || undefined,
+      contact_phone: form.contact_phone || undefined,
       fee_members_exempt_session: feeExempt,
     }
 
@@ -191,44 +227,26 @@ export default function NewTeamPage() {
   }
 
   return (
-    <div className="mx-auto max-w-xl space-y-6">
-      <div>
-        <Link href="/teams" className="text-sm text-[#5c6a7a] hover:text-[#1a2332]">
-          ← グループ一覧
-        </Link>
-        <h1 className="mt-2 text-xl font-bold text-[#1a2332]">グループを作成</h1>
+    <div className="mx-auto max-w-xl space-y-5">
+      {/* ヘッダー */}
+      <div className="flex items-center gap-3">
+        <BackLink
+          href="/teams"
+          className="flex h-10 w-10 items-center justify-center rounded-full border border-[#dce3ea] bg-white transition-colors hover:bg-[#f2f7fa]"
+          aria-label="戻る"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1a2332" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+        </BackLink>
+        <h1 className="text-xl font-bold text-[#1a2332]">グループを作成</h1>
       </div>
 
       {/* ステップインジケーター */}
-      <div className="flex justify-center">
-        <div className="flex items-center">
-          {([1, 2, 3] as const).map((n, i) => (
-            <div key={n} className="flex items-center">
-              <div
-                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-colors ${
-                  step > n
-                    ? "bg-[#005F8C]/20 text-[#005F8C]"
-                    : step === n
-                    ? "bg-[#005F8C] text-white"
-                    : "bg-[#edf0f4] text-[#5c6a7a]"
-                }`}
-              >
-                {step > n ? "✓" : n}
-              </div>
-              {i < 2 && (
-                <div
-                  className={`h-0.5 w-16 transition-colors ${
-                    step > n ? "bg-[#005F8C]/40" : "bg-[#dce3ea]"
-                  }`}
-                />
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
+      <StepIndicator current={step} />
 
-      {/* Step 1: 基本情報 */}
-      {step === 1 && (
+      {/* ===== Step 1: 基本情報 ===== */}
+      {step === 0 && (
         <form onSubmit={handleStep1Next} className="space-y-4">
           <Card className="border-[#dce3ea]">
             <CardContent className="space-y-4 pt-5">
@@ -237,13 +255,10 @@ export default function NewTeamPage() {
                   グループ名 <span className="text-[#c0392b]">*</span>
                 </Label>
                 <Input
-                  id="name"
-                  name="name"
+                  id="name" name="name"
                   placeholder="例: マウントリバー水泳クラブ"
-                  defaultValue={step1.name}
-                  maxLength={100}
-                  required
-                  autoFocus
+                  defaultValue={form.name}
+                  maxLength={100} required autoFocus
                   className="border-[#dce3ea]"
                 />
               </div>
@@ -253,115 +268,83 @@ export default function NewTeamPage() {
                   <span className="ml-1 text-xs font-normal text-[#8d99a8]">（任意）</span>
                 </Label>
                 <Textarea
-                  id="description"
-                  name="description"
+                  id="description" name="description"
                   placeholder="活動内容や特徴を入力してください"
-                  defaultValue={step1.description}
-                  rows={4}
-                  maxLength={2000}
+                  defaultValue={form.description}
+                  rows={4} maxLength={2000}
                   className="resize-none border-[#dce3ea]"
                 />
               </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="activity_area">
-                  活動エリア
-                  <span className="ml-1 text-xs font-normal text-[#8d99a8]">（任意）</span>
-                </Label>
-                <Input
-                  id="activity_area"
-                  name="activity_area"
-                  placeholder="例: 東京都渋谷区"
-                  defaultValue={step1.activity_area}
-                  maxLength={100}
-                  className="border-[#dce3ea]"
-                />
+              <div className="space-y-2">
+                <Label>メンバー募集</Label>
+                <div className="flex items-center gap-3 rounded-[10px] border border-[#dce3ea] p-3">
+                  <button
+                    type="button"
+                    onClick={() => setForm((prev) => ({ ...prev, is_recruiting: !prev.is_recruiting }))}
+                    className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
+                      form.is_recruiting ? "bg-[#005F8C]" : "bg-[#dce3ea]"
+                    }`}
+                  >
+                    <span className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
+                      form.is_recruiting ? "translate-x-5" : "translate-x-0"
+                    }`} />
+                  </button>
+                  <span className="text-sm font-medium text-[#1a2332]">
+                    {form.is_recruiting ? "メンバー募集中" : "募集停止中"}
+                  </span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Button type="submit" className="w-full rounded-full bg-[#005F8C] hover:bg-[#004E73]" style={{ minHeight: 48 }}>
+            次へ →
+          </Button>
+        </form>
+      )}
+
+      {/* ===== Step 2: 詳細設定 ===== */}
+      {step === 1 && (
+        <form onSubmit={handleStep2Next} className="space-y-4">
+          <Card className="border-[#dce3ea]">
+            <CardContent className="space-y-4 pt-5">
+              <div>
+                <p className="text-sm font-semibold text-[#1a2332]">詳細設定</p>
+                <p className="mt-0.5 text-xs text-[#5c6a7a]">すべて任意です。後から変更できます。</p>
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="main_pool">
-                  主な使用プール
-                  <span className="ml-1 text-xs font-normal text-[#8d99a8]">（任意）</span>
-                </Label>
-                <Input
-                  id="main_pool"
-                  name="main_pool"
-                  placeholder="例: 渋谷区スポーツセンタープール"
-                  defaultValue={step1.main_pool}
-                  maxLength={200}
-                  className="border-[#dce3ea]"
-                />
+                <Label htmlFor="activity_area">活動エリア</Label>
+                <Input id="activity_area" name="activity_area" placeholder="例: 東京都渋谷区" defaultValue={form.activity_area} maxLength={100} className="border-[#dce3ea]" />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="contact_email">
-                  問い合わせ用メールアドレス
-                  <span className="ml-1 text-xs font-normal text-[#8d99a8]">（任意）</span>
-                </Label>
-                <Input
-                  id="contact_email"
-                  name="contact_email"
-                  type="email"
-                  placeholder="例：contact@example.com"
-                  defaultValue={step1.contact_email}
-                  maxLength={254}
-                  className="border-[#dce3ea]"
-                />
+                <Label htmlFor="main_pool">主な使用プール</Label>
+                <Input id="main_pool" name="main_pool" placeholder="例: 渋谷区スポーツセンタープール" defaultValue={form.main_pool} maxLength={200} className="border-[#dce3ea]" />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="contact_phone">
-                  問い合わせ用電話番号
-                  <span className="ml-1 text-xs font-normal text-[#8d99a8]">（任意）</span>
-                </Label>
-                <Input
-                  id="contact_phone"
-                  name="contact_phone"
-                  type="tel"
-                  placeholder="09012345678"
-                  defaultValue={step1.contact_phone}
-                  maxLength={20}
-                  className="border-[#dce3ea]"
-                />
-                <p className="text-xs text-[#8d99a8]">ハイフンなし11桁で入力してください</p>
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="practice_frequency">
-                  練習ペース
-                  <span className="ml-1 text-xs font-normal text-[#8d99a8]">（任意）</span>
-                </Label>
+                <Label htmlFor="practice_frequency">練習ペース</Label>
                 <select
-                  id="practice_frequency"
-                  name="practice_frequency"
-                  defaultValue={step1.practice_frequency}
+                  id="practice_frequency" name="practice_frequency"
+                  defaultValue={form.practice_frequency}
                   className="h-10 w-full rounded-md border border-[#dce3ea] bg-white px-3 text-sm text-[#1a2332] focus:outline-none focus:ring-2 focus:ring-[#005F8C]/30"
                 >
                   <option value="">選択してください</option>
-                  {PRACTICE_FREQUENCIES.map((f) => (
-                    <option key={f} value={f}>{f}</option>
-                  ))}
+                  {PRACTICE_FREQUENCIES.map((f) => <option key={f} value={f}>{f}</option>)}
                 </select>
               </div>
               <div className="space-y-2">
-                <Label>
-                  練習曜日
-                  <span className="ml-1 text-xs font-normal text-[#8d99a8]">（任意・複数選択可）</span>
-                </Label>
+                <Label>練習曜日<span className="ml-1 text-xs font-normal text-[#8d99a8]">（複数選択可）</span></Label>
                 <div className="flex flex-wrap gap-2">
                   {PRACTICE_DAYS.map((day) => {
-                    const checked = step1.practice_days.includes(day)
+                    const checked = form.practice_days.includes(day)
                     return (
                       <button
-                        key={day}
-                        type="button"
-                        onClick={() =>
-                          setStep1((prev) => ({
-                            ...prev,
-                            practice_days: checked
-                              ? prev.practice_days.filter((d) => d !== day)
-                              : [...prev.practice_days, day],
-                          }))
-                        }
+                        key={day} type="button"
+                        onClick={() => setForm((prev) => ({
+                          ...prev,
+                          practice_days: checked ? prev.practice_days.filter((d) => d !== day) : [...prev.practice_days, day],
+                        }))}
                         className={`flex h-9 w-9 items-center justify-center rounded-full border text-sm font-medium transition-colors ${
-                          checked
-                            ? "border-[#005F8C] bg-[#005F8C] text-white"
-                            : "border-[#dce3ea] bg-white text-[#5c6a7a] hover:border-[#005F8C]/50"
+                          checked ? "border-[#005F8C] bg-[#005F8C] text-white" : "border-[#dce3ea] bg-white text-[#5c6a7a] hover:border-[#005F8C]/50"
                         }`}
                       >
                         {day}
@@ -370,69 +353,51 @@ export default function NewTeamPage() {
                   })}
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label>メンバー募集</Label>
-                <div className="flex items-center gap-3 rounded-xl border border-[#dce3ea] p-3">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setStep1((prev) => ({ ...prev, is_recruiting: !prev.is_recruiting }))
-                    }
-                    className={`relative h-6 w-10 rounded-full transition-colors ${
-                      step1.is_recruiting ? "bg-[#005F8C]" : "bg-[#dce3ea]"
-                    }`}
-                    style={{ minHeight: "24px" }}
-                  >
-                    <span
-                      className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
-                        step1.is_recruiting ? "translate-x-4" : "translate-x-0"
-                      }`}
-                    />
-                  </button>
-                  <span className="text-sm font-medium text-[#1a2332]">
-                    {step1.is_recruiting ? "メンバー募集中" : "募集停止中"}
-                  </span>
-                  <span className="ml-auto text-xs text-[#8d99a8]">公開ページに表示されます</span>
-                </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="contact_email">問い合わせ用メールアドレス</Label>
+                <Input id="contact_email" name="contact_email" type="email" placeholder="例：contact@example.com" defaultValue={form.contact_email} maxLength={254} className="border-[#dce3ea]" />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="contact_phone">問い合わせ用電話番号</Label>
+                <Input id="contact_phone" name="contact_phone" type="tel" placeholder="09012345678" defaultValue={form.contact_phone} maxLength={20} className="border-[#dce3ea]" />
               </div>
             </CardContent>
           </Card>
 
-          <Button
-            type="submit"
-            className="w-full rounded-full bg-[#005F8C] hover:bg-[#004E73]"
-            style={{ minHeight: "48px" }}
-          >
-            次へ →
-          </Button>
+          <div className="flex gap-3">
+            <Button type="button" variant="outline" onClick={() => setStep(0)} className="flex-1 rounded-full border-[#dce3ea] text-[#5c6a7a]" style={{ minHeight: 48 }}>
+              ← 戻る
+            </Button>
+            <Button type="submit" className="flex-1 rounded-full bg-[#005F8C] hover:bg-[#004E73]" style={{ minHeight: 48 }}>
+              次へ →
+            </Button>
+          </div>
+          <button type="button" onClick={() => { setStep(2) }} className="w-full text-center text-sm text-[#005F8C] hover:underline" style={{ minHeight: 44 }}>
+            スキップ →
+          </button>
         </form>
       )}
 
-      {/* Step 2: 画像設定 */}
+      {/* ===== Step 3: 画像 ===== */}
       {step === 2 && (
         <div className="space-y-4">
           <Card className="border-[#dce3ea]">
             <CardContent className="space-y-5 pt-5">
               <div>
                 <p className="text-sm font-semibold text-[#1a2332]">画像設定</p>
-                <p className="mt-0.5 text-xs text-[#5c6a7a]">両方任意です。後から変更できます。</p>
+                <p className="mt-0.5 text-xs text-[#5c6a7a]">任意です。後から変更できます。</p>
               </div>
 
               {/* カバー画像 */}
               <div className="space-y-2">
-                <Label>グループイメージ画像（ヒーロー）</Label>
+                <Label>グループイメージ画像</Label>
                 <div
-                  className="relative w-full overflow-hidden rounded-xl border border-dashed border-[#dce3ea] bg-[#f2f7fa] cursor-pointer hover:border-[#005F8C]/50 transition-colors"
+                  className="relative w-full cursor-pointer overflow-hidden rounded-[10px] border border-dashed border-[#dce3ea] bg-[#f2f7fa] transition-colors hover:border-[#005F8C]/50"
                   style={{ aspectRatio: "16/5" }}
                   onClick={() => coverInputRef.current?.click()}
                 >
-                  {step2.coverPreview ? (
-                    <Image
-                      src={step2.coverPreview}
-                      alt="カバー画像プレビュー"
-                      fill
-                      className="object-cover"
-                    />
+                  {images.coverPreview ? (
+                    <Image src={images.coverPreview} alt="カバー画像プレビュー" fill className="object-cover" />
                   ) : (
                     <div className="flex h-full w-full flex-col items-center justify-center gap-1">
                       <span className="text-2xl">🖼</span>
@@ -441,21 +406,9 @@ export default function NewTeamPage() {
                     </div>
                   )}
                 </div>
-                <input
-                  ref={coverInputRef}
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  className="hidden"
-                  onChange={(e) => handleFileSelect(e, "cover")}
-                />
-                {step2.coverPreview && (
-                  <button
-                    type="button"
-                    className="text-xs text-[#8d99a8] hover:text-[#5c6a7a]"
-                    onClick={() => {
-                      setStep2((prev) => ({ ...prev, coverFile: null, coverPreview: null }))
-                    }}
-                  >
+                <input ref={coverInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => handleFileSelect(e, "cover")} />
+                {images.coverPreview && (
+                  <button type="button" className="text-xs text-[#8d99a8] hover:text-[#5c6a7a]" onClick={() => setImages((prev) => ({ ...prev, coverFile: null, coverPreview: null }))}>
                     × 削除
                   </button>
                 )}
@@ -463,181 +416,163 @@ export default function NewTeamPage() {
 
               {/* グループアイコン */}
               <div className="space-y-2">
-                <Label>グループアイコン（丸アイコン）</Label>
+                <Label>グループアイコン</Label>
                 <div className="flex items-center gap-4">
                   <div
-                    className="relative h-20 w-20 shrink-0 cursor-pointer overflow-hidden rounded-full border border-dashed border-[#dce3ea] bg-[#f2f7fa] hover:border-[#005F8C]/50 transition-colors"
+                    className="relative h-20 w-20 shrink-0 cursor-pointer overflow-hidden rounded-full border border-dashed border-[#dce3ea] bg-[#f2f7fa] transition-colors hover:border-[#005F8C]/50"
                     onClick={() => iconInputRef.current?.click()}
                   >
-                    {step2.iconPreview ? (
-                      <Image
-                        src={step2.iconPreview}
-                        alt="アイコンプレビュー"
-                        fill
-                        className="object-cover"
-                      />
+                    {images.iconPreview ? (
+                      <Image src={images.iconPreview} alt="アイコンプレビュー" fill className="object-cover" />
                     ) : (
-                      <div className="flex h-full w-full flex-col items-center justify-center">
-                        <span className="text-2xl">🏊</span>
-                      </div>
+                      <div className="flex h-full w-full items-center justify-center"><span className="text-2xl">🏊</span></div>
                     )}
                   </div>
                   <div className="flex-1">
-                    <button
-                      type="button"
-                      onClick={() => iconInputRef.current?.click()}
-                      className="rounded-lg border border-[#dce3ea] px-3 py-2 text-sm text-[#5c6a7a] hover:border-[#005F8C]/50 transition-colors"
-                      style={{ minHeight: "44px" }}
-                    >
+                    <button type="button" onClick={() => iconInputRef.current?.click()} className="rounded-[10px] border border-[#dce3ea] px-3 py-2 text-sm text-[#5c6a7a] transition-colors hover:border-[#005F8C]/50" style={{ minHeight: 44 }}>
                       画像を選択
                     </button>
                     <p className="mt-1 text-xs text-[#8d99a8]">JPEG / PNG / WebP・5MB以下</p>
-                    {step2.iconPreview && (
-                      <button
-                        type="button"
-                        className="mt-1 text-xs text-[#8d99a8] hover:text-[#5c6a7a]"
-                        onClick={() => {
-                          setStep2((prev) => ({ ...prev, iconFile: null, iconPreview: null }))
-                        }}
-                      >
+                    {images.iconPreview && (
+                      <button type="button" className="mt-1 text-xs text-[#8d99a8] hover:text-[#5c6a7a]" onClick={() => setImages((prev) => ({ ...prev, iconFile: null, iconPreview: null }))}>
                         × 削除
                       </button>
                     )}
                   </div>
                 </div>
-                <input
-                  ref={iconInputRef}
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  className="hidden"
-                  onChange={(e) => handleFileSelect(e, "icon")}
-                />
+                <input ref={iconInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => handleFileSelect(e, "icon")} />
               </div>
             </CardContent>
           </Card>
 
           <div className="flex gap-3">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setStep(1)}
-              className="flex-1 rounded-full border-[#dce3ea] text-[#5c6a7a]"
-              style={{ minHeight: "48px" }}
-            >
+            <Button type="button" variant="outline" onClick={() => setStep(1)} className="flex-1 rounded-full border-[#dce3ea] text-[#5c6a7a]" style={{ minHeight: 48 }}>
               ← 戻る
             </Button>
-            <Button
-              type="button"
-              disabled={uploading}
-              onClick={handleStep2Next}
-              className="flex-1 rounded-full bg-[#005F8C] hover:bg-[#004E73] disabled:opacity-40"
-              style={{ minHeight: "48px" }}
-            >
+            <Button type="button" disabled={uploading} onClick={handleStep3Next} className="flex-1 rounded-full bg-[#005F8C] hover:bg-[#004E73] disabled:opacity-40" style={{ minHeight: 48 }}>
               {uploading ? "アップロード中..." : "次へ →"}
             </Button>
           </div>
+          <button type="button" onClick={() => { setStep(3) }} className="w-full text-center text-sm text-[#005F8C] hover:underline" style={{ minHeight: 44 }}>
+            スキップ →
+          </button>
         </div>
       )}
 
-      {/* Step 3: 料金・ポリシー設定 */}
+      {/* ===== Step 4: 料金設定（2セクション構成） ===== */}
       {step === 3 && (
-        <form onSubmit={handleStep3Submit} className="space-y-4">
-          {/* グループ名の確認表示 */}
-          <div className="rounded-xl bg-[#f2f7fa] px-4 py-3">
-            <p className="text-xs text-[#5c6a7a]">グループ名</p>
-            <p className="font-medium text-[#1a2332]">{step1.name}</p>
-          </div>
+        <form onSubmit={handleSubmit} className="space-y-5">
 
-          {/* 料金体系選択 */}
-          <Card className="border-[#dce3ea]">
-            <CardContent className="space-y-4 pt-5">
-              <div>
-                <p className="text-sm font-semibold text-[#1a2332]">料金体系</p>
-                <p className="mt-0.5 text-xs text-[#5c6a7a]">このグループで利用する料金体系を選択してください。後から変更できます。</p>
-              </div>
-
-              {/* セッション参加費 */}
-              <div className="space-y-3">
-                <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-[#dce3ea] p-3 hover:border-[#005F8C]/40">
-                  <input
-                    type="checkbox"
-                    checked={hasSessionFee}
-                    onChange={(e) => setHasSessionFee(e.target.checked)}
-                    className="h-4 w-4 rounded border-[#dce3ea] accent-[#005F8C]"
-                  />
-                  <div>
-                    <p className="text-sm font-medium text-[#1a2332]">セッション参加費あり</p>
-                    <p className="text-xs text-[#8d99a8]">練習・イベントごとに参加費を徴収する</p>
+          {/* ── セクション1: セッション参加費 ── */}
+          <div>
+            <div className="mb-2 flex items-center gap-2">
+              <span className="text-base">💰</span>
+              <h3 className="text-sm font-semibold text-[#1a2332]">セッション参加費</h3>
+            </div>
+            <div className="space-y-2">
+              {/* 参加費トグル */}
+              <div className={`overflow-hidden rounded-[14px] border transition-colors ${hasSessionFee ? "border-[#005F8C]/30" : "border-[#dce3ea]"}`}>
+                <div className="flex items-center gap-3 px-4 py-3">
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-[#1a2332]">参加費を設定する</p>
+                    <p className="text-xs text-[#5c6a7a]">練習・イベントごとに料金を徴収</p>
                   </div>
-                </label>
+                  <button type="button" onClick={() => setHasSessionFee(!hasSessionFee)}
+                    className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${hasSessionFee ? "bg-[#005F8C]" : "bg-[#dce3ea]"}`}>
+                    <span className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${hasSessionFee ? "translate-x-5" : "translate-x-0"}`} />
+                  </button>
+                </div>
                 {hasSessionFee && (
-                  <div className="ml-4 grid gap-3 sm:grid-cols-2">
-                    <div className="space-y-1.5">
-                      <Label htmlFor="default_member_price">参加費（メンバー）</Label>
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#5c6a7a]">¥</span>
-                        <Input
-                          id="default_member_price"
-                          name="default_member_price"
-                          type="number"
-                          min="0"
-                          step="100"
-                          defaultValue="1000"
-                          className="border-[#dce3ea] pl-7"
-                        />
+                  <div className="border-t border-[#dce3ea]/50 bg-[#f2f7fa]/50 px-4 py-3 space-y-3">
+                    <div className="grid gap-3 grid-cols-2">
+                      <div className="space-y-1">
+                        <Label htmlFor="default_member_price" className="text-xs">メンバー料金</Label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#5c6a7a]">¥</span>
+                          <Input id="default_member_price" name="default_member_price" type="number" min="0" step="100" defaultValue="1000" className="border-[#dce3ea] pl-7" />
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <Label htmlFor="default_guest_price" className="text-xs">ゲスト料金</Label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#5c6a7a]">¥</span>
+                          <Input id="default_guest_price" name="default_guest_price" type="number" min="0" step="100" defaultValue="1500" className="border-[#dce3ea] pl-7" />
+                        </div>
                       </div>
                     </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="default_guest_price">参加費（ゲスト）</Label>
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#5c6a7a]">¥</span>
-                        <Input
-                          id="default_guest_price"
-                          name="default_guest_price"
-                          type="number"
-                          min="0"
-                          step="100"
-                          defaultValue="1500"
-                          className="border-[#dce3ea] pl-7"
-                        />
+                    <div className="space-y-1">
+                      <Label htmlFor="cancellation_days" className="text-xs">キャンセル期限</Label>
+                      <div className="flex items-center gap-2">
+                        <Input id="cancellation_days" name="cancellation_days" type="number" min="0" max="30" defaultValue="3" className="w-16 border-[#dce3ea]" />
+                        <span className="text-xs text-[#5c6a7a]">日前まで無料キャンセル可</span>
                       </div>
+                    </div>
+
+                    {/* 回数券（参加費内のチェックボックス） */}
+                    <div className="border-t border-[#dce3ea]/30 pt-3">
+                      <label className="flex cursor-pointer items-center gap-2.5">
+                        <input
+                          type="checkbox"
+                          checked={hasPointCard}
+                          onChange={(e) => setHasPointCard(e.target.checked)}
+                          className="h-4 w-4 rounded border-[#dce3ea] accent-[#005F8C]"
+                        />
+                        <div>
+                          <p className="text-xs font-medium text-[#1a2332]">回数券での支払いを受け付ける</p>
+                        </div>
+                      </label>
+                      {hasPointCard && (
+                        <div className="mt-2 ml-6 grid gap-3 grid-cols-2">
+                          <div className="space-y-1">
+                            <Label htmlFor="point_card_count" className="text-xs">1枚の回数</Label>
+                            <Input id="point_card_count" name="point_card_count" type="number" min="1" max="100" defaultValue="10" className="border-[#dce3ea]" />
+                          </div>
+                          <div className="space-y-1">
+                            <Label htmlFor="point_card_price" className="text-xs">販売価格（任意）</Label>
+                            <div className="relative">
+                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#5c6a7a]">¥</span>
+                              <Input id="point_card_price" name="point_card_price" type="number" min="0" step="100" placeholder="未設定" className="border-[#dce3ea] pl-7" />
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
               </div>
+            </div>
+          </div>
 
+          {/* ── 区切り線 ── */}
+          <div className="h-px bg-[#e8edf2]" />
+
+          {/* ── セクション2: メンバーシップ ── */}
+          <div>
+            <div className="mb-1 flex items-center gap-2">
+              <span className="text-base">👥</span>
+              <h3 className="text-sm font-semibold text-[#1a2332]">メンバーシップ</h3>
+            </div>
+            <p className="mb-2 text-xs text-[#5c6a7a]">継続的な会費を設定する場合に有効にしてください</p>
+            <div className="space-y-2">
               {/* 年会費 */}
-              <div className="space-y-3">
-                <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-[#dce3ea] p-3 hover:border-[#005F8C]/40">
-                  <input
-                    type="checkbox"
-                    checked={hasAnnualFee}
-                    onChange={(e) => {
-                      setHasAnnualFee(e.target.checked)
-                      if (!e.target.checked && !hasMonthlyFee) setFeeExempt(false)
-                    }}
-                    className="h-4 w-4 rounded border-[#dce3ea] accent-[#005F8C]"
-                  />
-                  <div>
-                    <p className="text-sm font-medium text-[#1a2332]">年会費あり</p>
-                    <p className="text-xs text-[#8d99a8]">年1回の会費を徴収する</p>
+              <div className={`overflow-hidden rounded-[14px] border transition-colors ${hasAnnualFee ? "border-[#005F8C]/30" : "border-[#dce3ea]"}`}>
+                <div className="flex items-center gap-3 px-4 py-3">
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-[#1a2332]">年会費</p>
+                    <p className="text-xs text-[#5c6a7a]">年1回の会費を徴収</p>
                   </div>
-                </label>
+                  <button type="button" onClick={() => { setHasAnnualFee(!hasAnnualFee); if (hasAnnualFee && !hasMonthlyFee) setFeeExempt(false) }}
+                    className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${hasAnnualFee ? "bg-[#005F8C]" : "bg-[#dce3ea]"}`}>
+                    <span className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${hasAnnualFee ? "translate-x-5" : "translate-x-0"}`} />
+                  </button>
+                </div>
                 {hasAnnualFee && (
-                  <div className="ml-4">
-                    <div className="space-y-1.5">
-                      <Label htmlFor="annual_fee_amount">年会費金額</Label>
+                  <div className="border-t border-[#dce3ea]/50 bg-[#f2f7fa]/50 px-4 py-3">
+                    <div className="space-y-1">
+                      <Label htmlFor="annual_fee_amount" className="text-xs">金額</Label>
                       <div className="relative w-40">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#5c6a7a]">¥</span>
-                        <Input
-                          id="annual_fee_amount"
-                          name="annual_fee_amount"
-                          type="number"
-                          min="0"
-                          step="100"
-                          placeholder="0"
-                          className="border-[#dce3ea] pl-7"
-                        />
+                        <Input id="annual_fee_amount" name="annual_fee_amount" type="number" min="0" step="100" placeholder="0" className="border-[#dce3ea] pl-7" />
                       </div>
                     </div>
                   </div>
@@ -645,149 +580,53 @@ export default function NewTeamPage() {
               </div>
 
               {/* 月謝 */}
-              <div className="space-y-3">
-                <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-[#dce3ea] p-3 hover:border-[#005F8C]/40">
-                  <input
-                    type="checkbox"
-                    checked={hasMonthlyFee}
-                    onChange={(e) => {
-                      setHasMonthlyFee(e.target.checked)
-                      if (!e.target.checked && !hasAnnualFee) setFeeExempt(false)
-                    }}
-                    className="h-4 w-4 rounded border-[#dce3ea] accent-[#005F8C]"
-                  />
-                  <div>
-                    <p className="text-sm font-medium text-[#1a2332]">月謝あり</p>
-                    <p className="text-xs text-[#8d99a8]">毎月の月謝を徴収する</p>
+              <div className={`overflow-hidden rounded-[14px] border transition-colors ${hasMonthlyFee ? "border-[#005F8C]/30" : "border-[#dce3ea]"}`}>
+                <div className="flex items-center gap-3 px-4 py-3">
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-[#1a2332]">月謝</p>
+                    <p className="text-xs text-[#5c6a7a]">毎月の月謝を徴収</p>
                   </div>
-                </label>
+                  <button type="button" onClick={() => { setHasMonthlyFee(!hasMonthlyFee); if (hasMonthlyFee && !hasAnnualFee) setFeeExempt(false) }}
+                    className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${hasMonthlyFee ? "bg-[#005F8C]" : "bg-[#dce3ea]"}`}>
+                    <span className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${hasMonthlyFee ? "translate-x-5" : "translate-x-0"}`} />
+                  </button>
+                </div>
                 {hasMonthlyFee && (
-                  <div className="ml-4">
-                    <div className="space-y-1.5">
-                      <Label htmlFor="monthly_fee_amount">月謝金額</Label>
+                  <div className="border-t border-[#dce3ea]/50 bg-[#f2f7fa]/50 px-4 py-3">
+                    <div className="space-y-1">
+                      <Label htmlFor="monthly_fee_amount" className="text-xs">金額</Label>
                       <div className="relative w-40">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#5c6a7a]">¥</span>
-                        <Input
-                          id="monthly_fee_amount"
-                          name="monthly_fee_amount"
-                          type="number"
-                          min="0"
-                          step="100"
-                          placeholder="0"
-                          className="border-[#dce3ea] pl-7"
-                        />
+                        <Input id="monthly_fee_amount" name="monthly_fee_amount" type="number" min="0" step="100" placeholder="0" className="border-[#dce3ea] pl-7" />
                       </div>
                     </div>
                   </div>
                 )}
               </div>
 
-              {/* 会費会員の参加費免除 */}
-              {(hasAnnualFee || hasMonthlyFee) && (
-                <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-[#005F8C]/20 bg-[#005F8C]/5 p-3 hover:border-[#005F8C]/40">
-                  <input
-                    type="checkbox"
-                    checked={feeExempt}
-                    onChange={(e) => setFeeExempt(e.target.checked)}
-                    className="h-4 w-4 rounded border-[#dce3ea] accent-[#005F8C]"
-                  />
-                  <div>
-                    <p className="text-sm font-medium text-[#1a2332]">年会費・月謝会員のセッション参加費を免除</p>
-                    <p className="text-xs text-[#8d99a8]">年会費または月謝を支払っているメンバーはセッション参加費が無料になる</p>
-                  </div>
-                </label>
-              )}
-
-              {/* 回数券 */}
-              <div className="space-y-3">
-                <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-[#dce3ea] p-3 hover:border-[#005F8C]/40">
-                  <input
-                    type="checkbox"
-                    checked={hasPointCard}
-                    onChange={(e) => setHasPointCard(e.target.checked)}
-                    className="h-4 w-4 rounded border-[#dce3ea] accent-[#005F8C]"
-                  />
-                  <div>
-                    <p className="text-sm font-medium text-[#1a2332]">回数券あり</p>
-                    <p className="text-xs text-[#8d99a8]">スタンプカード方式で回数管理をする</p>
-                  </div>
-                </label>
-                {hasPointCard && (
-                  <div className="ml-4 grid gap-3 sm:grid-cols-2">
-                    <div className="space-y-1.5">
-                      <Label htmlFor="point_card_count">1枚あたりの回数</Label>
-                      <Input
-                        id="point_card_count"
-                        name="point_card_count"
-                        type="number"
-                        min="1"
-                        max="100"
-                        defaultValue="10"
-                        className="border-[#dce3ea]"
-                      />
+              {/* 会員特典: 参加費免除 */}
+              {(hasAnnualFee || hasMonthlyFee) && hasSessionFee && (
+                <div className={`overflow-hidden rounded-[14px] border transition-colors ${feeExempt ? "border-[#0f8a4f]/30 bg-[#eaf7f0]/30" : "border-[#dce3ea]"}`}>
+                  <div className="flex items-center gap-3 px-4 py-3">
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-[#1a2332]">会員特典: 参加費免除</p>
+                      <p className="text-xs text-[#5c6a7a]">会費を払っているメンバーはセッション参加費が無料に</p>
                     </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="point_card_price">
-                        回数券の価格
-                        <span className="ml-1 text-xs font-normal text-[#8d99a8]">（任意）</span>
-                      </Label>
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#5c6a7a]">¥</span>
-                        <Input
-                          id="point_card_price"
-                          name="point_card_price"
-                          type="number"
-                          min="0"
-                          step="100"
-                          placeholder="未設定"
-                          className="border-[#dce3ea] pl-7"
-                        />
-                      </div>
-                    </div>
+                    <button type="button" onClick={() => setFeeExempt(!feeExempt)}
+                      className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${feeExempt ? "bg-[#0f8a4f]" : "bg-[#dce3ea]"}`}>
+                      <span className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${feeExempt ? "translate-x-5" : "translate-x-0"}`} />
+                    </button>
                   </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* キャンセルポリシー */}
-          <Card className="border-[#dce3ea]">
-            <CardContent className="space-y-4 pt-5">
-              <p className="text-sm font-semibold text-[#1a2332]">キャンセルポリシー</p>
-              <div className="space-y-1.5">
-                <Label htmlFor="cancellation_days">無料キャンセル期限</Label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    id="cancellation_days"
-                    name="cancellation_days"
-                    type="number"
-                    min="0"
-                    max="30"
-                    defaultValue="3"
-                    className="w-20 border-[#dce3ea]"
-                  />
-                  <span className="text-sm text-[#5c6a7a]">日前まで無料キャンセル可</span>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              )}
+            </div>
+          </div>
 
-          <div className="flex gap-3">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setStep(2)}
-              className="flex-1 rounded-full border-[#dce3ea] text-[#5c6a7a]"
-              style={{ minHeight: "48px" }}
-            >
+          <div className="flex gap-3 pt-1">
+            <Button type="button" variant="outline" onClick={() => setStep(2)} className="flex-1 rounded-full border-[#dce3ea] text-[#5c6a7a]" style={{ minHeight: 48 }}>
               ← 戻る
             </Button>
-            <Button
-              type="submit"
-              disabled={isPending}
-              className="flex-1 rounded-full bg-[#005F8C] hover:bg-[#004E73]"
-              style={{ minHeight: "48px" }}
-            >
+            <Button type="submit" disabled={isPending} className="flex-1 rounded-full bg-[#005F8C] hover:bg-[#004E73]" style={{ minHeight: 48 }}>
               {isPending ? "作成中..." : "グループを作成"}
             </Button>
           </div>
