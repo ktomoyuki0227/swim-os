@@ -7,6 +7,7 @@ import { updateTeam, uploadTeamImage } from "@/actions/teams"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { BackLink } from "@/components/back-link"
+import { PricingSimulatorButton } from "@/components/pricing-simulator"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -95,6 +96,25 @@ export function EditTeamForm({ team, stripeEnabled, connectStatus }: EditTeamFor
     } else {
       setIconFile(file)
       setIconPreview(preview)
+    }
+  }
+
+  // シミュレーター適用ハンドラー
+  const handleSimulatorApply = (values: { pointCardPrice?: number; monthlyFee?: number; annualFee?: number }) => {
+    if (values.pointCardPrice !== undefined) {
+      setHasPointCard(true)
+      const el = document.getElementById("point_card_price") as HTMLInputElement | null
+      if (el) { el.value = String(values.pointCardPrice) }
+    }
+    if (values.monthlyFee !== undefined) {
+      setHasMonthlyFee(true)
+      const el = document.getElementById("monthly_fee_amount") as HTMLInputElement | null
+      if (el) { el.value = String(values.monthlyFee) }
+    }
+    if (values.annualFee !== undefined) {
+      setHasAnnualFee(true)
+      const el = document.getElementById("annual_fee_amount") as HTMLInputElement | null
+      if (el) { el.value = String(values.annualFee) }
     }
   }
 
@@ -351,25 +371,26 @@ export function EditTeamForm({ team, stripeEnabled, connectStatus }: EditTeamFor
             </div>
             <div className="space-y-2">
               <Label>メンバー募集</Label>
-              <div className="flex items-center gap-3 rounded-xl border border-[#dce3ea] p-3">
-                <button
-                  type="button"
-                  onClick={() => setIsRecruiting((v) => !v)}
-                  className={`relative h-6 w-10 rounded-full transition-colors ${
-                    isRecruiting ? "bg-[#005F8C]" : "bg-[#dce3ea]"
-                  }`}
-                  style={{ minHeight: "24px" }}
-                >
-                  <span
-                    className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
-                      isRecruiting ? "translate-x-4" : "translate-x-0"
+              <div className="rounded-[10px] border border-[#dce3ea] p-3">
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsRecruiting((v) => !v)}
+                    className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
+                      isRecruiting ? "bg-[#005F8C]" : "bg-[#dce3ea]"
                     }`}
-                  />
-                </button>
-                <span className="text-sm font-medium text-[#1a2332]">
-                  {isRecruiting ? "メンバー募集中" : "募集停止中"}
-                </span>
-                <span className="ml-auto text-xs text-[#8d99a8]">公開ページに表示されます</span>
+                  >
+                    <span
+                      className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
+                        isRecruiting ? "translate-x-5" : "translate-x-0"
+                      }`}
+                    />
+                  </button>
+                  <span className="text-sm font-medium text-[#1a2332]">
+                    {isRecruiting ? "メンバー募集中" : "募集停止中"}
+                  </span>
+                </div>
+                <p className="mt-1.5 text-xs text-[#8d99a8]">公開ページに表示されます</p>
               </div>
             </div>
           </CardContent>
@@ -415,7 +436,7 @@ export function EditTeamForm({ team, stripeEnabled, connectStatus }: EditTeamFor
               {coverPreview && (
                 <button
                   type="button"
-                  className="text-xs text-[#8d99a8] hover:text-[#5c6a7a]"
+                  className="text-xs text-[#c0392b] hover:underline"
                   onClick={() => {
                     setCoverFile(null)
                     setCoverPreview(null)
@@ -460,7 +481,7 @@ export function EditTeamForm({ team, stripeEnabled, connectStatus }: EditTeamFor
                   {iconPreview && (
                     <button
                       type="button"
-                      className="mt-1 text-xs text-[#8d99a8] hover:text-[#5c6a7a]"
+                      className="mt-1 text-xs text-[#c0392b] hover:underline"
                       onClick={() => {
                         setIconFile(null)
                         setIconPreview(null)
@@ -487,6 +508,7 @@ export function EditTeamForm({ team, stripeEnabled, connectStatus }: EditTeamFor
           <div className="mb-2 flex items-center gap-2">
             <span className="text-base">💰</span>
             <h3 className="text-sm font-semibold text-[#1a2332]">セッション参加費</h3>
+            <PricingSimulatorButton memberPrice={team.default_member_price ?? 1000} onApply={handleSimulatorApply} />
           </div>
           <div className="space-y-2">
             <div className={`overflow-hidden rounded-[14px] border transition-colors ${hasSessionFee ? "border-[#005F8C]/30" : "border-[#dce3ea]"}`}>
@@ -559,6 +581,7 @@ export function EditTeamForm({ team, stripeEnabled, connectStatus }: EditTeamFor
           <div className="mb-1 flex items-center gap-2">
             <span className="text-base">👥</span>
             <h3 className="text-sm font-semibold text-[#1a2332]">メンバーシップ</h3>
+            <PricingSimulatorButton memberPrice={team.default_member_price ?? 1000} onApply={handleSimulatorApply} />
           </div>
           <p className="mb-2 text-xs text-[#5c6a7a]">継続的な会費を設定する場合に有効にしてください</p>
           <div className="space-y-2">

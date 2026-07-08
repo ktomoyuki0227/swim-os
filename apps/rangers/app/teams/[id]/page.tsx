@@ -25,6 +25,7 @@ import { TeamDescription } from "@/app/(app)/teams/[id]/team-description"
 import { MemberAnnouncementsSheet } from "@/app/(app)/teams/[id]/member-announcements-sheet"
 import { MemberSessionList } from "@/app/(app)/teams/[id]/member-session-list"
 import { MemberPreviewBar } from "@/app/(app)/teams/[id]/member-preview-bar"
+import { StripeSetupBanner } from "@/app/(app)/teams/[id]/stripe-setup-banner"
 import { BackLink } from "@/components/back-link"
 import Image from "next/image"
 
@@ -165,6 +166,16 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
               <span className="text-sm text-[#5c6a7a]">グループ</span>
               <AdminActionButtons team={team} />
             </div>
+
+            {/* ── 決済設定バナー ── */}
+            {(team.has_session_fee || team.has_annual_fee || team.has_monthly_fee || team.has_point_card) &&
+              !team.stripe_onboarding_completed && process.env.STRIPE_SECRET_KEY && (
+              <StripeSetupBanner
+                teamId={id}
+                hasStripeAccount={!!team.stripe_account_id}
+                onboardingCompleted={team.stripe_onboarding_completed ?? false}
+              />
+            )}
 
             {/* ── グループ名 + 説明 ── */}
             <div>

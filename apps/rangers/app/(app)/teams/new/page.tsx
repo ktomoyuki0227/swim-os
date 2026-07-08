@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/components/toast"
 import { BackLink } from "@/components/back-link"
+import { PricingSimulatorButton } from "@/components/pricing-simulator"
 import { PRACTICE_FREQUENCIES, PRACTICE_DAYS } from "@/types/database"
 
 const STEPS = [
@@ -116,6 +117,25 @@ export default function NewTeamPage() {
   const [hasMonthlyFee, setHasMonthlyFee] = useState(false)
   const [hasPointCard, setHasPointCard] = useState(false)
   const [feeExempt, setFeeExempt] = useState(false)
+
+  // シミュレーター適用ハンドラー
+  const handleSimulatorApply = (values: { pointCardPrice?: number; monthlyFee?: number; annualFee?: number }) => {
+    if (values.pointCardPrice !== undefined) {
+      setHasPointCard(true)
+      const el = document.getElementById("point_card_price") as HTMLInputElement | null
+      if (el) { el.value = String(values.pointCardPrice) }
+    }
+    if (values.monthlyFee !== undefined) {
+      setHasMonthlyFee(true)
+      const el = document.getElementById("monthly_fee_amount") as HTMLInputElement | null
+      if (el) { el.value = String(values.monthlyFee) }
+    }
+    if (values.annualFee !== undefined) {
+      setHasAnnualFee(true)
+      const el = document.getElementById("annual_fee_amount") as HTMLInputElement | null
+      if (el) { el.value = String(values.annualFee) }
+    }
+  }
 
   // --- Handlers ---
   const handleStep1Next = (e: React.FormEvent<HTMLFormElement>) => {
@@ -468,6 +488,7 @@ export default function NewTeamPage() {
             <div className="mb-2 flex items-center gap-2">
               <span className="text-base">💰</span>
               <h3 className="text-sm font-semibold text-[#1a2332]">セッション参加費</h3>
+              <PricingSimulatorButton memberPrice={1000} onApply={handleSimulatorApply} />
             </div>
             <div className="space-y-2">
               {/* 参加費トグル */}
@@ -551,6 +572,7 @@ export default function NewTeamPage() {
             <div className="mb-1 flex items-center gap-2">
               <span className="text-base">👥</span>
               <h3 className="text-sm font-semibold text-[#1a2332]">メンバーシップ</h3>
+              <PricingSimulatorButton memberPrice={1000} onApply={handleSimulatorApply} />
             </div>
             <p className="mb-2 text-xs text-[#5c6a7a]">継続的な会費を設定する場合に有効にしてください</p>
             <div className="space-y-2">
