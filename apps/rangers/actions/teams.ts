@@ -70,6 +70,7 @@ export async function createTeam(data: unknown) {
       point_card_price: parsed.data.point_card_price || null,
       contact_email: parsed.data.contact_email || null,
       contact_phone: parsed.data.contact_phone || null,
+      team_type: parsed.data.team_type ?? "team",
     })
     .select()
     .single()

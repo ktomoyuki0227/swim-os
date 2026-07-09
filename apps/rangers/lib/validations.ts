@@ -79,6 +79,7 @@ export const teamSchema = z.object({
   contact_email: z.string().max(254).optional(),
   contact_phone: z.string().max(20).optional(),
   fee_members_exempt_session: z.boolean().default(false),
+  team_type: z.enum(["team", "personal"]).default("team"),
 })
 
 export const sessionSchema = z.object({

@@ -14,7 +14,10 @@ import { BackLink } from "@/components/back-link"
 import { PricingSimulatorButton } from "@/components/pricing-simulator"
 import { PRACTICE_FREQUENCIES, PRACTICE_DAYS } from "@/types/database"
 
+type TeamType = "team" | "personal"
+
 const STEPS = [
+  { label: "種別" },
   { label: "基本情報" },
   { label: "詳細設定" },
   { label: "画像" },
@@ -82,7 +85,7 @@ function StepIndicator({ current }: { current: number }) {
   )
 }
 
-function Step5PaymentSetup({ teamId }: { teamId: string }) {
+function Step6PaymentSetup({ teamId }: { teamId: string }) {
   const [isLoading, setIsLoading] = useState(false)
   const { showToast } = useToast()
 
@@ -153,7 +156,6 @@ function Step5PaymentSetup({ teamId }: { teamId: string }) {
           </ul>
         </div>
       </div>
-
     </div>
   )
 }
@@ -164,6 +166,7 @@ export default function NewTeamPage() {
   const { showToast } = useToast()
 
   const [step, setStep] = useState(0)
+  const [teamType, setTeamType] = useState<TeamType | null>(null)
 
   // Form state
   const [form, setForm] = useState<FormData>({
@@ -188,7 +191,7 @@ export default function NewTeamPage() {
   const coverInputRef = useRef<HTMLInputElement>(null)
   const iconInputRef = useRef<HTMLInputElement>(null)
 
-  // Created team ID (Step 5 で使用)
+  // Created team ID (Step 6 で使用)
   const [createdTeamId, setCreatedTeamId] = useState<string | null>(null)
 
   // Fee state
@@ -225,7 +228,8 @@ export default function NewTeamPage() {
       name: fd.get("name") as string,
       description: (fd.get("description") as string) || "",
     }))
-    setStep(1)
+    setStep(2)
+    window.scrollTo({ top: 0, behavior: "smooth" })
   }
 
   const handleStep2Next = (e: React.FormEvent<HTMLFormElement>) => {
@@ -239,7 +243,8 @@ export default function NewTeamPage() {
       contact_email: (fd.get("contact_email") as string) || "",
       contact_phone: (fd.get("contact_phone") as string) || "",
     }))
-    setStep(2)
+    setStep(3)
+    window.scrollTo({ top: 0, behavior: "smooth" })
   }
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>, type: "cover" | "icon") => {
@@ -276,7 +281,8 @@ export default function NewTeamPage() {
       }
       setCoverImageUrl(newCoverUrl)
       setIconImageUrl(newIconUrl)
-      setStep(3)
+      setStep(4)
+      window.scrollTo({ top: 0, behavior: "smooth" })
     } finally {
       setUploading(false)
     }
@@ -313,6 +319,7 @@ export default function NewTeamPage() {
       contact_email: form.contact_email || undefined,
       contact_phone: form.contact_phone || undefined,
       fee_members_exempt_session: false,
+      team_type: teamType ?? "team",
     }
 
     startTransition(async () => {
@@ -323,14 +330,18 @@ export default function NewTeamPage() {
         const hasFees = hasSessionFee || hasAnnualFee || hasMonthlyFee
         setCreatedTeamId(result.data.id)
         if (hasFees) {
-          // 料金設定ありの場合: Step 5（決済設定）に遷移
-          setStep(4)
+          setStep(5)
+          window.scrollTo({ top: 0, behavior: "smooth" })
         } else {
-          // 料金なし: チーム詳細ページに遷移
           router.push(`/teams/${result.data.id}`)
         }
       }
     })
+  }
+
+  const goToStep = (n: number) => {
+    setStep(n)
+    window.scrollTo({ top: 0, behavior: "smooth" })
   }
 
   return (
@@ -352,9 +363,92 @@ export default function NewTeamPage() {
       {/* ステップインジケーター */}
       <StepIndicator current={step} />
 
-      {/* ===== Step 1: 基本情報 ===== */}
+      {/* ===== Step 0: グループ種別 ===== */}
       {step === 0 && (
+        <div className="space-y-4">
+          <p className="text-sm text-[#5c6a7a]">作成するグループの種別を選んでください。</p>
+          <div className="grid grid-cols-2 gap-3">
+
+            {/* チームカード */}
+            <button
+              type="button"
+              onClick={() => { setTeamType("team"); goToStep(1) }}
+              className="flex flex-col items-center gap-4 rounded-[14px] border-2 border-[#dce3ea] bg-white p-5 text-center transition-all hover:border-[#005F8C] hover:shadow-[0_2px_8px_rgba(0,95,140,0.10)] active:scale-[0.98]"
+            >
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#005F8C]/10">
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#005F8C" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-base font-bold text-[#1a2332]">チーム</p>
+                <p className="mt-1 text-xs leading-relaxed text-[#5c6a7a]">クラブや水泳チームなど複数メンバーで活動するグループ</p>
+              </div>
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#005F8C] text-white">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </div>
+            </button>
+
+            {/* パーソナルカード */}
+            <button
+              type="button"
+              onClick={() => { setTeamType("personal"); goToStep(1) }}
+              className="flex flex-col items-center gap-4 rounded-[14px] border-2 border-[#dce3ea] bg-white p-5 text-center transition-all hover:border-[#0f8a4f] hover:shadow-[0_2px_8px_rgba(15,138,79,0.10)] active:scale-[0.98]"
+            >
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#0f8a4f]/10">
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#0f8a4f" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="10" cy="8" r="4" />
+                  <path d="M4 20v-2a6 6 0 0 1 9.5-5.5" />
+                  <path d="M19.5 2.5 L21 5.5 L24 6.5 L21 7.5 L19.5 10.5 L18 7.5 L15 6.5 L18 5.5 Z" fill="#0f8a4f" stroke="none" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-base font-bold text-[#1a2332]">パーソナル</p>
+                <p className="mt-1 text-xs leading-relaxed text-[#5c6a7a]">コーチと生徒の1対1または少人数のプライベートレッスン</p>
+              </div>
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#0f8a4f] text-white">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </div>
+            </button>
+
+          </div>
+        </div>
+      )}
+
+      {/* ===== Step 1: 基本情報 ===== */}
+      {step === 1 && (
         <form onSubmit={handleStep1Next} className="space-y-4">
+          {/* 選択した種別バッジ */}
+          {teamType && (
+            <div className="flex items-center gap-2">
+              <span
+                className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold"
+                style={teamType === "team"
+                  ? { backgroundColor: "#e8f2f8", color: "#005F8C" }
+                  : { backgroundColor: "#eaf7f0", color: "#0f8a4f" }
+                }
+              >
+                {teamType === "team" ? (
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                  </svg>
+                ) : (
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="8" r="4" /><path d="M6 20v-2a6 6 0 0 1 12 0v2" />
+                  </svg>
+                )}
+                {teamType === "team" ? "チーム" : "パーソナル"}
+              </span>
+            </div>
+          )}
+
           <Card className="border-[#dce3ea]">
             <CardContent className="space-y-4 pt-5">
               <div className="space-y-1.5">
@@ -363,7 +457,7 @@ export default function NewTeamPage() {
                 </Label>
                 <Input
                   id="name" name="name"
-                  placeholder="例: マウントリバー水泳クラブ"
+                  placeholder={teamType === "personal" ? "例: 田中コーチのパーソナルレッスン" : "例: マウントリバー水泳クラブ"}
                   defaultValue={form.name}
                   maxLength={100} required autoFocus
                   className="border-[#dce3ea]"
@@ -376,7 +470,7 @@ export default function NewTeamPage() {
                 </Label>
                 <Textarea
                   id="description" name="description"
-                  placeholder="活動内容や特徴を入力してください"
+                  placeholder={teamType === "personal" ? "レッスンの特徴や対象者を入力してください" : "活動内容や特徴を入力してください"}
                   defaultValue={form.description}
                   rows={4} maxLength={2000}
                   className="resize-none border-[#dce3ea]"
@@ -404,14 +498,19 @@ export default function NewTeamPage() {
             </CardContent>
           </Card>
 
-          <Button type="submit" className="w-full rounded-full bg-[#005F8C] hover:bg-[#004E73]" style={{ minHeight: 48 }}>
-            次へ →
-          </Button>
+          <div className="flex gap-3">
+            <Button type="button" variant="outline" onClick={() => goToStep(0)} className="flex-1 rounded-full border-[#dce3ea] text-[#5c6a7a]" style={{ minHeight: 48 }}>
+              ← 戻る
+            </Button>
+            <Button type="submit" className="flex-1 rounded-full bg-[#005F8C] hover:bg-[#004E73]" style={{ minHeight: 48 }}>
+              次へ →
+            </Button>
+          </div>
         </form>
       )}
 
       {/* ===== Step 2: 詳細設定 ===== */}
-      {step === 1 && (
+      {step === 2 && (
         <form onSubmit={handleStep2Next} className="space-y-4">
           <Card className="border-[#dce3ea]">
             <CardContent className="space-y-4 pt-5">
@@ -472,7 +571,7 @@ export default function NewTeamPage() {
           </Card>
 
           <div className="flex gap-3">
-            <Button type="button" variant="outline" onClick={() => setStep(0)} className="flex-1 rounded-full border-[#dce3ea] text-[#5c6a7a]" style={{ minHeight: 48 }}>
+            <Button type="button" variant="outline" onClick={() => goToStep(1)} className="flex-1 rounded-full border-[#dce3ea] text-[#5c6a7a]" style={{ minHeight: 48 }}>
               ← 戻る
             </Button>
             <Button type="submit" className="flex-1 rounded-full bg-[#005F8C] hover:bg-[#004E73]" style={{ minHeight: 48 }}>
@@ -483,7 +582,7 @@ export default function NewTeamPage() {
       )}
 
       {/* ===== Step 3: 画像 ===== */}
-      {step === 2 && (
+      {step === 3 && (
         <div className="space-y-4">
           <Card className="border-[#dce3ea]">
             <CardContent className="space-y-5 pt-5">
@@ -550,7 +649,7 @@ export default function NewTeamPage() {
           </Card>
 
           <div className="flex gap-3">
-            <Button type="button" variant="outline" onClick={() => setStep(1)} className="flex-1 rounded-full border-[#dce3ea] text-[#5c6a7a]" style={{ minHeight: 48 }}>
+            <Button type="button" variant="outline" onClick={() => goToStep(2)} className="flex-1 rounded-full border-[#dce3ea] text-[#5c6a7a]" style={{ minHeight: 48 }}>
               ← 戻る
             </Button>
             <Button type="button" disabled={uploading} onClick={handleStep3Next} className="flex-1 rounded-full bg-[#005F8C] hover:bg-[#004E73] disabled:opacity-40" style={{ minHeight: 48 }}>
@@ -560,8 +659,8 @@ export default function NewTeamPage() {
         </div>
       )}
 
-      {/* ===== Step 4: 料金設定（2セクション構成） ===== */}
-      {step === 3 && (
+      {/* ===== Step 4: 料金設定 ===== */}
+      {step === 4 && (
         <form onSubmit={handleSubmit} className="space-y-5">
 
           {/* ── セクション1: メンバーシップ ── */}
@@ -673,7 +772,7 @@ export default function NewTeamPage() {
                       </div>
                     </div>
 
-                    {/* 回数券（参加費内のチェックボックス） */}
+                    {/* 回数券 */}
                     <div className="border-t border-[#dce3ea]/30 pt-3 space-y-2">
                       <label className="flex cursor-pointer items-center gap-2.5">
                         <input type="checkbox" checked={hasPointCard} onChange={(e) => setHasPointCard(e.target.checked)} className="h-4 w-4 rounded border-[#dce3ea] accent-[#005F8C]" />
@@ -702,7 +801,7 @@ export default function NewTeamPage() {
           </div>
 
           <div className="flex gap-3 pt-1">
-            <Button type="button" variant="outline" onClick={() => setStep(2)} className="flex-1 rounded-full border-[#dce3ea] text-[#5c6a7a]" style={{ minHeight: 48 }}>
+            <Button type="button" variant="outline" onClick={() => goToStep(3)} className="flex-1 rounded-full border-[#dce3ea] text-[#5c6a7a]" style={{ minHeight: 48 }}>
               ← 戻る
             </Button>
             <Button type="submit" disabled={isPending} className="flex-1 rounded-full bg-[#005F8C] hover:bg-[#004E73]" style={{ minHeight: 48 }}>
@@ -713,8 +812,8 @@ export default function NewTeamPage() {
       )}
 
       {/* ===== Step 5: 決済設定 ===== */}
-      {step === 4 && createdTeamId && (
-        <Step5PaymentSetup teamId={createdTeamId} />
+      {step === 5 && createdTeamId && (
+        <Step6PaymentSetup teamId={createdTeamId} />
       )}
     </div>
   )
