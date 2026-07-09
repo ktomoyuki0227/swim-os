@@ -117,7 +117,8 @@ export const sessionSchema = z.object({
   })).optional(),
 })
 
-// グループ更新用（更新可能フィールドのみ。coach_id / invite_code 等は除外）
+// グループ更新用（更新可能フィールドのみ。coach_id / invite_code / team_type は除外）
+// team_type は作成時のみ設定可能。作成後の変更は不可。
 export const teamUpdateSchema = z.object({
   name: z.string().min(1, "グループ名を入力してください").max(100, "100文字以内").optional(),
   description: z.string().max(2000, "2000文字以内").optional(),

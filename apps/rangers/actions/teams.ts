@@ -460,7 +460,7 @@ export async function getPublicTeams(options?: { q?: string; excludeUserId?: str
 
   let query = admin
     .from("teams")
-    .select("id, name, description, avatar_url, coach_id")
+    .select("id, name, description, avatar_url, coach_id, team_type")
     .eq("status", "active")
     .order("created_at", { ascending: false })
     .limit(20)
