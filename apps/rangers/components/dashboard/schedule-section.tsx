@@ -221,7 +221,7 @@ export function ScheduleSection({ sessions, teams }: Props) {
           </div>
         ) : (
           <div className="flex flex-col gap-2">
-            {sorted.slice(0, 10).map((session) => (
+            {sorted.map((session) => (
               <Link
                 key={session.id}
                 href={`/teams/${session.team_id}/sessions/${session.id}`}

@@ -46,8 +46,8 @@ export default async function DashboardPage() {
   const allTeams = (teamsData || []) as Record<string, unknown>[]
 
   const now = new Date()
-  const hour = now.getHours()
-  const greeting = hour < 12 ? "おはようございます" : hour < 18 ? "こんにちは" : "こんばんは"
+  const jstHour = (now.getUTCHours() + 9) % 24
+  const greeting = jstHour < 12 ? "おはようございます" : jstHour < 18 ? "こんにちは" : "こんばんは"
   const userName = profile?.name || ""
 
   // ── グループなし: オンボーディング画面 ────────────────────────
@@ -182,7 +182,7 @@ export default async function DashboardPage() {
   type SessionRaw = Record<string, unknown> & { team_name: string; team_color: string }
   const allSessions: SessionRaw[] = []
 
-  for (const team of allTeams.slice(0, 5)) {
+  for (const team of allTeams.slice(0, 8)) {
     const { data: sessions } = await getTeamSessions(team.id as string)
     if (sessions) {
       allSessions.push(
@@ -218,7 +218,7 @@ export default async function DashboardPage() {
     is_registered: registeredIds.has(s.id as string),
   }))
 
-  const teamFilterOptions: TeamFilterOption[] = allTeams.slice(0, 5).map((team) => ({
+  const teamFilterOptions: TeamFilterOption[] = allTeams.slice(0, 8).map((team) => ({
     id: team.id as string,
     name: team.name as string,
     color: teamColors[team.id as string],
@@ -230,7 +230,7 @@ export default async function DashboardPage() {
       <section>
         <div className="mb-2 flex items-center justify-between">
           <h2 className="text-lg font-semibold leading-[1.4] text-[#1a2332]">あなたのグループ</h2>
-          {allTeams.length > 4 && (
+          {allTeams.length > 8 && (
             <Link href="/teams" className="inline-flex min-h-[44px] items-center text-sm text-[#005F8C] hover:underline">
               すべて見る →
             </Link>

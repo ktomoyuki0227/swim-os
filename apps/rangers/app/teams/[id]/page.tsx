@@ -133,7 +133,7 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
         (s: Record<string, unknown>) =>
           s.session_status === "open" || s.session_status === "confirmed"
       )
-      .slice(0, 5)
+      .slice(0, 10)
     const announcements = (announcementsResult.data || []) as Array<{
       id: string
       title: string

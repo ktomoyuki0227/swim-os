@@ -9,6 +9,7 @@ type Filter = "upcoming" | "past"
 
 const SESSION_TYPE_LABELS: Record<string, string> = {
   practice: "練習",
+  camp: "合宿",
   competition: "大会",
   meeting: "ミーティング",
   event: "イベント",
