@@ -50,7 +50,7 @@ export default async function TeamsPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
           {teams.map((team: Record<string, unknown>) => {
             const isAdmin = team.my_role === "admin"
             const avatarUrl = team.avatar_url as string | null
@@ -70,7 +70,7 @@ export default async function TeamsPage() {
                         alt={teamName}
                         fill
                         className="object-cover"
-                        sizes="(max-width: 768px) 50vw, 300px"
+                        sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                       />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center text-3xl font-bold text-white">
