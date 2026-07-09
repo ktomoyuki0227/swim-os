@@ -20,6 +20,13 @@ export function PricingSimulatorButton({ memberPrice, onApply }: PricingSimulato
   const [open, setOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
 
+  // 入力値を親側で保持（ポップアップを閉じても残る）
+  const [savedInputs, setSavedInputs] = useState({
+    avgAttendance: "",
+    cardSessions: "",
+    inputMemberPrice: "",
+  })
+
   useEffect(() => { setMounted(true) }, [])
 
   useEffect(() => {
@@ -53,7 +60,8 @@ export function PricingSimulatorButton({ memberPrice, onApply }: PricingSimulato
 
       {mounted && open && createPortal(
         <PricingSimulatorModal
-          memberPrice={memberPrice}
+          initialInputs={savedInputs}
+          onInputsChange={setSavedInputs}
           onClose={() => setOpen(false)}
           onApply={onApply ? (values) => { onApply(values); setOpen(false) } : undefined}
         />,
@@ -63,14 +71,26 @@ export function PricingSimulatorButton({ memberPrice, onApply }: PricingSimulato
   )
 }
 
-function PricingSimulatorModal({ memberPrice, onClose, onApply }: {
-  memberPrice: number
+interface SimInputs {
+  avgAttendance: string
+  cardSessions: string
+  inputMemberPrice: string
+}
+
+function PricingSimulatorModal({ initialInputs, onInputsChange, onClose, onApply }: {
+  initialInputs: SimInputs
+  onInputsChange: (inputs: SimInputs) => void
   onClose: () => void
   onApply?: (values: ApplyValues) => void
 }) {
-  const [avgAttendance, setAvgAttendance] = useState("")
-  const [cardSessions, setCardSessions] = useState("10")
-  const [inputMemberPrice, setInputMemberPrice] = useState(String(memberPrice || 1000))
+  const [avgAttendance, setAvgAttendance] = useState(initialInputs.avgAttendance)
+  const [cardSessions, setCardSessions] = useState(initialInputs.cardSessions)
+  const [inputMemberPrice, setInputMemberPrice] = useState(initialInputs.inputMemberPrice)
+
+  // 入力値が変わるたびに親に保存
+  useEffect(() => {
+    onInputsChange({ avgAttendance, cardSessions, inputMemberPrice })
+  }, [avgAttendance, cardSessions, inputMemberPrice, onInputsChange])
 
   const price = parseInt(inputMemberPrice) || 0
   const avg = parseInt(avgAttendance) || 0
@@ -126,6 +146,7 @@ function PricingSimulatorModal({ memberPrice, onClose, onApply }: {
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#5c6a7a]">¥</span>
                 <Input
                   type="number" min="0" step="100"
+                  placeholder="1000"
                   value={inputMemberPrice}
                   onChange={(e) => setInputMemberPrice(e.target.value)}
                   className="border-[#dce3ea] pl-7"
@@ -136,7 +157,7 @@ function PricingSimulatorModal({ memberPrice, onClose, onApply }: {
               <div className="space-y-1">
                 <Label className="text-xs">平均参加回数/月</Label>
                 <Input
-                  type="number" min="1" max="30" placeholder="例: 3"
+                  type="number" min="1" max="30" placeholder="3"
                   value={avgAttendance}
                   onChange={(e) => setAvgAttendance(e.target.value)}
                   className="border-[#dce3ea]"
@@ -146,11 +167,11 @@ function PricingSimulatorModal({ memberPrice, onClose, onApply }: {
                 <Label className="text-xs">回数券のスタンプ枚数</Label>
                 <Input
                   type="number" min="1" max="50"
+                  placeholder="10"
                   value={cardSessions}
                   onChange={(e) => setCardSessions(e.target.value)}
                   className="border-[#dce3ea]"
                 />
-                <p className="text-[10px] text-[#8d99a8]">例: 10回券なら10</p>
               </div>
             </div>
           </div>

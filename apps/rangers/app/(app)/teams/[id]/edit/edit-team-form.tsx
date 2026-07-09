@@ -71,7 +71,6 @@ export function EditTeamForm({ team, stripeEnabled, connectStatus }: EditTeamFor
   const [hasAnnualFee, setHasAnnualFee] = useState(team.has_annual_fee)
   const [hasMonthlyFee, setHasMonthlyFee] = useState(team.has_monthly_fee)
   const [hasPointCard, setHasPointCard] = useState(team.has_point_card)
-  const [feeExempt, setFeeExempt] = useState(team.fee_members_exempt_session)
 
   // Image state
   const [coverPreview, setCoverPreview] = useState<string | null>(team.cover_image_url)
@@ -200,7 +199,7 @@ export function EditTeamForm({ team, stripeEnabled, connectStatus }: EditTeamFor
         point_card_price: hasPointCard ? (Number.isNaN(pointCardPriceVal) ? undefined : pointCardPriceVal) : undefined,
         contact_email: (data.get("contact_email") as string) || null,
         contact_phone: (data.get("contact_phone") as string) || null,
-        fee_members_exempt_session: feeExempt,
+        fee_members_exempt_session: team.fee_members_exempt_session,
       }
 
       if (newCoverUrl) payload.cover_image_url = newCoverUrl
@@ -503,6 +502,67 @@ export function EditTeamForm({ team, stripeEnabled, connectStatus }: EditTeamFor
           </CardContent>
         </Card>
 
+        {/* ── メンバーシップ ── */}
+        <div>
+          <div className="mb-1 flex items-center gap-2">
+            <span className="text-base">👥</span>
+            <h3 className="text-sm font-semibold text-[#1a2332]">メンバーシップ</h3>
+            <PricingSimulatorButton memberPrice={team.default_member_price ?? 1000} onApply={handleSimulatorApply} />
+          </div>
+          <p className="mb-2 text-xs text-[#5c6a7a]">継続的な会費を設定する場合に有効にしてください</p>
+          <div className="space-y-2">
+            <div className={`overflow-hidden rounded-[14px] border transition-colors ${hasAnnualFee ? "border-[#005F8C]/30" : "border-[#dce3ea]"}`}>
+              <div className="flex items-center gap-3 px-4 py-3">
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-[#1a2332]">年会費</p>
+                  <p className="text-xs text-[#5c6a7a]">年1回の会費を徴収</p>
+                </div>
+                <button type="button" onClick={() => setHasAnnualFee(!hasAnnualFee)}
+                  className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${hasAnnualFee ? "bg-[#005F8C]" : "bg-[#dce3ea]"}`}>
+                  <span className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${hasAnnualFee ? "translate-x-5" : "translate-x-0"}`} />
+                </button>
+              </div>
+              {hasAnnualFee && (
+                <div className="border-t border-[#dce3ea]/50 bg-[#f2f7fa]/50 px-4 py-3">
+                  <div className="space-y-1">
+                    <Label htmlFor="annual_fee_amount" className="text-xs">金額</Label>
+                    <div className="relative w-40">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#5c6a7a]">¥</span>
+                      <Input id="annual_fee_amount" name="annual_fee_amount" type="number" min="0" step="100" defaultValue={team.annual_fee_amount ?? ""} placeholder="0" className="border-[#dce3ea] pl-7" />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className={`overflow-hidden rounded-[14px] border transition-colors ${hasMonthlyFee ? "border-[#005F8C]/30" : "border-[#dce3ea]"}`}>
+              <div className="flex items-center gap-3 px-4 py-3">
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-[#1a2332]">月謝</p>
+                  <p className="text-xs text-[#5c6a7a]">毎月の月謝を徴収</p>
+                </div>
+                <button type="button" onClick={() => setHasMonthlyFee(!hasMonthlyFee)}
+                  className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${hasMonthlyFee ? "bg-[#005F8C]" : "bg-[#dce3ea]"}`}>
+                  <span className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${hasMonthlyFee ? "translate-x-5" : "translate-x-0"}`} />
+                </button>
+              </div>
+              {hasMonthlyFee && (
+                <div className="border-t border-[#dce3ea]/50 bg-[#f2f7fa]/50 px-4 py-3">
+                  <div className="space-y-1">
+                    <Label htmlFor="monthly_fee_amount" className="text-xs">金額</Label>
+                    <div className="relative w-40">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#5c6a7a]">¥</span>
+                      <Input id="monthly_fee_amount" name="monthly_fee_amount" type="number" min="0" step="100" defaultValue={team.monthly_fee_amount ?? ""} placeholder="0" className="border-[#dce3ea] pl-7" />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="h-px bg-[#e8edf2]" />
+
         {/* ── セッション参加費 ── */}
         <div>
           <div className="mb-2 flex items-center gap-2">
@@ -543,17 +603,17 @@ export function EditTeamForm({ team, stripeEnabled, connectStatus }: EditTeamFor
                   <div className="space-y-1">
                     <Label htmlFor="cancellation_days" className="text-xs">キャンセル期限</Label>
                     <div className="flex items-center gap-2">
-                      <Input id="cancellation_days" name="cancellation_days" type="number" min="0" max="30" defaultValue={team.cancellation_days ?? 3} className="w-16 border-[#dce3ea]" />
+                      <Input id="cancellation_days" name="cancellation_days" type="number" min="0" max="30" defaultValue={team.cancellation_days ?? 3} className="w-20 border-[#dce3ea]" />
                       <span className="text-xs text-[#5c6a7a]">日前まで無料キャンセル可</span>
                     </div>
                   </div>
-                  <div className="border-t border-[#dce3ea]/30 pt-3">
+                  <div className="border-t border-[#dce3ea]/30 pt-3 space-y-2">
                     <label className="flex cursor-pointer items-center gap-2.5">
                       <input type="checkbox" checked={hasPointCard} onChange={(e) => setHasPointCard(e.target.checked)} className="h-4 w-4 rounded border-[#dce3ea] accent-[#005F8C]" />
                       <p className="text-xs font-medium text-[#1a2332]">回数券での支払いを受け付ける</p>
                     </label>
                     {hasPointCard && (
-                      <div className="mt-2 ml-6 grid gap-3 grid-cols-2">
+                      <div className="ml-6 grid gap-3 grid-cols-2">
                         <div className="space-y-1">
                           <Label htmlFor="point_card_count" className="text-xs">1枚の回数</Label>
                           <Input id="point_card_count" name="point_card_count" type="number" min="1" max="100" defaultValue={team.point_card_count ?? 10} className="border-[#dce3ea]" />
@@ -571,82 +631,6 @@ export function EditTeamForm({ team, stripeEnabled, connectStatus }: EditTeamFor
                 </div>
               )}
             </div>
-          </div>
-        </div>
-
-        <div className="h-px bg-[#e8edf2]" />
-
-        {/* ── メンバーシップ ── */}
-        <div>
-          <div className="mb-1 flex items-center gap-2">
-            <span className="text-base">👥</span>
-            <h3 className="text-sm font-semibold text-[#1a2332]">メンバーシップ</h3>
-            <PricingSimulatorButton memberPrice={team.default_member_price ?? 1000} onApply={handleSimulatorApply} />
-          </div>
-          <p className="mb-2 text-xs text-[#5c6a7a]">継続的な会費を設定する場合に有効にしてください</p>
-          <div className="space-y-2">
-            <div className={`overflow-hidden rounded-[14px] border transition-colors ${hasAnnualFee ? "border-[#005F8C]/30" : "border-[#dce3ea]"}`}>
-              <div className="flex items-center gap-3 px-4 py-3">
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-[#1a2332]">年会費</p>
-                  <p className="text-xs text-[#5c6a7a]">年1回の会費を徴収</p>
-                </div>
-                <button type="button" onClick={() => { setHasAnnualFee(!hasAnnualFee); if (hasAnnualFee && !hasMonthlyFee) setFeeExempt(false) }}
-                  className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${hasAnnualFee ? "bg-[#005F8C]" : "bg-[#dce3ea]"}`}>
-                  <span className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${hasAnnualFee ? "translate-x-5" : "translate-x-0"}`} />
-                </button>
-              </div>
-              {hasAnnualFee && (
-                <div className="border-t border-[#dce3ea]/50 bg-[#f2f7fa]/50 px-4 py-3">
-                  <div className="space-y-1">
-                    <Label htmlFor="annual_fee_amount" className="text-xs">金額</Label>
-                    <div className="relative w-40">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#5c6a7a]">¥</span>
-                      <Input id="annual_fee_amount" name="annual_fee_amount" type="number" min="0" step="100" defaultValue={team.annual_fee_amount ?? ""} placeholder="0" className="border-[#dce3ea] pl-7" />
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className={`overflow-hidden rounded-[14px] border transition-colors ${hasMonthlyFee ? "border-[#005F8C]/30" : "border-[#dce3ea]"}`}>
-              <div className="flex items-center gap-3 px-4 py-3">
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-[#1a2332]">月謝</p>
-                  <p className="text-xs text-[#5c6a7a]">毎月の月謝を徴収</p>
-                </div>
-                <button type="button" onClick={() => { setHasMonthlyFee(!hasMonthlyFee); if (hasMonthlyFee && !hasAnnualFee) setFeeExempt(false) }}
-                  className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${hasMonthlyFee ? "bg-[#005F8C]" : "bg-[#dce3ea]"}`}>
-                  <span className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${hasMonthlyFee ? "translate-x-5" : "translate-x-0"}`} />
-                </button>
-              </div>
-              {hasMonthlyFee && (
-                <div className="border-t border-[#dce3ea]/50 bg-[#f2f7fa]/50 px-4 py-3">
-                  <div className="space-y-1">
-                    <Label htmlFor="monthly_fee_amount" className="text-xs">金額</Label>
-                    <div className="relative w-40">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#5c6a7a]">¥</span>
-                      <Input id="monthly_fee_amount" name="monthly_fee_amount" type="number" min="0" step="100" defaultValue={team.monthly_fee_amount ?? ""} placeholder="0" className="border-[#dce3ea] pl-7" />
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {(hasAnnualFee || hasMonthlyFee) && hasSessionFee && (
-              <div className={`overflow-hidden rounded-[14px] border transition-colors ${feeExempt ? "border-[#0f8a4f]/30 bg-[#eaf7f0]/30" : "border-[#dce3ea]"}`}>
-                <div className="flex items-center gap-3 px-4 py-3">
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-[#1a2332]">会員特典: 参加費免除</p>
-                    <p className="text-xs text-[#5c6a7a]">会費を払っているメンバーはセッション参加費が無料に</p>
-                  </div>
-                  <button type="button" onClick={() => setFeeExempt(!feeExempt)}
-                    className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${feeExempt ? "bg-[#0f8a4f]" : "bg-[#dce3ea]"}`}>
-                    <span className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${feeExempt ? "translate-x-5" : "translate-x-0"}`} />
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
         </div>
 

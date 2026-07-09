@@ -19,6 +19,7 @@ const STEPS = [
   { label: "詳細設定" },
   { label: "画像" },
   { label: "料金設定" },
+  { label: "決済設定" },
 ]
 
 interface FormData {
@@ -81,6 +82,82 @@ function StepIndicator({ current }: { current: number }) {
   )
 }
 
+function Step5PaymentSetup({ teamId }: { teamId: string }) {
+  const [isLoading, setIsLoading] = useState(false)
+  const { showToast } = useToast()
+
+  const handleSetup = async () => {
+    setIsLoading(true)
+    try {
+      const res = await fetch("/api/stripe/connect/onboarding", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ teamId }),
+      })
+      if (!res.ok) throw new Error("failed")
+      const { url } = await res.json()
+      window.location.href = url
+    } catch {
+      showToast("決済設定の開始に失敗しました", "error")
+      setIsLoading(false)
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* 完了メッセージ */}
+      <div className="flex items-center gap-3 rounded-[14px] bg-[#eaf7f0] px-4 py-3">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#0f8a4f]/10">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0f8a4f" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        </div>
+        <div>
+          <p className="text-sm font-semibold text-[#1a2332]">グループが作成されました！</p>
+          <p className="text-xs text-[#5c6a7a]">あと1ステップで完了です</p>
+        </div>
+      </div>
+
+      {/* 口座登録カード */}
+      <div className="rounded-[14px] border border-[#dce3ea] p-5 space-y-4">
+        <div className="flex items-start gap-3">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#005F8C]/10 text-lg">🏦</span>
+          <div>
+            <p className="text-sm font-semibold text-[#1a2332]">口座情報の登録</p>
+            <p className="mt-1 text-xs leading-relaxed text-[#5c6a7a]">
+              メンバーからの支払いを受け取るために、振込先の口座情報を登録してください。
+              Stripeの安全な画面で本人確認と銀行口座の登録を行います。
+            </p>
+          </div>
+        </div>
+
+        <Button
+          type="button"
+          onClick={handleSetup}
+          disabled={isLoading}
+          className="w-full rounded-full bg-[#005F8C] hover:bg-[#004E73]"
+          style={{ minHeight: 48 }}
+        >
+          {isLoading ? "移動中..." : "口座情報を登録する"}
+        </Button>
+
+        <div className="space-y-1.5 rounded-[10px] bg-[#f2f7fa] p-3">
+          <p className="text-xs font-medium text-[#1a2332]">登録に必要なもの</p>
+          <ul className="space-y-1 text-xs text-[#5c6a7a]">
+            <li className="flex items-center gap-1.5">
+              <span className="text-[#005F8C]">•</span>本人確認書類（運転免許証 or パスポート）
+            </li>
+            <li className="flex items-center gap-1.5">
+              <span className="text-[#005F8C]">•</span>銀行口座情報（銀行名・支店・口座番号）
+            </li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+  )
+}
+
 export default function NewTeamPage() {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
@@ -111,12 +188,14 @@ export default function NewTeamPage() {
   const coverInputRef = useRef<HTMLInputElement>(null)
   const iconInputRef = useRef<HTMLInputElement>(null)
 
+  // Created team ID (Step 5 で使用)
+  const [createdTeamId, setCreatedTeamId] = useState<string | null>(null)
+
   // Fee state
   const [hasSessionFee, setHasSessionFee] = useState(true)
   const [hasAnnualFee, setHasAnnualFee] = useState(false)
   const [hasMonthlyFee, setHasMonthlyFee] = useState(false)
   const [hasPointCard, setHasPointCard] = useState(false)
-  const [feeExempt, setFeeExempt] = useState(false)
 
   // シミュレーター適用ハンドラー
   const handleSimulatorApply = (values: { pointCardPrice?: number; monthlyFee?: number; annualFee?: number }) => {
@@ -233,7 +312,7 @@ export default function NewTeamPage() {
       point_card_price: hasPointCard ? (Number.isNaN(pointCardPriceVal) ? undefined : pointCardPriceVal) : undefined,
       contact_email: form.contact_email || undefined,
       contact_phone: form.contact_phone || undefined,
-      fee_members_exempt_session: feeExempt,
+      fee_members_exempt_session: false,
     }
 
     startTransition(async () => {
@@ -241,7 +320,15 @@ export default function NewTeamPage() {
       if (result.error) {
         showToast(result.error, "error")
       } else if (result.data) {
-        router.push(`/teams/${result.data.id}`)
+        const hasFees = hasSessionFee || hasAnnualFee || hasMonthlyFee
+        setCreatedTeamId(result.data.id)
+        if (hasFees) {
+          // 料金設定ありの場合: Step 5（決済設定）に遷移
+          setStep(4)
+        } else {
+          // 料金なし: チーム詳細ページに遷移
+          router.push(`/teams/${result.data.id}`)
+        }
       }
     })
   }
@@ -392,9 +479,6 @@ export default function NewTeamPage() {
               次へ →
             </Button>
           </div>
-          <button type="button" onClick={() => { setStep(2) }} className="w-full text-center text-sm text-[#005F8C] hover:underline" style={{ minHeight: 44 }}>
-            スキップ →
-          </button>
         </form>
       )}
 
@@ -473,9 +557,6 @@ export default function NewTeamPage() {
               {uploading ? "アップロード中..." : "次へ →"}
             </Button>
           </div>
-          <button type="button" onClick={() => { setStep(3) }} className="w-full text-center text-sm text-[#005F8C] hover:underline" style={{ minHeight: 44 }}>
-            スキップ →
-          </button>
         </div>
       )}
 
@@ -483,91 +564,7 @@ export default function NewTeamPage() {
       {step === 3 && (
         <form onSubmit={handleSubmit} className="space-y-5">
 
-          {/* ── セクション1: セッション参加費 ── */}
-          <div>
-            <div className="mb-2 flex items-center gap-2">
-              <span className="text-base">💰</span>
-              <h3 className="text-sm font-semibold text-[#1a2332]">セッション参加費</h3>
-              <PricingSimulatorButton memberPrice={1000} onApply={handleSimulatorApply} />
-            </div>
-            <div className="space-y-2">
-              {/* 参加費トグル */}
-              <div className={`overflow-hidden rounded-[14px] border transition-colors ${hasSessionFee ? "border-[#005F8C]/30" : "border-[#dce3ea]"}`}>
-                <div className="flex items-center gap-3 px-4 py-3">
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-[#1a2332]">参加費を設定する</p>
-                    <p className="text-xs text-[#5c6a7a]">練習・イベントごとに料金を徴収</p>
-                  </div>
-                  <button type="button" onClick={() => setHasSessionFee(!hasSessionFee)}
-                    className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${hasSessionFee ? "bg-[#005F8C]" : "bg-[#dce3ea]"}`}>
-                    <span className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${hasSessionFee ? "translate-x-5" : "translate-x-0"}`} />
-                  </button>
-                </div>
-                {hasSessionFee && (
-                  <div className="border-t border-[#dce3ea]/50 bg-[#f2f7fa]/50 px-4 py-3 space-y-3">
-                    <div className="grid gap-3 grid-cols-2">
-                      <div className="space-y-1">
-                        <Label htmlFor="default_member_price" className="text-xs">メンバー料金</Label>
-                        <div className="relative">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#5c6a7a]">¥</span>
-                          <Input id="default_member_price" name="default_member_price" type="number" min="0" step="100" defaultValue="1000" className="border-[#dce3ea] pl-7" />
-                        </div>
-                      </div>
-                      <div className="space-y-1">
-                        <Label htmlFor="default_guest_price" className="text-xs">ゲスト料金</Label>
-                        <div className="relative">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#5c6a7a]">¥</span>
-                          <Input id="default_guest_price" name="default_guest_price" type="number" min="0" step="100" defaultValue="1500" className="border-[#dce3ea] pl-7" />
-                        </div>
-                      </div>
-                    </div>
-                    <div className="space-y-1">
-                      <Label htmlFor="cancellation_days" className="text-xs">キャンセル期限</Label>
-                      <div className="flex items-center gap-2">
-                        <Input id="cancellation_days" name="cancellation_days" type="number" min="0" max="30" defaultValue="3" className="w-16 border-[#dce3ea]" />
-                        <span className="text-xs text-[#5c6a7a]">日前まで無料キャンセル可</span>
-                      </div>
-                    </div>
-
-                    {/* 回数券（参加費内のチェックボックス） */}
-                    <div className="border-t border-[#dce3ea]/30 pt-3">
-                      <label className="flex cursor-pointer items-center gap-2.5">
-                        <input
-                          type="checkbox"
-                          checked={hasPointCard}
-                          onChange={(e) => setHasPointCard(e.target.checked)}
-                          className="h-4 w-4 rounded border-[#dce3ea] accent-[#005F8C]"
-                        />
-                        <div>
-                          <p className="text-xs font-medium text-[#1a2332]">回数券での支払いを受け付ける</p>
-                        </div>
-                      </label>
-                      {hasPointCard && (
-                        <div className="mt-2 ml-6 grid gap-3 grid-cols-2">
-                          <div className="space-y-1">
-                            <Label htmlFor="point_card_count" className="text-xs">1枚の回数</Label>
-                            <Input id="point_card_count" name="point_card_count" type="number" min="1" max="100" defaultValue="10" className="border-[#dce3ea]" />
-                          </div>
-                          <div className="space-y-1">
-                            <Label htmlFor="point_card_price" className="text-xs">販売価格（任意）</Label>
-                            <div className="relative">
-                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#5c6a7a]">¥</span>
-                              <Input id="point_card_price" name="point_card_price" type="number" min="0" step="100" placeholder="未設定" className="border-[#dce3ea] pl-7" />
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* ── 区切り線 ── */}
-          <div className="h-px bg-[#e8edf2]" />
-
-          {/* ── セクション2: メンバーシップ ── */}
+          {/* ── セクション1: メンバーシップ ── */}
           <div>
             <div className="mb-1 flex items-center gap-2">
               <span className="text-base">👥</span>
@@ -583,7 +580,7 @@ export default function NewTeamPage() {
                     <p className="text-sm font-medium text-[#1a2332]">年会費</p>
                     <p className="text-xs text-[#5c6a7a]">年1回の会費を徴収</p>
                   </div>
-                  <button type="button" onClick={() => { setHasAnnualFee(!hasAnnualFee); if (hasAnnualFee && !hasMonthlyFee) setFeeExempt(false) }}
+                  <button type="button" onClick={() => setHasAnnualFee(!hasAnnualFee)}
                     className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${hasAnnualFee ? "bg-[#005F8C]" : "bg-[#dce3ea]"}`}>
                     <span className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${hasAnnualFee ? "translate-x-5" : "translate-x-0"}`} />
                   </button>
@@ -608,7 +605,7 @@ export default function NewTeamPage() {
                     <p className="text-sm font-medium text-[#1a2332]">月謝</p>
                     <p className="text-xs text-[#5c6a7a]">毎月の月謝を徴収</p>
                   </div>
-                  <button type="button" onClick={() => { setHasMonthlyFee(!hasMonthlyFee); if (hasMonthlyFee && !hasAnnualFee) setFeeExempt(false) }}
+                  <button type="button" onClick={() => setHasMonthlyFee(!hasMonthlyFee)}
                     className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${hasMonthlyFee ? "bg-[#005F8C]" : "bg-[#dce3ea]"}`}>
                     <span className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${hasMonthlyFee ? "translate-x-5" : "translate-x-0"}`} />
                   </button>
@@ -625,22 +622,82 @@ export default function NewTeamPage() {
                   </div>
                 )}
               </div>
+            </div>
+          </div>
 
-              {/* 会員特典: 参加費免除 */}
-              {(hasAnnualFee || hasMonthlyFee) && hasSessionFee && (
-                <div className={`overflow-hidden rounded-[14px] border transition-colors ${feeExempt ? "border-[#0f8a4f]/30 bg-[#eaf7f0]/30" : "border-[#dce3ea]"}`}>
-                  <div className="flex items-center gap-3 px-4 py-3">
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-[#1a2332]">会員特典: 参加費免除</p>
-                      <p className="text-xs text-[#5c6a7a]">会費を払っているメンバーはセッション参加費が無料に</p>
-                    </div>
-                    <button type="button" onClick={() => setFeeExempt(!feeExempt)}
-                      className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${feeExempt ? "bg-[#0f8a4f]" : "bg-[#dce3ea]"}`}>
-                      <span className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${feeExempt ? "translate-x-5" : "translate-x-0"}`} />
-                    </button>
+          {/* ── 区切り線 ── */}
+          <div className="h-px bg-[#e8edf2]" />
+
+          {/* ── セクション2: セッション参加費 ── */}
+          <div>
+            <div className="mb-2 flex items-center gap-2">
+              <span className="text-base">💰</span>
+              <h3 className="text-sm font-semibold text-[#1a2332]">セッション参加費</h3>
+              <PricingSimulatorButton memberPrice={1000} onApply={handleSimulatorApply} />
+            </div>
+            <div className="space-y-2">
+              <div className={`overflow-hidden rounded-[14px] border transition-colors ${hasSessionFee ? "border-[#005F8C]/30" : "border-[#dce3ea]"}`}>
+                <div className="flex items-center gap-3 px-4 py-3">
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-[#1a2332]">参加費を設定する</p>
+                    <p className="text-xs text-[#5c6a7a]">練習・イベントごとに料金を徴収</p>
                   </div>
+                  <button type="button" onClick={() => setHasSessionFee(!hasSessionFee)}
+                    className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${hasSessionFee ? "bg-[#005F8C]" : "bg-[#dce3ea]"}`}>
+                    <span className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${hasSessionFee ? "translate-x-5" : "translate-x-0"}`} />
+                  </button>
                 </div>
-              )}
+                {hasSessionFee && (
+                  <div className="border-t border-[#dce3ea]/50 bg-[#f2f7fa]/50 px-4 py-3 space-y-3">
+                    <div className="grid gap-3 grid-cols-2">
+                      <div className="space-y-1">
+                        <Label htmlFor="default_member_price" className="text-xs">メンバー料金</Label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#5c6a7a]">¥</span>
+                          <Input id="default_member_price" name="default_member_price" type="number" min="0" step="100" placeholder="1000" className="border-[#dce3ea] pl-7" />
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <Label htmlFor="default_guest_price" className="text-xs">ゲスト料金</Label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#5c6a7a]">¥</span>
+                          <Input id="default_guest_price" name="default_guest_price" type="number" min="0" step="100" placeholder="1500" className="border-[#dce3ea] pl-7" />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="cancellation_days" className="text-xs">キャンセル期限</Label>
+                      <div className="flex items-center gap-2">
+                        <Input id="cancellation_days" name="cancellation_days" type="number" min="0" max="30" placeholder="3" className="w-20 border-[#dce3ea]" />
+                        <span className="text-xs text-[#5c6a7a]">日前まで無料キャンセル可</span>
+                      </div>
+                    </div>
+
+                    {/* 回数券（参加費内のチェックボックス） */}
+                    <div className="border-t border-[#dce3ea]/30 pt-3 space-y-2">
+                      <label className="flex cursor-pointer items-center gap-2.5">
+                        <input type="checkbox" checked={hasPointCard} onChange={(e) => setHasPointCard(e.target.checked)} className="h-4 w-4 rounded border-[#dce3ea] accent-[#005F8C]" />
+                        <p className="text-xs font-medium text-[#1a2332]">回数券での支払いを受け付ける</p>
+                      </label>
+                      {hasPointCard && (
+                        <div className="ml-6 grid gap-3 grid-cols-2">
+                          <div className="space-y-1">
+                            <Label htmlFor="point_card_count" className="text-xs">1枚の回数</Label>
+                            <Input id="point_card_count" name="point_card_count" type="number" min="1" max="100" placeholder="10" className="border-[#dce3ea]" />
+                          </div>
+                          <div className="space-y-1">
+                            <Label htmlFor="point_card_price" className="text-xs">販売価格（任意）</Label>
+                            <div className="relative">
+                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#5c6a7a]">¥</span>
+                              <Input id="point_card_price" name="point_card_price" type="number" min="0" step="100" placeholder="未設定" className="border-[#dce3ea] pl-7" />
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -653,6 +710,11 @@ export default function NewTeamPage() {
             </Button>
           </div>
         </form>
+      )}
+
+      {/* ===== Step 5: 決済設定 ===== */}
+      {step === 4 && createdTeamId && (
+        <Step5PaymentSetup teamId={createdTeamId} />
       )}
     </div>
   )

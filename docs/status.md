@@ -1,5 +1,5 @@
 # 作業ステータス
-最終更新: 2026-07-03
+最終更新: 2026-07-09
 
 ---
 
@@ -806,11 +806,48 @@ commits: `5a7aef6`, `60f017b`, `acc7874`, `177701a`, `b4d5d2e` → main
 
 ---
 
+## 直近でやったこと（2026-07-03〜07-09）
+
+### グループ作成フロー 5ステップ化 ✅
+
+**`apps/rangers/app/(app)/teams/new/page.tsx`**
+- Step 5（決済設定）を条件付き表示に変更
+  - `has_session_fee || has_annual_fee || has_monthly_fee` のいずれか1つでも ON の場合のみ Step 5 に遷移
+  - 料金なしの場合はグループ詳細ページに直接遷移
+- Step 5 内の「グループが作成されました」バナーをコンパクト化（`py-3` → `py-2`）
+- 「口座情報を登録する」ボタンの Stripe Connect onboarding フローを実装
+
+**`apps/rangers/app/(app)/teams/[id]/edit/edit-team-form.tsx`**
+- `feeExempt` ローカルステートを削除し `team.fee_members_exempt_session` を直接参照するよう修正
+- 編集フォームにメンバーシップ・セッション参加費セクションを追加（新規作成フォームとUI統一）
+
+**`apps/rangers/components/pricing-simulator.tsx`**
+- 料金シミュレーターをポップアップ（ダイアログ）形式に変更
+
+### Stripe Connect 調査・有効化 ✅
+
+- ボタンを押すと「決済設定の開始に失敗しました」が出る問題を調査
+- 原因: Stripe ダッシュボードで Connect 機能が未有効化だった
+- 対応: ともくんが Stripe Dashboard で Connect（Marketplace）を有効化
+- Stripe SDK バージョン、RLS ポリシー、team_members の status デフォルト値はすべて問題なし確認済み
+
+### ローカル開発での Stripe Connect コールバック問題を特定 ✅
+
+- ローカルで口座登録を完了すると `swim-os-seven.vercel.app` にリダイレクトされる
+- Vercel 側はログイン状態でないため `stripe_onboarding_completed` が DB に保存されない
+- **Fix: `.env.local` に `NEXT_PUBLIC_APP_URL=http://localhost:3000` を追加する（未実施）**
+
+---
+
 ## 次にやること
 
 ### P1（近日中）
 
-1. **ページ単位の UI/UX ブラッシュアップ 続き**
+1. **`.env.local` に `NEXT_PUBLIC_APP_URL=http://localhost:3000` を追加してローカルで Stripe Connect 動作確認**
+   - 追加後 `npm run dev` 再起動 → グループ作成 Step 5 で口座登録完了まで通す
+   - `stripe_onboarding_completed = true` が DB に保存されるか確認
+
+2. **ページ単位の UI/UX ブラッシュアップ 続き**
    - ✅ 完了: dashboard, teams（一覧・詳細 管理者/メンバー）
    - 次の対象: sessions → profile → payments → fees → auth → public の順
    - 方針: コンポーネントの種類・配置の変更も OK（ユーザー体験が向上するなら積極的に提案）
