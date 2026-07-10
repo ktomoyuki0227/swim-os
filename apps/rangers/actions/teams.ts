@@ -444,7 +444,7 @@ export async function joinTeamAction(
   redirect(`/teams/${result.data.id}`)
 }
 
-export async function getPublicTeams(options?: { q?: string; excludeUserId?: string }) {
+export async function getPublicTeams(options?: { q?: string; excludeUserId?: string; teamType?: "team" | "personal" }) {
   const admin = createAdminClient()
 
   // ログインユーザーが所属しているグループIDを取得して除外
@@ -467,6 +467,10 @@ export async function getPublicTeams(options?: { q?: string; excludeUserId?: str
 
   if (options?.q) {
     query = query.ilike("name", `%${options.q}%`)
+  }
+
+  if (options?.teamType) {
+    query = query.eq("team_type", options.teamType)
   }
 
   if (excludeIds.length > 0) {

@@ -615,6 +615,7 @@ export async function getPublicSessions(filters?: {
   location?: string
   from?: string
   to?: string
+  type?: string
 }) {
   const supabase = await createClient()
 
@@ -637,6 +638,10 @@ export async function getPublicSessions(filters?: {
   }
   if (filters?.location) {
     query = query.ilike("location", `%${filters.location}%`)
+  }
+
+  if (filters?.type) {
+    query = query.eq("type", filters.type)
   }
 
   const { data, error } = await query

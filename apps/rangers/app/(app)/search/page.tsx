@@ -1,10 +1,11 @@
+import Image from "next/image"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
 import { getPublicSessions } from "@/actions/sessions"
 import { getPublicTeams } from "@/actions/teams"
 import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { SearchBar } from "./search-bar"
+import { FilterChips } from "./filter-chips"
 
 const SESSION_TYPE_LABELS: Record<string, string> = {
   practice: "練習",
@@ -14,34 +15,65 @@ const SESSION_TYPE_LABELS: Record<string, string> = {
   meeting: "ミーティング",
 }
 
+const SESSION_TYPE_OPTIONS = [
+  { key: "all", label: "すべて" },
+  { key: "practice", label: "練習" },
+  { key: "camp", label: "合宿" },
+  { key: "competition", label: "大会" },
+  { key: "event", label: "イベント" },
+  { key: "meeting", label: "ミーティング" },
+]
+
+const TEAM_TYPE_OPTIONS = [
+  { key: "all", label: "すべて" },
+  { key: "team", label: "チーム" },
+  { key: "personal", label: "パーソナル" },
+]
+
 interface SearchPageProps {
-  searchParams: Promise<{ tab?: string; q?: string; location?: string }>
+  searchParams: Promise<{
+    tab?: string
+    q?: string
+    location?: string
+    teamType?: string
+    sessionType?: string
+  }>
 }
 
 export default async function SearchPage({ searchParams }: SearchPageProps) {
   const params = await searchParams
   const tab = params.tab === "teams" ? "teams" : "sessions"
-  // q を優先、旧来の location パラメータにも対応
   const q = params.q || params.location || ""
+  const teamType = params.teamType || "all"
+  const sessionType = params.sessionType || "all"
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  // タブ切り替えリンク（現在の q を引き継ぐ）
   const makeTabHref = (t: string) => {
     const p = new URLSearchParams({ tab: t })
     if (q) p.set("q", q)
     return `/search?${p.toString()}`
   }
 
+  // フィルターチップに渡す現在のパラメータ文字列（タブ切り替え時にリセットされないよう保持）
+  const currentParams = (() => {
+    const p = new URLSearchParams()
+    if (params.tab) p.set("tab", params.tab)
+    if (params.q) p.set("q", params.q)
+    if (params.teamType) p.set("teamType", params.teamType)
+    if (params.sessionType) p.set("sessionType", params.sessionType)
+    return p.toString()
+  })()
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
         <h1 className="text-lg font-semibold text-[#1a2332]">探す</h1>
         <p className="mt-1 text-sm text-[#5c6a7a]">グループやセッションを見つけましょう</p>
       </div>
 
-      {/* タブ（セグメントタブ） */}
+      {/* タブ */}
       <div className="flex gap-[2px] rounded-[14px] bg-[#f2f7fa] p-1">
         {[
           { key: "sessions", label: "セッション" },
@@ -51,7 +83,10 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             key={t.key}
             href={makeTabHref(t.key)}
             className={`flex min-h-[36px] flex-1 items-center justify-center rounded-[10px] px-[14px] py-2 text-sm transition-colors
-              ${tab === t.key ? "bg-white font-semibold text-[#1a2332] shadow-sm" : "font-normal text-[#5c6a7a] hover:text-[#1a2332]"}`}
+              ${tab === t.key
+                ? "bg-white font-semibold text-[#1a2332] shadow-sm"
+                : "font-normal text-[#5c6a7a] hover:text-[#1a2332]"
+              }`}
           >
             {t.label}
           </Link>
@@ -61,20 +96,29 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
       {/* 検索バー */}
       <SearchBar defaultValue={q} tab={tab} />
 
+      {/* フィルターチップ */}
+      <FilterChips
+        options={tab === "teams" ? TEAM_TYPE_OPTIONS : SESSION_TYPE_OPTIONS}
+        paramKey={tab === "teams" ? "teamType" : "sessionType"}
+        currentValue={tab === "teams" ? teamType : sessionType}
+        currentParams={currentParams}
+      />
+
       {/* 結果 */}
       {tab === "sessions" ? (
-        <SessionResults q={q} />
+        <SessionResults q={q} sessionType={sessionType} />
       ) : (
-        <TeamResults q={q} userId={user?.id} />
+        <TeamResults q={q} userId={user?.id} teamType={teamType} />
       )}
     </div>
   )
 }
 
-async function SessionResults({ q }: { q: string }) {
+async function SessionResults({ q, sessionType }: { q: string; sessionType: string }) {
   const { data: sessions } = await getPublicSessions({
     q: q || undefined,
     from: new Date().toISOString(),
+    type: sessionType !== "all" ? sessionType : undefined,
   })
 
   if (!sessions || sessions.length === 0) {
@@ -102,6 +146,7 @@ async function SessionResults({ q }: { q: string }) {
         return (
           <Card key={session.id as string} className="border-[#dce3ea] transition-all hover:border-[#005F8C]">
             <CardContent className="flex items-center gap-4 p-4">
+              {/* 日付ブロック */}
               <div className="flex w-14 shrink-0 flex-col items-center rounded-[14px] bg-[#005F8C]/10 py-2">
                 <span className="text-xs font-medium text-[#005F8C]">
                   {new Date(session.scheduled_at as string).toLocaleDateString("ja-JP", { month: "short" })}
@@ -113,12 +158,13 @@ async function SessionResults({ q }: { q: string }) {
                   {new Date(session.scheduled_at as string).toLocaleDateString("ja-JP", { weekday: "short" })}
                 </span>
               </div>
+              {/* 内容 */}
               <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-1.5">
                   <p className="font-medium text-[#1a2332]">{session.title as string}</p>
-                  <Badge className="bg-[#edf0f4] text-[#5c6a7a] border-transparent text-xs">
+                  <span className="rounded-full bg-[#edf0f4] px-2 py-0.5 text-xs text-[#5c6a7a]">
                     {SESSION_TYPE_LABELS[session.type as string] || session.type as string}
-                  </Badge>
+                  </span>
                 </div>
                 <p className="text-xs text-[#5c6a7a]">
                   {new Date(session.scheduled_at as string).toLocaleTimeString("ja-JP", {
@@ -143,8 +189,12 @@ async function SessionResults({ q }: { q: string }) {
   )
 }
 
-async function TeamResults({ q, userId }: { q: string; userId?: string }) {
-  const { data: teams } = await getPublicTeams({ q: q || undefined, excludeUserId: userId })
+async function TeamResults({ q, userId, teamType }: { q: string; userId?: string; teamType: string }) {
+  const { data: teams } = await getPublicTeams({
+    q: q || undefined,
+    excludeUserId: userId,
+    teamType: teamType !== "all" ? (teamType as "team" | "personal") : undefined,
+  })
 
   if (!teams || teams.length === 0) {
     return (
@@ -172,16 +222,37 @@ async function TeamResults({ q, userId }: { q: string; userId?: string }) {
         <Link key={team.id as string} href={`/teams/${team.id}`}>
           <Card className="border-[#dce3ea] transition-all hover:border-[#005F8C]">
             <CardContent className="flex items-center gap-4 p-4">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-[14px] bg-[#005F8C]/10 text-base font-bold text-[#005F8C]">
+              {/* アバター */}
+              <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-[14px] bg-[#005F8C]/10">
                 {team.avatar_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={team.avatar_url as string} alt={team.name as string} className="h-full w-full object-cover" />
+                  <Image
+                    src={team.avatar_url as string}
+                    alt={team.name as string}
+                    fill
+                    className="object-cover"
+                    sizes="48px"
+                  />
                 ) : (
-                  (team.name as string)?.[0] || "T"
+                  <div className="flex h-full w-full items-center justify-center text-base font-bold text-[#005F8C]">
+                    {(team.name as string)?.[0] || "T"}
+                  </div>
                 )}
               </div>
+              {/* 内容 */}
               <div className="min-w-0 flex-1">
-                <p className="font-medium text-[#1a2332]">{team.name as string}</p>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <p className="font-medium text-[#1a2332]">{team.name as string}</p>
+                  <span
+                    className="shrink-0 rounded-full px-2 py-0.5 text-xs font-medium"
+                    style={
+                      team.team_type === "personal"
+                        ? { backgroundColor: "#eaf7f0", color: "#0f8a4f" }
+                        : { backgroundColor: "#e8f2f8", color: "#005F8C" }
+                    }
+                  >
+                    {team.team_type === "personal" ? "パーソナル" : "チーム"}
+                  </span>
+                </div>
                 {(team.description as string | null) && (
                   <p className="mt-0.5 line-clamp-2 text-xs text-[#5c6a7a]">
                     {team.description as string}
