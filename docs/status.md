@@ -839,6 +839,39 @@ commits: `5a7aef6`, `60f017b`, `acc7874`, `177701a`, `b4d5d2e` → main
 
 ---
 
+## 直近でやったこと（2026-07-10）
+
+### team_type（チーム/パーソナル）グループ種別機能 全実装完了 ✅
+
+**DB マイグレーション（`supabase/migrations/00028_add_team_type.sql`）**
+- `teams.team_type TEXT NOT NULL DEFAULT 'team' CHECK (team_type IN ('team', 'personal'))` を追加
+- `migration repair` はマイグレーション履歴テーブルを更新するだけでSQLを実行しない仕様のため、直後に `supabase db query --linked` でカラム存在を確認して再実行した（学習済み）
+
+**グループ作成フロー 6ステップ化（`app/(app)/teams/new/page.tsx`）**
+- Step 0: チーム/パーソナルをカードUIで選択（アイコン＋色分け）→ クリックで自動的に Step 1 へ
+- 既存 Step 1〜5 のインデックスを +1 シフト（Step 2〜6 に）
+- すべての戻るボタン index・handleSubmit の team_type payload を確認済み・問題なし
+
+**グループ一覧 フィルター付き表示（`app/(app)/teams/teams-client.tsx` 新規）**
+- サーバー（page.tsx）とクライアント（teams-client.tsx）に分離
+- プルダウンで「すべて / チーム / パーソナル」切り替え
+- 「すべて」表示時はチームセクション → 区切り線 → パーソナルセクションの順
+- 両種別が存在する場合のみセクションヘッダーと区切り線を表示
+
+**バリデーション・アクション（`validations.ts` / `actions/teams.ts`）**
+- `teamSchema` に `team_type: z.enum(["team", "personal"]).default("team")` を追加
+- `teamUpdateSchema` には意図的に除外（作成後変更不可。コメントで明記）
+- `createTeam` の INSERT に `team_type` を追加
+- `getPublicTeams` の SELECT に `team_type` を追加（探すページ用）
+
+**テストデータ整理**
+- テスト用グループ9件（「あ」「い」「1」「a」「６」「b」等）を `db query --linked` で削除
+- 残: マウントリバー水泳クラブ・東京マスターズ水泳クラブの2件のみ
+
+commits: `4c0f37c`, `3e55556`, `12965d6`, `1140a82` → main プッシュ済み
+
+---
+
 ## 次にやること
 
 ### P1（近日中）
@@ -847,9 +880,13 @@ commits: `5a7aef6`, `60f017b`, `acc7874`, `177701a`, `b4d5d2e` → main
    - 追加後 `npm run dev` 再起動 → グループ作成 Step 5 で口座登録完了まで通す
    - `stripe_onboarding_completed = true` が DB に保存されるか確認
 
-2. **ページ単位の UI/UX ブラッシュアップ 続き**
+2. **探すページ（search）のブラッシュアップ**
+   - team_type フィルター（チーム/パーソナル）の追加
+   - UI/UX の改善
+
+3. **ページ単位の UI/UX ブラッシュアップ 続き**
    - ✅ 完了: dashboard, teams（一覧・詳細 管理者/メンバー）
-   - 次の対象: sessions → profile → payments → fees → auth → public の順
+   - 次の対象: search → sessions → profile → payments → fees → auth → public の順
    - 方針: コンポーネントの種類・配置の変更も OK（ユーザー体験が向上するなら積極的に提案）
    - LP ページ `(public)/page.tsx` はアプリ内とは別扱い（独自デザイン）
    - DESIGN.md を必ず参照すること（`apps/rangers/DESIGN.md`）
