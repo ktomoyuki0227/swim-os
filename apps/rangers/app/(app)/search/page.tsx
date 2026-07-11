@@ -125,13 +125,13 @@ async function SessionResults({ q, sessionType }: { q: string; sessionType: stri
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       <p className="text-sm text-[#5c6a7a]">{sessions.length}件のセッション</p>
       {sessions.map((session: Record<string, unknown>) => {
         const team = session.team as Record<string, unknown> | null
         return (
-          <Card key={session.id as string} className="border-[#dce3ea] transition-all hover:border-[#005F8C]">
-            <CardContent className="flex items-center gap-4 p-4">
+          <Card key={session.id as string} className="border-[#dce3ea] py-0 transition-all hover:border-[#005F8C]">
+            <CardContent className="flex items-center gap-4 px-4 py-3">
               {/* 日付ブロック */}
               <div className="flex w-14 shrink-0 flex-col items-center rounded-[14px] bg-[#005F8C]/10 py-2">
                 <span className="text-xs font-medium text-[#005F8C]">
@@ -202,12 +202,12 @@ async function TeamResults({ q, userId, teamType }: { q: string; userId?: string
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-2">
       <p className="text-sm text-[#5c6a7a]">{teams.length}件のグループ</p>
       {teams.map((team: Record<string, unknown>) => (
         <Link key={team.id as string} href={`/teams/${team.id}`}>
-          <Card className="border-[#dce3ea] transition-all hover:border-[#005F8C]">
-            <CardContent className="flex items-center gap-4 p-4">
+          <Card className="border-[#dce3ea] py-0 transition-all hover:border-[#005F8C]">
+            <CardContent className="flex items-center gap-4 px-4 py-3">
               {/* アバター */}
               <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-[14px] bg-[#005F8C]/10">
                 {team.avatar_url ? (
