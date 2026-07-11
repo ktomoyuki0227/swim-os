@@ -5,7 +5,7 @@ import { getPublicSessions } from "@/actions/sessions"
 import { getPublicTeams } from "@/actions/teams"
 import { Card, CardContent } from "@/components/ui/card"
 import { SearchBar } from "./search-bar"
-import { FilterChips } from "./filter-chips"
+import { SearchFiltersBar } from "./search-filters-bar"
 
 const SESSION_TYPE_LABELS: Record<string, string> = {
   practice: "練習",
@@ -14,21 +14,6 @@ const SESSION_TYPE_LABELS: Record<string, string> = {
   event: "イベント",
   meeting: "ミーティング",
 }
-
-const SESSION_TYPE_OPTIONS = [
-  { key: "all", label: "すべて" },
-  { key: "practice", label: "練習" },
-  { key: "camp", label: "合宿" },
-  { key: "competition", label: "大会" },
-  { key: "event", label: "イベント" },
-  { key: "meeting", label: "ミーティング" },
-]
-
-const TEAM_TYPE_OPTIONS = [
-  { key: "all", label: "すべて" },
-  { key: "team", label: "チーム" },
-  { key: "personal", label: "パーソナル" },
-]
 
 interface SearchPageProps {
   searchParams: Promise<{
@@ -56,7 +41,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     return `/search?${p.toString()}`
   }
 
-  // フィルターチップに渡す現在のパラメータ文字列（タブ切り替え時にリセットされないよう保持）
+  // フィルターバーに渡す現在のパラメータ文字列（クライアント側でのURL更新に使用）
   const currentParams = (() => {
     const p = new URLSearchParams()
     if (params.tab) p.set("tab", params.tab)
@@ -67,42 +52,43 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   })()
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="text-lg font-semibold text-[#1a2332]">探す</h1>
-        <p className="mt-1 text-sm text-[#5c6a7a]">グループやセッションを見つけましょう</p>
-      </div>
-
-      {/* タブ */}
-      <div className="flex gap-[2px] rounded-[14px] bg-[#f2f7fa] p-1">
-        {[
-          { key: "sessions", label: "セッション" },
-          { key: "teams", label: "グループ" },
-        ].map((t) => (
-          <Link
-            key={t.key}
-            href={makeTabHref(t.key)}
-            className={`flex min-h-[36px] flex-1 items-center justify-center rounded-[10px] px-[14px] py-2 text-sm transition-colors
-              ${tab === t.key
-                ? "bg-white font-semibold text-[#1a2332] shadow-sm"
-                : "font-normal text-[#5c6a7a] hover:text-[#1a2332]"
-              }`}
-          >
-            {t.label}
-          </Link>
-        ))}
-      </div>
+    <div className="space-y-3">
+      {/* ページタイトル */}
+      <h1 className="text-lg font-semibold text-[#1a2332]">探す</h1>
 
       {/* 検索バー */}
       <SearchBar defaultValue={q} tab={tab} />
 
-      {/* フィルターチップ */}
-      <FilterChips
-        options={tab === "teams" ? TEAM_TYPE_OPTIONS : SESSION_TYPE_OPTIONS}
-        paramKey={tab === "teams" ? "teamType" : "sessionType"}
-        currentValue={tab === "teams" ? teamType : sessionType}
-        currentParams={currentParams}
-      />
+      {/* タブ + フィルター（同一行） */}
+      <div className="flex items-center justify-between gap-3">
+        {/* タブ切り替え */}
+        <div className="flex flex-1 gap-[2px] rounded-[14px] bg-[#f2f7fa] p-1">
+          {[
+            { key: "sessions", label: "セッション" },
+            { key: "teams", label: "グループ" },
+          ].map((t) => (
+            <Link
+              key={t.key}
+              href={makeTabHref(t.key)}
+              className={`flex flex-1 min-h-[36px] items-center justify-center whitespace-nowrap rounded-[10px] px-[14px] py-2 text-sm transition-colors
+                ${tab === t.key
+                  ? "bg-white font-semibold text-[#1a2332] shadow-sm"
+                  : "font-normal text-[#5c6a7a] hover:text-[#1a2332]"
+                }`}
+            >
+              {t.label}
+            </Link>
+          ))}
+        </div>
+
+        {/* フィルターボタン */}
+        <SearchFiltersBar
+          tab={tab}
+          sessionType={sessionType}
+          teamType={teamType}
+          currentParams={currentParams}
+        />
+      </div>
 
       {/* 結果 */}
       {tab === "sessions" ? (
