@@ -214,6 +214,7 @@ export function UpdateCardForm({ hasCard }: { hasCard: boolean }) {
       <Button
         variant={hasCard ? "outline" : "default"}
         onClick={() => setOpen(true)}
+        className="w-full"
         style={{ minHeight: "44px" }}
       >
         {hasCard ? "カードを変更する" : "カードを登録する"}

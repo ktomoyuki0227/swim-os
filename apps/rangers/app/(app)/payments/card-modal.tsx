@@ -91,8 +91,8 @@ export function CardModal({ cardDetails, hasCard }: CardModalProps) {
               </button>
             </div>
 
-            {/* コンテンツ */}
-            <div className="space-y-4 px-5 pb-10">
+            {/* コンテンツ（高さ超過時にスクロール可能） */}
+            <div className="space-y-4 overflow-y-auto px-5 pb-10" style={{ maxHeight: "calc(85vh - 80px)" }}>
               {/* 登録済みカード情報 */}
               {cardDetails ? (
                 <div className="flex items-center gap-3 rounded-[10px] border border-[#dce3ea] bg-[#f2f7fa] px-4 py-3">

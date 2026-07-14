@@ -182,7 +182,7 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
     return true
   })
 
-  // 年月でグループ化（降順）
+  // 年月でグループ化
   const groupedByMonth = new Map<string, PaymentItem[]>()
   for (const item of filtered) {
     const key = `${item.date.getFullYear()}-${String(item.date.getMonth() + 1).padStart(2, "0")}`
