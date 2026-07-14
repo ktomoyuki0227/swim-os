@@ -54,10 +54,18 @@ export function CardModal({ cardDetails, hasCard }: CardModalProps) {
         type="button"
         onClick={() => setIsOpen(true)}
         style={{ minHeight: "44px", minWidth: "44px" }}
-        className="flex items-center justify-center rounded-full border border-[#dce3ea] bg-white text-[#5c6a7a] transition-colors hover:border-[#005F8C] hover:text-[#005F8C]"
+        className={`relative flex items-center justify-center rounded-full border bg-white transition-colors hover:border-[#005F8C] hover:text-[#005F8C] ${
+          hasCard
+            ? "border-[#dce3ea] text-[#5c6a7a]"
+            : "border-[#b8860b] text-[#b8860b]"
+        }`}
         aria-label="クレジットカード管理"
       >
         <CreditCard className="h-5 w-5" />
+        {/* カード未登録時の警告ドット */}
+        {!hasCard && (
+          <span className="absolute right-0.5 top-0.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-[#b8860b]" />
+        )}
       </button>
 
       {/* ボトムシートモーダル（PageTransition の transform 影響を避けるため portal で描画） */}

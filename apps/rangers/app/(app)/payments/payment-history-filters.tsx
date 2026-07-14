@@ -20,8 +20,16 @@ export function PaymentHistoryFilters({ selectedType, selectedSort }: PaymentHis
     router.push(`/payments?${p.toString()}`)
   }
 
-  const selectClass =
-    "w-full appearance-none rounded-full border border-[#dce3ea] bg-white pl-4 pr-8 text-sm text-[#1a2332] focus:outline-none focus:ring-2 focus:ring-[#005F8C]/30"
+  function getSelectClass(isActive: boolean) {
+    return `w-full appearance-none rounded-full border bg-white pl-4 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-[#005F8C]/30 ${
+      isActive
+        ? "border-[#005F8C] text-[#005F8C] font-medium"
+        : "border-[#dce3ea] text-[#1a2332]"
+    }`
+  }
+
+  const typeActive = selectedType !== ""
+  const sortActive = selectedSort !== ""
 
   return (
     <div className="flex gap-2">
@@ -31,14 +39,14 @@ export function PaymentHistoryFilters({ selectedType, selectedSort }: PaymentHis
           value={selectedType}
           onChange={(e) => update("type", e.target.value)}
           style={{ minHeight: "44px" }}
-          className={selectClass}
+          className={getSelectClass(typeActive)}
         >
           <option value="">すべて</option>
           <option value="session">セッション参加費</option>
           <option value="fee">会費</option>
         </select>
         <ChevronDown
-          className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#5c6a7a]"
+          className={`pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 ${typeActive ? "text-[#005F8C]" : "text-[#5c6a7a]"}`}
           aria-hidden="true"
         />
       </div>
@@ -49,13 +57,13 @@ export function PaymentHistoryFilters({ selectedType, selectedSort }: PaymentHis
           value={selectedSort}
           onChange={(e) => update("sort", e.target.value)}
           style={{ minHeight: "44px" }}
-          className={selectClass}
+          className={getSelectClass(sortActive)}
         >
           <option value="">新着順</option>
           <option value="asc">古い順</option>
         </select>
         <ChevronDown
-          className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#5c6a7a]"
+          className={`pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 ${sortActive ? "text-[#005F8C]" : "text-[#5c6a7a]"}`}
           aria-hidden="true"
         />
       </div>
