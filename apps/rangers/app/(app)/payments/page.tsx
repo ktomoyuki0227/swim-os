@@ -36,7 +36,7 @@ type PaymentItem = {
 }
 
 interface PaymentsPageProps {
-  searchParams: Promise<{ type?: string }>
+  searchParams: Promise<{ type?: string; sort?: string }>
 }
 
 /** itemType に応じた左カラーバーの色 */
@@ -60,6 +60,8 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
   const params = await searchParams
   // "session" | "fee" | "" (すべて)
   const filterType = params.type ?? ""
+  // "asc" (古い順) | "" (新着順・デフォルト)
+  const filterSort = params.sort ?? ""
 
   const { data: profile } = await supabase
     .from("profiles")
@@ -163,8 +165,12 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
     })
   }
 
-  // 最新順にソート
-  items.sort((a, b) => b.date.getTime() - a.date.getTime())
+  // ソート（新着順 or 古い順）
+  items.sort((a, b) =>
+    filterSort === "asc"
+      ? a.date.getTime() - b.date.getTime()
+      : b.date.getTime() - a.date.getTime()
+  )
 
   // フィルター適用
   // "session" → セッション参加費のみ
@@ -183,7 +189,9 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
     if (!groupedByMonth.has(key)) groupedByMonth.set(key, [])
     groupedByMonth.get(key)!.push(item)
   }
-  const sortedMonthKeys = Array.from(groupedByMonth.keys()).sort((a, b) => b.localeCompare(a))
+  const sortedMonthKeys = Array.from(groupedByMonth.keys()).sort((a, b) =>
+    filterSort === "asc" ? a.localeCompare(b) : b.localeCompare(a)
+  )
 
   return (
     <div className="mx-auto max-w-2xl space-y-4">
@@ -195,7 +203,7 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
       </div>
 
       {/* フィルターチップ */}
-      <PaymentHistoryFilters selectedType={filterType} />
+      <PaymentHistoryFilters selectedType={filterType} selectedSort={filterSort} />
 
       {/* 支払い履歴 */}
       {filtered.length === 0 ? (
