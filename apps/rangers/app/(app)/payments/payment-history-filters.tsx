@@ -1,59 +1,45 @@
 "use client"
 
-import { useRouter, useSearchParams } from "next/navigation"
+import { useRouter } from "next/navigation"
+
+const OPTIONS = [
+  { value: "", label: "すべて" },
+  { value: "session", label: "セッション参加費" },
+  { value: "fee", label: "会費" },
+] as const
 
 interface PaymentHistoryFiltersProps {
-  teams: { id: string; name: string }[]
-  selectedTeam: string
   selectedType: string
 }
 
-const selectClass =
-  "rounded-lg border border-[#dce3ea] bg-white px-3 py-2 text-sm text-[#1a2332] focus:outline-none focus:ring-2 focus:ring-[#005F8C]/30"
-
-export function PaymentHistoryFilters({
-  teams,
-  selectedTeam,
-  selectedType,
-}: PaymentHistoryFiltersProps) {
+export function PaymentHistoryFilters({ selectedType }: PaymentHistoryFiltersProps) {
   const router = useRouter()
-  const searchParams = useSearchParams()
 
-  const update = (key: string, value: string) => {
-    const params = new URLSearchParams(searchParams.toString())
-    if (value) {
-      params.set(key, value)
-    } else {
-      params.delete(key)
-    }
-    router.push(`/payments?${params.toString()}`)
+  function select(value: string) {
+    const p = new URLSearchParams()
+    if (value) p.set("type", value)
+    router.push(`/payments?${p.toString()}`)
   }
 
   return (
-    <div className="flex flex-wrap gap-2">
-      <select
-        value={selectedTeam}
-        onChange={(e) => update("team", e.target.value)}
-        className={selectClass}
-      >
-        <option value="">すべてのグループ</option>
-        {teams.map((t) => (
-          <option key={t.id} value={t.id}>
-            {t.name}
-          </option>
-        ))}
-      </select>
-
-      <select
-        value={selectedType}
-        onChange={(e) => update("type", e.target.value)}
-        className={selectClass}
-      >
-        <option value="">すべての種別</option>
-        <option value="session">セッション参加費</option>
-        <option value="annual">年会費</option>
-        <option value="monthly">月謝</option>
-      </select>
+    <div className="flex gap-2">
+      {OPTIONS.map((option) => {
+        const isSelected = option.value === selectedType
+        return (
+          <button
+            key={option.value}
+            type="button"
+            onClick={() => select(option.value)}
+            className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+              isSelected
+                ? "bg-[#005F8C] text-white"
+                : "bg-[#f2f7fa] text-[#5c6a7a] hover:bg-[#e0edf5] hover:text-[#005F8C]"
+            }`}
+          >
+            {option.label}
+          </button>
+        )
+      })}
     </div>
   )
 }
