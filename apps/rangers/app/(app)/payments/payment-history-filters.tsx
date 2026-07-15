@@ -29,7 +29,6 @@ export function PaymentHistoryFilters({ selectedType, selectedSort }: PaymentHis
   }
 
   const typeActive = selectedType !== ""
-  const sortActive = selectedSort !== ""
 
   return (
     <div className="flex gap-2">
@@ -51,19 +50,19 @@ export function PaymentHistoryFilters({ selectedType, selectedSort }: PaymentHis
         />
       </div>
 
-      {/* 並び替え */}
+      {/* 並び替え（アクティブ強調なし） */}
       <div className="relative flex-1">
         <select
           value={selectedSort}
           onChange={(e) => update("sort", e.target.value)}
           style={{ minHeight: "44px" }}
-          className={getSelectClass(sortActive)}
+          className={getSelectClass(false)}
         >
           <option value="">新着順</option>
           <option value="asc">古い順</option>
         </select>
         <ChevronDown
-          className={`pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 ${sortActive ? "text-[#005F8C]" : "text-[#5c6a7a]"}`}
+          className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#5c6a7a]"
           aria-hidden="true"
         />
       </div>
