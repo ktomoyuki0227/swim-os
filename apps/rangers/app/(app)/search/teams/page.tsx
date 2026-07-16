@@ -2,10 +2,9 @@ export const dynamic = "force-dynamic"
 
 import Link from "next/link"
 import Image from "next/image"
-import { ChevronLeft } from "lucide-react"
+import { ChevronLeft, Users } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
 import { getPublicTeams } from "@/actions/teams"
-import { Card, CardContent } from "@/components/ui/card"
 import { SubpageSearchForm } from "../subpage-search-form"
 
 interface TeamsPageProps {
@@ -44,45 +43,41 @@ export default async function TeamsPage({ searchParams }: TeamsPageProps) {
       {/* 検索バー */}
       <SubpageSearchForm
         defaultValue={q}
-        placeholder="グループ名で検索..."
+        placeholder="チーム名で検索..."
         actionPath="/search/teams"
       />
 
       {/* 結果 */}
       {!teams || teams.length === 0 ? (
-        <Card className="rounded-[14px] border-[#dce3ea]">
-          <CardContent className="flex flex-col items-center justify-center px-6 py-12">
-            <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[rgba(15,138,79,0.08)]">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8d99a8" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                <circle cx="9" cy="7" r="4" />
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-              </svg>
-            </div>
-            <p className="text-base font-semibold text-[#1a2332]">チームが見つかりません</p>
-            <p className="mt-1 text-sm text-[#5c6a7a]">条件を変更して再検索してみてください</p>
-          </CardContent>
-        </Card>
+        <div className="flex flex-col items-center justify-center rounded-2xl border border-[#dce3ea] bg-white px-6 py-16 text-center">
+          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[rgba(15,138,79,0.08)]">
+            <Users className="h-6 w-6 text-[#8d99a8]" />
+          </div>
+          <p className="font-semibold text-[#1a2332]">チームが見つかりません</p>
+          <p className="mt-1 text-sm text-[#5c6a7a]">条件を変更して再検索してみてください</p>
+        </div>
       ) : (
-        <div className="flex flex-col gap-2">
-          <p className="text-sm text-[#5c6a7a]">{teams.length}件のチーム</p>
+        <div className="space-y-3">
+          <p className="text-xs text-[#8d99a8]">{teams.length}件のチーム</p>
           {teams.map((team: Record<string, unknown>) => (
-            <Link key={team.id as string} href={`/teams/${team.id}`}>
-              <Card className="border-[#dce3ea] py-0 transition-all hover:border-[#0f8a4f]">
-                <CardContent className="flex items-center gap-4 px-4 py-3">
-                  {/* アバター */}
-                  <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-[14px] bg-[#0f8a4f]/10">
-                    {team.avatar_url ? (
+            <Link key={team.id as string} href={`/teams/${team.id}`} className="block">
+              <div className="overflow-hidden rounded-2xl border border-[#dce3ea] bg-white shadow-sm transition-all hover:border-[#a8d5be] hover:shadow-md">
+                <div className="flex items-center gap-4 p-4">
+                  {/* アバター（大型・グラデーション背景） */}
+                  <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-[16px]">
+                    {(team.avatar_url as string | null) ? (
                       <Image
                         src={team.avatar_url as string}
                         alt={team.name as string}
                         fill
                         className="object-cover"
-                        sizes="48px"
+                        sizes="64px"
                       />
                     ) : (
-                      <div className="flex h-full w-full items-center justify-center text-base font-bold text-[#0f8a4f]">
+                      <div
+                        className="flex h-full w-full items-center justify-center text-2xl font-bold text-white"
+                        style={{ background: "linear-gradient(135deg, #0f8a4f 0%, #076938 100%)" }}
+                      >
                         {(team.name as string)?.[0] || "T"}
                       </div>
                     )}
@@ -90,19 +85,32 @@ export default async function TeamsPage({ searchParams }: TeamsPageProps) {
 
                   {/* 内容 */}
                   <div className="min-w-0 flex-1">
-                    <p className="font-medium text-[#1a2332]">{team.name as string}</p>
-                    {(team.description as string | null) && (
-                      <p className="mt-0.5 line-clamp-2 text-xs text-[#5c6a7a]">
+                    <div className="flex items-center gap-2">
+                      <p className="font-semibold text-[#1a2332]">{team.name as string}</p>
+                    </div>
+                    {(team.description as string | null) ? (
+                      <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-[#5c6a7a]">
                         {team.description as string}
                       </p>
+                    ) : (
+                      <p className="mt-1 text-xs text-[#c8d8e8]">説明はありません</p>
                     )}
+                    <div className="mt-2.5 flex items-center gap-1.5">
+                      <span
+                        className="rounded-full px-2.5 py-0.5 text-[11px] font-semibold"
+                        style={{ backgroundColor: "rgba(15,138,79,0.1)", color: "#0f8a4f" }}
+                      >
+                        チーム
+                      </span>
+                      <span className="text-xs text-[#0f8a4f]">→ 詳細を見る</span>
+                    </div>
                   </div>
 
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8d99a8" strokeWidth="2" className="shrink-0">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#c8d8e8" strokeWidth="2.5" className="shrink-0">
                     <polyline points="9 18 15 12 9 6" />
                   </svg>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             </Link>
           ))}
         </div>
