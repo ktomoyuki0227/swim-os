@@ -94,6 +94,9 @@ export function Navigation({ userName, avatarUrl, unreadCount = 0, inactiveRoute
     .slice(0, 2)
     .toUpperCase()
 
+  // /search/sessions・/search/teams・/search/personal ではボトムナビを非表示
+  const hideBottomNav = /^\/search\/.+/.test(pathname)
+
   const isActive = (href: string) => {
     if (inactiveRoutes.includes(href)) return false
     // /teams/[id]/join は非メンバーの申請ページなのでグループとして扱わない
@@ -199,8 +202,8 @@ export function Navigation({ userName, avatarUrl, unreadCount = 0, inactiveRoute
         </div>
       </header>
 
-      {/* Mobile bottom tab bar */}
-      <nav className="fixed bottom-0 left-0 right-0 z-20 border-t border-[#dce3ea] bg-white md:hidden">
+      {/* Mobile bottom tab bar（検索サブページでは非表示） */}
+      <nav className={`fixed bottom-0 left-0 right-0 z-20 border-t border-[#dce3ea] bg-white md:hidden ${hideBottomNav ? "hidden" : ""}`}>
         <div className="flex">
           {navLinks.map((link) => (
             <Link
