@@ -50,75 +50,84 @@ export default function SearchPage() {
         </div>
       </Link>
 
-      {/* チーム + パーソナル - 同じ行・同じ高さ */}
-      <div className="flex gap-3">
-        {/* チーム */}
-        <Link href="/search/teams" className="flex-1">
-          <div
-            className="relative h-36 overflow-hidden rounded-2xl transition-opacity active:opacity-90"
-            style={{ background: "linear-gradient(135deg, #0f8a4f 0%, #076938 100%)" }}
+      {/* チーム */}
+      <Link href="/search/teams" className="block">
+        <div
+          className="relative h-36 overflow-hidden rounded-2xl transition-opacity active:opacity-90"
+          style={{ background: "linear-gradient(135deg, #0f8a4f 0%, #076938 100%)" }}
+        >
+          <svg
+            className="absolute right-0 top-0 h-full w-auto"
+            viewBox="0 0 200 112"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            aria-hidden="true"
           >
-            <svg
-              className="absolute right-0 top-0 h-full w-auto"
-              viewBox="0 0 130 144"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              aria-hidden="true"
-            >
-              <circle cx="80" cy="80" r="70" fill="rgba(255,255,255,0.05)" />
-              <circle cx="35" cy="52" r="11" fill="rgba(255,255,255,0.2)" />
-              <rect x="25" y="67" width="20" height="30" rx="6" fill="rgba(255,255,255,0.15)" />
-              <line x1="25" y1="78" x2="12" y2="70" stroke="rgba(255,255,255,0.18)" strokeWidth="5" strokeLinecap="round" />
-              <line x1="45" y1="78" x2="56" y2="70" stroke="rgba(255,255,255,0.18)" strokeWidth="5" strokeLinecap="round" />
-              <circle cx="68" cy="44" r="13" fill="rgba(255,255,255,0.26)" />
-              <rect x="56" y="61" width="24" height="34" rx="7" fill="rgba(255,255,255,0.2)" />
-              <line x1="56" y1="74" x2="42" y2="66" stroke="rgba(255,255,255,0.22)" strokeWidth="5" strokeLinecap="round" />
-              <line x1="80" y1="74" x2="94" y2="66" stroke="rgba(255,255,255,0.22)" strokeWidth="5" strokeLinecap="round" />
-              <circle cx="102" cy="52" r="11" fill="rgba(255,255,255,0.2)" />
-              <rect x="92" y="67" width="20" height="30" rx="6" fill="rgba(255,255,255,0.15)" />
-              <line x1="92" y1="78" x2="80" y2="70" stroke="rgba(255,255,255,0.18)" strokeWidth="5" strokeLinecap="round" />
-              <line x1="112" y1="78" x2="124" y2="70" stroke="rgba(255,255,255,0.18)" strokeWidth="5" strokeLinecap="round" />
-            </svg>
+            <circle cx="160" cy="56" r="80" fill="rgba(255,255,255,0.05)" />
+            <circle cx="90" cy="40" r="13" fill="rgba(255,255,255,0.2)" />
+            <rect x="78" y="57" width="24" height="34" rx="7" fill="rgba(255,255,255,0.15)" />
+            <line x1="78" y1="70" x2="62" y2="62" stroke="rgba(255,255,255,0.18)" strokeWidth="5" strokeLinecap="round" />
+            <line x1="102" y1="70" x2="116" y2="62" stroke="rgba(255,255,255,0.18)" strokeWidth="5" strokeLinecap="round" />
+            <circle cx="130" cy="32" r="15" fill="rgba(255,255,255,0.26)" />
+            <rect x="116" y="51" width="28" height="38" rx="8" fill="rgba(255,255,255,0.2)" />
+            <line x1="116" y1="66" x2="100" y2="57" stroke="rgba(255,255,255,0.22)" strokeWidth="5" strokeLinecap="round" />
+            <line x1="144" y1="66" x2="160" y2="57" stroke="rgba(255,255,255,0.22)" strokeWidth="5" strokeLinecap="round" />
+            <circle cx="168" cy="40" r="13" fill="rgba(255,255,255,0.2)" />
+            <rect x="156" y="57" width="24" height="34" rx="7" fill="rgba(255,255,255,0.15)" />
+            <line x1="156" y1="70" x2="144" y2="62" stroke="rgba(255,255,255,0.18)" strokeWidth="5" strokeLinecap="round" />
+            <line x1="180" y1="70" x2="194" y2="62" stroke="rgba(255,255,255,0.18)" strokeWidth="5" strokeLinecap="round" />
+          </svg>
 
-            <div className="absolute bottom-0 left-0 p-4">
-              <p className="text-base font-bold text-white">チーム</p>
-              <p className="mt-0.5 text-xs text-white/70">仲間と一緒に泳ぐ</p>
-            </div>
+          <div className="absolute bottom-0 left-0 p-5">
+            <p className="text-xl font-bold tracking-tight text-white">チーム</p>
+            <p className="mt-0.5 text-sm text-white/70">仲間と一緒に泳ぐ</p>
           </div>
-        </Link>
 
-        {/* パーソナル */}
-        <Link href="/search/personal" className="flex-1">
-          <div
-            className="relative h-36 overflow-hidden rounded-2xl transition-opacity active:opacity-90"
-            style={{ background: "linear-gradient(135deg, #7B5EA7 0%, #5438A0 100%)" }}
+          <div className="absolute right-5 top-1/2 -translate-y-1/2">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </div>
+        </div>
+      </Link>
+
+      {/* パーソナル */}
+      <Link href="/search/personal" className="block">
+        <div
+          className="relative h-36 overflow-hidden rounded-2xl transition-opacity active:opacity-90"
+          style={{ background: "linear-gradient(135deg, #7B5EA7 0%, #5438A0 100%)" }}
+        >
+          <svg
+            className="absolute right-0 top-0 h-full w-auto"
+            viewBox="0 0 200 112"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            aria-hidden="true"
           >
-            <svg
-              className="absolute right-0 top-0 h-full w-auto"
-              viewBox="0 0 130 144"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              aria-hidden="true"
-            >
-              <circle cx="80" cy="80" r="70" fill="rgba(255,255,255,0.05)" />
-              <circle cx="80" cy="42" r="24" stroke="rgba(255,255,255,0.25)" strokeWidth="3" fill="rgba(255,255,255,0.07)" />
-              <line x1="80" y1="18" x2="80" y2="13" stroke="rgba(255,255,255,0.35)" strokeWidth="3" strokeLinecap="round" />
-              <line x1="74" y1="11" x2="86" y2="11" stroke="rgba(255,255,255,0.35)" strokeWidth="3" strokeLinecap="round" />
-              <line x1="80" y1="42" x2="80" y2="27" stroke="rgba(255,255,255,0.5)" strokeWidth="2.5" strokeLinecap="round" />
-              <line x1="80" y1="42" x2="92" y2="36" stroke="rgba(255,255,255,0.4)" strokeWidth="2" strokeLinecap="round" />
-              <circle cx="60" cy="82" r="12" fill="rgba(255,255,255,0.22)" />
-              <rect x="49" y="97" width="22" height="32" rx="7" fill="rgba(255,255,255,0.17)" />
-              <line x1="49" y1="109" x2="36" y2="101" stroke="rgba(255,255,255,0.2)" strokeWidth="5" strokeLinecap="round" />
-              <line x1="71" y1="109" x2="84" y2="101" stroke="rgba(255,255,255,0.2)" strokeWidth="5" strokeLinecap="round" />
-            </svg>
+            <circle cx="160" cy="56" r="80" fill="rgba(255,255,255,0.05)" />
+            <circle cx="140" cy="34" r="24" stroke="rgba(255,255,255,0.25)" strokeWidth="3" fill="rgba(255,255,255,0.07)" />
+            <line x1="140" y1="10" x2="140" y2="5" stroke="rgba(255,255,255,0.35)" strokeWidth="3" strokeLinecap="round" />
+            <line x1="134" y1="3" x2="146" y2="3" stroke="rgba(255,255,255,0.35)" strokeWidth="3" strokeLinecap="round" />
+            <line x1="140" y1="34" x2="140" y2="19" stroke="rgba(255,255,255,0.5)" strokeWidth="2.5" strokeLinecap="round" />
+            <line x1="140" y1="34" x2="152" y2="28" stroke="rgba(255,255,255,0.4)" strokeWidth="2" strokeLinecap="round" />
+            <circle cx="110" cy="68" r="14" fill="rgba(255,255,255,0.22)" />
+            <rect x="97" y="85" width="26" height="36" rx="8" fill="rgba(255,255,255,0.17)" />
+            <line x1="97" y1="99" x2="82" y2="90" stroke="rgba(255,255,255,0.2)" strokeWidth="5" strokeLinecap="round" />
+            <line x1="123" y1="99" x2="138" y2="90" stroke="rgba(255,255,255,0.2)" strokeWidth="5" strokeLinecap="round" />
+          </svg>
 
-            <div className="absolute bottom-0 left-0 p-4">
-              <p className="text-base font-bold text-white">パーソナル</p>
-              <p className="mt-0.5 text-xs text-white/70">個別指導を受ける</p>
-            </div>
+          <div className="absolute bottom-0 left-0 p-5">
+            <p className="text-xl font-bold tracking-tight text-white">パーソナル</p>
+            <p className="mt-0.5 text-sm text-white/70">個別指導を受ける</p>
           </div>
-        </Link>
-      </div>
+
+          <div className="absolute right-5 top-1/2 -translate-y-1/2">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </div>
+        </div>
+      </Link>
     </div>
   )
 }
