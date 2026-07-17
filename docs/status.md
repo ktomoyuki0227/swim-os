@@ -839,6 +839,42 @@ commits: `5a7aef6`, `60f017b`, `acc7874`, `177701a`, `b4d5d2e` → main
 
 ---
 
+## 直近でやったこと（2026-07-17）
+
+### チーム・パーソナル検索ページ UI/UX ブラッシュアップ ✅
+
+**チーム検索（`app/(app)/search/teams/`）**
+- `team-search-input.tsx`: sort / recruitingOnly / days の全フィルター状態を検索時に保持するよう修正
+- `team-filters-bar.tsx`:
+  - 絞り込みシートから「募集状況」セクションを削除
+  - 3列構成に変更（絞り込み｜並び替え｜募集中トグル）
+  - 「募集中」トグルボタンを追加（テキスト+iOSスタイルスイッチ、デフォルトON）
+  - 募集中フラグをデフォルトON（`recruiting !== "0"` で判定）に変更
+- `page.tsx`:
+  - カード行順を刷新：チーム名+エリア → 管理者（小アバター+氏名）→ 頻度+曜日 → メインプール → 説明文2行
+  - 説明文を `line-clamp-2` に変更（2行まで表示）
+  - 逆くの字を `self-stretch + items-center` で縦中央に修正
+  - デフォルトで募集中チームのみ表示（`recruiting !== "0"`）
+
+**パーソナル検索（`app/(app)/search/personal/`）**
+- `page.tsx`:
+  - 「パーソナル」バッジ削除（このページはパーソナルのみのため不要）
+  - カード行順を刷新：グループ名+エリア → コーチ氏名（小アバター）→ 頻度+曜日 → 料金（¥〇〇〜/セッション）→ 説明文2行
+  - 逆くの字を `self-stretch + items-center` で縦中央に修正
+  - `items-center` → `items-start`（複数行カードの縦ズレ解消）
+
+**共通（`actions/teams.ts`）**
+- `getPublicTeams` のSELECTに `default_guest_price` と `coach:profiles!coach_id(name, avatar_url)` を追加
+- チーム・パーソナル両ページで管理者/コーチの氏名・アバターを表示
+
+**デモデータ追加（`supabase/migrations/00029_seed_extra_teams.sql`）**
+- チーム4件追加：大阪スイミングクラブ / 横浜トライスイマーズ / 福岡マスターズ / 京都スイミングサークル
+- パーソナル3件追加：山田健太・鈴木太郎・佐藤花子 各コーチのパーソナル指導
+- 各グループに3〜4件のセッション（`is_external=true`）
+- ロゴ画像7枚を生成してSupabase Storageにアップロード済み
+
+---
+
 ## 直近でやったこと（2026-07-16）
 
 ### 探すページ・セッション検索 UI/UX ブラッシュアップ ✅

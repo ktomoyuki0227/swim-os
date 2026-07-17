@@ -444,7 +444,14 @@ export async function joinTeamAction(
   redirect(`/teams/${result.data.id}`)
 }
 
-export async function getPublicTeams(options?: { q?: string; excludeUserId?: string; teamType?: "team" | "personal" }) {
+export async function getPublicTeams(options?: {
+  q?: string
+  excludeUserId?: string
+  teamType?: "team" | "personal"
+  sort?: "newest" | "name"
+  recruitingOnly?: boolean
+  days?: string[]
+}) {
   const admin = createAdminClient()
 
   // ログインユーザーが所属しているグループIDを取得して除外
@@ -460,10 +467,15 @@ export async function getPublicTeams(options?: { q?: string; excludeUserId?: str
 
   let query = admin
     .from("teams")
-    .select("id, name, description, avatar_url, coach_id, team_type")
+    .select("id, name, description, avatar_url, coach_id, team_type, is_recruiting, activity_area, practice_frequency, practice_days, main_pool, default_guest_price, coach:profiles!coach_id(name, avatar_url)")
     .eq("status", "active")
-    .order("created_at", { ascending: false })
-    .limit(20)
+    .limit(50)
+
+  if (options?.sort === "name") {
+    query = query.order("name", { ascending: true })
+  } else {
+    query = query.order("created_at", { ascending: false })
+  }
 
   if (options?.q) {
     query = query.ilike("name", `%${options.q}%`)
@@ -471,6 +483,14 @@ export async function getPublicTeams(options?: { q?: string; excludeUserId?: str
 
   if (options?.teamType) {
     query = query.eq("team_type", options.teamType)
+  }
+
+  if (options?.recruitingOnly) {
+    query = query.eq("is_recruiting", true)
+  }
+
+  if (options?.days && options.days.length > 0) {
+    query = query.overlaps("practice_days", options.days)
   }
 
   if (excludeIds.length > 0) {
