@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { Navigation } from "@/components/navigation"
+import { NavigationProgress } from "@/components/navigation-progress"
 import { ToastProvider } from "@/components/toast"
 import { PageTransition } from "@/components/page-transition"
 import { getUnreadNotificationCount } from "@/actions/notifications"
@@ -50,8 +51,9 @@ export default async function AppLayout({
 
   return (
     <ToastProvider>
+      <NavigationProgress />
       <Navigation userName={profile.name} avatarUrl={profile.avatar_url} unreadCount={unreadResult.count} />
-      <main className="mx-auto w-full max-w-5xl flex-1 overflow-x-hidden px-4 py-6 pb-24 md:pb-6">
+      <main className="mx-auto w-full max-w-5xl flex-1 overflow-x-hidden px-4 pb-24 md:pb-6">
         <PageTransition>{children}</PageTransition>
       </main>
     </ToastProvider>

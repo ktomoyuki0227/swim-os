@@ -27,9 +27,9 @@ const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
 const IS_TEST_MODE = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY?.startsWith("pk_test_") ?? false
 
 const TEST_CARDS = [
-  { number: "4242 4242 4242 4242", result: "成功", variant: "success" as const },
-  { number: "4000 0000 0000 9995", result: "残高不足エラー", variant: "warning" as const },
-  { number: "4000 0000 0000 0002", result: "拒否", variant: "error" as const },
+  { number: "4242 4242 4242 4242", result: "成功", variant: "success" as const, pmId: "pm_card_visa" },
+  { number: "4000 0000 0000 9995", result: "残高不足エラー", variant: "warning" as const, pmId: "pm_card_chargeDeclinedInsufficientFunds" },
+  { number: "4000 0000 0000 0002", result: "拒否", variant: "error" as const, pmId: "pm_card_chargeDeclined" },
 ]
 
 const ALL_STEPS = [
@@ -48,7 +48,7 @@ const WIZARD_STEPS = [
   { num: 3, label: "基本情報(2)", desc: "住所と電話番号を入力してください" },
   { num: 4, label: "緊急連絡先", desc: "万が一の際の緊急連絡先を登録してください" },
   { num: 5, label: "競技登録", desc: "マスターズ水泳・JSAの登録情報を入力してください" },
-  { num: 6, label: "お支払い", desc: "グループの年会費・月謝・練習費などのお支払い方法を登録してください" },
+  { num: 6, label: "お支払い", desc: "お支払い方法を登録しておくと、グループの参加費をスムーズに支払えます。後でプロフィールページから登録することもできます。" },
 ]
 
 interface FormState {
@@ -118,12 +118,29 @@ function CardSetupForm({
   const [submitting, setSubmitting] = useState(false)
   const [cardComplete, setCardComplete] = useState({ number: false, expiry: false, cvc: false })
   const [showTestCards, setShowTestCards] = useState(false)
-  const [copiedCard, setCopiedCard] = useState<string | null>(null)
 
-  const copyTestCard = (number: string) => {
-    navigator.clipboard.writeText(number.replace(/\s/g, "")).catch(() => {})
-    setCopiedCard(number)
-    setTimeout(() => setCopiedCard(null), 2000)
+  const quickUseTestCard = async (pmId: string) => {
+    if (!stripe) return
+    setSubmitting(true)
+    setFormError(null)
+    const { setupIntent, error } = await stripe.confirmCardSetup(clientSecret, {
+      payment_method: pmId,
+    })
+    if (error) {
+      setFormError(error.message ?? "テストカードの確認に失敗しました")
+      setSubmitting(false)
+      return
+    }
+    if (setupIntent?.payment_method) {
+      const resolvedId =
+        typeof setupIntent.payment_method === "string"
+          ? setupIntent.payment_method
+          : setupIntent.payment_method.id
+      onSuccess(resolvedId)
+    } else {
+      setFormError("お支払い方法の取得に失敗しました。もう一度お試しください。")
+    }
+    setSubmitting(false)
   }
 
   const allComplete = cardComplete.number && cardComplete.expiry && cardComplete.cvc
@@ -212,36 +229,29 @@ function CardSetupForm({
           </button>
           {showTestCards && (
             <div className="mt-3 space-y-2 rounded-lg bg-[#f2f7fa] p-3">
-              <p className="text-xs font-medium text-[#1a2332]">テストカード番号</p>
-              <p className="text-xs text-[#8d99a8]">有効期限: 12/34　　CVC: 任意の3桁（例: 123）</p>
+              <p className="text-xs font-medium text-[#1a2332]">テストカード（クリックで即時登録）</p>
               <div className="flex flex-col gap-1.5">
                 {TEST_CARDS.map((card) => (
                   <button
                     key={card.number}
                     type="button"
-                    onClick={() => copyTestCard(card.number)}
-                    className={`rounded-lg border px-3 py-2 text-left transition-colors hover:border-[#005F8C] hover:bg-white ${
-                      copiedCard === card.number ? "border-[#005F8C] bg-white" : "border-[#dce3ea] bg-white"
-                    }`}
+                    onClick={() => quickUseTestCard(card.pmId)}
+                    disabled={submitting}
+                    className="rounded-lg border border-[#dce3ea] bg-white px-3 py-2 text-left transition-colors hover:border-[#005F8C] hover:bg-white disabled:opacity-50"
                   >
                     <div className="flex items-center justify-between gap-2">
                       <span className="font-mono text-xs font-semibold text-[#1a2332]">{card.number}</span>
-                      {copiedCard === card.number ? (
-                        <span className="shrink-0 text-xs font-medium text-[#005F8C]">✓ コピー済み</span>
-                      ) : (
-                        <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-xs font-medium ${
-                          card.variant === "success" ? "bg-[#eaf7f0] text-[#0f8a4f]"
-                          : card.variant === "warning" ? "bg-orange-100 text-orange-700"
-                          : "bg-[#fdecea] text-[#c0392b]"
-                        }`}>
-                          {card.result}
-                        </span>
-                      )}
+                      <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-xs font-medium ${
+                        card.variant === "success" ? "bg-[#eaf7f0] text-[#0f8a4f]"
+                        : card.variant === "warning" ? "bg-orange-100 text-orange-700"
+                        : "bg-[#fdecea] text-[#c0392b]"
+                      }`}>
+                        {card.result}
+                      </span>
                     </div>
                   </button>
                 ))}
               </div>
-              <p className="text-xs text-[#8d99a8]">クリックするとカード番号をクリップボードにコピーします</p>
             </div>
           )}
         </div>
@@ -353,7 +363,7 @@ export default function OnboardingPage() {
   })
   const [saveError, setSaveError] = useState<string | null>(null)
 
-  const isValidPhone = (val: string) => /^\d{11}$/.test(val.replace(/[-\s]/g, ""))
+  const isValidPhone = (val: string) => /^\d{10,11}$/.test(val.replace(/[-\s]/g, ""))
 
   const toggleItem = (list: string[], item: string): string[] =>
     list.includes(item) ? list.filter((v) => v !== item) : [...list, item]
@@ -780,7 +790,7 @@ export default function OnboardingPage() {
                   onChange={(e) => set("phone", e.target.value)}
                   className="border-[#dce3ea]"
                 />
-                <p className="text-xs text-[#8d99a8]">ハイフンなし11桁で入力してください</p>
+                <p className="text-xs text-[#8d99a8]">ハイフンなし10〜11桁で入力してください</p>
               </div>
             </>
           )}
@@ -821,7 +831,7 @@ export default function OnboardingPage() {
                   onChange={(e) => set("emergency_contact", e.target.value)}
                   className="border-[#dce3ea]"
                 />
-                <p className="text-xs text-[#8d99a8]">ハイフンなし11桁で入力してください</p>
+                <p className="text-xs text-[#8d99a8]">ハイフンなし10〜11桁で入力してください</p>
               </div>
             </>
           )}
@@ -884,7 +894,28 @@ export default function OnboardingPage() {
 
           {/* ── Step 6: Stripe ── */}
           {step === 6 && (
-            <StripeStep onSuccess={(pmId) => handleComplete(pmId)} />
+            <>
+              <StripeStep onSuccess={(pmId) => handleComplete(pmId)} />
+              <div className="flex gap-3 pt-1">
+                <Button
+                  variant="outline"
+                  onClick={() => setStep((s) => s - 1)}
+                  className="flex-1 rounded-full border-[#dce3ea] text-[#5c6a7a]"
+                  style={{ minHeight: "44px" }}
+                >
+                  前へ
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => handleComplete()}
+                  disabled={isPending}
+                  className="flex-1 rounded-full border-[#dce3ea] text-[#5c6a7a] hover:bg-[#f2f7fa]"
+                  style={{ minHeight: "44px" }}
+                >
+                  {isPending ? "保存中..." : "スキップ"}
+                </Button>
+              </div>
+            </>
           )}
 
           {/* ナビゲーション（Step 1–5） */}

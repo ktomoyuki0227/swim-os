@@ -71,8 +71,11 @@ export function PageTransition({ children }: PageTransitionProps) {
       ? "animate-fade-in"
       : undefined
 
+  // 検索サブページ（/search/sessions など）はページ側でヘッダー直下に貼り付けるため pt-6 を外す
+  const noTopPad = /^\/search\/.+/.test(pathname)
+
   return (
-    <div key={animKey} className={animClass}>
+    <div key={animKey} className={[animClass, noTopPad ? "" : "pt-6"].filter(Boolean).join(" ") || undefined}>
       {children}
     </div>
   )

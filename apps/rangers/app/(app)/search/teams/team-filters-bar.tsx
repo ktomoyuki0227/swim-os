@@ -43,7 +43,7 @@ function BottomSheet({ children, onClose }: { children: React.ReactNode; onClose
         ref={sheetRef}
         className="fixed bottom-0 left-0 right-0 z-50 rounded-t-[28px] bg-white"
         style={{
-          transition: "transform 0.32s cubic-bezier(0.32,0.72,0,1)",
+          transition: "transform 0.25s cubic-bezier(0.32,0.72,0,1)",
           boxShadow: "0 -12px 48px rgba(0,0,0,0.14), 0 -1px 0 rgba(0,0,0,0.06)",
         }}
       >

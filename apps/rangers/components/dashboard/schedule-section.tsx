@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useCallback, useEffect } from "react"
+import { createPortal } from "react-dom"
 import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
@@ -54,6 +55,7 @@ export function ScheduleSection({ sessions, teams }: Props) {
     () => new Set(teams.map((t) => t.id))
   )
   const [openSheet, setOpenSheet] = useState<SheetType>(null)
+  const [mounted, setMounted] = useState(false)
 
   const now = new Date()
 
@@ -100,6 +102,8 @@ export function ScheduleSection({ sessions, teams }: Props) {
     tab === "registered" ? "参加予定のセッションはありません" :
     tab === "past" ? "過去の参加セッションはありません" :
     "セッションはありません"
+
+  useEffect(() => { setMounted(true) }, [])
 
   // ESCキーでシート閉じる + 背景スクロールロック
   useEffect(() => {
@@ -281,11 +285,10 @@ export function ScheduleSection({ sessions, teams }: Props) {
         )}
       </div>
 
-      {/* ボトムシート: 表示内容 */}
-      {openSheet === "tab" && (
+      {/* ボトムシート（createPortal でbody直下にマウント） */}
+      {mounted && openSheet === "tab" && createPortal(
         <div
           className="fixed inset-0 z-[300] flex items-end sm:items-center sm:justify-center"
-          style={{ minHeight: "100dvh" }}
           onClick={() => setOpenSheet(null)}
           role="dialog"
           aria-modal="true"
@@ -297,7 +300,6 @@ export function ScheduleSection({ sessions, teams }: Props) {
             style={{ paddingBottom: "calc(24px + env(safe-area-inset-bottom, 0px))" }}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* ドラッグハンドル */}
             <div className="mx-auto mb-4 h-1 w-8 rounded-full bg-[#dce3ea] sm:hidden" />
             <h3 className="mb-4 text-[18px] font-semibold text-[#1a2332]">表示内容</h3>
             <div className="flex flex-col gap-1">
@@ -325,14 +327,13 @@ export function ScheduleSection({ sessions, teams }: Props) {
               })}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
-      {/* ボトムシート: グループ */}
-      {openSheet === "team" && (
+      {mounted && openSheet === "team" && createPortal(
         <div
           className="fixed inset-0 z-[300] flex items-end sm:items-center sm:justify-center"
-          style={{ minHeight: "100dvh" }}
           onClick={() => setOpenSheet(null)}
           role="dialog"
           aria-modal="true"
@@ -375,7 +376,8 @@ export function ScheduleSection({ sessions, teams }: Props) {
               })}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </section>
   )
