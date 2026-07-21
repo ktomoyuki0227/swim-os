@@ -18,6 +18,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { completeOnboarding, type OnboardingData } from "@/actions/onboarding"
 import { uploadAvatar } from "@/actions/profile"
+import { updatePaymentMethod } from "@/actions/payments"
 import { SWIM_SPECIALTIES, SWIMMING_GOALS, SWIM_LEVELS, PREFECTURES, SWIMMER_TYPES, SWIM_DISCIPLINES } from "@/types/database"
 
 const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
@@ -404,6 +405,16 @@ export default function OnboardingPage() {
   const handleComplete = (stripePaymentMethodId?: string) => {
     setSaveError(null)
     startTransition(async () => {
+      // カード登録済みの場合: Stripe 側で Customer のデフォルト PM を設定する
+      // (SetupIntent 確認だけでは invoice_settings.default_payment_method が更新されない)
+      if (stripePaymentMethodId) {
+        const { error: pmError } = await updatePaymentMethod(stripePaymentMethodId)
+        if (pmError) {
+          setSaveError("カード情報の設定に失敗しました。もう一度お試しください。")
+          return
+        }
+      }
+
       if (avatarFile) {
         const fd = new FormData()
         fd.append("avatar", avatarFile)

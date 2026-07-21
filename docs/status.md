@@ -1,5 +1,5 @@
 # 作業ステータス
-最終更新: 2026-07-09
+最終更新: 2026-07-18
 
 ---
 
@@ -836,6 +836,39 @@ commits: `5a7aef6`, `60f017b`, `acc7874`, `177701a`, `b4d5d2e` → main
 - ローカルで口座登録を完了すると `swim-os-seven.vercel.app` にリダイレクトされる
 - Vercel 側はログイン状態でないため `stripe_onboarding_completed` が DB に保存されない
 - **Fix: `.env.local` に `NEXT_PUBLIC_APP_URL=http://localhost:3000` を追加する（未実施）**
+
+---
+
+## 直近でやったこと（2026-07-18）
+
+### ページ遷移 UX 改善・オンボーディング修正・アニメーション高速化 ✅
+
+commit `d616bf5` → main プッシュ済み（8ファイル変更）
+
+**ナビゲーションプログレスバー（新規: `components/navigation-progress.tsx`）**
+- NavState マシン（`idle | loading | completing`）で正確なライフサイクルを管理
+- ヘッダー下（`top-16`）に横棒（2px、`#005F8C`）を配置
+- 1.5s で 85% まで伸びるアニメーション → ページ読み込み完了後に 100% へスナップしフェードアウト
+- 右下（`bottom-20 right-4`）にスピナー（ローディング中のみ表示）
+- `(app)/layout.tsx` に組み込み済み
+
+**ダッシュボード・スケジュールセクション修正（`components/dashboard/schedule-section.tsx`）**
+- ボトムシート（「全て」「全グループ」）押下でグレー画面になるバグを修正
+- 原因: `PageTransition` の `animation-fill-mode: both` がスタッキングコンテキストを作り `fixed` 要素を閉じ込めていた
+- `createPortal(content, document.body)` に移行して根本解決（`team-filters-bar.tsx` と同じパターン）
+
+**ページ遷移アニメーション高速化（`app/globals.css`）**
+- slide-in-right / slide-in-left / fade-up-in: 350ms → 200ms に短縮
+- slide-up（ボトムシート）: 0.32s → 0.25s に短縮（`team-filters-bar.tsx` / `session-filters-bar.tsx` も同様）
+- `to` キーフレームから `transform` を除去 → アニメーション完了後のスタッキングコンテキスト問題を根本解消
+- `nav-progress` キーフレーム追加（0→85%、`transform-origin: left center`）
+
+**オンボーディング修正（`app/(auth)/onboarding/page.tsx`）**
+- クレジットカード登録を任意化（Step 6 に「前へ」「スキップ」ボタン追加）
+- 電話番号バリデーション: 11桁のみ → 10〜11桁に対応（固定電話対応）
+- テストカード選択で即時登録（`stripe.confirmCardSetup` + 事前定義 PM ID 使用）
+  - クリップボードコピー方式 → ワンクリックで決済フロー完了する方式に変更
+  - 本番化時はテストカードブロックを削除するだけでOK
 
 ---
 
