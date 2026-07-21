@@ -25,6 +25,7 @@ export async function getOrCreateConnectAccount(
 
   const account = await stripe.accounts.create({
     type: "standard",
+    country: "JP",
     email,
     business_profile: { name: teamName },
     metadata: { team_id: teamId },

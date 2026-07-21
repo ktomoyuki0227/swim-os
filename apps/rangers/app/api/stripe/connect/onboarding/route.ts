@@ -77,7 +77,7 @@ export async function GET(req: NextRequest) {
   }
 
   if (!process.env.STRIPE_SECRET_KEY) {
-    return NextResponse.redirect(new URL(`/teams/${teamId}/edit?connectError=true`, req.url))
+    return NextResponse.redirect(new URL(`/teams/${teamId}?connectError=true`, req.url))
   }
 
   const supabase = await createClient()
@@ -91,7 +91,7 @@ export async function GET(req: NextRequest) {
     .eq("id", teamId)
     .single()
   if (!team?.stripe_account_id) {
-    return NextResponse.redirect(new URL(`/teams/${teamId}/edit?connectError=true`, req.url))
+    return NextResponse.redirect(new URL(`/teams/${teamId}?connectError=true`, req.url))
   }
 
   const { data: authData } = await admin.auth.admin.getUserById(user.id)
@@ -102,6 +102,6 @@ export async function GET(req: NextRequest) {
     const url = await createAccountLink(accountId, teamId)
     return NextResponse.redirect(url)
   } catch {
-    return NextResponse.redirect(new URL(`/teams/${teamId}/edit?connectError=true`, req.url))
+    return NextResponse.redirect(new URL(`/teams/${teamId}?connectError=true`, req.url))
   }
 }

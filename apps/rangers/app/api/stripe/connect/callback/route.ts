@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
   if (!user) return NextResponse.redirect(new URL("/login", req.url))
 
   if (!process.env.STRIPE_SECRET_KEY) {
-    return NextResponse.redirect(new URL(`/teams/${teamId}/edit?connectError=true`, req.url))
+    return NextResponse.redirect(new URL(`/teams/${teamId}?connectError=true`, req.url))
   }
 
   const admin = createAdminClient()
@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
     .single()
 
   if (!team?.stripe_account_id) {
-    return NextResponse.redirect(new URL(`/teams/${teamId}/edit?connectError=true`, req.url))
+    return NextResponse.redirect(new URL(`/teams/${teamId}?connectError=true`, req.url))
   }
 
   try {
@@ -49,18 +49,18 @@ export async function GET(req: NextRequest) {
 
     if (completed) {
       return NextResponse.redirect(
-        new URL(`/teams/${teamId}/edit?connectSuccess=true`, req.url)
+        new URL(`/teams/${teamId}?connectSuccess=true`, req.url)
       )
     } else {
       // オンボーディング未完了（中断して戻ってきた）
       return NextResponse.redirect(
-        new URL(`/teams/${teamId}/edit?connectPending=true`, req.url)
+        new URL(`/teams/${teamId}?connectPending=true`, req.url)
       )
     }
   } catch (err) {
     console.error("[connect/callback] Failed to retrieve account:", err)
     return NextResponse.redirect(
-      new URL(`/teams/${teamId}/edit?connectError=true`, req.url)
+      new URL(`/teams/${teamId}?connectError=true`, req.url)
     )
   }
 }
