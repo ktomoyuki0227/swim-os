@@ -14,11 +14,11 @@ export default function RegisterConfirmPage() {
           <CardTitle className="text-2xl text-[#005F8C]">確認メールを送信しました</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4 text-center">
-          <p className="text-sm text-[#5c6a7a]">
+          <p className="text-sm text-[#475569]">
             ご登録いただいたメールアドレスに確認メールを送信しました。
             メール内のリンクをクリックして、アカウントを有効化してください。
           </p>
-          <p className="text-xs text-[#5c6a7a]">
+          <p className="text-sm text-[#475569]">
             メールが届かない場合は、迷惑メールフォルダもご確認ください。
           </p>
           <Link href="/login">
@@ -28,7 +28,7 @@ export default function RegisterConfirmPage() {
           </Link>
         </CardContent>
       </Card>
-      <p className="mt-6 text-center text-sm text-[#8d99a8]">
+      <p className="mt-6 text-center text-sm text-[#64748b]">
         Rangers · マスターズ水泳レッスン予約
       </p>
     </div>

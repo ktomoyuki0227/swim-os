@@ -63,7 +63,7 @@ export function AnnouncementsSection({ teamId, announcements }: AnnouncementsSec
           <CardContent className="p-4">
             <form onSubmit={handleSubmit} className="space-y-3">
               <div className="space-y-1">
-                <label className="text-xs font-medium text-[#5c6a7a]">タイトル *</label>
+                <label className="text-sm font-medium text-[#475569]">タイトル *</label>
                 <input
                   type="text"
                   value={title}
@@ -75,7 +75,7 @@ export function AnnouncementsSection({ teamId, announcements }: AnnouncementsSec
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-medium text-[#5c6a7a]">本文（任意）</label>
+                <label className="text-sm font-medium text-[#475569]">本文（任意）</label>
                 <textarea
                   value={body}
                   onChange={(e) => setBody(e.target.value)}
@@ -91,7 +91,7 @@ export function AnnouncementsSection({ teamId, announcements }: AnnouncementsSec
                   variant="outline"
                   size="sm"
                   onClick={() => setShowForm(false)}
-                  className="flex-1 rounded-full border-[#dce3ea] text-sm text-[#5c6a7a]"
+                  className="flex-1 rounded-full border-[#dce3ea] text-sm text-[#475569]"
                   style={{ minHeight: "44px" }}
                 >
                   キャンセル
@@ -114,10 +114,10 @@ export function AnnouncementsSection({ teamId, announcements }: AnnouncementsSec
       {announcements.length === 0 && !showForm ? (
         <Card className="border-[#dce3ea]">
           <CardContent className="py-10 text-center">
-            <p className="text-sm text-[#5c6a7a]">お知らせはまだありません</p>
+            <p className="text-sm text-[#475569]">お知らせはまだありません</p>
             <button
               onClick={() => setShowForm(true)}
-              className="mt-2 text-xs text-[#005F8C] hover:underline"
+              className="mt-2 text-sm text-[#005F8C] hover:underline"
             >
               最初のお知らせを作成する
             </button>
@@ -130,9 +130,9 @@ export function AnnouncementsSection({ teamId, announcements }: AnnouncementsSec
               <CardContent className="p-4">
                 <p className="font-medium text-[#1a2332]">{announcement.title}</p>
                 {announcement.body && (
-                  <p className="mt-1 text-sm text-[#5c6a7a] whitespace-pre-wrap">{announcement.body}</p>
+                  <p className="mt-1 text-sm text-[#475569] whitespace-pre-wrap">{announcement.body}</p>
                 )}
-                <p className="mt-2 text-xs text-[#8d99a8]">
+                <p className="mt-2 text-sm text-[#64748b]">
                   {new Date(announcement.created_at).toLocaleDateString("ja-JP", {
                     year: "numeric",
                     month: "long",

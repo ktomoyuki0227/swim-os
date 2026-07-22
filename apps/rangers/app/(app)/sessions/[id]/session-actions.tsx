@@ -188,7 +188,7 @@ export function SessionActions({
         <button
           type="button"
           onClick={() => setShowTemplateInput(true)}
-          className="w-full rounded-full border border-dashed border-[#dce3ea] py-2.5 text-sm text-[#5c6a7a] hover:border-[#005F8C] hover:text-[#005F8C]"
+          className="w-full rounded-full border border-dashed border-[#dce3ea] py-2.5 text-sm text-[#475569] hover:border-[#005F8C] hover:text-[#005F8C]"
         >
           テンプレートとして保存
         </button>
@@ -214,7 +214,7 @@ export function SessionActions({
           <button
             type="button"
             onClick={() => { setShowTemplateInput(false); setTemplateName("") }}
-            className="rounded-lg border border-[#dce3ea] px-3 text-sm text-[#5c6a7a] hover:bg-[#f2f7fa]"
+            className="rounded-lg border border-[#dce3ea] px-3 text-sm text-[#475569] hover:bg-[#f2f7fa]"
           >
             ✕
           </button>

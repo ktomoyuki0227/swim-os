@@ -68,7 +68,7 @@ export default function AboutPage() {
             <br />
             もっと身近に。
           </h1>
-          <p className="mx-auto mb-10 max-w-xl text-lg leading-relaxed text-[#5c6a7a]">
+          <p className="mx-auto mb-10 max-w-xl text-lg leading-relaxed text-[#475569]">
             Rangers は元日本代表・競技経験豊富なコーチによる
             マンツーマン水泳指導のプラットフォームです。
             あなたのペースで、好きな場所・好きな時間に上達できます。
@@ -113,7 +113,7 @@ export default function AboutPage() {
                   />
                 </div>
                 <h3 className="mb-2 font-semibold">{title}</h3>
-                <p className="text-sm leading-relaxed text-[#5c6a7a]">{description}</p>
+                <p className="text-sm leading-relaxed text-[#475569]">{description}</p>
               </div>
             ))}
           </div>
@@ -137,7 +137,7 @@ export default function AboutPage() {
                     {step}
                   </div>
                   <h3 className="mb-1.5 font-semibold">{title}</h3>
-                  <p className="mx-auto max-w-[120px] text-xs leading-relaxed text-[#5c6a7a]">
+                  <p className="mx-auto max-w-[120px] text-sm leading-relaxed text-[#475569]">
                     {desc}
                   </p>
                 </div>
@@ -172,7 +172,7 @@ export default function AboutPage() {
                   </div>
                   <div>
                     <h3 className="font-semibold">{title}</h3>
-                    <p className="text-xs leading-relaxed text-[#5c6a7a]">{desc}</p>
+                    <p className="text-sm leading-relaxed text-[#475569]">{desc}</p>
                   </div>
                 </div>
                 {i < steps.length - 1 && (
@@ -198,7 +198,7 @@ export default function AboutPage() {
       <section className="py-20 text-center">
         <div className="mx-auto max-w-xl px-4">
           <h2 className="mb-3 text-2xl font-bold">さっそく始めましょう</h2>
-          <p className="mb-8 text-[#5c6a7a]">入会金・月会費は一切かかりません</p>
+          <p className="mb-8 text-[#475569]">入会金・月会費は一切かかりません</p>
           <Link href="/register">
             <Button size="lg" className="bg-[#005F8C] px-12 hover:bg-[#004E73]">
               無料で始める

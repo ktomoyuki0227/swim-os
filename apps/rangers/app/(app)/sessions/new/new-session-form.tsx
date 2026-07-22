@@ -107,7 +107,7 @@ function StepIndicator({ current }: { current: number }) {
                     ? "bg-[#005F8C] text-white"
                     : active
                     ? "border-2 border-[#005F8C] bg-white text-[#005F8C]"
-                    : "border-2 border-[#dce3ea] bg-white text-[#8d99a8]"
+                    : "border-2 border-[#dce3ea] bg-white text-[#64748b]"
                 }`}
               >
                 {done ? (
@@ -118,7 +118,7 @@ function StepIndicator({ current }: { current: number }) {
                   i + 1
                 )}
               </div>
-              <span className={`text-[10px] font-medium ${active ? "text-[#005F8C]" : "text-[#8d99a8]"}`}>
+              <span className={`text-[10px] font-medium ${active ? "text-[#005F8C]" : "text-[#64748b]"}`}>
                 {step.label}
               </span>
             </div>
@@ -427,7 +427,7 @@ export function NewSessionForm({
     <div className={`mx-auto space-y-6 ${step === 3 ? "max-w-3xl" : "max-w-xl"} transition-all`}>
       {/* ヘッダー */}
       <div>
-        <Link href={activeTeamId ? `/teams/${activeTeamId}?tab=sessions` : "/"} className="text-sm text-[#5c6a7a] hover:text-[#1a2332]">
+        <Link href={activeTeamId ? `/teams/${activeTeamId}?tab=sessions` : "/"} className="text-sm text-[#475569] hover:text-[#1a2332]">
           ← セッション管理
         </Link>
         <h1 className="mt-2 text-2xl font-bold text-[#1a2332]">セッションを作成</h1>
@@ -577,20 +577,20 @@ export function NewSessionForm({
                 {form.duration && form.duration !== "custom" && form.end_at && form.scheduled_at && (
                   <div className="flex items-center gap-3 rounded-xl border border-[#005F8C]/15 bg-[#005F8C]/5 px-4 py-3">
                     <div className="text-center">
-                      <p className="mb-0.5 text-[10px] text-[#8d99a8]">開始</p>
+                      <p className="mb-0.5 text-[10px] text-[#64748b]">開始</p>
                       <p className="text-base font-semibold tabular-nums text-[#1a2332]">
                         {new Date(form.scheduled_at).toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" })}
                       </p>
                     </div>
                     <div className="flex flex-1 items-center gap-2">
                       <div className="h-px flex-1 bg-[#005F8C]/25" />
-                      <span className="rounded-full border border-[#005F8C]/20 bg-white px-2.5 py-0.5 text-xs font-medium text-[#005F8C]">
+                      <span className="rounded-full border border-[#005F8C]/20 bg-white px-2.5 py-0.5 text-sm font-medium text-[#005F8C]">
                         {form.duration}分
                       </span>
                       <div className="h-px flex-1 bg-[#005F8C]/25" />
                     </div>
                     <div className="text-center">
-                      <p className="mb-0.5 text-[10px] text-[#8d99a8]">終了</p>
+                      <p className="mb-0.5 text-[10px] text-[#64748b]">終了</p>
                       <p className="text-base font-semibold tabular-nums text-[#1a2332]">
                         {new Date(form.end_at).toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" })}
                       </p>
@@ -640,7 +640,7 @@ export function NewSessionForm({
             <div className="space-y-1.5">
               <Label htmlFor="description">
                 説明・練習メニュー
-                <span className="ml-1.5 text-xs font-normal text-[#8d99a8]">任意</span>
+                <span className="ml-1.5 text-sm font-normal text-[#64748b]">任意</span>
               </Label>
               <Textarea
                 id="description"
@@ -663,7 +663,7 @@ export function NewSessionForm({
               <div className="space-y-1.5">
                 <Label htmlFor="member_price">メンバー参加費</Label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#5c6a7a]">¥</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#475569]">¥</span>
                   <Input
                     id="member_price"
                     type="number"
@@ -678,7 +678,7 @@ export function NewSessionForm({
               <div className="space-y-1.5">
                 <Label htmlFor="guest_price">ゲスト参加費</Label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#5c6a7a]">¥</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#475569]">¥</span>
                   <Input
                     id="guest_price"
                     type="number"
@@ -698,7 +698,7 @@ export function NewSessionForm({
               className={`flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-sm transition-colors ${
                 form.allow_point_card
                   ? "border-[#005F8C]/30 bg-[#e8f2f8] text-[#005F8C]"
-                  : "border-[#dce3ea] bg-[#f2f7fa] text-[#5c6a7a]"
+                  : "border-[#dce3ea] bg-[#f2f7fa] text-[#475569]"
               }`}
             >
               <div className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 transition-colors ${
@@ -719,7 +719,7 @@ export function NewSessionForm({
               className={`flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-sm transition-colors ${
                 form.is_external
                   ? "border-[#005F8C]/30 bg-[#e8f2f8] text-[#005F8C]"
-                  : "border-[#dce3ea] bg-[#f2f7fa] text-[#5c6a7a]"
+                  : "border-[#dce3ea] bg-[#f2f7fa] text-[#475569]"
               }`}
             >
               <div className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 transition-colors ${
@@ -792,7 +792,7 @@ export function NewSessionForm({
                   onChange={(e) => set("cancellation_days", e.target.value)}
                   className="w-28 border-[#dce3ea]"
                 />
-                <span className="text-sm text-[#5c6a7a]">日前まで</span>
+                <span className="text-sm text-[#475569]">日前まで</span>
                 {form.cancellation_days && form.scheduled_at && (() => {
                   const deadline = new Date(form.scheduled_at)
                   deadline.setDate(deadline.getDate() - parseInt(form.cancellation_days))
@@ -809,7 +809,7 @@ export function NewSessionForm({
             {form.type === "competition" && (
               <div className="space-y-3 rounded-xl border border-[#dce3ea] p-4">
                 <p className="text-sm font-semibold text-[#1a2332]">エントリー入力項目</p>
-                <p className="text-xs text-[#5c6a7a]">参加者が登録時に入力するフィールドを設定します</p>
+                <p className="text-sm text-[#475569]">参加者が登録時に入力するフィールドを設定します</p>
                 {competitionFields.map((field, idx) => (
                   <div key={idx} className="flex items-center gap-2 rounded-lg border border-[#dce3ea] bg-white p-3">
                     <input
@@ -823,7 +823,7 @@ export function NewSessionForm({
                       className="min-w-0 flex-1 border-0 bg-transparent text-sm font-medium text-[#1a2332] outline-none"
                       placeholder="項目名"
                     />
-                    <label className="flex items-center gap-1 text-xs text-[#5c6a7a]">
+                    <label className="flex items-center gap-1 text-sm text-[#475569]">
                       <input
                         type="checkbox"
                         checked={field.required}
@@ -948,7 +948,7 @@ export function NewSessionForm({
                       <button
                         type="button"
                         onClick={() => setOpenTagCategory(null)}
-                        className="flex h-8 w-8 items-center justify-center rounded-full bg-[#f2f7fa] text-[#5c6a7a] hover:bg-[#e0edf5]"
+                        className="flex h-8 w-8 items-center justify-center rounded-full bg-[#f2f7fa] text-[#475569] hover:bg-[#e0edf5]"
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
                           <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
@@ -993,11 +993,11 @@ export function NewSessionForm({
               <CardContent className="pt-4">
                 <div className="mb-3 flex items-center justify-between">
                   <div>
-                    <p className="text-xs font-semibold text-[#5c6a7a]">
+                    <p className="text-sm font-semibold text-[#475569]">
                       メンバー一覧（{selectedMemberIds.length}/{teamMembers.length}人 選択中）
                     </p>
                     {untaggedCount > 0 && (
-                      <p className="mt-0.5 text-xs text-[#8d99a8]">※ タグ未設定 {untaggedCount}人あり</p>
+                      <p className="mt-0.5 text-sm text-[#64748b]">※ タグ未設定 {untaggedCount}人あり</p>
                     )}
                   </div>
                   <button
@@ -1009,10 +1009,10 @@ export function NewSessionForm({
                         setSelectedMemberIds(teamMembers.map((m) => (m.swimmer as Record<string, unknown>).id as string))
                       }
                     }}
-                    className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
+                    className={`rounded-full px-2.5 py-1 text-sm font-medium transition-colors ${
                       allChecked
                         ? "bg-[#005F8C] text-white"
-                        : "border border-[#dce3ea] bg-white text-[#5c6a7a] hover:border-[#005F8C]"
+                        : "border border-[#dce3ea] bg-white text-[#475569] hover:border-[#005F8C]"
                     }`}
                   >
                     {allChecked ? "全解除" : "全選択"}
@@ -1020,9 +1020,9 @@ export function NewSessionForm({
                 </div>
 
                 {membersLoading ? (
-                  <p className="py-8 text-center text-sm text-[#8d99a8]">読み込み中...</p>
+                  <p className="py-8 text-center text-sm text-[#64748b]">読み込み中...</p>
                 ) : teamMembers.length === 0 ? (
-                  <p className="py-8 text-center text-sm text-[#8d99a8]">メンバーがいません</p>
+                  <p className="py-8 text-center text-sm text-[#64748b]">メンバーがいません</p>
                 ) : (
                   <div className="max-h-80 overflow-y-auto space-y-1">
                     {sortedMembers.map((m) => {
@@ -1055,13 +1055,13 @@ export function NewSessionForm({
                               </svg>
                             )}
                           </div>
-                          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#005F8C]/10 text-xs font-bold text-[#005F8C]">
+                          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#005F8C]/10 text-sm font-bold text-[#005F8C]">
                             {(swimmer.name as string)?.[0] || "?"}
                           </div>
                           <div className="min-w-0 flex-1">
                             <p className="truncate text-sm font-medium text-[#1a2332]">{swimmer.name as string}</p>
                             {memberTagLabels.length > 0 && (
-                              <p className="truncate text-xs text-[#8d99a8]">{memberTagLabels.join(" · ")}</p>
+                              <p className="truncate text-sm text-[#64748b]">{memberTagLabels.join(" · ")}</p>
                             )}
                           </div>
                         </button>
@@ -1079,48 +1079,48 @@ export function NewSessionForm({
       {step === 4 && (
         <Card className="border-[#dce3ea]">
           <CardContent className="space-y-5 pt-5">
-            <p className="text-sm text-[#5c6a7a]">以下の内容でセッションを作成します。確認してください。</p>
+            <p className="text-sm text-[#475569]">以下の内容でセッションを作成します。確認してください。</p>
 
             <div className="space-y-2">
-              <p className="text-xs font-semibold text-[#8d99a8] uppercase tracking-wide">基本情報</p>
+              <p className="text-sm font-semibold text-[#64748b] uppercase tracking-wide">基本情報</p>
               <div className="rounded-xl bg-[#f2f7fa] px-4 py-3 text-sm space-y-2">
                 <div className="flex gap-2">
-                  <span className="w-24 shrink-0 text-[#8d99a8]">タイトル</span>
+                  <span className="w-24 shrink-0 text-[#64748b]">タイトル</span>
                   <span className="font-medium text-[#1a2332]">{form.title}</span>
                 </div>
                 <div className="flex gap-2">
-                  <span className="w-24 shrink-0 text-[#8d99a8]">種類</span>
+                  <span className="w-24 shrink-0 text-[#64748b]">種類</span>
                   <span className="text-[#1a2332]">{({"practice": "練習", "camp": "合宿", "competition": "試合", "event": "イベント", "meeting": "ミーティング"} as Record<string, string>)[form.type] || form.type}</span>
                 </div>
                 <div className="flex gap-2">
-                  <span className="w-24 shrink-0 text-[#8d99a8]">{form.type === "camp" ? "開始日時" : "日時"}</span>
+                  <span className="w-24 shrink-0 text-[#64748b]">{form.type === "camp" ? "開始日時" : "日時"}</span>
                   <span className="text-[#1a2332]">{form.scheduled_at ? new Date(form.scheduled_at).toLocaleString("ja-JP") : "—"}</span>
                 </div>
                 {form.end_at && (
                   <div className="flex gap-2">
-                    <span className="w-24 shrink-0 text-[#8d99a8]">終了日時</span>
+                    <span className="w-24 shrink-0 text-[#64748b]">終了日時</span>
                     <span className="text-[#1a2332]">{new Date(form.end_at).toLocaleString("ja-JP")}</span>
                   </div>
                 )}
                 <div className="flex gap-2">
-                  <span className="w-24 shrink-0 text-[#8d99a8]">場所</span>
+                  <span className="w-24 shrink-0 text-[#64748b]">場所</span>
                   <span className="text-[#1a2332]">{form.location}</span>
                 </div>
                 {form.meeting_point && (
                   <div className="flex gap-2">
-                    <span className="w-24 shrink-0 text-[#8d99a8]">待ち合わせ</span>
+                    <span className="w-24 shrink-0 text-[#64748b]">待ち合わせ</span>
                     <span className="text-[#1a2332]">{form.meeting_point}</span>
                   </div>
                 )}
                 {form.gender_filter !== "all" && (
                   <div className="flex gap-2">
-                    <span className="w-24 shrink-0 text-[#8d99a8]">対象性別</span>
+                    <span className="w-24 shrink-0 text-[#64748b]">対象性別</span>
                     <span className="text-[#1a2332]">{form.gender_filter === "male" ? "男性のみ" : "女性のみ"}</span>
                   </div>
                 )}
                 {form.description && (
                   <div className="flex gap-2">
-                    <span className="w-24 shrink-0 text-[#8d99a8]">説明・メニュー</span>
+                    <span className="w-24 shrink-0 text-[#64748b]">説明・メニュー</span>
                     <span className="whitespace-pre-wrap text-[#1a2332]">{form.description}</span>
                   </div>
                 )}
@@ -1128,52 +1128,52 @@ export function NewSessionForm({
             </div>
 
             <div className="space-y-2">
-              <p className="text-xs font-semibold text-[#8d99a8] uppercase tracking-wide">参加費</p>
+              <p className="text-sm font-semibold text-[#64748b] uppercase tracking-wide">参加費</p>
               <div className="rounded-xl bg-[#f2f7fa] px-4 py-3 text-sm space-y-2">
                 <div className="flex gap-2">
-                  <span className="w-24 shrink-0 text-[#8d99a8]">メンバー</span>
+                  <span className="w-24 shrink-0 text-[#64748b]">メンバー</span>
                   <span className="text-[#1a2332]">¥{parseInt(form.member_price || "0").toLocaleString()}</span>
                 </div>
                 <div className="flex gap-2">
-                  <span className="w-24 shrink-0 text-[#8d99a8]">ゲスト</span>
+                  <span className="w-24 shrink-0 text-[#64748b]">ゲスト</span>
                   <span className="text-[#1a2332]">¥{parseInt(form.guest_price || "0").toLocaleString()}</span>
                 </div>
                 <div className="flex gap-2">
-                  <span className="w-24 shrink-0 text-[#8d99a8]">回数券</span>
+                  <span className="w-24 shrink-0 text-[#64748b]">回数券</span>
                   <span className="text-[#1a2332]">{form.allow_point_card ? "利用可" : "利用不可"}</span>
                 </div>
               </div>
             </div>
 
             <div className="space-y-2">
-              <p className="text-xs font-semibold text-[#8d99a8] uppercase tracking-wide">詳細設定</p>
+              <p className="text-sm font-semibold text-[#64748b] uppercase tracking-wide">詳細設定</p>
               <div className="rounded-xl bg-[#f2f7fa] px-4 py-3 text-sm space-y-2">
                 {form.registration_deadline && (
                   <div className="flex gap-2">
-                    <span className="w-24 shrink-0 text-[#8d99a8]">申込締切</span>
+                    <span className="w-24 shrink-0 text-[#64748b]">申込締切</span>
                     <span className="text-[#1a2332]">{new Date(form.registration_deadline).toLocaleDateString("ja-JP")}</span>
                   </div>
                 )}
                 {form.min_participants && (
                   <div className="flex gap-2">
-                    <span className="w-24 shrink-0 text-[#8d99a8]">最低人数</span>
+                    <span className="w-24 shrink-0 text-[#64748b]">最低人数</span>
                     <span className="text-[#1a2332]">{form.min_participants}人</span>
                   </div>
                 )}
                 {form.max_participants && (
                   <div className="flex gap-2">
-                    <span className="w-24 shrink-0 text-[#8d99a8]">定員</span>
+                    <span className="w-24 shrink-0 text-[#64748b]">定員</span>
                     <span className="text-[#1a2332]">{form.max_participants}人</span>
                   </div>
                 )}
                 {form.cancellation_days && (
                   <div className="flex gap-2">
-                    <span className="w-24 shrink-0 text-[#8d99a8]">キャンセル期限</span>
+                    <span className="w-24 shrink-0 text-[#64748b]">キャンセル期限</span>
                     <span className="text-[#1a2332]">{form.cancellation_days}日前まで</span>
                   </div>
                 )}
                 <div className="flex gap-2">
-                  <span className="w-24 shrink-0 text-[#8d99a8]">外部公開</span>
+                  <span className="w-24 shrink-0 text-[#64748b]">外部公開</span>
                   <span className="text-[#1a2332]">{form.is_external ? "あり" : "なし"}</span>
                 </div>
               </div>
@@ -1181,13 +1181,13 @@ export function NewSessionForm({
 
             {form.type === "competition" && competitionFields.length > 0 && (
               <div className="space-y-2">
-                <p className="text-xs font-semibold text-[#8d99a8] uppercase tracking-wide">エントリー項目</p>
+                <p className="text-sm font-semibold text-[#64748b] uppercase tracking-wide">エントリー項目</p>
                 <div className="rounded-xl bg-[#f2f7fa] px-4 py-3 text-sm space-y-1.5">
                   {competitionFields.map((f, i) => (
                     <div key={i} className="flex items-center gap-2">
                       <span className="text-[#1a2332]">{f.label || "（未入力）"}</span>
                       {f.required && (
-                        <span className="rounded-full bg-[#fdecea] px-1.5 py-0.5 text-xs font-medium text-[#c0392b]">必須</span>
+                        <span className="rounded-full bg-[#fdecea] px-1.5 py-0.5 text-sm font-medium text-[#c0392b]">必須</span>
                       )}
                     </div>
                   ))}
@@ -1196,18 +1196,18 @@ export function NewSessionForm({
             )}
 
             <div className="space-y-2">
-              <p className="text-xs font-semibold text-[#8d99a8] uppercase tracking-wide">配信対象</p>
+              <p className="text-sm font-semibold text-[#64748b] uppercase tracking-wide">配信対象</p>
               <div className="rounded-xl bg-[#f2f7fa] px-4 py-3 text-sm space-y-2">
                 {selectedTags.length > 0 && (
                   <div className="flex gap-2">
-                    <span className="w-24 shrink-0 text-[#8d99a8]">タグ絞込</span>
+                    <span className="w-24 shrink-0 text-[#64748b]">タグ絞込</span>
                     <span className="text-[#1a2332]">
                       {selectedTags.map((t) => SYSTEM_TAGS.find((s) => s.id === t)?.label || t).join("、")}
                     </span>
                   </div>
                 )}
                 <div className="flex gap-2">
-                  <span className="w-24 shrink-0 text-[#8d99a8]">選択人数</span>
+                  <span className="w-24 shrink-0 text-[#64748b]">選択人数</span>
                   <span className="text-[#1a2332]">
                     {selectedMemberIds.length === teamMembers.length
                       ? `全メンバー（${teamMembers.length}人）`
@@ -1224,12 +1224,12 @@ export function NewSessionForm({
       <div className="flex gap-3">
         {step === 0 ? (
           <Link href={activeTeamId ? `/teams/${activeTeamId}?tab=sessions` : "/"} className="flex-1">
-            <Button type="button" variant="outline" className="w-full rounded-full border-[#dce3ea] text-[#5c6a7a]" style={{ minHeight: "48px" }}>
+            <Button type="button" variant="outline" className="w-full rounded-full border-[#dce3ea] text-[#475569]" style={{ minHeight: "48px" }}>
               キャンセル
             </Button>
           </Link>
         ) : (
-          <Button type="button" variant="outline" onClick={handleBack} className="flex-1 rounded-full border-[#dce3ea] text-[#5c6a7a]" style={{ minHeight: "48px" }}>
+          <Button type="button" variant="outline" onClick={handleBack} className="flex-1 rounded-full border-[#dce3ea] text-[#475569]" style={{ minHeight: "48px" }}>
             ← 戻る
           </Button>
         )}

@@ -26,7 +26,7 @@ const stripeInputStyle = {
     fontSize: "15px",
     color: "#1a2332",
     fontFamily: "system-ui, sans-serif",
-    "::placeholder": { color: "#8d99a8" },
+    "::placeholder": { color: "#64748b" },
   },
   invalid: { color: "#c0392b" },
 }
@@ -90,7 +90,7 @@ function CardForm({ clientSecret, onSuccess }: { clientSecret: string; onSuccess
     <div className="space-y-4">
       <div className="space-y-3">
         <div className="space-y-1">
-          <label className="text-xs font-medium text-[#5c6a7a]">カード番号</label>
+          <label className="text-sm font-medium text-[#475569]">カード番号</label>
           <div className="rounded-lg border bg-white px-3 py-3">
             <CardNumberElement
               options={{ style: stripeInputStyle }}
@@ -100,7 +100,7 @@ function CardForm({ clientSecret, onSuccess }: { clientSecret: string; onSuccess
         </div>
         <div className="flex gap-3">
           <div className="flex-1 space-y-1">
-            <label className="text-xs font-medium text-[#5c6a7a]">有効期限</label>
+            <label className="text-sm font-medium text-[#475569]">有効期限</label>
             <div className="rounded-lg border bg-white px-3 py-3">
               <CardExpiryElement
                 options={{ style: stripeInputStyle }}
@@ -109,7 +109,7 @@ function CardForm({ clientSecret, onSuccess }: { clientSecret: string; onSuccess
             </div>
           </div>
           <div className="flex-1 space-y-1">
-            <label className="text-xs font-medium text-[#5c6a7a]">セキュリティコード</label>
+            <label className="text-sm font-medium text-[#475569]">セキュリティコード</label>
             <div className="rounded-lg border bg-white px-3 py-3">
               <CardCvcElement
                 options={{ style: stripeInputStyle }}
@@ -121,13 +121,13 @@ function CardForm({ clientSecret, onSuccess }: { clientSecret: string; onSuccess
       </div>
 
       {formError && (
-        <p className="rounded-lg border border-[#c0392b]/20 bg-[#fdecea] px-3 py-2 text-xs text-[#c0392b]">
+        <p className="rounded-lg border border-[#c0392b]/20 bg-[#fdecea] px-3 py-2 text-sm text-[#c0392b]">
           {formError}
         </p>
       )}
 
       {IS_TEST_MODE && (
-        <p className="text-xs text-[#5c6a7a]">
+        <p className="text-sm text-[#475569]">
           テスト用カード: 4242 4242 4242 4242 / 有効期限: 任意の将来日 / CVC: 任意の3桁
         </p>
       )}
@@ -229,7 +229,7 @@ export function UpdateCardForm({ hasCard }: { hasCard: boolean }) {
         <button
           type="button"
           onClick={() => setOpen(false)}
-          className="text-xs text-[#5c6a7a] hover:text-[#1a2332]"
+          className="text-sm text-[#475569] hover:text-[#1a2332]"
         >
           キャンセル
         </button>

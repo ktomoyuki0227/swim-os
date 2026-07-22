@@ -12,7 +12,7 @@ export function TeamDescription({ text }: TeamDescriptionProps) {
 
   return (
     <div>
-      <p className={`text-sm leading-relaxed text-[#5c6a7a] ${!expanded && isLong ? "line-clamp-2" : ""}`}>
+      <p className={`text-sm leading-relaxed text-[#475569] ${!expanded && isLong ? "line-clamp-2" : ""}`}>
         {text}
       </p>
       {isLong && (

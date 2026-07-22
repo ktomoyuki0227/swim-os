@@ -78,7 +78,7 @@ function InfoRow({ label, value }: { label: string; value?: string | null }) {
   if (!value) return null
   return (
     <div className="flex justify-between gap-4 py-2 text-sm">
-      <span className="shrink-0 text-[#8d99a8]">{label}</span>
+      <span className="shrink-0 text-[#64748b]">{label}</span>
       <span className="text-right text-[#1a2332]">{value}</span>
     </div>
   )
@@ -266,13 +266,13 @@ export function MemberDetailModal({
             <div>
               <p className="font-semibold text-[#1a2332]">{swimmer?.name || "不明"}</p>
               {swimmer?.furigana && (
-                <p className="text-xs text-[#8d99a8]">{swimmer.furigana}</p>
+                <p className="text-sm text-[#64748b]">{swimmer.furigana}</p>
               )}
             </div>
           </div>
           <button
             onClick={onClose}
-            className="flex h-7 w-7 items-center justify-center rounded-full text-[#8d99a8] hover:bg-[#f2f7fa] hover:text-[#5c6a7a]"
+            className="flex h-7 w-7 items-center justify-center rounded-full text-[#64748b] hover:bg-[#f2f7fa] hover:text-[#475569]"
             aria-label="閉じる"
           >
             ✕
@@ -288,7 +288,7 @@ export function MemberDetailModal({
               className={`flex-1 py-2.5 text-sm font-medium transition-colors ${
                 activeTab === tab
                   ? "border-b-2 border-[#005F8C] text-[#005F8C]"
-                  : "text-[#8d99a8] hover:text-[#5c6a7a]"
+                  : "text-[#64748b] hover:text-[#475569]"
               }`}
             >
               {tab === "detail" ? "詳細" : "編集"}
@@ -302,7 +302,7 @@ export function MemberDetailModal({
             <div className="divide-y divide-[#e8edf2]">
               {/* メンバー情報 */}
               <div className="pb-3">
-                <p className="mb-2 text-xs font-medium text-[#8d99a8]">メンバー情報</p>
+                <p className="mb-2 text-sm font-medium text-[#64748b]">メンバー情報</p>
                 <InfoRow label="役割" value={member.role === "admin" ? "管理者" : "一般メンバー"} />
                 <InfoRow label="会員種別" value={membershipLabel} />
                 <InfoRow label="参加日" value={joinedAt} />
@@ -310,7 +310,7 @@ export function MemberDetailModal({
 
               {/* 基本情報 */}
               <div className="py-3">
-                <p className="mb-2 text-xs font-medium text-[#8d99a8]">基本情報</p>
+                <p className="mb-2 text-sm font-medium text-[#64748b]">基本情報</p>
                 <InfoRow label="メールアドレス" value={emailLoading ? "取得中..." : email ?? "—"} />
                 <InfoRow label="電話番号" value={swimmer?.phone} />
                 <InfoRow label="性別" value={genderLabel} />
@@ -321,7 +321,7 @@ export function MemberDetailModal({
               {/* 緊急連絡先 */}
               {(swimmer?.emergency_contact || swimmer?.emergency_contact_name) && (
                 <div className="py-3">
-                  <p className="mb-2 text-xs font-medium text-[#8d99a8]">緊急連絡先</p>
+                  <p className="mb-2 text-sm font-medium text-[#64748b]">緊急連絡先</p>
                   <InfoRow label="氏名" value={swimmer?.emergency_contact_name} />
                   <InfoRow label="続柄" value={swimmer?.emergency_contact_relation} />
                   <InfoRow label="電話番号" value={swimmer?.emergency_contact} />
@@ -330,24 +330,24 @@ export function MemberDetailModal({
 
               {/* 水泳情報 */}
               <div className="py-3">
-                <p className="mb-2 text-xs font-medium text-[#8d99a8]">水泳情報</p>
+                <p className="mb-2 text-sm font-medium text-[#64748b]">水泳情報</p>
                 <InfoRow label="レベル" value={swimmer?.level} />
                 <InfoRow label="スイマータイプ" value={swimmer?.swimmer_type} />
                 {(swimmer?.swim_disciplines ?? []).length > 0 && (
                   <div className="flex justify-between gap-4 py-2 text-sm">
-                    <span className="shrink-0 text-[#8d99a8]">水泳カテゴリ</span>
+                    <span className="shrink-0 text-[#64748b]">水泳カテゴリ</span>
                     <span className="text-right text-[#1a2332]">{(swimmer?.swim_disciplines ?? []).join("・")}</span>
                   </div>
                 )}
                 {(swimmer?.specialties ?? []).length > 0 && (
                   <div className="flex justify-between gap-4 py-2 text-sm">
-                    <span className="shrink-0 text-[#8d99a8]">得意種目</span>
+                    <span className="shrink-0 text-[#64748b]">得意種目</span>
                     <span className="text-right text-[#1a2332]">{(swimmer?.specialties ?? []).join("・")}</span>
                   </div>
                 )}
                 {(swimmer?.swimming_goals ?? []).length > 0 && (
                   <div className="flex justify-between gap-4 py-2 text-sm">
-                    <span className="shrink-0 text-[#8d99a8]">活動目的</span>
+                    <span className="shrink-0 text-[#64748b]">活動目的</span>
                     <span className="text-right text-[#1a2332]">{(swimmer?.swimming_goals ?? []).join("・")}</span>
                   </div>
                 )}
@@ -356,7 +356,7 @@ export function MemberDetailModal({
               {/* 登録情報 */}
               {(swimmer?.masters_registered || swimmer?.jsa_registered) && (
                 <div className="py-3">
-                  <p className="mb-2 text-xs font-medium text-[#8d99a8]">登録情報</p>
+                  <p className="mb-2 text-sm font-medium text-[#64748b]">登録情報</p>
                   {swimmer?.masters_registered && (
                     <InfoRow label="マスターズ登録" value={swimmer.masters_number ? `登録済（${swimmer.masters_number}）` : "登録済"} />
                   )}
@@ -386,7 +386,7 @@ export function MemberDetailModal({
                         className={`rounded-full border px-4 py-1.5 text-sm font-medium transition-colors ${
                           membershipType === opt.value
                             ? "border-[#005F8C] bg-[#e8f2f8] text-[#005F8C]"
-                            : "border-[#dce3ea] text-[#5c6a7a] hover:border-[#005F8C]"
+                            : "border-[#dce3ea] text-[#475569] hover:border-[#005F8C]"
                         }`}
                       >
                         {opt.label}
@@ -404,7 +404,7 @@ export function MemberDetailModal({
                     <button
                       type="button"
                       onClick={() => setStampRemaining((n) => Math.max(0, n - 1))}
-                      className="flex h-8 w-8 items-center justify-center rounded-full border border-[#dce3ea] text-lg text-[#5c6a7a] transition-colors hover:border-[#005F8C] hover:text-[#005F8C]"
+                      className="flex h-8 w-8 items-center justify-center rounded-full border border-[#dce3ea] text-lg text-[#475569] transition-colors hover:border-[#005F8C] hover:text-[#005F8C]"
                     >
                       −
                     </button>
@@ -419,11 +419,11 @@ export function MemberDetailModal({
                     <button
                       type="button"
                       onClick={() => setStampRemaining((n) => n + 1)}
-                      className="flex h-8 w-8 items-center justify-center rounded-full border border-[#dce3ea] text-lg text-[#5c6a7a] transition-colors hover:border-[#005F8C] hover:text-[#005F8C]"
+                      className="flex h-8 w-8 items-center justify-center rounded-full border border-[#dce3ea] text-lg text-[#475569] transition-colors hover:border-[#005F8C] hover:text-[#005F8C]"
                     >
                       ＋
                     </button>
-                    <span className="text-sm text-[#5c6a7a]">回</span>
+                    <span className="text-sm text-[#475569]">回</span>
                   </div>
                 </div>
               )}
@@ -433,17 +433,17 @@ export function MemberDetailModal({
                 <p className="mb-2.5 text-sm font-medium text-[#1a2332]">タグ</p>
                 {Object.entries(tagsByCategory).map(([category, tags]) => (
                   <div key={category} className="mb-3">
-                    <p className="mb-1.5 text-xs text-[#8d99a8]">{category}</p>
+                    <p className="mb-1.5 text-sm text-[#64748b]">{category}</p>
                     <div className="flex flex-wrap gap-2">
                       {tags.map((tag) => (
                         <button
                           key={tag.id}
                           type="button"
                           onClick={() => toggleTag(tag.id)}
-                          className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                          className={`rounded-full border px-3 py-1 text-sm font-medium transition-colors ${
                             selectedTags.includes(tag.id)
                               ? "border-[#005F8C] bg-[#e8f2f8] text-[#005F8C]"
-                              : "border-[#dce3ea] text-[#5c6a7a] hover:border-[#005F8C]"
+                              : "border-[#dce3ea] text-[#475569] hover:border-[#005F8C]"
                           }`}
                         >
                           {tag.label}
@@ -458,7 +458,7 @@ export function MemberDetailModal({
               <div>
                 <p className="mb-2.5 text-sm font-medium text-[#1a2332]">グループでの役割</p>
                 {isSelf ? (
-                  <p className="text-xs text-[#8d99a8]">自分の役割は変更できません</p>
+                  <p className="text-sm text-[#64748b]">自分の役割は変更できません</p>
                 ) : (
                   <div className="flex gap-2">
                     {(["member", "admin"] as const).map((r) => (
@@ -469,7 +469,7 @@ export function MemberDetailModal({
                         className={`rounded-full border px-4 py-1.5 text-sm font-medium transition-colors ${
                           role === r
                             ? "border-[#005F8C] bg-[#e8f2f8] text-[#005F8C]"
-                            : "border-[#dce3ea] text-[#5c6a7a] hover:border-[#005F8C]"
+                            : "border-[#dce3ea] text-[#475569] hover:border-[#005F8C]"
                         }`}
                       >
                         {r === "admin" ? "管理者" : "一般メンバー"}
@@ -486,7 +486,7 @@ export function MemberDetailModal({
                 type="button"
                 onClick={onClose}
                 disabled={isSaving}
-                className="flex-1 rounded-full border border-[#dce3ea] py-2.5 text-sm font-medium text-[#5c6a7a] transition-colors hover:border-[#005F8C] disabled:opacity-50"
+                className="flex-1 rounded-full border border-[#dce3ea] py-2.5 text-sm font-medium text-[#475569] transition-colors hover:border-[#005F8C] disabled:opacity-50"
               >
                 キャンセル
               </button>

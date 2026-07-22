@@ -27,7 +27,7 @@ export function SubscriptionSection({ teamId, members }: SubscriptionSectionProp
   if (members.length === 0) {
     return (
       <Card className="border-[#dce3ea]">
-        <CardContent className="py-6 text-center text-sm text-[#5c6a7a]">
+        <CardContent className="py-6 text-center text-sm text-[#475569]">
           月謝会員がいません
         </CardContent>
       </Card>
@@ -91,7 +91,7 @@ function MemberSubscriptionCard({
 
   const statusBadge = () => {
     if (!member.stripe_subscription_id || !status || status === "canceled") {
-      return <Badge className="bg-[#edf0f4] text-[#5c6a7a] border-transparent">未設定</Badge>
+      return <Badge className="bg-[#edf0f4] text-[#475569] border-transparent">未設定</Badge>
     }
     if (status === "active") {
       return <Badge className="bg-[#eaf7f0] text-[#0f8a4f] border-transparent">有効</Badge>
@@ -102,7 +102,7 @@ function MemberSubscriptionCard({
     if (status === "unpaid") {
       return <Badge className="bg-[#fdecea] text-[#c0392b] border-transparent">未払い</Badge>
     }
-    return <Badge className="bg-[#edf0f4] text-[#5c6a7a] border-transparent">{status}</Badge>
+    return <Badge className="bg-[#edf0f4] text-[#475569] border-transparent">{status}</Badge>
   }
 
   const canStart = !member.stripe_subscription_id || status === "canceled"

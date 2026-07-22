@@ -20,7 +20,7 @@ export function MarkReadButton({ announcementId, onRead }: { announcementId: str
     <button
       onClick={handleClick}
       disabled={isLoading}
-      className="shrink-0 text-xs text-[#005F8C] hover:underline"
+      className="shrink-0 text-sm text-[#005F8C] hover:underline"
     >
       {isLoading ? "..." : "既読"}
     </button>

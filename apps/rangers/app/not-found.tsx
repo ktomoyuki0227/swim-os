@@ -10,7 +10,7 @@ export default function NotFound() {
       </div>
       <p className="text-7xl font-bold text-[#005F8C]/20" aria-hidden="true">404</p>
       <h1 className="text-2xl font-bold">ページが見つかりません</h1>
-      <p className="max-w-sm text-[#5c6a7a]">
+      <p className="max-w-sm text-[#475569]">
         お探しのページは存在しないか、移動した可能性があります。
       </p>
       <div className="flex gap-3">

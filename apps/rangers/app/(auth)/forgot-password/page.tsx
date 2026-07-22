@@ -28,7 +28,7 @@ export default function ForgotPasswordPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="mb-4 text-center text-sm text-[#5c6a7a]">
+            <p className="mb-4 text-center text-sm text-[#475569]">
               メールが届かない場合は迷惑メールフォルダもご確認ください。
             </p>
             <Link href="/login">
@@ -38,7 +38,7 @@ export default function ForgotPasswordPage() {
             </Link>
           </CardContent>
         </Card>
-        <p className="mt-6 text-center text-sm text-[#8d99a8]">
+        <p className="mt-6 text-center text-sm text-[#64748b]">
           Rangers · マスターズ水泳レッスン予約
         </p>
       </div>
@@ -76,14 +76,14 @@ export default function ForgotPasswordPage() {
               {isPending ? "送信中..." : "リセットリンクを送信"}
             </Button>
           </form>
-          <p className="mt-4 text-center text-sm text-[#5c6a7a]">
+          <p className="mt-4 text-center text-sm text-[#475569]">
             <Link href="/login" className="text-[#005F8C] underline underline-offset-2">
               ログインに戻る
             </Link>
           </p>
         </CardContent>
       </Card>
-      <p className="mt-6 text-center text-sm text-[#8d99a8]">
+      <p className="mt-6 text-center text-sm text-[#64748b]">
         Rangers · マスターズ水泳レッスン予約
       </p>
     </div>

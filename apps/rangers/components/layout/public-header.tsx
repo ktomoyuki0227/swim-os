@@ -34,7 +34,7 @@ export function PublicHeader({ user }: PublicHeaderProps) {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="rounded-full text-[#5c6a7a] hover:text-[#1a2332]"
+                  className="rounded-full text-[#475569] hover:text-[#1a2332]"
                   style={{ minHeight: "44px" }}
                 >
                   ログイン

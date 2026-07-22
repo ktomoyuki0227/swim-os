@@ -74,7 +74,7 @@ export default async function MessageThreadPage({ params }: MessageThreadPagePro
           <p className="font-medium">{partner.name}</p>
           <Link
               href={`/profiles/${partner.id}`}
-              className="text-xs text-[#005F8C] hover:underline"
+              className="text-sm text-[#005F8C] hover:underline"
             >
               プロフィールを見る
             </Link>
@@ -84,7 +84,7 @@ export default async function MessageThreadPage({ params }: MessageThreadPagePro
       {/* メッセージ一覧 */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {(messages ?? []).length === 0 && (
-          <p className="py-8 text-center text-sm text-[#8d99a8]">
+          <p className="py-8 text-center text-sm text-[#64748b]">
             まだメッセージはありません
           </p>
         )}
@@ -105,7 +105,7 @@ export default async function MessageThreadPage({ params }: MessageThreadPagePro
                     className="mb-1 rounded-full object-cover"
                   />
                 ) : (
-                  <div className="mb-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#005F8C]/10 text-xs font-medium text-[#005F8C]">
+                  <div className="mb-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#005F8C]/10 text-sm font-medium text-[#005F8C]">
                     {partner.name[0]}
                   </div>
                 )
@@ -120,7 +120,7 @@ export default async function MessageThreadPage({ params }: MessageThreadPagePro
                 >
                   {msg.content}
                 </div>
-                <p className="text-xs text-[#8d99a8]">
+                <p className="text-sm text-[#64748b]">
                   {new Date(msg.created_at).toLocaleTimeString("ja-JP", {
                     hour: "2-digit",
                     minute: "2-digit",

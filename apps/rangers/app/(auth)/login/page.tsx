@@ -43,7 +43,7 @@ function LoginForm() {
           <div className="flex justify-center">
             <Image src="/rangers-name-背景透過.png" alt="Rangers" width={160} height={44} className="object-contain" />
           </div>
-          <p className="mt-1 text-sm text-[#5c6a7a]">マスターズ水泳グループ管理</p>
+          <p className="mt-1 text-sm text-[#475569]">マスターズ水泳グループ管理</p>
         </CardHeader>
         <CardContent className="space-y-6 pt-4">
           <button
@@ -57,11 +57,11 @@ function LoginForm() {
             LINEでログイン（次フェーズ実装予定）
           </button>
 
-          <p className="text-center text-xs text-[#8d99a8]">
+          <p className="text-center text-sm text-[#64748b]">
             ログインすることで、利用規約とプライバシーポリシーに同意したものとみなされます。
           </p>
 
-          <p className="text-center text-sm text-[#5c6a7a]">
+          <p className="text-center text-sm text-[#475569]">
             アカウントをお持ちでない方は{" "}
             <Link href="/register" className="font-medium text-[#005F8C] hover:underline">
               新規登録
@@ -73,7 +73,7 @@ function LoginForm() {
             <button
               type="button"
               onClick={() => setShowDevLogin((v) => !v)}
-              className="w-full text-center text-xs text-[#8d99a8] hover:text-[#5c6a7a]"
+              className="w-full text-center text-sm text-[#64748b] hover:text-[#475569]"
             >
               {showDevLogin ? "▲ 閉じる" : "▼ デモ用ログイン（開発用）"}
             </button>
@@ -82,12 +82,12 @@ function LoginForm() {
               <form action={formAction} className="mt-4 space-y-3">
                 {invite && <input type="hidden" name="invite" value={invite} />}
                 {state.error && (
-                  <p className="rounded-[10px] border border-[#c0392b]/20 bg-[#fdecea] px-3 py-2 text-xs text-[#c0392b]">
+                  <p className="rounded-[10px] border border-[#c0392b]/20 bg-[#fdecea] px-3 py-2 text-sm text-[#c0392b]">
                     {state.error}
                   </p>
                 )}
                 <div className="space-y-1">
-                  <Label htmlFor="email" className="text-xs text-[#5c6a7a]">メールアドレス</Label>
+                  <Label htmlFor="email" className="text-sm text-[#475569]">メールアドレス</Label>
                   <Input
                     id="email"
                     name="email"
@@ -100,7 +100,7 @@ function LoginForm() {
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label htmlFor="password" className="text-xs text-[#5c6a7a]">パスワード</Label>
+                  <Label htmlFor="password" className="text-sm text-[#475569]">パスワード</Label>
                   <Input
                     id="password"
                     name="password"
@@ -116,14 +116,14 @@ function LoginForm() {
                   type="submit"
                   disabled={isPending}
                   variant="outline"
-                  className="w-full rounded-full border-[#dce3ea] text-sm text-[#5c6a7a]"
+                  className="w-full rounded-full border-[#dce3ea] text-sm text-[#475569]"
                   style={{ minHeight: "44px" }}
                 >
                   {isPending ? "ログイン中..." : "メールでログイン"}
                 </Button>
 
                 {/* クイック切り替え */}
-                <div className="rounded-lg bg-[#f2f7fa] p-3 text-xs text-[#5c6a7a] space-y-2">
+                <div className="rounded-lg bg-[#f2f7fa] p-3 text-sm text-[#475569] space-y-2">
                   <p className="font-medium text-[#1a2332]">テストアカウント（パスワード共通: test1234）</p>
                   <div className="flex flex-col gap-1.5">
                     {[
@@ -169,7 +169,7 @@ function LoginForm() {
                           <p className={`font-semibold ${a.highlight ? "text-[#166534]" : "text-[#1a2332]"}`}>
                             {a.label}
                           </p>
-                          <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                          <span className={`rounded-full px-2 py-0.5 text-sm font-medium ${
                             a.highlight
                               ? "bg-[#06C755]/10 text-[#166534]"
                               : "bg-[#005F8C]/10 text-[#005F8C]"
@@ -177,7 +177,7 @@ function LoginForm() {
                             {a.role}
                           </span>
                         </div>
-                        <p className="mt-0.5 text-xs text-[#8d99a8] leading-tight">{a.desc}</p>
+                        <p className="mt-0.5 text-sm text-[#64748b] leading-tight">{a.desc}</p>
                       </button>
                     ))}
                   </div>
@@ -187,7 +187,7 @@ function LoginForm() {
           </div>
         </CardContent>
       </Card>
-      <p className="mt-6 text-center text-sm text-[#8d99a8]">
+      <p className="mt-6 text-center text-sm text-[#64748b]">
         Rangers · マスターズ水泳グループ管理
       </p>
     </div>

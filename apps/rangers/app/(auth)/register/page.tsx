@@ -24,19 +24,19 @@ function StepProgress({ current }: { current: number }) {
         <Fragment key={num}>
           <div className="flex flex-col items-center">
             <div
-              className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold transition-colors ${
+              className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold transition-colors ${
                 num < current
                   ? "bg-[#005F8C]/20 text-[#005F8C]"
                   : num === current
                   ? "bg-[#005F8C] text-white shadow-md"
-                  : "bg-[#dce3ea] text-[#8d99a8]"
+                  : "bg-[#dce3ea] text-[#64748b]"
               }`}
             >
               {num < current ? "✓" : num}
             </div>
             <p
-              className={`mt-1 hidden text-xs sm:block ${
-                num === current ? "font-medium text-[#005F8C]" : "text-[#8d99a8]"
+              className={`mt-1 hidden text-sm sm:block ${
+                num === current ? "font-medium text-[#005F8C]" : "text-[#64748b]"
               }`}
             >
               {label}
@@ -87,7 +87,7 @@ function RegisterForm() {
               required
               className="w-full rounded-lg border bg-white px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#005F8C]/30"
             />
-            <p className="mt-1 text-xs text-[#5c6a7a]">本名で登録してください</p>
+            <p className="mt-1 text-sm text-[#475569]">本名で登録してください</p>
           </div>
 
           <div>
@@ -122,7 +122,7 @@ function RegisterForm() {
           <div className="space-y-2 pt-1">
             <label className="flex cursor-pointer items-start gap-2 text-sm">
               <input type="checkbox" name="termsAgreed" value="on" required className="mt-0.5 accent-[#005F8C]" />
-              <span className="text-[#5c6a7a]">
+              <span className="text-[#475569]">
                 <Link href="/terms" className="text-[#005F8C] hover:underline">利用規約</Link>
                 と
                 <Link href="/privacy" className="text-[#005F8C] hover:underline">プライバシーポリシー</Link>
@@ -141,7 +141,7 @@ function RegisterForm() {
           </button>
         </form>
 
-        <div className="mt-6 border-t pt-5 text-center text-sm text-[#5c6a7a]">
+        <div className="mt-6 border-t pt-5 text-center text-sm text-[#475569]">
           すでにアカウントをお持ちの方はこちら
           <br />
           <Link href="/login" className="mt-1 inline-block text-[#005F8C] font-medium hover:underline">

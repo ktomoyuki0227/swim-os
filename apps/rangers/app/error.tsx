@@ -24,11 +24,11 @@ export default function Error({ error, reset }: ErrorProps) {
       </div>
       <p className="text-7xl font-bold text-[#c0392b]/20" aria-hidden="true">500</p>
       <h1 className="text-2xl font-bold">エラーが発生しました</h1>
-      <p className="max-w-sm text-[#5c6a7a]">
+      <p className="max-w-sm text-[#475569]">
         予期せぬエラーが発生しました。再試行するか、ホームに戻ってください。
       </p>
       {error.digest && (
-        <p className="text-xs text-[#5c6a7a]">
+        <p className="text-sm text-[#475569]">
           エラーID: <code className="font-mono">{error.digest}</code>
         </p>
       )}

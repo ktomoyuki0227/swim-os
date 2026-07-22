@@ -58,11 +58,11 @@ export default async function DashboardPage() {
       <div className="space-y-6">
         {/* ウェルカムヘッダー */}
         <div className="rounded-[14px] bg-[#f2f7fa] px-5 py-6">
-          <p className="text-sm leading-[1.5] text-[#5c6a7a]">{greeting}</p>
+          <p className="text-sm leading-[1.5] text-[#475569]">{greeting}</p>
           <h1 className="mt-1 text-[22px] font-semibold leading-[1.4] tracking-[-0.2px] text-[#1a2332]">
             ようこそ、{userName}さん！
           </h1>
-          <p className="mt-2 text-sm leading-[1.5] text-[#5c6a7a]">
+          <p className="mt-2 text-sm leading-[1.5] text-[#475569]">
             Rangers では水泳グループの練習・大会・会費を<br className="hidden sm:inline" />
             まとめて管理できます。まずグループに参加しましょう。
           </p>
@@ -85,7 +85,7 @@ export default async function DashboardPage() {
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-[#1a2332]">グループを探す</p>
-                  <p className="mt-0.5 text-xs text-[#5c6a7a]">公開グループに参加</p>
+                  <p className="mt-0.5 text-sm text-[#475569]">公開グループに参加</p>
                 </div>
               </div>
             </Link>
@@ -102,7 +102,7 @@ export default async function DashboardPage() {
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-[#1a2332]">グループを作る</p>
-                  <p className="mt-0.5 text-xs text-[#5c6a7a]">コーチ・管理者として</p>
+                  <p className="mt-0.5 text-sm text-[#475569]">コーチ・管理者として</p>
                 </div>
               </div>
             </Link>
@@ -130,24 +130,24 @@ export default async function DashboardPage() {
                   <Card key={session.id as string} className="border-[#dce3ea] transition-all hover:border-[#005F8C]">
                     <CardContent className="flex items-center gap-4 p-4">
                       <div className="flex w-14 shrink-0 flex-col items-center rounded-[6px] bg-[#005F8C]/10 py-2">
-                        <span className="text-xs font-medium text-[#005F8C]">
+                        <span className="text-sm font-medium text-[#005F8C]">
                           {new Date(session.scheduled_at as string).toLocaleDateString("ja-JP", { month: "short" })}
                         </span>
                         <span className="text-xl font-bold leading-tight text-[#005F8C]">
                           {new Date(session.scheduled_at as string).getDate()}
                         </span>
-                        <span className="text-xs text-[#005F8C]">
+                        <span className="text-sm text-[#005F8C]">
                           {new Date(session.scheduled_at as string).toLocaleDateString("ja-JP", { weekday: "short" })}
                         </span>
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
                           <p className="truncate font-medium text-[#1a2332]">{session.title as string}</p>
-                          <Badge className="shrink-0 bg-[#edf0f4] text-[#5c6a7a] border-transparent text-xs">
+                          <Badge className="shrink-0 bg-[#edf0f4] text-[#475569] border-transparent text-sm">
                             {SESSION_TYPE_LABELS[session.type as string] || session.type as string}
                           </Badge>
                         </div>
-                        <p className="text-xs text-[#5c6a7a]">
+                        <p className="text-sm text-[#475569]">
                           {new Date(session.scheduled_at as string).toLocaleTimeString("ja-JP", {
                             hour: "2-digit",
                             minute: "2-digit",
@@ -155,11 +155,11 @@ export default async function DashboardPage() {
                           {session.location ? ` · ${session.location as string}` : ""}
                         </p>
                         {team && (
-                          <p className="text-xs text-[#5c6a7a]">{team.name as string}</p>
+                          <p className="text-sm text-[#475569]">{team.name as string}</p>
                         )}
                         <p className="mt-0.5 text-sm font-semibold text-[#005F8C]">
                           ¥{(session.guest_price as number || 0).toLocaleString()}
-                          <span className="text-xs font-normal text-[#5c6a7a]">（ゲスト）</span>
+                          <span className="text-sm font-normal text-[#475569]">（ゲスト）</span>
                         </p>
                       </div>
                     </CardContent>
@@ -266,11 +266,11 @@ export default async function DashboardPage() {
                       </div>
                     )}
                     <span
-                      className="absolute right-1.5 top-1.5 rounded-full px-2 py-0.5 text-xs font-semibold backdrop-blur-sm"
+                      className="absolute right-1.5 top-1.5 rounded-full px-2 py-0.5 text-sm font-semibold backdrop-blur-sm"
                       style={
                         isAdmin
                           ? { backgroundColor: "rgba(255,255,255,0.85)", color }
-                          : { backgroundColor: "rgba(255,255,255,0.85)", color: "#5c6a7a" }
+                          : { backgroundColor: "rgba(255,255,255,0.85)", color: "#475569" }
                       }
                     >
                       {isAdmin ? "管理者" : "メンバー"}
@@ -278,7 +278,7 @@ export default async function DashboardPage() {
                   </div>
                   {/* 下: グループ名 */}
                   <div className="px-2.5 py-2">
-                    <p className="line-clamp-2 text-xs font-semibold leading-snug text-[#1a2332]">
+                    <p className="line-clamp-2 text-sm font-semibold leading-snug text-[#1a2332]">
                       {team.name as string}
                     </p>
                   </div>
@@ -292,12 +292,12 @@ export default async function DashboardPage() {
             <Link href="/search?tab=teams" className="block shrink-0 w-[136px]">
               <div className="flex h-[100px] flex-col items-center justify-center gap-2 rounded-[14px] border border-dashed border-[#dce3ea] bg-[#f2f7fa] transition-colors hover:bg-[#edf0f4]">
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[rgba(0,95,140,0.08)]">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8d99a8" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="11" cy="11" r="8" />
                     <line x1="21" y1="21" x2="16.65" y2="16.65" />
                   </svg>
                 </div>
-                <p className="text-sm font-medium text-[#5c6a7a]">グループを探す</p>
+                <p className="text-sm font-medium text-[#475569]">グループを探す</p>
               </div>
             </Link>
           )}

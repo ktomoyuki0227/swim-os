@@ -29,7 +29,7 @@ export default async function NewSessionPage({ searchParams }: Props) {
   }
 
   return (
-    <Suspense fallback={<div className="p-4 text-sm text-[#5c6a7a]">読み込み中...</div>}>
+    <Suspense fallback={<div className="p-4 text-sm text-[#475569]">読み込み中...</div>}>
       <NewSessionForm initialTemplates={initialTemplates} initialTeamId={initialTeamId} />
     </Suspense>
   )

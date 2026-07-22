@@ -66,10 +66,10 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
             <div className="min-w-0 flex-1">
               <h1 className="text-xl font-bold text-[#1a2332]">{profile.name as string}</h1>
               {profile.career && (
-                <p className="mt-0.5 text-sm text-[#5c6a7a]">{profile.career as string}</p>
+                <p className="mt-0.5 text-sm text-[#475569]">{profile.career as string}</p>
               )}
               {prefectures.length > 0 && (
-                <p className="mt-0.5 text-xs text-[#8d99a8]">{prefectures.slice(0, 2).join("・")}</p>
+                <p className="mt-0.5 text-sm text-[#64748b]">{prefectures.slice(0, 2).join("・")}</p>
               )}
             </div>
           </div>
@@ -78,17 +78,17 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
           {(specialties.length > 0 || targetAges.length > 0 || swimDisciplines.length > 0) && (
             <div className="mt-5 flex flex-wrap gap-1.5">
               {specialties.map((s) => (
-                <span key={s} className="rounded-full bg-[#e8f2f8] px-3 py-1 text-xs font-medium text-[#005F8C]">
+                <span key={s} className="rounded-full bg-[#e8f2f8] px-3 py-1 text-sm font-medium text-[#005F8C]">
                   {s}
                 </span>
               ))}
               {targetAges.map((a) => (
-                <span key={a} className="rounded-full bg-[#eaf7f0] px-3 py-1 text-xs font-medium text-[#0f8a4f]">
+                <span key={a} className="rounded-full bg-[#eaf7f0] px-3 py-1 text-sm font-medium text-[#0f8a4f]">
                   {a}
                 </span>
               ))}
               {swimDisciplines.map((d) => (
-                <span key={d} className="rounded-full bg-[#e8f2f8] px-3 py-1 text-xs font-medium text-[#005F8C]">
+                <span key={d} className="rounded-full bg-[#e8f2f8] px-3 py-1 text-sm font-medium text-[#005F8C]">
                   {d}
                 </span>
               ))}
@@ -98,7 +98,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
           {/* 自己紹介 */}
           {profile.bio && (
             <div className="mt-5 border-t border-[#e8edf2] pt-4">
-              <p className="mb-1.5 text-xs font-medium text-[#8d99a8]">自己紹介</p>
+              <p className="mb-1.5 text-sm font-medium text-[#64748b]">自己紹介</p>
               <p className="text-sm leading-relaxed text-[#1a2332]">{profile.bio as string}</p>
             </div>
           )}
@@ -106,7 +106,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
           {/* 経歴 */}
           {profile.career && (
             <div className="mt-4 border-t border-[#e8edf2] pt-4">
-              <p className="mb-1.5 text-xs font-medium text-[#8d99a8]">経歴</p>
+              <p className="mb-1.5 text-sm font-medium text-[#64748b]">経歴</p>
               <p className="text-sm leading-relaxed text-[#1a2332]">{profile.career as string}</p>
             </div>
           )}
@@ -114,7 +114,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
           {/* 実績 */}
           {profile.achievements && (
             <div className="mt-4 border-t border-[#e8edf2] pt-4">
-              <p className="mb-1.5 text-xs font-medium text-[#8d99a8]">実績</p>
+              <p className="mb-1.5 text-sm font-medium text-[#64748b]">実績</p>
               <p className="text-sm leading-relaxed text-[#1a2332]">{profile.achievements as string}</p>
             </div>
           )}
@@ -122,15 +122,15 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
           {/* 活動・目的 */}
           {(swimmingGoals.length > 0 || participationStyles.length > 0) && (
             <div className="mt-4 border-t border-[#e8edf2] pt-4">
-              <p className="mb-2 text-xs font-medium text-[#8d99a8]">活動スタイル</p>
+              <p className="mb-2 text-sm font-medium text-[#64748b]">活動スタイル</p>
               <div className="flex flex-wrap gap-1.5">
                 {swimmingGoals.map((g) => (
-                  <span key={g} className="rounded-full bg-[#fdf6e3] px-3 py-1 text-xs text-[#b8860b]">
+                  <span key={g} className="rounded-full bg-[#fdf6e3] px-3 py-1 text-sm text-[#b8860b]">
                     {g}
                   </span>
                 ))}
                 {participationStyles.map((p) => (
-                  <span key={p} className="rounded-full bg-[#fdf6e3] px-3 py-1 text-xs text-[#b8860b]">
+                  <span key={p} className="rounded-full bg-[#fdf6e3] px-3 py-1 text-sm text-[#b8860b]">
                     {p}
                   </span>
                 ))}

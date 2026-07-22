@@ -38,10 +38,10 @@ export default async function MessagesPage() {
         <h1 className="mb-6 text-lg font-semibold text-[#1a2332]">メッセージ</h1>
         <div className="flex flex-col items-center gap-3 py-16 text-center">
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[rgba(0,95,140,0.08)]">
-            <MessageCircle className="h-6 w-6 text-[#8d99a8]" />
+            <MessageCircle className="h-6 w-6 text-[#64748b]" />
           </div>
           <p className="text-base font-semibold text-[#1a2332]">まだメッセージはありません</p>
-          <p className="text-sm text-[#5c6a7a]">
+          <p className="text-sm text-[#475569]">
             グループ管理者からのメッセージがここに表示されます
           </p>
         </div>
@@ -98,19 +98,19 @@ export default async function MessagesPage() {
                 <div className="flex items-center justify-between">
                   <p className="font-medium text-[#1a2332]">{partner.name}</p>
                   {latestMessages[partner.id] && (
-                    <p className="text-xs text-[#8d99a8]">
+                    <p className="text-sm text-[#64748b]">
                       {new Date(latestMessages[partner.id].created_at).toLocaleDateString("ja-JP")}
                     </p>
                   )}
                 </div>
                 {latestMessages[partner.id] && (
-                  <p className="truncate text-sm text-[#5c6a7a]">
+                  <p className="truncate text-sm text-[#475569]">
                     {latestMessages[partner.id].content}
                   </p>
                 )}
               </div>
               {(unreadCounts[partner.id] ?? 0) > 0 && (
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#005F8C] text-xs font-bold text-white">
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#005F8C] text-sm font-bold text-white">
                   {unreadCounts[partner.id]}
                 </span>
               )}

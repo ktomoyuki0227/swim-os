@@ -125,7 +125,7 @@ export function Navigation({ userName, avatarUrl, unreadCount = 0, inactiveRoute
                   "flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                   isActive(link.href)
                     ? "bg-[#005F8C]/10 text-[#005F8C]"
-                    : "text-[#5c6a7a] hover:bg-[#f2f7fa] hover:text-[#1a2332]"
+                    : "text-[#475569] hover:bg-[#f2f7fa] hover:text-[#1a2332]"
                 )}
               >
                 {link.label}
@@ -138,7 +138,7 @@ export function Navigation({ userName, avatarUrl, unreadCount = 0, inactiveRoute
             {/* Notification bell */}
             <Link
               href="/notifications"
-              className="relative flex h-9 w-9 items-center justify-center rounded-lg text-[#5c6a7a] transition-colors hover:bg-[#f2f7fa] hover:text-[#1a2332]"
+              className="relative flex h-9 w-9 items-center justify-center rounded-lg text-[#475569] transition-colors hover:bg-[#f2f7fa] hover:text-[#1a2332]"
               aria-label="通知"
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -157,7 +157,7 @@ export function Navigation({ userName, avatarUrl, unreadCount = 0, inactiveRoute
               <button
                 type="button"
                 onClick={() => setMenuOpen((v) => !v)}
-                className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-[#005F8C]/10 text-xs font-semibold text-[#005F8C] ring-1 ring-[#dce3ea] transition-opacity hover:opacity-80"
+                className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-[#005F8C]/10 text-sm font-semibold text-[#005F8C] ring-1 ring-[#dce3ea] transition-opacity hover:opacity-80"
                 aria-label={`${userName}のメニュー`}
               >
                 {avatarUrl ? (
@@ -210,10 +210,10 @@ export function Navigation({ userName, avatarUrl, unreadCount = 0, inactiveRoute
               key={link.href}
               href={link.href}
               className={cn(
-                "flex flex-1 flex-col items-center gap-0.5 py-2 text-xs font-medium transition-colors",
+                "flex flex-1 flex-col items-center gap-0.5 py-2 text-sm font-medium transition-colors",
                 isActive(link.href)
                   ? "text-[#005F8C]"
-                  : "text-[#8d99a8]"
+                  : "text-[#64748b]"
               )}
             >
               <span className={cn(

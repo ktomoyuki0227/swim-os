@@ -23,7 +23,7 @@ const SESSION_TYPE_STYLES: Record<string, { bar: string; bg: string; text: strin
   event:       { bar: "#0f8a4f", bg: "rgba(15,138,79,0.09)",   text: "#0f8a4f" },
   meeting:     { bar: "#7B5EA7", bg: "rgba(123,94,167,0.09)",  text: "#7B5EA7" },
 }
-const DEFAULT_STYLE = { bar: "#8d99a8", bg: "rgba(141,153,168,0.09)", text: "#5c6a7a" }
+const DEFAULT_STYLE = { bar: "#64748b", bg: "rgba(100,116,139,0.09)", text: "#475569" }
 
 import { MAX_PRICE, DEFAULT_MAX_PRICE } from "../session-price-config"
 
@@ -98,7 +98,7 @@ export default async function SessionsPage({ searchParams }: SessionsPageProps) 
         <div className="flex items-center gap-2 px-3 py-2">
           <Link
             href="/search"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#f2f7fa] text-[#5c6a7a] hover:bg-[#e0edf5]"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#f2f7fa] text-[#475569] hover:bg-[#e0edf5]"
             aria-label="探すに戻る"
           >
             <ChevronLeft className="h-5 w-5" />
@@ -121,17 +121,17 @@ export default async function SessionsPage({ searchParams }: SessionsPageProps) 
       {sessions.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-2xl border border-[#dce3ea] bg-white px-6 py-16 text-center">
           <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[rgba(0,95,140,0.08)]">
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#8d99a8" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="11" cy="11" r="8" />
               <line x1="21" y1="21" x2="16.65" y2="16.65" />
             </svg>
           </div>
           <p className="font-semibold text-[#1a2332]">セッションが見つかりません</p>
-          <p className="mt-1 text-sm text-[#5c6a7a]">条件を変更して再検索してみてください</p>
+          <p className="mt-1 text-sm text-[#475569]">条件を変更して再検索してみてください</p>
         </div>
       ) : (
         <div className="space-y-2">
-          <p className="text-xs text-[#8d99a8]">{sessions.length}件のセッション</p>
+          <p className="text-sm text-[#64748b]">{sessions.length}件のセッション</p>
           {sessions.map((session: Record<string, unknown>) => {
             const team = session.team as Record<string, unknown> | null
             const teamId = team?.id as string | undefined
@@ -187,7 +187,7 @@ export default async function SessionsPage({ searchParams }: SessionsPageProps) 
                         </div>
 
                         {/* 行2: 日時 */}
-                        <div className="flex items-center gap-1 overflow-hidden text-xs text-[#5c6a7a]">
+                        <div className="flex items-center gap-1 overflow-hidden text-sm text-[#475569]">
                           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
                             <circle cx="12" cy="12" r="10" />
                             <polyline points="12 6 12 12 16 14" />
@@ -196,7 +196,7 @@ export default async function SessionsPage({ searchParams }: SessionsPageProps) 
                         </div>
 
                         {/* 行3: 場所 */}
-                        <div className="flex items-center gap-1 overflow-hidden text-xs text-[#5c6a7a]">
+                        <div className="flex items-center gap-1 overflow-hidden text-sm text-[#475569]">
                           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
                             <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
                             <circle cx="12" cy="10" r="3" />
@@ -207,7 +207,7 @@ export default async function SessionsPage({ searchParams }: SessionsPageProps) 
                         </div>
 
                         {/* 行4: チーム */}
-                        <div className="flex items-center gap-1 overflow-hidden text-xs">
+                        <div className="flex items-center gap-1 overflow-hidden text-sm">
                           <div className="relative h-4 w-4 shrink-0 overflow-hidden rounded-full bg-[#e8eff4]">
                             {team ? (
                               (team.avatar_url as string | null) ? (
@@ -230,7 +230,7 @@ export default async function SessionsPage({ searchParams }: SessionsPageProps) 
                               </svg>
                             )}
                           </div>
-                          <span className={`truncate ${team ? "text-[#8d99a8]" : "text-[#c8d8e8]"}`}>
+                          <span className={`truncate ${team ? "text-[#64748b]" : "text-[#c8d8e8]"}`}>
                             {team ? (team.name as string) : "-"}
                           </span>
                         </div>
@@ -238,10 +238,10 @@ export default async function SessionsPage({ searchParams }: SessionsPageProps) 
 
                       {/* ゲスト料金（col 3 = auto、常に確保） */}
                       <div className="text-right">
-                        <p className={`text-sm font-bold ${guestPrice > 0 ? "text-[#005F8C]" : "text-[#8d99a8]"}`}>
+                        <p className={`text-sm font-bold ${guestPrice > 0 ? "text-[#005F8C]" : "text-[#64748b]"}`}>
                           {guestPrice > 0 ? `¥${guestPrice.toLocaleString()}` : "無料"}
                         </p>
-                        <p className="text-[10px] text-[#8d99a8]">ゲスト料金</p>
+                        <p className="text-[10px] text-[#64748b]">ゲスト料金</p>
                       </div>
 
                       {/* 逆くの字（col 4 = 14px） */}

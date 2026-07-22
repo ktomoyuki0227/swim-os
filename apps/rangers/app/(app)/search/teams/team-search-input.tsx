@@ -34,7 +34,7 @@ export function TeamSearchInput({
     <form onSubmit={handleSubmit} className="flex-1">
       <div className="relative">
         <svg
-          className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8d99a8]"
+          className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#64748b]"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
@@ -52,7 +52,7 @@ export function TeamSearchInput({
           defaultValue={defaultValue}
           placeholder="チーム名で検索..."
           style={{ minHeight: "40px" }}
-          className="w-full rounded-full border border-[#dce3ea] bg-[#f2f7fa] py-2 pl-9 pr-4 text-sm text-[#1a2332] placeholder:text-[#8d99a8] focus:border-[#0f8a4f] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0f8a4f]/20"
+          className="w-full rounded-full border border-[#dce3ea] bg-[#f2f7fa] py-2 pl-9 pr-4 text-sm text-[#1a2332] placeholder:text-[#64748b] focus:border-[#0f8a4f] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0f8a4f]/20"
         />
       </div>
     </form>

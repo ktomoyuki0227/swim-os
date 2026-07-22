@@ -87,7 +87,7 @@ export default function FaqPage() {
             FAQ
           </p>
           <h1 className="mb-4 text-4xl font-bold tracking-tight sm:text-5xl">よくある質問</h1>
-          <p className="text-[#5c6a7a]">
+          <p className="text-[#475569]">
             解決しない場合は{" "}
             <Link href="/messages" className="text-[#005F8C] hover:underline">
               サポートへお問い合わせ
@@ -114,12 +114,12 @@ export default function FaqPage() {
                   >
                     <summary className="flex cursor-pointer list-none items-center justify-between px-6 py-4 font-medium">
                       <span>{item.q}</span>
-                      <span className="ml-4 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#f2f7fa]text-sm font-bold text-[#5c6a7a] transition-transform group-open:rotate-45">
+                      <span className="ml-4 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#f2f7fa]text-sm font-bold text-[#475569] transition-transform group-open:rotate-45">
                         +
                       </span>
                     </summary>
                     <div className="border-t bg-[#f2f7fa]/20 px-6 py-4">
-                      <p className="text-sm leading-relaxed text-[#5c6a7a]">{item.a}</p>
+                      <p className="text-sm leading-relaxed text-[#475569]">{item.a}</p>
                     </div>
                   </details>
                 ))}
@@ -131,7 +131,7 @@ export default function FaqPage() {
         {/* お問い合わせ */}
         <div className="mt-16 rounded-2xl bg-sky-50 p-8 text-center">
           <p className="mb-1 font-semibold">解決しませんでしたか？</p>
-          <p className="mb-5 text-sm text-[#5c6a7a]">
+          <p className="mb-5 text-sm text-[#475569]">
             サポートグループがお答えします。
           </p>
           <Link

@@ -139,7 +139,7 @@ export function TeamFiltersBar({ sort, recruitingOnly, days, q }: TeamFiltersBar
           onClick={() => setOpenSheet(openSheet === "filter" ? null : "filter")}
           style={{ minHeight: "44px" }}
           className={`flex flex-1 items-center justify-center gap-1 text-sm transition-colors ${
-            filterActive ? "font-semibold text-[#0f8a4f]" : "text-[#5c6a7a]"
+            filterActive ? "font-semibold text-[#0f8a4f]" : "text-[#475569]"
           }`}
         >
           <span>{filterLabel}</span>
@@ -160,7 +160,7 @@ export function TeamFiltersBar({ sort, recruitingOnly, days, q }: TeamFiltersBar
           onClick={() => setOpenSheet(openSheet === "sort" ? null : "sort")}
           style={{ minHeight: "44px" }}
           className={`flex flex-1 items-center justify-center gap-1 text-sm transition-colors ${
-            sortActive ? "font-semibold text-[#0f8a4f]" : "text-[#5c6a7a]"
+            sortActive ? "font-semibold text-[#0f8a4f]" : "text-[#475569]"
           }`}
         >
           <span>{SORT_LABELS[sort] ?? "並び替え"}</span>
@@ -181,7 +181,7 @@ export function TeamFiltersBar({ sort, recruitingOnly, days, q }: TeamFiltersBar
           style={{ minHeight: "44px" }}
           className="flex flex-1 items-center justify-center gap-1.5"
         >
-          <span className={`text-sm transition-colors ${recruitingOnly ? "font-semibold text-[#0f8a4f]" : "text-[#5c6a7a]"}`}>
+          <span className={`text-sm transition-colors ${recruitingOnly ? "font-semibold text-[#0f8a4f]" : "text-[#475569]"}`}>
             募集中
           </span>
           <div className={`relative h-5 w-9 rounded-full transition-colors ${recruitingOnly ? "bg-[#0f8a4f]" : "bg-[#dce3ea]"}`}>
@@ -201,7 +201,7 @@ export function TeamFiltersBar({ sort, recruitingOnly, days, q }: TeamFiltersBar
             <button
               type="button"
               onClick={() => setOpenSheet(null)}
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f2f7fa] text-[#5c6a7a] transition-colors hover:bg-[#e0edf5]"
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f2f7fa] text-[#475569] transition-colors hover:bg-[#e0edf5]"
             >
               <X className="h-4 w-4" aria-hidden="true" />
             </button>
@@ -212,7 +212,7 @@ export function TeamFiltersBar({ sort, recruitingOnly, days, q }: TeamFiltersBar
           {openSheet === "filter" && (
             <div className="px-5 pt-5 pb-6">
               {/* 曜日 */}
-              <p className="mb-3 text-[11px] font-bold uppercase tracking-widest text-[#8d99a8]">曜日</p>
+              <p className="mb-3 text-[11px] font-bold uppercase tracking-widest text-[#64748b]">曜日</p>
               <div className="flex gap-2">
                 {DAY_OPTIONS.map((day) => {
                   const sel = tempDays.includes(day)
@@ -227,7 +227,7 @@ export function TeamFiltersBar({ sort, recruitingOnly, days, q }: TeamFiltersBar
                           : { borderColor: "#e0eaef" }
                       }
                       className={`flex h-10 flex-1 items-center justify-center rounded-full border text-sm transition-all ${
-                        sel ? "font-semibold" : "bg-[#f8fafc] text-[#5c6a7a]"
+                        sel ? "font-semibold" : "bg-[#f8fafc] text-[#475569]"
                       }`}
                     >
                       {day}
@@ -241,7 +241,7 @@ export function TeamFiltersBar({ sort, recruitingOnly, days, q }: TeamFiltersBar
                 <button
                   type="button"
                   onClick={() => setTempDays([])}
-                  className="flex-1 rounded-2xl border border-[#dce3ea] py-3.5 text-sm font-semibold text-[#5c6a7a] transition-colors hover:bg-[#f2f7fa]"
+                  className="flex-1 rounded-2xl border border-[#dce3ea] py-3.5 text-sm font-semibold text-[#475569] transition-colors hover:bg-[#f2f7fa]"
                 >
                   リセット
                 </button>

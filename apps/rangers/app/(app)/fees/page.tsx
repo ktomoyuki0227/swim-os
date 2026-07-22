@@ -97,7 +97,7 @@ export default async function FeesPage({ searchParams }: FeesPageProps) {
 
         {adminTeams.length === 0 ? (
           <Card className="border-[#dce3ea]">
-            <CardContent className="py-10 text-center text-sm text-[#5c6a7a]">
+            <CardContent className="py-10 text-center text-sm text-[#475569]">
               グループを作成してください
             </CardContent>
           </Card>
@@ -181,7 +181,7 @@ export default async function FeesPage({ searchParams }: FeesPageProps) {
 
       {adminTeams.length === 0 ? (
         <Card className="border-[#dce3ea]">
-          <CardContent className="py-10 text-center text-sm text-[#5c6a7a]">
+          <CardContent className="py-10 text-center text-sm text-[#475569]">
             グループを作成してください
           </CardContent>
         </Card>
@@ -207,13 +207,13 @@ export default async function FeesPage({ searchParams }: FeesPageProps) {
                 <Card className="border-[#dce3ea]">
                   <CardContent className="p-4 text-center">
                     <p className="text-2xl font-bold text-[#0f8a4f]">{paidCount}</p>
-                    <p className="text-xs text-[#5c6a7a]">支払済み</p>
+                    <p className="text-sm text-[#475569]">支払済み</p>
                   </CardContent>
                 </Card>
                 <Card className="border-[#dce3ea]">
                   <CardContent className="p-4 text-center">
                     <p className="text-2xl font-bold text-[#b8860b]">{unpaidCount}</p>
-                    <p className="text-xs text-[#5c6a7a]">未払い</p>
+                    <p className="text-sm text-[#475569]">未払い</p>
                   </CardContent>
                 </Card>
                 <Card className="border-[#dce3ea]">
@@ -221,7 +221,7 @@ export default async function FeesPage({ searchParams }: FeesPageProps) {
                     <p className="text-lg font-bold text-[#005F8C]">
                       ¥{paidAmount.toLocaleString()}
                     </p>
-                    <p className="text-xs text-[#5c6a7a]">
+                    <p className="text-sm text-[#475569]">
                       / ¥{totalAmount.toLocaleString()}
                     </p>
                   </CardContent>
@@ -234,7 +234,7 @@ export default async function FeesPage({ searchParams }: FeesPageProps) {
                   <h2 className="text-base font-semibold text-[#1a2332]">
                     Stripe Subscription 管理
                   </h2>
-                  <p className="text-xs text-[#8d99a8]">
+                  <p className="text-sm text-[#64748b]">
                     月謝会員ごとに自動引き落とし（Subscription）を開始・停止できます。
                   </p>
                   <SubscriptionSection teamId={selectedTeamId} members={monthlyMembers} />
@@ -260,8 +260,8 @@ export default async function FeesPage({ searchParams }: FeesPageProps) {
                 {fees.length === 0 ? (
                   <Card className="border-[#dce3ea]">
                     <CardContent className="py-10 text-center">
-                      <p className="text-sm text-[#5c6a7a]">会費データがありません</p>
-                      <p className="mt-1 text-xs text-[#8d99a8]">
+                      <p className="text-sm text-[#475569]">会費データがありません</p>
+                      <p className="mt-1 text-sm text-[#64748b]">
                         「一括生成」ボタンで全メンバー分のレコードを作成できます
                       </p>
                     </CardContent>
@@ -282,7 +282,7 @@ export default async function FeesPage({ searchParams }: FeesPageProps) {
                               <p className="font-medium text-[#1a2332]">
                                 {(swimmer?.name as string) || "不明"}
                               </p>
-                              <p className="text-xs text-[#5c6a7a]">
+                              <p className="text-sm text-[#475569]">
                                 {isNoRecord
                                   ? "会費レコード未作成"
                                   : `¥${(fee.amount as number)?.toLocaleString()}${fee.paid_at ? ` · ${new Date(fee.paid_at as string).toLocaleDateString("ja-JP")}支払済` : ""}`
@@ -294,7 +294,7 @@ export default async function FeesPage({ searchParams }: FeesPageProps) {
                                 isPaid
                                   ? "bg-[#eaf7f0] text-[#0f8a4f] border-transparent"
                                   : isNoRecord
-                                    ? "bg-[#edf0f4] text-[#5c6a7a] border-transparent"
+                                    ? "bg-[#edf0f4] text-[#475569] border-transparent"
                                     : "bg-[#fdf6e3] text-[#b8860b] border-transparent"
                               }
                             >
@@ -320,7 +320,7 @@ function NoFeeTypeMessage({ teamId }: { teamId: string }) {
     <Card className="border-[#dce3ea]">
       <CardContent className="flex flex-col items-center py-12 text-center">
         <p className="text-sm font-medium text-[#1a2332]">料金体系が設定されていません</p>
-        <p className="mt-1 text-xs text-[#8d99a8]">
+        <p className="mt-1 text-sm text-[#64748b]">
           年会費・月謝・回数券のいずれかを有効にするとここで管理できます
         </p>
         <Link href={`/teams/${teamId}/edit`} className="mt-4">

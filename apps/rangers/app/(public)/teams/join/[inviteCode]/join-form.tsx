@@ -60,7 +60,7 @@ export function JoinForm({
                   className="sr-only"
                 />
                 <span className="font-semibold text-[#1a2332]">{opt.label}</span>
-                <span className="text-xs text-[#5c6a7a]">{opt.desc}</span>
+                <span className="text-sm text-[#475569]">{opt.desc}</span>
               </label>
             ))}
           </div>

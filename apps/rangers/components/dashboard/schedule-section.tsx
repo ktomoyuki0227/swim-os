@@ -209,7 +209,7 @@ export function ScheduleSection({ sessions, teams }: Props) {
         {sorted.length === 0 ? (
           <div className="flex flex-col items-center py-12 px-6">
             <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[rgba(0,95,140,0.08)]">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8d99a8" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
                 <line x1="16" y1="2" x2="16" y2="6" />
                 <line x1="8" y1="2" x2="8" y2="6" />
@@ -217,7 +217,7 @@ export function ScheduleSection({ sessions, teams }: Props) {
               </svg>
             </div>
             <p className="text-base font-semibold text-[#1a2332]">{emptyMessage}</p>
-            <p className="mt-1 text-sm text-[#5c6a7a]">
+            <p className="mt-1 text-sm text-[#475569]">
               {tab === "registered" ? "セッションに参加登録すると、ここに表示されます" :
                tab === "past" ? "参加したセッションの履歴が表示されます" :
                "グループのセッションが作成されると表示されます"}
@@ -238,20 +238,20 @@ export function ScheduleSection({ sessions, teams }: Props) {
                       className="flex w-14 shrink-0 flex-col items-center rounded-[6px] py-2"
                       style={{ backgroundColor: `${session.team_color}18` }}
                     >
-                      <span className="text-xs font-medium" style={{ color: session.team_color }}>
+                      <span className="text-sm font-medium" style={{ color: session.team_color }}>
                         {new Date(session.scheduled_at).toLocaleDateString("ja-JP", { month: "short", timeZone: "UTC" })}
                       </span>
                       <span className="text-xl font-bold leading-tight" style={{ color: session.team_color }}>
                         {new Date(session.scheduled_at).getUTCDate()}
                       </span>
-                      <span className="text-xs" style={{ color: session.team_color }}>
+                      <span className="text-sm" style={{ color: session.team_color }}>
                         {new Date(session.scheduled_at).toLocaleDateString("ja-JP", { weekday: "short", timeZone: "UTC" })}
                       </span>
                     </div>
                     {/* 情報 */}
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-medium text-[#1a2332]">{session.title}</p>
-                      <p className="truncate text-xs text-[#5c6a7a]">
+                      <p className="truncate text-sm text-[#475569]">
                         {new Date(session.scheduled_at).toLocaleTimeString("ja-JP", {
                           hour: "2-digit",
                           minute: "2-digit",
@@ -259,22 +259,22 @@ export function ScheduleSection({ sessions, teams }: Props) {
                         })}
                         {session.location ? ` · ${session.location}` : ""}
                       </p>
-                      <p className="truncate text-xs text-[#8d99a8]">{session.team_name}</p>
+                      <p className="truncate text-sm text-[#64748b]">{session.team_name}</p>
                     </div>
                     {/* バッジ */}
                     {tab !== "past" && (
                       session.is_registered ? (
-                        <Badge className="shrink-0 bg-[#eaf7f0] text-[#0f8a4f] border-transparent text-xs">
+                        <Badge className="shrink-0 bg-[#eaf7f0] text-[#0f8a4f] border-transparent text-sm">
                           参加予定
                         </Badge>
                       ) : (
-                        <Badge className="shrink-0 bg-[#e8f2f8] text-[#005F8C] border-transparent text-xs">
+                        <Badge className="shrink-0 bg-[#e8f2f8] text-[#005F8C] border-transparent text-sm">
                           受付中
                         </Badge>
                       )
                     )}
                     {tab === "past" && (
-                      <Badge className="shrink-0 bg-[#edf0f4] text-[#5c6a7a] border-transparent text-xs">
+                      <Badge className="shrink-0 bg-[#edf0f4] text-[#475569] border-transparent text-sm">
                         {SESSION_TYPE_LABELS[session.type] || session.type}
                       </Badge>
                     )}
@@ -364,7 +364,7 @@ export function ScheduleSection({ sessions, teams }: Props) {
                       className="inline-block h-3 w-3 shrink-0 rounded-full"
                       style={{ backgroundColor: team.color }}
                     />
-                    <span className={`flex-1 ${checked ? "font-semibold text-[#1a2332]" : "text-[#5c6a7a]"}`}>
+                    <span className={`flex-1 ${checked ? "font-semibold text-[#1a2332]" : "text-[#475569]"}`}>
                       {team.name}
                     </span>
                     {checked && (

@@ -66,7 +66,7 @@ export function SessionCalendar({ sessions }: Props) {
       <div className="flex items-center justify-between px-4 py-3 border-b border-[#dce3ea]">
         <button
           onClick={prevMonth}
-          className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-[#f2f7fa] text-[#5c6a7a] transition-colors"
+          className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-[#f2f7fa] text-[#475569] transition-colors"
         >
           ‹
         </button>
@@ -75,7 +75,7 @@ export function SessionCalendar({ sessions }: Props) {
         </p>
         <button
           onClick={nextMonth}
-          className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-[#f2f7fa] text-[#5c6a7a] transition-colors"
+          className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-[#f2f7fa] text-[#475569] transition-colors"
         >
           ›
         </button>
@@ -86,8 +86,8 @@ export function SessionCalendar({ sessions }: Props) {
         {WEEKDAYS.map((d, i) => (
           <div
             key={d}
-            className={`py-1.5 text-center text-xs font-medium ${
-              i === 5 ? "text-[#005F8C]" : i === 6 ? "text-[#c0392b]" : "text-[#8d99a8]"
+            className={`py-1.5 text-center text-sm font-medium ${
+              i === 5 ? "text-[#005F8C]" : i === 6 ? "text-[#c0392b]" : "text-[#64748b]"
             }`}
           >
             {d}
@@ -116,7 +116,7 @@ export function SessionCalendar({ sessions }: Props) {
             >
               {/* 日付 */}
               <span
-                className={`mt-0.5 text-xs font-medium leading-none
+                className={`mt-0.5 text-sm font-medium leading-none
                   ${isSelected ? "text-white" : isToday ? "font-bold text-[#005F8C]" : weekday === 5 ? "text-[#005F8C]" : weekday === 6 ? "text-[#c0392b]" : "text-[#1a2332]"}
                 `}
               >
@@ -146,7 +146,7 @@ export function SessionCalendar({ sessions }: Props) {
                   ))}
                   {daySessions.length > 2 && (
                     <p
-                      className={`text-center leading-none ${isSelected ? "text-white/50" : "text-[#8d99a8]"}`}
+                      className={`text-center leading-none ${isSelected ? "text-white/50" : "text-[#64748b]"}`}
                       style={{ fontSize: "7px" }}
                     >
                       +{daySessions.length - 2}
@@ -164,7 +164,7 @@ export function SessionCalendar({ sessions }: Props) {
         <div className="border-t border-[#dce3ea] min-h-[52px]">
           <div className="p-3 space-y-1">
             {selectedSessions.length === 0 ? (
-              <p className="text-xs text-center text-[#8d99a8] py-1">セッションなし</p>
+              <p className="text-sm text-center text-[#64748b] py-1">セッションなし</p>
             ) : (
               selectedSessions.map((s) => (
                 <Link
@@ -179,8 +179,8 @@ export function SessionCalendar({ sessions }: Props) {
                     }}
                   />
                   <div className="min-w-0">
-                    <p className="truncate text-xs font-medium text-[#1a2332]">{s.title}</p>
-                    <p className="truncate text-xs text-[#8d99a8]">
+                    <p className="truncate text-sm font-medium text-[#1a2332]">{s.title}</p>
+                    <p className="truncate text-sm text-[#64748b]">
                       {new Date(s.scheduled_at).toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" })}
                       {s.team_name ? ` · ${s.team_name}` : ""}
                     </p>

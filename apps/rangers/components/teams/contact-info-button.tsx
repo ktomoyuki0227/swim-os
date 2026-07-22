@@ -104,14 +104,14 @@ export function ContactInfoButton({ teamId, contactEmail, contactPhone, isLogged
               )}
             </div>
 
-            <p className="mt-4 text-xs text-[#8d99a8]">
+            <p className="mt-4 text-sm text-[#64748b]">
               こちらの連絡先までお気軽にご連絡ください。
             </p>
 
             <button
               type="button"
               onClick={handleClose}
-              className="mt-5 w-full rounded-full border border-[#dce3ea] py-2.5 text-sm text-[#5c6a7a] hover:border-[#8d99a8]"
+              className="mt-5 w-full rounded-full border border-[#dce3ea] py-2.5 text-sm text-[#475569] hover:border-[#8d99a8]"
               style={{ minHeight: "44px" }}
             >
               閉じる

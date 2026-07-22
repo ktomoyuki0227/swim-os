@@ -56,7 +56,7 @@ export function CardModal({ cardDetails, hasCard }: CardModalProps) {
         style={{ minHeight: "44px", minWidth: "44px" }}
         className={`relative flex items-center justify-center rounded-full border bg-white transition-colors hover:border-[#005F8C] hover:text-[#005F8C] ${
           hasCard
-            ? "border-[#dce3ea] text-[#5c6a7a]"
+            ? "border-[#dce3ea] text-[#475569]"
             : "border-[#b8860b] text-[#b8860b]"
         }`}
         aria-label="クレジットカード管理"
@@ -93,7 +93,7 @@ export function CardModal({ cardDetails, hasCard }: CardModalProps) {
               <button
                 type="button"
                 onClick={() => setIsOpen(false)}
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-[#f2f7fa] text-[#5c6a7a] hover:bg-[#e0edf5]"
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-[#f2f7fa] text-[#475569] hover:bg-[#e0edf5]"
               >
                 <X className="h-4 w-4" aria-hidden="true" />
               </button>
@@ -110,13 +110,13 @@ export function CardModal({ cardDetails, hasCard }: CardModalProps) {
                       {CARD_BRAND_LABELS[cardDetails.brand] ?? cardDetails.brand}{" "}
                       <span className="font-mono">•••• {cardDetails.last4}</span>
                     </p>
-                    <p className="text-xs text-[#5c6a7a]">
+                    <p className="text-sm text-[#475569]">
                       有効期限: {String(cardDetails.expMonth).padStart(2, "0")}/{cardDetails.expYear}
                     </p>
                   </div>
                 </div>
               ) : (
-                <p className="text-sm text-[#5c6a7a]">
+                <p className="text-sm text-[#475569]">
                   クレジットカードが登録されていません。グループの参加費・年会費・月謝の支払いに使用されます。
                 </p>
               )}

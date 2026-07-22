@@ -26,11 +26,11 @@ export default async function NotificationsPage() {
       {!notifications || notifications.length === 0 ? (
         <Card className="border-[#dce3ea]">
           <CardContent className="flex flex-col items-center justify-center py-12">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#8d99a8" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
               <path d="M13.73 21a2 2 0 0 1-3.46 0" />
             </svg>
-            <p className="mt-3 text-sm text-[#5c6a7a]">通知はありません</p>
+            <p className="mt-3 text-sm text-[#475569]">通知はありません</p>
           </CardContent>
         </Card>
       ) : (

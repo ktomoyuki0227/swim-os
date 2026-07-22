@@ -115,13 +115,13 @@ export default async function MemberSessionPage({ params }: SessionPageProps) {
   return (
     <div className="space-y-6">
       <div>
-        <Link href={`/teams/${teamId}`} className="text-sm text-[#5c6a7a] hover:text-[#1a2332]">
+        <Link href={`/teams/${teamId}`} className="text-sm text-[#475569] hover:text-[#1a2332]">
           ← グループに戻る
         </Link>
         <div className="mt-2 flex items-start justify-between gap-3">
           <div>
             <h1 className="text-xl font-bold text-[#1a2332]">{session.title}</h1>
-            <p className="text-xs text-[#5c6a7a]">{SESSION_TYPE_LABELS[session.type]}</p>
+            <p className="text-sm text-[#475569]">{SESSION_TYPE_LABELS[session.type]}</p>
           </div>
           <Badge className={status.className}>
             {status.label}
@@ -133,7 +133,7 @@ export default async function MemberSessionPage({ params }: SessionPageProps) {
       <Card className="border-[#dce3ea]">
         <CardContent className="divide-y divide-[#dce3ea] p-0">
           <div className="flex items-center justify-between px-4 py-3">
-            <span className="text-sm text-[#5c6a7a]">日時</span>
+            <span className="text-sm text-[#475569]">日時</span>
             <span className="text-sm font-medium text-[#1a2332]">
               {scheduledDate.toLocaleDateString("ja-JP", {
                 year: "numeric",
@@ -146,14 +146,14 @@ export default async function MemberSessionPage({ params }: SessionPageProps) {
             </span>
           </div>
           <div className="flex items-center justify-between px-4 py-3">
-            <span className="text-sm text-[#5c6a7a]">場所</span>
+            <span className="text-sm text-[#475569]">場所</span>
             <span className="text-sm font-medium text-[#1a2332]">{session.location || "未定"}</span>
           </div>
 
           {/* 料金表示: メンバーには直接表示、非メンバーには閲覧追跡付き */}
           {isMember ? (
             <div className="flex items-center justify-between px-4 py-3">
-              <span className="text-sm text-[#5c6a7a]">参加費（メンバー）</span>
+              <span className="text-sm text-[#475569]">参加費（メンバー）</span>
               <span className="text-sm font-bold text-[#005F8C]">
                 {isExempt ? "無料（会費会員）" : `¥${(session.member_price || 0).toLocaleString()}`}
               </span>
@@ -167,7 +167,7 @@ export default async function MemberSessionPage({ params }: SessionPageProps) {
           )}
 
           <div className="flex items-center justify-between px-4 py-3">
-            <span className="text-sm text-[#5c6a7a]">参加者数</span>
+            <span className="text-sm text-[#475569]">参加者数</span>
             <span className="text-sm font-medium text-[#1a2332]">
               {registrationCount}名
               {session.max_participants && ` / ${session.max_participants}名`}
@@ -175,7 +175,7 @@ export default async function MemberSessionPage({ params }: SessionPageProps) {
           </div>
           {session.registration_deadline && (
             <div className="flex items-center justify-between px-4 py-3">
-              <span className="text-sm text-[#5c6a7a]">申込締切</span>
+              <span className="text-sm text-[#475569]">申込締切</span>
               <span className={`text-sm font-medium ${isDeadlinePassed ? "text-[#c0392b]" : "text-[#1a2332]"}`}>
                 {new Date(session.registration_deadline).toLocaleDateString("ja-JP", {
                   month: "long",
@@ -191,7 +191,7 @@ export default async function MemberSessionPage({ params }: SessionPageProps) {
       </Card>
 
       {session.description && (
-        <p className="text-sm text-[#5c6a7a]">{session.description}</p>
+        <p className="text-sm text-[#475569]">{session.description}</p>
       )}
 
       {/* Registration status */}
@@ -204,7 +204,7 @@ export default async function MemberSessionPage({ params }: SessionPageProps) {
               </svg>
               <div>
                 <p className="font-medium text-[#0f8a4f]">参加登録済み</p>
-                <p className="text-xs text-[#5c6a7a]">
+                <p className="text-sm text-[#475569]">
                   {myRegistration.payment_status === "free"
                     ? "参加費免除（会費会員）"
                     : myRegistration.payment_method === "cash"
@@ -221,7 +221,7 @@ export default async function MemberSessionPage({ params }: SessionPageProps) {
           {canCancel ? (
             <CancelButton sessionId={sessionId} />
           ) : isPast && myRegistration ? (
-            <div className="rounded-xl border border-[#dce3ea] bg-[#f2f7fa] p-3 text-center text-xs text-[#8d99a8]">
+            <div className="rounded-xl border border-[#dce3ea] bg-[#f2f7fa] p-3 text-center text-sm text-[#64748b]">
               開催日を過ぎたためキャンセルできません
             </div>
           ) : null}
@@ -236,7 +236,7 @@ export default async function MemberSessionPage({ params }: SessionPageProps) {
           hasCard={hasCard}
         />
       ) : (
-        <div className="rounded-xl border border-[#dce3ea] bg-[#f2f7fa] p-4 text-center text-sm text-[#5c6a7a]">
+        <div className="rounded-xl border border-[#dce3ea] bg-[#f2f7fa] p-4 text-center text-sm text-[#475569]">
           {session.session_status === "cancelled"
             ? "このセッションは中止になりました"
             : isFull
@@ -252,7 +252,7 @@ export default async function MemberSessionPage({ params }: SessionPageProps) {
         <Card className="border-[#dce3ea]">
           <CardContent className="p-4">
             <h2 className="mb-2 text-sm font-semibold text-[#1a2332]">練習メニュー</h2>
-            <pre className="whitespace-pre-wrap text-sm text-[#5c6a7a]">{session.content}</pre>
+            <pre className="whitespace-pre-wrap text-sm text-[#475569]">{session.content}</pre>
           </CardContent>
         </Card>
       )}

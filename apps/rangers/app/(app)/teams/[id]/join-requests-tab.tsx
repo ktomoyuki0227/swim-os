@@ -65,7 +65,7 @@ export function JoinRequestsTab({ teamId, initialRequests }: JoinRequestsTabProp
     return (
       <div className="flex flex-col items-center py-12 px-6">
         <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[rgba(0,95,140,0.08)]">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8d99a8" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
             <circle cx="9" cy="7" r="4" />
             <line x1="19" y1="8" x2="19" y2="14" />
@@ -73,7 +73,7 @@ export function JoinRequestsTab({ teamId, initialRequests }: JoinRequestsTabProp
           </svg>
         </div>
         <p className="text-base font-semibold text-[#1a2332]">参加申請はありません</p>
-        <p className="mt-1 text-sm text-[#5c6a7a]">メンバーからの申請が届くと表示されます</p>
+        <p className="mt-1 text-sm text-[#475569]">メンバーからの申請が届くと表示されます</p>
       </div>
     )
   }
@@ -102,13 +102,13 @@ export function JoinRequestsTab({ teamId, initialRequests }: JoinRequestsTabProp
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium text-[#1a2332]">{swimmer?.name ?? "不明"}</p>
                 {swimmer?.furigana && (
-                  <p className="text-xs text-[#8d99a8]">{swimmer.furigana}</p>
+                  <p className="text-sm text-[#64748b]">{swimmer.furigana}</p>
                 )}
                 <div className="mt-0.5 flex items-center gap-2">
-                  <span className="rounded-full bg-[#e8f2f8] px-2 py-0.5 text-xs font-medium text-[#005F8C]">
+                  <span className="rounded-full bg-[#e8f2f8] px-2 py-0.5 text-sm font-medium text-[#005F8C]">
                     {MEMBERSHIP_TYPE_LABEL[req.membership_type] ?? req.membership_type}
                   </span>
-                  <span className="text-xs text-[#8d99a8]">
+                  <span className="text-sm text-[#64748b]">
                     {new Date(req.created_at).toLocaleDateString("ja-JP")}
                   </span>
                 </div>
@@ -118,7 +118,7 @@ export function JoinRequestsTab({ teamId, initialRequests }: JoinRequestsTabProp
               <div className="flex shrink-0 flex-col gap-1.5">
                 <Button
                   size="sm"
-                  className="h-8 rounded-full bg-[#005F8C] px-4 text-xs hover:bg-[#004E73]"
+                  className="h-8 rounded-full bg-[#005F8C] px-4 text-sm hover:bg-[#004E73]"
                   onClick={() => handleApprove(req.id)}
                   disabled={isProcessing}
                 >
@@ -127,7 +127,7 @@ export function JoinRequestsTab({ teamId, initialRequests }: JoinRequestsTabProp
                 <Button
                   size="sm"
                   variant="outline"
-                  className="h-8 rounded-full border-[#dce3ea] px-4 text-xs text-[#5c6a7a] hover:bg-[#f2f7fa]"
+                  className="h-8 rounded-full border-[#dce3ea] px-4 text-sm text-[#475569] hover:bg-[#f2f7fa]"
                   onClick={() => handleReject(req.id)}
                   disabled={isProcessing}
                 >

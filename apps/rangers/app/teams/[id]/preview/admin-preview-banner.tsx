@@ -24,18 +24,18 @@ export function AdminPreviewBanner({ teamId }: AdminPreviewBannerProps) {
             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
             <circle cx="12" cy="12" r="3" />
           </svg>
-          <span className="text-xs font-medium">ゲスト目線のプレビュー</span>
+          <span className="text-sm font-medium">ゲスト目線のプレビュー</span>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={handleCopy}
-            className="rounded-full border border-white/30 px-3 py-1 text-xs transition-colors hover:bg-white/10 active:scale-95"
+            className="rounded-full border border-white/30 px-3 py-1 text-sm transition-colors hover:bg-white/10 active:scale-95"
           >
             {copied ? "コピーしました！" : "URLをコピー"}
           </button>
           <Link
             href={`/teams/${teamId}`}
-            className="rounded-full bg-white/20 px-3 py-1 text-xs font-medium transition-colors hover:bg-white/30"
+            className="rounded-full bg-white/20 px-3 py-1 text-sm font-medium transition-colors hover:bg-white/30"
           >
             管理画面へ戻る
           </Link>

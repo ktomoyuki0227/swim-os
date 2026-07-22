@@ -38,7 +38,7 @@ export function StripeSetupBanner({ teamId, hasStripeAccount, onboardingComplete
         <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#d97706]/10 text-base">⚠️</span>
         <div className="flex-1">
           <p className="text-sm font-semibold text-[#1a2332]">決済の受取設定が未完了です</p>
-          <p className="mt-0.5 text-xs text-[#5c6a7a]">
+          <p className="mt-0.5 text-sm text-[#475569]">
             {hasStripeAccount
               ? "Stripe の設定が途中で止まっています。設定を完了すると、メンバーからの支払いが口座に振り込まれるようになります。"
               : "料金を徴収するには、売上の振込先となる口座情報の登録が必要です。"}

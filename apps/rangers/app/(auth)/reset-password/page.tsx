@@ -37,7 +37,7 @@ export default function ResetPasswordPage() {
             </Link>
           </CardContent>
         </Card>
-        <p className="mt-6 text-center text-sm text-[#8d99a8]">
+        <p className="mt-6 text-center text-sm text-[#64748b]">
           Rangers · マスターズ水泳レッスン予約
         </p>
       </div>
@@ -87,7 +87,7 @@ export default function ResetPasswordPage() {
                 aria-invalid={mismatch}
               />
               {mismatch && (
-                <p role="alert" className="text-xs text-[#c0392b]">
+                <p role="alert" className="text-sm text-[#c0392b]">
                   パスワードが一致しません
                 </p>
               )}
@@ -102,7 +102,7 @@ export default function ResetPasswordPage() {
           </form>
         </CardContent>
       </Card>
-      <p className="mt-6 text-center text-sm text-[#8d99a8]">
+      <p className="mt-6 text-center text-sm text-[#64748b]">
         Rangers · マスターズ水泳レッスン予約
       </p>
     </div>

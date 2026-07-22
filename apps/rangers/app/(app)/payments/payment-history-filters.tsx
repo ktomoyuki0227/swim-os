@@ -45,7 +45,7 @@ export function PaymentHistoryFilters({ selectedType, selectedSort }: PaymentHis
           <option value="fee">会費</option>
         </select>
         <ChevronDown
-          className={`pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 ${typeActive ? "text-[#005F8C]" : "text-[#5c6a7a]"}`}
+          className={`pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 ${typeActive ? "text-[#005F8C]" : "text-[#475569]"}`}
           aria-hidden="true"
         />
       </div>
@@ -62,7 +62,7 @@ export function PaymentHistoryFilters({ selectedType, selectedSort }: PaymentHis
           <option value="asc">古い順</option>
         </select>
         <ChevronDown
-          className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#5c6a7a]"
+          className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#475569]"
           aria-hidden="true"
         />
       </div>

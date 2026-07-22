@@ -8,10 +8,10 @@ export function PublicFooter() {
           <Image src="/rangers-logo-背景透過.png" alt="Rangers logo" width={40} height={40} className="object-contain" />
           <Image src="/rangers-name-背景透過.png" alt="Rangers" width={110} height={30} className="object-contain" />
         </div>
-        <p className="mb-6 text-sm leading-relaxed text-[#8d99a8]">
+        <p className="mb-6 text-sm leading-relaxed text-[#64748b]">
           マスターズ水泳グループのスケジュール管理・参加登録・会費管理をひとつのアプリで。
         </p>
-        <div className="border-t border-white/10 pt-6 text-xs text-[#8d99a8]">
+        <div className="border-t border-white/10 pt-6 text-sm text-[#64748b]">
           © 2025 Rangers — Groove House
         </div>
       </div>

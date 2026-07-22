@@ -18,7 +18,7 @@ export function InviteCodeInput() {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#dce3ea] bg-white px-4 py-3 text-sm font-medium text-[#5c6a7a] transition-colors hover:border-[#005F8C] hover:text-[#005F8C]"
+        className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#dce3ea] bg-white px-4 py-3 text-sm font-medium text-[#475569] transition-colors hover:border-[#005F8C] hover:text-[#005F8C]"
         style={{ minHeight: "44px" }}
       >
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -50,7 +50,7 @@ export function InviteCodeInput() {
       <button
         type="button"
         onClick={() => { setOpen(false); setCode("") }}
-        className="rounded-xl border border-[#dce3ea] px-3 py-2.5 text-sm text-[#8d99a8] transition-colors hover:bg-[#f2f7fa]"
+        className="rounded-xl border border-[#dce3ea] px-3 py-2.5 text-sm text-[#64748b] transition-colors hover:bg-[#f2f7fa]"
         style={{ minHeight: "44px" }}
       >
         キャンセル

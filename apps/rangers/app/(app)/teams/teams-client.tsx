@@ -30,8 +30,8 @@ function TeamCard({ team }: { team: Team }) {
             </div>
           )}
           <span
-            className="absolute right-2 top-2 rounded-full px-2 py-0.5 text-xs font-semibold backdrop-blur-sm"
-            style={{ backgroundColor: "rgba(255,255,255,0.85)", color: isAdmin ? "#005F8C" : "#5c6a7a" }}
+            className="absolute right-2 top-2 rounded-full px-2 py-0.5 text-sm font-semibold backdrop-blur-sm"
+            style={{ backgroundColor: "rgba(255,255,255,0.85)", color: isAdmin ? "#005F8C" : "#475569" }}
           >
             {isAdmin ? "管理者" : "メンバー"}
           </span>
@@ -39,7 +39,7 @@ function TeamCard({ team }: { team: Team }) {
         <div className="px-3 py-2.5">
           <p className="line-clamp-2 text-sm font-semibold leading-snug text-[#1a2332]">{teamName}</p>
           {team.description ? (
-            <p className="mt-0.5 line-clamp-2 text-xs leading-relaxed text-[#5c6a7a]">
+            <p className="mt-0.5 line-clamp-2 text-sm leading-relaxed text-[#475569]">
               {team.description as string}
             </p>
           ) : null}
@@ -93,7 +93,7 @@ export function TeamsClient({ teams }: TeamsClientProps) {
             <svg
               className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2"
               width="14" height="14" viewBox="0 0 24 24"
-              fill="none" stroke="#8d99a8" strokeWidth="2.5"
+              fill="none" stroke="#64748b" strokeWidth="2.5"
               strokeLinecap="round" strokeLinejoin="round"
             >
               <polyline points="6 9 12 15 18 9" />
@@ -115,7 +115,7 @@ export function TeamsClient({ teams }: TeamsClientProps) {
           {teamGroups.length > 0 && (
             <div className="space-y-2.5">
               {hasBoth && (
-                <p className="text-xs font-semibold tracking-wide text-[#8d99a8]">チーム</p>
+                <p className="text-sm font-semibold tracking-wide text-[#64748b]">チーム</p>
               )}
               <TeamGrid teams={teamGroups} />
             </div>
@@ -124,7 +124,7 @@ export function TeamsClient({ teams }: TeamsClientProps) {
           {personalGroups.length > 0 && (
             <div className="space-y-2.5">
               {hasBoth && (
-                <p className="text-xs font-semibold tracking-wide text-[#8d99a8]">パーソナル</p>
+                <p className="text-sm font-semibold tracking-wide text-[#64748b]">パーソナル</p>
               )}
               <TeamGrid teams={personalGroups} />
             </div>
@@ -137,7 +137,7 @@ export function TeamsClient({ teams }: TeamsClientProps) {
         filteredTeams && filteredTeams.length > 0 ? (
           <TeamGrid teams={filteredTeams} />
         ) : (
-          <p className="py-8 text-center text-sm text-[#8d99a8]">
+          <p className="py-8 text-center text-sm text-[#64748b]">
             {filter === "team" ? "チームグループがありません" : "パーソナルグループがありません"}
           </p>
         )

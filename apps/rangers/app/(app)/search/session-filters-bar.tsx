@@ -88,7 +88,7 @@ function FilterChip({
       style={{
         minHeight: "36px",
         background: active ? "#005F8C" : "#f2f7fa",
-        color: active ? "#fff" : "#5c6a7a",
+        color: active ? "#fff" : "#475569",
         border: active ? "1.5px solid #005F8C" : "1.5px solid #e0eaef",
       }}
       className="flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-medium transition-all"
@@ -167,14 +167,14 @@ function PriceRangeSlider({
       {/* 金額表示 */}
       <div className="mb-8 flex items-end justify-between">
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-widest text-[#8d99a8]">最低金額</p>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-[#64748b]">最低金額</p>
           <p className="mt-1 text-3xl font-bold tracking-tight text-[#1a2332]">
             {minVal === 0 ? "¥0" : `¥${minVal.toLocaleString()}`}
           </p>
         </div>
         <div className="mb-2 h-px w-10 bg-[#dce3ea]" />
         <div className="text-right">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-[#8d99a8]">最高金額</p>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-[#64748b]">最高金額</p>
           <p className="mt-1 text-3xl font-bold tracking-tight text-[#1a2332]">
             {maxVal >= MAX_PRICE ? "¥20K+" : `¥${maxVal.toLocaleString()}`}
           </p>
@@ -334,7 +334,7 @@ export function SessionFiltersBar({
           onClick={() => setOpenSheet(openSheet === "filter" ? null : "filter")}
           style={{ minHeight: "44px" }}
           className={`flex flex-1 items-center justify-center gap-1 text-sm transition-colors ${
-            filterActive ? "font-semibold text-[#005F8C]" : "text-[#5c6a7a]"
+            filterActive ? "font-semibold text-[#005F8C]" : "text-[#475569]"
           }`}
         >
           <span>絞り込み</span>
@@ -348,7 +348,7 @@ export function SessionFiltersBar({
           onClick={() => setOpenSheet(openSheet === "price" ? null : "price")}
           style={{ minHeight: "44px" }}
           className={`flex flex-1 items-center justify-center gap-1 text-sm transition-colors ${
-            priceActive ? "font-semibold text-[#005F8C]" : "text-[#5c6a7a]"
+            priceActive ? "font-semibold text-[#005F8C]" : "text-[#475569]"
           }`}
         >
           <span className="truncate">{priceLabel}</span>
@@ -361,7 +361,7 @@ export function SessionFiltersBar({
           onClick={() => setOpenSheet(openSheet === "sort" ? null : "sort")}
           style={{ minHeight: "44px" }}
           className={`flex flex-1 items-center justify-center gap-1 text-sm transition-colors ${
-            sortActive ? "font-semibold text-[#005F8C]" : "text-[#5c6a7a]"
+            sortActive ? "font-semibold text-[#005F8C]" : "text-[#475569]"
           }`}
         >
           <span>{sortLabel}</span>
@@ -380,7 +380,7 @@ export function SessionFiltersBar({
             <button
               type="button"
               onClick={() => setOpenSheet(null)}
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f2f7fa] text-[#5c6a7a] transition-colors hover:bg-[#e0edf5]"
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f2f7fa] text-[#475569] transition-colors hover:bg-[#e0edf5]"
             >
               <X className="h-4 w-4" aria-hidden="true" />
             </button>
@@ -391,7 +391,7 @@ export function SessionFiltersBar({
           {openSheet === "filter" && (
             <div className="px-5 pt-5 pb-6">
               {/* 日付 */}
-              <p className="mb-3 text-[11px] font-bold uppercase tracking-widest text-[#8d99a8]">日付</p>
+              <p className="mb-3 text-[11px] font-bold uppercase tracking-widest text-[#64748b]">日付</p>
               <div className="flex flex-wrap gap-2">
                 {DATE_RANGE_OPTIONS.map((opt) => {
                   const sel = opt.key === tempDateRange
@@ -406,7 +406,7 @@ export function SessionFiltersBar({
                         borderColor: "rgba(0,95,140,0.25)",
                       } : { borderColor: "#e0eaef" }}
                       className={`rounded-full border px-4 py-2 text-sm transition-all ${
-                        sel ? "font-semibold" : "bg-[#f8fafc] text-[#5c6a7a]"
+                        sel ? "font-semibold" : "bg-[#f8fafc] text-[#475569]"
                       }`}
                     >
                       {opt.label}
@@ -416,7 +416,7 @@ export function SessionFiltersBar({
               </div>
 
               {/* 種別 */}
-              <p className="mb-3 mt-6 text-[11px] font-bold uppercase tracking-widest text-[#8d99a8]">種別</p>
+              <p className="mb-3 mt-6 text-[11px] font-bold uppercase tracking-widest text-[#64748b]">種別</p>
               <div className="grid grid-cols-2 gap-2">
                 {SESSION_TYPE_OPTIONS.map((opt) => {
                   const sel = opt.key === tempSessionType
@@ -432,7 +432,7 @@ export function SessionFiltersBar({
                         borderColor: c ? `${c}30` : "rgba(0,95,140,0.25)",
                       } : { borderColor: "#e0eaef" }}
                       className={`flex items-center gap-2 rounded-xl border px-3.5 py-2.5 text-sm transition-all ${
-                        sel ? "font-semibold" : "bg-[#f8fafc] text-[#5c6a7a]"
+                        sel ? "font-semibold" : "bg-[#f8fafc] text-[#475569]"
                       }`}
                     >
                       {c && <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: c }} />}
@@ -448,7 +448,7 @@ export function SessionFiltersBar({
                 <button
                   type="button"
                   onClick={() => { setTempDateRange("all"); setTempSessionType("all") }}
-                  className="flex-1 rounded-2xl border border-[#dce3ea] py-3.5 text-sm font-semibold text-[#5c6a7a] transition-colors hover:bg-[#f2f7fa]"
+                  className="flex-1 rounded-2xl border border-[#dce3ea] py-3.5 text-sm font-semibold text-[#475569] transition-colors hover:bg-[#f2f7fa]"
                 >
                   リセット
                 </button>
@@ -476,7 +476,7 @@ export function SessionFiltersBar({
                 <button
                   type="button"
                   onClick={() => { setTempMin(0); setTempMax(DEFAULT_MAX_PRICE) }}
-                  className="flex-1 rounded-2xl border border-[#dce3ea] py-3.5 text-sm font-semibold text-[#5c6a7a] transition-colors hover:bg-[#f2f7fa]"
+                  className="flex-1 rounded-2xl border border-[#dce3ea] py-3.5 text-sm font-semibold text-[#475569] transition-colors hover:bg-[#f2f7fa]"
                 >
                   リセット
                 </button>

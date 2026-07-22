@@ -189,11 +189,11 @@ export function EditSessionForm({ session, teamId, teamName }: EditSessionFormPr
     <div className="mx-auto max-w-xl space-y-6">
       {/* ヘッダー */}
       <div>
-        <Link href={`/sessions/${sessionId}`} className="text-sm text-[#5c6a7a] hover:text-[#1a2332]">
+        <Link href={`/sessions/${sessionId}`} className="text-sm text-[#475569] hover:text-[#1a2332]">
           ← セッション詳細に戻る
         </Link>
         <h1 className="mt-2 text-xl font-bold text-[#1a2332]">セッションを編集</h1>
-        <p className="text-sm text-[#5c6a7a]">{teamName}</p>
+        <p className="text-sm text-[#475569]">{teamName}</p>
       </div>
 
       {isConfirmed && (
@@ -468,7 +468,7 @@ export function EditSessionForm({ session, teamId, teamName }: EditSessionFormPr
           <p className="text-sm text-[#64748b]">タグを選ぶと、該当するメンバーにのみ通知されます（空の場合は全員）</p>
           {Object.entries(tagsByCategory).map(([category, tags]) => (
             <div key={category}>
-              <p className="mb-1.5 text-sm font-medium text-[#5c6a7a]">{category}</p>
+              <p className="mb-1.5 text-sm font-medium text-[#475569]">{category}</p>
               <div className="flex flex-wrap gap-1.5">
                 {tags.map((tag) => {
                   const active = selectedTags.includes(tag.id)
@@ -484,7 +484,7 @@ export function EditSessionForm({ session, teamId, teamName }: EditSessionFormPr
                       className={`rounded-full border px-2.5 py-0.5 text-sm font-medium transition-colors ${
                         active
                           ? "border-[#005F8C] bg-[#005F8C] text-white"
-                          : "border-[#dce3ea] bg-white text-[#5c6a7a] hover:border-[#005F8C]"
+                          : "border-[#dce3ea] bg-white text-[#475569] hover:border-[#005F8C]"
                       }`}
                     >
                       {tag.label}
@@ -531,7 +531,7 @@ export function EditSessionForm({ session, teamId, teamName }: EditSessionFormPr
         <Link href={`/sessions/${sessionId}`} className="flex-1">
           <Button
             variant="outline"
-            className="w-full rounded-full border-[#dce3ea] text-[#5c6a7a]"
+            className="w-full rounded-full border-[#dce3ea] text-[#475569]"
             style={{ minHeight: "48px" }}
           >
             キャンセル

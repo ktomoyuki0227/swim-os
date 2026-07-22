@@ -68,7 +68,7 @@ export default async function HomePage() {
         <div className="relative w-full px-4 py-20 sm:py-28">
           <div className="mx-auto max-w-5xl">
             <div className="max-w-2xl">
-              <span className="mb-5 inline-flex items-center gap-1.5 rounded-full border border-[#5BC0EB]/40 bg-[#5BC0EB]/15 px-4 py-1.5 text-xs font-medium text-[#5BC0EB]">
+              <span className="mb-5 inline-flex items-center gap-1.5 rounded-full border border-[#5BC0EB]/40 bg-[#5BC0EB]/15 px-4 py-1.5 text-sm font-medium text-[#5BC0EB]">
                 水泳×テクノロジーで、泳ぐ人をつなぐ
               </span>
               <h1 className="mb-5 text-4xl font-bold leading-[1.15] tracking-tight text-white sm:text-5xl md:text-[3.5rem]">
@@ -110,7 +110,7 @@ export default async function HomePage() {
         <div className="mx-auto max-w-5xl">
           <div className="mb-12 text-center">
             <h2 className="text-2xl font-bold text-[#1a2332] sm:text-3xl">Rangers でできること</h2>
-            <p className="mt-2 text-sm text-[#5c6a7a]">スイマーも、コーチも、グループも——みんなのための水泳プラットフォーム</p>
+            <p className="mt-2 text-sm text-[#475569]">スイマーも、コーチも、グループも——みんなのための水泳プラットフォーム</p>
           </div>
           <div className="grid gap-6 sm:grid-cols-3">
             {[
@@ -158,13 +158,13 @@ export default async function HomePage() {
                 >
                   {icon}
                 </div>
-                <p className="mb-0.5 text-xs font-semibold uppercase tracking-widest" style={{ color }}>
+                <p className="mb-0.5 text-sm font-semibold uppercase tracking-widest" style={{ color }}>
                   {subtitle}
                 </p>
                 <h3 className="mb-4 text-xl font-bold text-[#1a2332]">{title}</h3>
                 <ul className="space-y-2">
                   {points.map((p) => (
-                    <li key={p} className="flex items-start gap-2 text-sm text-[#5c6a7a]">
+                    <li key={p} className="flex items-start gap-2 text-sm text-[#475569]">
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" className="mt-0.5 shrink-0">
                         <polyline points="20 6 9 17 4 12" />
                       </svg>
@@ -183,7 +183,7 @@ export default async function HomePage() {
         <div className="mx-auto max-w-5xl">
           <div className="mb-12 text-center">
             <h2 className="text-2xl font-bold text-[#1a2332] sm:text-3xl">グループ・コーチが掲載するメリット</h2>
-            <p className="mt-2 text-sm text-[#5c6a7a]">無料で始めて、必要な機能だけ使う</p>
+            <p className="mt-2 text-sm text-[#475569]">無料で始めて、必要な機能だけ使う</p>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {[
@@ -217,7 +217,7 @@ export default async function HomePage() {
                   {num}
                 </div>
                 <h3 className="mb-2 font-bold text-[#1a2332]">{title}</h3>
-                <p className="text-sm leading-relaxed text-[#5c6a7a]">{desc}</p>
+                <p className="text-sm leading-relaxed text-[#475569]">{desc}</p>
               </div>
             ))}
           </div>
@@ -238,7 +238,7 @@ export default async function HomePage() {
       <section className="bg-[#1a2332] px-4 py-16 sm:py-20">
         <div className="mx-auto max-w-5xl">
           <div className="mb-10 text-center">
-            <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-[#5BC0EB]">Our Vision</p>
+            <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-[#5BC0EB]">Our Vision</p>
             <h2 className="text-2xl font-bold text-white sm:text-3xl">Rangers が目指す未来</h2>
             <p className="mt-3 text-sm leading-relaxed text-slate-400 max-w-2xl mx-auto">
               水泳業界のインフラになる。<br />
@@ -286,7 +286,7 @@ export default async function HomePage() {
             <div className="mb-8 flex items-end justify-between">
               <div>
                 <h2 className="text-2xl font-bold text-[#1a2332] sm:text-3xl">人気のマスターズグループ</h2>
-                <p className="mt-1 text-sm text-[#5c6a7a]">活動中のグループを探して、参加してみよう</p>
+                <p className="mt-1 text-sm text-[#475569]">活動中のグループを探して、参加してみよう</p>
               </div>
               <Link href="/login" className="hidden text-sm font-medium text-[#005F8C] hover:text-[#004E73] sm:block">
                 すべて見る →
@@ -314,11 +314,11 @@ export default async function HomePage() {
                     <div className="min-w-0 flex-1">
                       <h3 className="font-bold text-[#1a2332] group-hover:text-[#005F8C] truncate">{team.name}</h3>
                       {team.description && (
-                        <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-[#5c6a7a]">
+                        <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-[#475569]">
                           {team.description}
                         </p>
                       )}
-                      <p className="mt-2 text-xs font-medium text-[#005F8C]">参加を申し込む →</p>
+                      <p className="mt-2 text-sm font-medium text-[#005F8C]">参加を申し込む →</p>
                     </div>
                   </div>
                 </Link>
@@ -339,7 +339,7 @@ export default async function HomePage() {
           <div className="mx-auto max-w-5xl">
             <div className="mb-8">
               <h2 className="text-2xl font-bold text-[#1a2332] sm:text-3xl">パーソナルレッスン</h2>
-              <p className="mt-1 text-sm text-[#5c6a7a]">専門コーチがあなたの目標に合わせて指導</p>
+              <p className="mt-1 text-sm text-[#475569]">専門コーチがあなたの目標に合わせて指導</p>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               {coaches.map((coach) => (
@@ -365,10 +365,10 @@ export default async function HomePage() {
                         {coach.name} コーチ
                       </h3>
                       {coach.prefectures && coach.prefectures.length > 0 && (
-                        <p className="mt-0.5 text-xs text-[#5c6a7a]">📍 {coach.prefectures[0]}</p>
+                        <p className="mt-0.5 text-sm text-[#475569]">📍 {coach.prefectures[0]}</p>
                       )}
                       {coach.bio && (
-                        <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-[#5c6a7a]">{coach.bio}</p>
+                        <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-[#475569]">{coach.bio}</p>
                       )}
                       {coach.specialties && coach.specialties.length > 0 && (
                         <div className="mt-2 flex flex-wrap gap-1">
@@ -397,7 +397,7 @@ export default async function HomePage() {
           <div className="mx-auto max-w-5xl">
             <div className="mb-8">
               <h2 className="text-2xl font-bold text-[#1a2332] sm:text-3xl">新着イベント・合宿</h2>
-              <p className="mt-1 text-sm text-[#5c6a7a]">参加受付中のイベントや合宿に申し込もう</p>
+              <p className="mt-1 text-sm text-[#475569]">参加受付中のイベントや合宿に申し込もう</p>
             </div>
             <div className="space-y-3">
               {events.map((session) => {
@@ -416,7 +416,7 @@ export default async function HomePage() {
                   competition: "#E8614D",
                   event: "#0f8a4f",
                   practice: "#005F8C",
-                  meeting: "#5c6a7a",
+                  meeting: "#475569",
                 }
                 const typeColor = typeColors[session.type as string] ?? "#005F8C"
 
@@ -444,7 +444,7 @@ export default async function HomePage() {
                           </span>
                         </div>
                         <p className="font-medium text-[#1a2332]">{session.title as string}</p>
-                        <p className="text-xs text-[#5c6a7a]">
+                        <p className="text-sm text-[#475569]">
                           {scheduledAt.toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" })}
                           {session.location ? ` · ${session.location as string}` : ""}
                           {team ? ` · ${team.name}` : ""}
@@ -454,7 +454,7 @@ export default async function HomePage() {
                         <p className="text-sm font-semibold text-[#005F8C]">
                           ¥{((session.guest_price as number) || 0).toLocaleString()}
                         </p>
-                        <p className="text-[10px] text-[#8d99a8]">参加費</p>
+                        <p className="text-[10px] text-[#64748b]">参加費</p>
                       </div>
                     </div>
                   </Link>
@@ -475,7 +475,7 @@ export default async function HomePage() {
       {/* ===== 最終 CTA ===== */}
       <section className="bg-[#005F8C] px-4 py-16 sm:py-24">
         <div className="mx-auto max-w-2xl text-center">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-[#5BC0EB]">
+          <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-[#5BC0EB]">
             Join Rangers
           </p>
           <h2 className="mb-4 text-2xl font-bold text-white sm:text-3xl">
@@ -507,7 +507,7 @@ export default async function HomePage() {
               </Button>
             </Link>
           </div>
-          <p className="mt-6 text-xs text-blue-200">
+          <p className="mt-6 text-sm text-blue-200">
             登録無料 · クレジットカード不要 · いつでも退会可能
           </p>
         </div>

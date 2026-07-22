@@ -16,7 +16,7 @@ export function BackButton() {
   return (
     <button
       onClick={handleBack}
-      className="mb-4 inline-block text-sm text-[#5c6a7a] hover:text-[#1a2332]"
+      className="mb-4 inline-block text-sm text-[#475569] hover:text-[#1a2332]"
     >
       ← 戻る
     </button>

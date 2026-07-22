@@ -194,7 +194,7 @@ export function SearchFiltersBar({
               <button
                 type="button"
                 onClick={() => setOpenGroup(null)}
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-[#f2f7fa] text-[#5c6a7a] hover:bg-[#e0edf5]"
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-[#f2f7fa] text-[#475569] hover:bg-[#e0edf5]"
               >
                 <svg
                   width="14"

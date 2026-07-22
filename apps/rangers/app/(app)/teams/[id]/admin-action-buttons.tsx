@@ -63,7 +63,7 @@ export function AdminActionButtons({ team }: AdminActionButtonsProps) {
               <h2 className="text-base font-semibold text-[#1a2332]">グループ設定</h2>
               <button
                 onClick={() => setSettingsOpen(false)}
-                className="flex h-7 w-7 items-center justify-center rounded-full text-[#5c6a7a] hover:bg-[#f2f7fa]"
+                className="flex h-7 w-7 items-center justify-center rounded-full text-[#475569] hover:bg-[#f2f7fa]"
                 aria-label="閉じる"
               >
                 <CloseIcon />
@@ -77,31 +77,31 @@ export function AdminActionButtons({ team }: AdminActionButtonsProps) {
                 <CardContent className="space-y-3">
                   <div className="flex flex-wrap gap-1.5 pb-1">
                     {team.has_session_fee && (
-                      <span className="rounded-full bg-[#e8f2f8] px-2.5 py-0.5 text-xs text-[#005F8C]">参加費</span>
+                      <span className="rounded-full bg-[#e8f2f8] px-2.5 py-0.5 text-sm text-[#005F8C]">参加費</span>
                     )}
                     {team.has_annual_fee && (
-                      <span className="rounded-full bg-[#e8f2f8] px-2.5 py-0.5 text-xs text-[#005F8C]">年会費</span>
+                      <span className="rounded-full bg-[#e8f2f8] px-2.5 py-0.5 text-sm text-[#005F8C]">年会費</span>
                     )}
                     {team.has_monthly_fee && (
-                      <span className="rounded-full bg-[#e8f2f8] px-2.5 py-0.5 text-xs text-[#005F8C]">月謝</span>
+                      <span className="rounded-full bg-[#e8f2f8] px-2.5 py-0.5 text-sm text-[#005F8C]">月謝</span>
                     )}
                     {team.has_point_card && (
-                      <span className="rounded-full bg-[#e8f2f8] px-2.5 py-0.5 text-xs text-[#005F8C]">回数券</span>
+                      <span className="rounded-full bg-[#e8f2f8] px-2.5 py-0.5 text-sm text-[#005F8C]">回数券</span>
                     )}
                     {!team.has_session_fee && !team.has_annual_fee && !team.has_monthly_fee && !team.has_point_card && (
-                      <span className="text-xs text-[#8d99a8]">料金体系なし</span>
+                      <span className="text-sm text-[#64748b]">料金体系なし</span>
                     )}
                   </div>
                   {team.has_session_fee && (
                     <>
                       <div className="flex justify-between text-sm">
-                        <span className="text-[#5c6a7a]">デフォルト参加費（メンバー）</span>
+                        <span className="text-[#475569]">デフォルト参加費（メンバー）</span>
                         <span className="font-medium text-[#1a2332]">
                           ¥{(team.default_member_price || 0).toLocaleString()}
                         </span>
                       </div>
                       <div className="flex justify-between text-sm">
-                        <span className="text-[#5c6a7a]">デフォルト参加費（ゲスト）</span>
+                        <span className="text-[#475569]">デフォルト参加費（ゲスト）</span>
                         <span className="font-medium text-[#1a2332]">
                           ¥{(team.default_guest_price || 0).toLocaleString()}
                         </span>
@@ -110,7 +110,7 @@ export function AdminActionButtons({ team }: AdminActionButtonsProps) {
                   )}
                   {team.has_annual_fee && team.annual_fee_amount && (
                     <div className="flex justify-between text-sm">
-                      <span className="text-[#5c6a7a]">年会費</span>
+                      <span className="text-[#475569]">年会費</span>
                       <span className="font-medium text-[#1a2332]">
                         ¥{team.annual_fee_amount.toLocaleString()}
                       </span>
@@ -118,7 +118,7 @@ export function AdminActionButtons({ team }: AdminActionButtonsProps) {
                   )}
                   {team.has_monthly_fee && team.monthly_fee_amount && (
                     <div className="flex justify-between text-sm">
-                      <span className="text-[#5c6a7a]">月謝</span>
+                      <span className="text-[#475569]">月謝</span>
                       <span className="font-medium text-[#1a2332]">
                         ¥{team.monthly_fee_amount.toLocaleString()}
                       </span>
@@ -126,7 +126,7 @@ export function AdminActionButtons({ team }: AdminActionButtonsProps) {
                   )}
                   {team.has_session_fee && (
                     <div className="flex justify-between text-sm">
-                      <span className="text-[#5c6a7a]">キャンセル期限</span>
+                      <span className="text-[#475569]">キャンセル期限</span>
                       <span className="font-medium text-[#1a2332]">
                         {team.cancellation_days}日前まで
                       </span>
@@ -143,24 +143,24 @@ export function AdminActionButtons({ team }: AdminActionButtonsProps) {
                   <CardContent className="space-y-2">
                     {team.main_pool && (
                       <div className="flex justify-between text-sm">
-                        <span className="text-[#5c6a7a]">主な使用プール</span>
+                        <span className="text-[#475569]">主な使用プール</span>
                         <span className="font-medium text-[#1a2332]">{team.main_pool}</span>
                       </div>
                     )}
                     {team.practice_frequency && (
                       <div className="flex justify-between text-sm">
-                        <span className="text-[#5c6a7a]">練習頻度</span>
+                        <span className="text-[#475569]">練習頻度</span>
                         <span className="font-medium text-[#1a2332]">{team.practice_frequency}</span>
                       </div>
                     )}
                     {(team.practice_days ?? []).length > 0 && (
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-[#5c6a7a]">練習曜日</span>
+                        <span className="text-[#475569]">練習曜日</span>
                         <div className="flex gap-1">
                           {(team.practice_days ?? []).map((day: string) => (
                             <span
                               key={day}
-                              className="flex h-6 w-6 items-center justify-center rounded-full bg-[#e8f2f8] text-xs font-medium text-[#005F8C]"
+                              className="flex h-6 w-6 items-center justify-center rounded-full bg-[#e8f2f8] text-sm font-medium text-[#005F8C]"
                             >
                               {day}
                             </span>

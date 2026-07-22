@@ -24,7 +24,7 @@ export default async function TeamsPage() {
         <Card className="border-[#dce3ea]">
           <CardContent className="flex flex-col items-center justify-center px-6 py-12">
             <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[rgba(0,95,140,0.08)]">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8d99a8" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
                 <circle cx="9" cy="7" r="4" />
                 <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
@@ -32,7 +32,7 @@ export default async function TeamsPage() {
               </svg>
             </div>
             <p className="text-base font-semibold text-[#1a2332]">まだグループに参加していません</p>
-            <p className="mt-1 text-sm text-[#5c6a7a]">招待リンクからグループに参加するか、グループを作成してください</p>
+            <p className="mt-1 text-sm text-[#475569]">招待リンクからグループに参加するか、グループを作成してください</p>
             <Link
               href="/teams/new"
               className="mt-4 inline-flex items-center rounded-full bg-[#005F8C] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#004E73]"

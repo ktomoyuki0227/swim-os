@@ -20,7 +20,7 @@ const ALERT_STATUS_LABELS: Record<string, string> = {
 
 const ALERT_STATUS_STYLES: Record<string, string> = {
   failed: "bg-[#fdecea] text-[#c0392b]",
-  refunded: "bg-[#edf0f4] text-[#5c6a7a]",
+  refunded: "bg-[#edf0f4] text-[#475569]",
   unpaid: "bg-[#fdf6e3] text-[#b8860b]",
 }
 
@@ -208,7 +208,7 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
       {/* 支払い履歴 */}
       {filtered.length === 0 ? (
         <div className="rounded-[14px] border border-[#dce3ea] bg-white px-6 py-16 text-center">
-          <p className="text-sm text-[#5c6a7a]">
+          <p className="text-sm text-[#475569]">
             {items.length === 0 ? "支払い履歴がありません" : "条件に一致する履歴がありません"}
           </p>
         </div>
@@ -225,7 +225,7 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
                   <p className="text-sm font-semibold text-[#1a2332]">
                     {formatMonthKey(monthKey)}
                   </p>
-                  <p className="text-xs text-[#5c6a7a]">
+                  <p className="text-sm text-[#475569]">
                     {monthItems.length}件 · ¥{totalAmount.toLocaleString()}
                   </p>
                 </div>
@@ -257,7 +257,7 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
                           <p className="truncate text-sm font-medium text-[#1a2332]">
                             {item.label}
                           </p>
-                          <p className="truncate text-xs text-[#5c6a7a]">{item.teamName}</p>
+                          <p className="truncate text-sm text-[#475569]">{item.teamName}</p>
                         </div>
 
                         {/* 金額 + 異常ステータスバッジ */}
@@ -267,7 +267,7 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
                           </p>
                           {ALERT_STATUS_LABELS[item.status] && (
                             <span
-                              className={`mt-0.5 inline-block rounded-full px-2 py-0.5 text-xs font-medium ${ALERT_STATUS_STYLES[item.status]}`}
+                              className={`mt-0.5 inline-block rounded-full px-2 py-0.5 text-sm font-medium ${ALERT_STATUS_STYLES[item.status]}`}
                             >
                               {ALERT_STATUS_LABELS[item.status]}
                             </span>

@@ -33,7 +33,7 @@ export default async function PersonalPage({ searchParams }: PersonalPageProps) 
         <div className="flex items-center gap-2 px-3 py-2">
           <Link
             href="/search"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#f2f7fa] text-[#5c6a7a] hover:bg-[#e0edf5]"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#f2f7fa] text-[#475569] hover:bg-[#e0edf5]"
             aria-label="探すに戻る"
           >
             <ChevronLeft className="h-5 w-5" />
@@ -47,17 +47,17 @@ export default async function PersonalPage({ searchParams }: PersonalPageProps) 
         {!coaches || coaches.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-2xl border border-[#dce3ea] bg-white px-6 py-16 text-center">
             <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[rgba(123,94,167,0.08)]">
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#8d99a8" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                 <circle cx="12" cy="7" r="4" />
               </svg>
             </div>
             <p className="font-semibold text-[#1a2332]">コーチが見つかりません</p>
-            <p className="mt-1 text-sm text-[#5c6a7a]">条件を変更して再検索してみてください</p>
+            <p className="mt-1 text-sm text-[#475569]">条件を変更して再検索してみてください</p>
           </div>
         ) : (
           <div className="space-y-2">
-            <p className="text-xs text-[#8d99a8]">{coaches.length}人のコーチ</p>
+            <p className="text-sm text-[#64748b]">{coaches.length}人のコーチ</p>
             {coaches.map((coach: Record<string, unknown>) => {
               const coachProfile = coach.coach as { name: string; avatar_url: string | null } | null
               const area = coach.activity_area as string | null
@@ -133,13 +133,13 @@ export default async function PersonalPage({ searchParams }: PersonalPageProps) 
                                   </div>
                                 )}
                               </div>
-                              <span className="text-[10px] text-[#8d99a8]">{coachProfile.name}</span>
+                              <span className="text-[10px] text-[#64748b]">{coachProfile.name}</span>
                             </div>
                           )}
 
                           {/* 行3: 頻度 + 曜日 */}
                           {(frequency || practiceDays.length > 0) && (
-                            <div className="flex items-center gap-1.5 overflow-hidden text-xs text-[#5c6a7a]">
+                            <div className="flex items-center gap-1.5 overflow-hidden text-sm text-[#475569]">
                               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
                                 <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
                                 <line x1="16" y1="2" x2="16" y2="6" />
@@ -167,7 +167,7 @@ export default async function PersonalPage({ searchParams }: PersonalPageProps) 
 
                           {/* 行4: 料金 */}
                           {guestPrice != null && (
-                            <div className="flex items-center gap-1 text-xs text-[#5c6a7a]">
+                            <div className="flex items-center gap-1 text-sm text-[#475569]">
                               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
                                 <line x1="12" y1="1" x2="12" y2="23" />
                                 <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
@@ -177,7 +177,7 @@ export default async function PersonalPage({ searchParams }: PersonalPageProps) 
                           )}
 
                           {/* 行5: 説明文 */}
-                          <p className={`line-clamp-2 text-xs ${description ? "text-[#5c6a7a]" : "text-[#c8d8e8]"}`}>
+                          <p className={`line-clamp-2 text-sm ${description ? "text-[#475569]" : "text-[#c8d8e8]"}`}>
                             {description ?? "説明はありません"}
                           </p>
                         </div>

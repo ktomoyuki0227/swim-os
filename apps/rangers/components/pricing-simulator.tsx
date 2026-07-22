@@ -125,7 +125,7 @@ function PricingSimulatorModal({ initialInputs, onInputsChange, onClose, onApply
           </div>
           <button
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-full text-[#5c6a7a] transition-colors hover:bg-[#f2f7fa]"
+            className="flex h-8 w-8 items-center justify-center rounded-full text-[#475569] transition-colors hover:bg-[#f2f7fa]"
             aria-label="閉じる"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
@@ -136,14 +136,14 @@ function PricingSimulatorModal({ initialInputs, onInputsChange, onClose, onApply
 
         {/* コンテンツ */}
         <div className="max-h-[70dvh] overflow-y-auto overscroll-contain px-5 py-4 space-y-4">
-          <p className="text-xs text-[#5c6a7a]">チームの情報を入力すると、各料金の目安を自動計算します。</p>
+          <p className="text-sm text-[#475569]">チームの情報を入力すると、各料金の目安を自動計算します。</p>
 
           {/* 入力フォーム */}
           <div className="space-y-3">
             <div className="space-y-1">
-              <Label className="text-xs">メンバー1回あたりの参加費</Label>
+              <Label className="text-sm">メンバー1回あたりの参加費</Label>
               <div className="relative w-40">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#5c6a7a]">¥</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#475569]">¥</span>
                 <Input
                   type="number" min="0" step="100"
                   placeholder="1000"
@@ -155,7 +155,7 @@ function PricingSimulatorModal({ initialInputs, onInputsChange, onClose, onApply
             </div>
             <div className="grid gap-3 grid-cols-2">
               <div className="space-y-1">
-                <Label className="text-xs">平均参加回数/月</Label>
+                <Label className="text-sm">平均参加回数/月</Label>
                 <Input
                   type="number" min="1" max="30" placeholder="3"
                   value={avgAttendance}
@@ -164,7 +164,7 @@ function PricingSimulatorModal({ initialInputs, onInputsChange, onClose, onApply
                 />
               </div>
               <div className="space-y-1">
-                <Label className="text-xs">回数券のスタンプ枚数</Label>
+                <Label className="text-sm">回数券のスタンプ枚数</Label>
                 <Input
                   type="number" min="1" max="50"
                   placeholder="10"
@@ -184,7 +184,7 @@ function PricingSimulatorModal({ initialInputs, onInputsChange, onClose, onApply
               {/* 回数券 */}
               <div className="rounded-[10px] bg-[#f2f7fa] p-3 space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <p className="text-xs font-semibold text-[#1a2332]">🎫 回数券（{cards}回・20%割引）</p>
+                  <p className="text-sm font-semibold text-[#1a2332]">🎫 回数券（{cards}回・20%割引）</p>
                   {onApply && (
                     <button
                       type="button"
@@ -196,10 +196,10 @@ function PricingSimulatorModal({ initialInputs, onInputsChange, onClose, onApply
                   )}
                 </div>
                 <div className="flex items-baseline justify-between">
-                  <span className="text-xs text-[#5c6a7a]">おすすめ価格</span>
+                  <span className="text-sm text-[#475569]">おすすめ価格</span>
                   <span className="text-lg font-bold text-[#005F8C]">¥{pointCardPrice.toLocaleString()}</span>
                 </div>
-                <p className="text-[10px] text-[#8d99a8]">
+                <p className="text-[10px] text-[#64748b]">
                   1回あたり ¥{pointCardPerSession.toLocaleString()}（都度払い ¥{price.toLocaleString()} より ¥{(price - pointCardPerSession).toLocaleString()} お得）
                 </p>
               </div>
@@ -207,7 +207,7 @@ function PricingSimulatorModal({ initialInputs, onInputsChange, onClose, onApply
               {/* 月謝 */}
               <div className="rounded-[10px] bg-[#f2f7fa] p-3 space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <p className="text-xs font-semibold text-[#1a2332]">💳 月謝（参加費免除の場合）</p>
+                  <p className="text-sm font-semibold text-[#1a2332]">💳 月謝（参加費免除の場合）</p>
                   {onApply && (
                     <button
                       type="button"
@@ -219,10 +219,10 @@ function PricingSimulatorModal({ initialInputs, onInputsChange, onClose, onApply
                   )}
                 </div>
                 <div className="flex items-baseline justify-between">
-                  <span className="text-xs text-[#5c6a7a]">おすすめ価格</span>
+                  <span className="text-sm text-[#475569]">おすすめ価格</span>
                   <span className="text-lg font-bold text-[#005F8C]">¥{monthlySuggestion.toLocaleString()}</span>
                 </div>
-                <p className="text-[10px] text-[#8d99a8]">
+                <p className="text-[10px] text-[#64748b]">
                   月{avg}回参加 × ¥{price.toLocaleString()} = ¥{(avg * price).toLocaleString()} の20%割引
                 </p>
                 {breakeven > 0 && (
@@ -235,7 +235,7 @@ function PricingSimulatorModal({ initialInputs, onInputsChange, onClose, onApply
               {/* 年会費 */}
               <div className="rounded-[10px] bg-[#f2f7fa] p-3 space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <p className="text-xs font-semibold text-[#1a2332]">📅 年会費（月謝の10ヶ月分）</p>
+                  <p className="text-sm font-semibold text-[#1a2332]">📅 年会費（月謝の10ヶ月分）</p>
                   {onApply && (
                     <button
                       type="button"
@@ -247,10 +247,10 @@ function PricingSimulatorModal({ initialInputs, onInputsChange, onClose, onApply
                   )}
                 </div>
                 <div className="flex items-baseline justify-between">
-                  <span className="text-xs text-[#5c6a7a]">おすすめ価格</span>
+                  <span className="text-sm text-[#475569]">おすすめ価格</span>
                   <span className="text-lg font-bold text-[#005F8C]">¥{annualSuggestion.toLocaleString()}</span>
                 </div>
-                <p className="text-[10px] text-[#8d99a8]">
+                <p className="text-[10px] text-[#64748b]">
                   月謝 ¥{monthlySuggestion.toLocaleString()} × 10ヶ月（2ヶ月分お得）
                 </p>
               </div>
@@ -267,7 +267,7 @@ function PricingSimulatorModal({ initialInputs, onInputsChange, onClose, onApply
                 </button>
               )}
 
-              <p className="text-[10px] text-[#8d99a8] text-center">※ あくまで目安です。チームの運営方針に合わせて調整してください。</p>
+              <p className="text-[10px] text-[#64748b] text-center">※ あくまで目安です。チームの運営方針に合わせて調整してください。</p>
             </div>
           )}
         </div>

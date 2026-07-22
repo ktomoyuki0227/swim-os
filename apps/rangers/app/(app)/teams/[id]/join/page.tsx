@@ -44,13 +44,13 @@ export default async function TeamJoinPage({ params }: PageProps) {
         <div className="rounded-2xl border border-[#dce3ea] bg-white p-5 text-center">
           <div className="mb-3 text-3xl">🔒</div>
           <p className="font-semibold text-[#1a2332]">現在メンバーを募集していません</p>
-          <p className="mt-1 text-sm text-[#5c6a7a]">
+          <p className="mt-1 text-sm text-[#475569]">
             このグループは現在、新しいメンバーの受付を停止しています。
           </p>
         </div>
 
         <div className="mt-6 text-center">
-          <Link href={`/teams/${team.id}`} className="text-sm text-[#5c6a7a] hover:text-[#1a2332]">
+          <Link href={`/teams/${team.id}`} className="text-sm text-[#475569] hover:text-[#1a2332]">
             ← グループページに戻る
           </Link>
         </div>
@@ -107,16 +107,16 @@ export default async function TeamJoinPage({ params }: PageProps) {
           <div className="rounded-2xl border border-[#b8860b]/30 bg-[#fdf6e3] p-5 text-center">
             <div className="mb-3 text-3xl">⏳</div>
             <p className="font-semibold text-[#1a2332]">参加申請中です</p>
-            <p className="mt-1 text-sm text-[#5c6a7a]">
+            <p className="mt-1 text-sm text-[#475569]">
               管理者が申請を確認しています。承認されると通知が届きます。
             </p>
-            <p className="mt-2 text-xs text-[#8d99a8]">
+            <p className="mt-2 text-sm text-[#64748b]">
               申請日: {new Date(pendingRequest.created_at).toLocaleDateString("ja-JP")}
             </p>
           </div>
 
           <div className="mt-6 text-center">
-            <Link href={`/teams/${team.id}`} className="text-sm text-[#5c6a7a] hover:text-[#1a2332]">
+            <Link href={`/teams/${team.id}`} className="text-sm text-[#475569] hover:text-[#1a2332]">
               ← グループページに戻る
             </Link>
           </div>
@@ -138,14 +138,14 @@ export default async function TeamJoinPage({ params }: PageProps) {
             )}
           </div>
           <div>
-            <p className="mb-0.5 text-xs font-semibold uppercase tracking-wide text-[#005F8C]">
+            <p className="mb-0.5 text-sm font-semibold uppercase tracking-wide text-[#005F8C]">
               入会申請
             </p>
             <h1 className="text-xl font-bold text-[#1a2332]">{team.name}</h1>
           </div>
         </div>
         {team.description && (
-          <p className="text-sm leading-relaxed text-[#5c6a7a]">{team.description}</p>
+          <p className="text-sm leading-relaxed text-[#475569]">{team.description}</p>
         )}
       </div>
 
@@ -177,7 +177,7 @@ export default async function TeamJoinPage({ params }: PageProps) {
           >
             ログインして参加
           </Link>
-          <p className="text-center text-xs text-[#8d99a8]">
+          <p className="text-center text-sm text-[#64748b]">
             アカウント登録・ログイン後、自動的にグループ参加画面に戻ります
           </p>
         </div>
@@ -186,7 +186,7 @@ export default async function TeamJoinPage({ params }: PageProps) {
       <div className="mt-6 text-center">
         <Link
           href={`/teams/${team.id}`}
-          className="text-sm text-[#5c6a7a] hover:text-[#1a2332]"
+          className="text-sm text-[#475569] hover:text-[#1a2332]"
         >
           ← グループページに戻る
         </Link>

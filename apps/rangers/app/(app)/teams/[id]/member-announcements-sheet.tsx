@@ -98,13 +98,13 @@ export function MemberAnnouncementsSheet({ announcements: initialAnnouncements, 
               {initialAnnouncements.length === 0 ? (
                 <div className="flex flex-col items-center py-12 px-6">
                   <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[rgba(0,95,140,0.08)]">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8d99a8" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
                       <path d="M13.73 21a2 2 0 0 1-3.46 0" />
                     </svg>
                   </div>
                   <p className="text-base font-semibold text-[#1a2332]">お知らせはありません</p>
-                  <p className="mt-1 text-sm text-[#5c6a7a]">グループからのお知らせが届くと表示されます</p>
+                  <p className="mt-1 text-sm text-[#475569]">グループからのお知らせが届くと表示されます</p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -122,9 +122,9 @@ export function MemberAnnouncementsSheet({ announcements: initialAnnouncements, 
                                 {announcement.title}
                               </p>
                               {announcement.body && (
-                                <p className="mt-1 text-sm text-[#5c6a7a]">{announcement.body}</p>
+                                <p className="mt-1 text-sm text-[#475569]">{announcement.body}</p>
                               )}
-                              <p className="mt-2 text-xs text-[#8d99a8]">
+                              <p className="mt-2 text-sm text-[#64748b]">
                                 {new Date(announcement.created_at).toLocaleDateString("ja-JP")}
                               </p>
                             </div>

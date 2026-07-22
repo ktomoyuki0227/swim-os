@@ -49,7 +49,7 @@ export function SessionTypeSelect({ currentValue, currentQ }: SessionTypeSelectP
       </select>
       <ChevronDown
         className={`pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 ${
-          isActive ? "text-[#005F8C]" : "text-[#5c6a7a]"
+          isActive ? "text-[#005F8C]" : "text-[#475569]"
         }`}
         aria-hidden="true"
       />
