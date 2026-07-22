@@ -4,7 +4,7 @@ import { createClient, createAdminClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 
-export async function getMyNotifications() {
+export async function getMyNotifications(): Promise<{ data: import("@/types/database").Notification[] }> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
@@ -17,7 +17,7 @@ export async function getMyNotifications() {
     .limit(50)
 
   if (error) return { data: [] }
-  return { data: data || [] }
+  return { data: (data || []) as import("@/types/database").Notification[] }
 }
 
 export async function markAsRead(notificationId: string) {
@@ -32,6 +32,7 @@ export async function markAsRead(notificationId: string) {
     .eq("user_id", user.id)
 
   if (error) return { error: "既読の更新に失敗しました" }
+  revalidatePath("/notifications")
   return { success: true }
 }
 

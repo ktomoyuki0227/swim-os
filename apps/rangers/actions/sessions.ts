@@ -86,7 +86,7 @@ export async function createSession(teamId: string, data: unknown) {
         title: `新しいセッションが追加されました`,
         body: `「${session.title}」${scheduledDate}`,
         team_id: teamId,
-        link: `/sessions/${session.id}`,
+        link: `/teams/${teamId}/sessions/${session.id}`,
       }))
     )
   }
@@ -170,7 +170,7 @@ export async function updateSession(sessionId: string, data: unknown) {
           title: `「${sessionTitle}」の内容が変更されました`,
           body: "日時・場所などの情報が更新されています。ご確認ください",
           team_id: session.team_id,
-          link: `/sessions/${sessionId}`,
+          link: `/teams/${session.team_id}/sessions/${sessionId}`,
         }))
       )
     }
@@ -596,7 +596,7 @@ export async function cancelSession(sessionId: string) {
         title: `「${session.title}」が中止になりました`,
         body: `${scheduledDate}に予定していたセッションが中止になりました`,
         team_id: session.team_id,
-        link: `/sessions/${sessionId}`,
+        link: `/teams/${session.team_id}/sessions/${sessionId}`,
       }))
     )
   }
@@ -879,7 +879,7 @@ export async function registerForSession(
       title: "参加登録が完了しました",
       body: `「${session.title}」${scheduledDate}`,
       team_id: session.team_id,
-      link: `/sessions/${sessionId}`,
+      link: `/teams/${session.team_id}/sessions/${sessionId}`,
     })
   }
 
@@ -996,7 +996,7 @@ export async function cancelRegistration(sessionId: string) {
       // セッションの通知対象メンバーに空き通知を配信（adminClientでRLS自己参照をバイパス）
       const { data: targetMembers } = await adminClient
         .from("team_members")
-        .select("swimmer_id")
+        .select("swimmer_id, role")
         .eq("team_id", session.team_id)
         .eq("status", "active")
 
@@ -1012,13 +1012,16 @@ export async function cancelRegistration(sessionId: string) {
         const notifyTargets = targetMembers.filter((m) => !registeredIds.has(m.swimmer_id))
 
         for (const target of notifyTargets) {
+          const notifLink = target.role === "admin"
+            ? `/sessions/${sessionId}`
+            : `/teams/${session.team_id}/sessions/${sessionId}`
           await adminClient.from("notifications").insert({
             user_id: target.swimmer_id,
             type: "waitlist_available",
             title: `空きが出ました: ${session.title}`,
             body: `「${session.title}」に空きが出ました。参加登録が可能です。`,
             team_id: session.team_id,
-            link: `/sessions/${sessionId}`,
+            link: notifLink,
           })
         }
       }
