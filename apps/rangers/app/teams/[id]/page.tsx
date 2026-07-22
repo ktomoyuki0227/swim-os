@@ -22,7 +22,6 @@ import { getTeamJoinRequests, getMyJoinRequest } from "@/actions/join-requests"
 import { ContactInfoButton } from "@/components/teams/contact-info-button"
 import { AdminTeamActions } from "@/app/(app)/teams/[id]/admin-team-actions"
 import { TeamDescription } from "@/app/(app)/teams/[id]/team-description"
-import { MemberAnnouncementsSheet } from "@/app/(app)/teams/[id]/member-announcements-sheet"
 import { MemberSessionList } from "@/app/(app)/teams/[id]/member-session-list"
 import { MemberPreviewBar } from "@/app/(app)/teams/[id]/member-preview-bar"
 import { StripeSetupBanner } from "@/app/(app)/teams/[id]/stripe-setup-banner"
@@ -163,7 +162,7 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
                   <polyline points="15 18 9 12 15 6" />
                 </svg>
               </BackLink>
-              <span className="text-sm text-[#5c6a7a]">グループ</span>
+              <span className="text-sm text-[#475569]">グループ</span>
               <AdminActionButtons team={team} />
             </div>
 
@@ -228,7 +227,7 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
             {/* ── 主催者 ── */}
             {adminMembers.length > 0 && (
               <div className="rounded-[14px] border border-[#dce3ea] bg-white px-4 py-3">
-                <p className="mb-2 text-xs font-semibold text-[#5c6a7a]">主催者</p>
+                <p className="mb-2 text-sm font-semibold text-[#475569]">主催者</p>
                 <div className="flex items-center gap-3">
                   <div className="flex -space-x-1.5">
                     {adminMembers.slice(0, 3).map((m: Record<string, unknown>, i: number) => {
@@ -238,7 +237,7 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
                       return (
                         <div
                           key={m.id as string}
-                          className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border-2 border-white bg-[#005F8C]/10 text-xs font-semibold text-[#005F8C]"
+                          className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border-2 border-white bg-[#005F8C]/10 text-sm font-semibold text-[#005F8C]"
                           style={{ zIndex: 3 - i }}
                         >
                           {avatarUrl ? (
@@ -253,7 +252,7 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
                   <p className="text-sm font-semibold text-[#1a2332]">
                     {((adminMembers[0] as Record<string, unknown>).swimmer as Record<string, unknown> | null)?.name as string || ""}
                     {adminMembers.length > 1 && (
-                      <span className="font-normal text-[#5c6a7a]"> 他{adminMembers.length - 1}人</span>
+                      <span className="font-normal text-[#475569]"> 他{adminMembers.length - 1}人</span>
                     )}
                   </p>
                 </div>
@@ -266,7 +265,7 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
               {sessions.length === 0 ? (
                 <div className="flex flex-col items-center py-12 px-6">
                   <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[rgba(0,95,140,0.08)]">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8d99a8" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                       <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
                       <line x1="16" y1="2" x2="16" y2="6" />
                       <line x1="8" y1="2" x2="8" y2="6" />
@@ -274,7 +273,7 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
                     </svg>
                   </div>
                   <p className="text-base font-semibold text-[#1a2332]">予定されているセッションはありません</p>
-                  <p className="mt-1 text-sm text-[#5c6a7a]">セッションを作成して、メンバーに共有しましょう</p>
+                  <p className="mt-1 text-sm text-[#475569]">セッションを作成して、メンバーに共有しましょう</p>
                 </div>
               ) : (
                 <div className="flex flex-col gap-3">
@@ -284,7 +283,7 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
                         <CardContent className="flex items-center justify-between p-4">
                           <div>
                             <p className="font-medium text-[#1a2332]">{session.title as string}</p>
-                            <p className="text-sm text-[#5c6a7a]">
+                            <p className="text-sm text-[#475569]">
                               {new Date(session.scheduled_at as string).toLocaleDateString("ja-JP", {
                                 month: "long",
                                 day: "numeric",
@@ -319,10 +318,9 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
   }
 
   // ─── メンバービュー ────────────────────────────────────────────────
-  const [teamResult, sessionsResult, announcementsResult, memberPreviewResult] = await Promise.all([
+  const [teamResult, sessionsResult, memberPreviewResult] = await Promise.all([
     getTeam(id),
     getTeamSessions(id),
-    getTeamAnnouncements(id),
     // メンバープレビュー用（管理者権限不要な軽量クエリ）
     adminClient
       .from("team_members")
@@ -344,15 +342,6 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
         new Date(a.scheduled_at as string).getTime() -
         new Date(b.scheduled_at as string).getTime()
     )
-  const announcements = (announcementsResult.data || []) as Array<{
-    id: string
-    title: string
-    body: string | null
-    created_at: string
-    is_read: boolean
-  }>
-  const unreadCount = announcements.filter((a) => !a.is_read).length
-
   // 自分の参加済みセッション ID を取得
   let registeredSessionIds = new Set<string>()
   if (allSessions.length > 0) {
@@ -398,9 +387,8 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
                 <polyline points="15 18 9 12 15 6" />
               </svg>
             </BackLink>
-            <span className="text-sm text-[#5c6a7a]">グループ</span>
+            <span className="text-sm text-[#475569]">グループ</span>
             <div className="flex items-center gap-2">
-              <MemberAnnouncementsSheet announcements={announcements} unreadCount={unreadCount} />
               {(team.contact_email || team.contact_phone) && (
                 <ContactInfoButton
                   teamId={team.id}

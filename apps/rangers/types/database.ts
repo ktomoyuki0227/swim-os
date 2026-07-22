@@ -448,6 +448,7 @@ export type NotificationType =
   | "join_request_rejected"
   // セッション関連
   | "session_added"
+  | "session_confirmed"
   | "session_registered"
   | "session_cancelled"
   | "session_cancelled_by_member"
@@ -460,6 +461,8 @@ export type NotificationType =
   | "payment_failed"
   | "stamp_low"
   | "fee_reminder"
+  // お知らせ関連
+  | "team_announcement"
   // その他
   | "inquiry_received"
 

@@ -41,7 +41,28 @@ export async function createAnnouncement(teamId: string, data: unknown) {
 
   if (error) return { error: "お知らせの作成に失敗しました" }
 
+  // チームの全メンバー（管理者除く）に個別通知を送信
+  const { data: members } = await adminClient
+    .from("team_members")
+    .select("swimmer_id")
+    .eq("team_id", teamId)
+    .eq("status", "active")
+    .neq("swimmer_id", user.id)
+  if (members && members.length > 0) {
+    await adminClient.from("notifications").insert(
+      members.map((m) => ({
+        user_id: m.swimmer_id,
+        type: "team_announcement",
+        title: parsed.data.title,
+        body: parsed.data.body || null,
+        team_id: teamId,
+        link: `/teams/${teamId}`,
+      }))
+    )
+  }
+
   revalidatePath("/teams")
+  revalidatePath("/notifications")
   return { data: announcement }
 }
 

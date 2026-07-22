@@ -28,13 +28,18 @@ const typeIcons: Record<string, React.ReactNode> = {
     </svg>
   ),
   join_request_rejected: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8d99a8" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" />
     </svg>
   ),
   session_added: (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#005F8C" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /><line x1="12" y1="14" x2="12" y2="19" /><line x1="9.5" y1="16.5" x2="14.5" y2="16.5" />
+    </svg>
+  ),
+  session_confirmed: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0f8a4f" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /><polyline points="9 16 11 18 15 14" />
     </svg>
   ),
   session_registered: (
@@ -97,10 +102,15 @@ const typeIcons: Record<string, React.ReactNode> = {
       <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
     </svg>
   ),
+  team_announcement: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#005F8C" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 11l19-9-9 19-2-8-8-2z" />
+    </svg>
+  ),
 }
 
 const defaultIcon = (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8d99a8" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
     <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" />
   </svg>
 )
@@ -125,14 +135,14 @@ export function NotificationItem({ notification }: Props) {
       <CardContent className="flex items-start gap-3 px-4 py-2.5">
         <span className="mt-0.5 shrink-0">{icon}</span>
         <div className="flex-1">
-          <p className={`text-sm ${notification.is_read ? "font-normal text-[#5c6a7a]" : "font-semibold text-[#1a2332]"}`}>
+          <p className={`text-sm ${notification.is_read ? "font-normal text-[#475569]" : "font-semibold text-[#1a2332]"}`}>
             {notification.title}
           </p>
           {notification.body ? (
-            <p className="mt-1 text-xs text-[#5c6a7a]">{notification.body}</p>
+            <p className="mt-1 text-sm text-[#475569]">{notification.body}</p>
           ) : null}
           <div className="mt-1 flex items-center gap-2">
-            <p className="text-xs text-[#8d99a8]">
+            <p className="text-sm text-[#64748b]">
               {new Date(notification.created_at).toLocaleDateString("ja-JP", {
                 month: "long",
                 day: "numeric",
@@ -141,7 +151,7 @@ export function NotificationItem({ notification }: Props) {
               })}
             </p>
             {notification.link && (
-              <span className="text-xs text-[#005F8C]">→ 確認する</span>
+              <span className="text-sm text-[#005F8C]">→ 確認する</span>
             )}
           </div>
         </div>
