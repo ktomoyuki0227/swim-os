@@ -26,7 +26,7 @@ function profileToTagIds(swimmer: TeamMemberWithProfile["swimmer"]): string[] {
   else if (swimmer.swimmer_type === "マスターズ") tags.push("swimmer_type_masters")
   const disciplines = swimmer.swim_disciplines ?? []
   if (disciplines.includes("競泳")) tags.push("discipline_swimming")
-  if (disciplines.includes("シンクロ")) tags.push("discipline_synchro")
+  if (disciplines.includes("AS（シンクロ）")) tags.push("discipline_synchro")
   if (disciplines.includes("オープンウォーター")) tags.push("discipline_openwater")
   if (disciplines.includes("飛び込み")) tags.push("discipline_diving")
   if (disciplines.includes("水球")) tags.push("discipline_waterpolo")
@@ -56,7 +56,7 @@ function tagIdsToProfile(tags: string[]) {
   }
   const DISCIPLINE_MAP: Record<string, string> = {
     discipline_swimming: "競泳",
-    discipline_synchro: "シンクロ",
+    discipline_synchro: "AS（シンクロ）",
     discipline_openwater: "オープンウォーター",
     discipline_diving: "飛び込み",
     discipline_waterpolo: "水球",

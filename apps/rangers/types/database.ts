@@ -134,9 +134,9 @@ export const SWIM_SPECIALTIES = [
   "背泳ぎ",
   "個人メドレー",
   "スタート・ターン",
-  "マスターズ水泳",
   "子供水泳",
   "水泳全般",
+  "その他",
 ] as const
 
 export type SwimSpecialty = (typeof SWIM_SPECIALTIES)[number]
@@ -151,6 +151,7 @@ export const SWIMMING_GOALS = [
   "リハビリ・体力回復",
   "マスターズ大会出場",
   "子どもへの指導",
+  "その他",
 ] as const
 
 export type SwimmingGoal = (typeof SWIMMING_GOALS)[number]
@@ -224,7 +225,7 @@ export const SYSTEM_TAGS = [
   { id: "swimmer_type_player",     label: "選手",             category: "スイマータイプ" },
   { id: "swimmer_type_masters",    label: "マスターズ",       category: "スイマータイプ" },
   { id: "discipline_swimming",     label: "競泳",             category: "水泳カテゴリ" },
-  { id: "discipline_synchro",      label: "シンクロ",         category: "水泳カテゴリ" },
+  { id: "discipline_synchro",      label: "AS（シンクロ）",   category: "水泳カテゴリ" },
   { id: "discipline_openwater",    label: "オープンウォーター", category: "水泳カテゴリ" },
   { id: "discipline_diving",       label: "飛び込み",         category: "水泳カテゴリ" },
   { id: "discipline_waterpolo",    label: "水球",             category: "水泳カテゴリ" },
@@ -233,11 +234,11 @@ export const SYSTEM_TAGS = [
 export type SystemTagId = (typeof SYSTEM_TAGS)[number]["id"]
 
 /** スイマータイプマスター */
-export const SWIMMER_TYPES = ["選手", "マスターズ"] as const
+export const SWIMMER_TYPES = ["選手", "マスターズ", "その他"] as const
 export type SwimmerType = (typeof SWIMMER_TYPES)[number]
 
 /** 水泳カテゴリマスター */
-export const SWIM_DISCIPLINES = ["競泳", "シンクロ", "オープンウォーター", "飛び込み", "水球"] as const
+export const SWIM_DISCIPLINES = ["競泳", "AS（シンクロ）", "オープンウォーター", "飛び込み", "水球", "トライアスロン", "その他"] as const
 export type SwimDiscipline = (typeof SWIM_DISCIPLINES)[number]
 
 /** 練習頻度マスター */

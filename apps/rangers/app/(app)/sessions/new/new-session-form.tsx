@@ -31,11 +31,31 @@ type CompetitionField = {
   options?: string[]
 }
 
+const DURATION_OPTIONS = [
+  { label: "30分", value: "30" },
+  { label: "45分", value: "45" },
+  { label: "60分", value: "60" },
+  { label: "90分", value: "90" },
+  { label: "120分", value: "120" },
+  { label: "150分", value: "150" },
+  { label: "180分", value: "180" },
+  { label: "カスタム", value: "custom" },
+]
+
+function calcEndAt(scheduledAt: string, durationMinutes: number): string {
+  if (!scheduledAt) return ""
+  const d = new Date(scheduledAt)
+  d.setMinutes(d.getMinutes() + durationMinutes)
+  const pad = (n: number) => String(n).padStart(2, "0")
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
 type FormData = {
   title: string
   type: string
   scheduled_at: string
   end_at: string
+  duration: string
   location: string
   meeting_point: string
   gender_filter: "all" | "male" | "female"
@@ -56,6 +76,7 @@ const DEFAULT_FORM: FormData = {
   type: "practice",
   scheduled_at: "",
   end_at: "",
+  duration: "",
   location: "",
   meeting_point: "",
   gender_filter: "all",
@@ -231,7 +252,7 @@ export function NewSessionForm({
           if (tag.startsWith("discipline_")) {
             const labelMap: Record<string, string> = {
               discipline_swimming: "競泳",
-              discipline_synchro: "シンクロ",
+              discipline_synchro: "AS（シンクロ）",
               discipline_openwater: "オープンウォーター",
               discipline_diving: "飛び込み",
               discipline_waterpolo: "水球",
@@ -311,6 +332,17 @@ export function NewSessionForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [copySessionId, templateId])
 
+  // 開始日時 or 所要時間が変わったら end_at を自動計算（camp 以外かつ custom 以外）
+  useEffect(() => {
+    if (form.type === "camp") return
+    if (!form.duration || form.duration === "custom") return
+    const minutes = parseInt(form.duration, 10)
+    if (isNaN(minutes)) return
+    const computed = calcEndAt(form.scheduled_at, minutes)
+    setForm((prev) => ({ ...prev, end_at: computed }))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.scheduled_at, form.duration, form.type])
+
   const set = (key: keyof FormData, value: string | boolean) =>
     setForm((prev) => ({ ...prev, [key]: value }))
 
@@ -351,7 +383,7 @@ export function NewSessionForm({
         content: form.content || undefined,
         type: form.type as "practice" | "camp" | "competition" | "event" | "meeting",
         scheduled_at: form.scheduled_at,
-        end_at: form.type === "camp" && form.end_at ? form.end_at : undefined,
+        end_at: form.end_at || undefined,
         location: form.location,
         meeting_point: form.meeting_point || undefined,
         gender_filter: form.gender_filter,
@@ -491,32 +523,86 @@ export function NewSessionForm({
               </div>
             </div>
 
-            <div className={`grid gap-4 ${form.type === "camp" ? "sm:grid-cols-2" : ""}`}>
+            <div className="space-y-1.5">
+              <Label htmlFor="scheduled_at">
+                {form.type === "camp" ? "開始日時" : "日時"} <span className="text-[#c0392b]">*</span>
+              </Label>
+              <Input
+                id="scheduled_at"
+                type="datetime-local"
+                value={form.scheduled_at}
+                onChange={(e) => set("scheduled_at", e.target.value)}
+                className="border-[#dce3ea]"
+              />
+            </div>
+
+            {form.type === "camp" ? (
               <div className="space-y-1.5">
-                <Label htmlFor="scheduled_at">
-                  {form.type === "camp" ? "開始日時" : "日時"} <span className="text-[#c0392b]">*</span>
-                </Label>
+                <Label htmlFor="end_at">終了日時</Label>
                 <Input
-                  id="scheduled_at"
+                  id="end_at"
                   type="datetime-local"
-                  value={form.scheduled_at}
-                  onChange={(e) => set("scheduled_at", e.target.value)}
+                  value={form.end_at}
+                  onChange={(e) => set("end_at", e.target.value)}
                   className="border-[#dce3ea]"
                 />
               </div>
-              {form.type === "camp" && (
-                <div className="space-y-1.5">
-                  <Label htmlFor="end_at">終了日時</Label>
-                  <Input
-                    id="end_at"
-                    type="datetime-local"
-                    value={form.end_at}
-                    onChange={(e) => set("end_at", e.target.value)}
-                    className="border-[#dce3ea]"
-                  />
-                </div>
-              )}
-            </div>
+            ) : (
+              <div className="space-y-2">
+                <Label htmlFor="duration">所要時間</Label>
+                <select
+                  id="duration"
+                  value={form.duration}
+                  onChange={(e) => {
+                    set("duration", e.target.value)
+                    if (e.target.value !== "custom") set("end_at", "")
+                  }}
+                  className="h-10 w-40 rounded-lg border border-[#dce3ea] bg-white px-3 text-sm text-[#1a2332] focus:outline-none focus:ring-2 focus:ring-[#005F8C]/30"
+                >
+                  <option value="">選択しない</option>
+                  {DURATION_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
+                  ))}
+                </select>
+
+                {form.duration && form.duration !== "custom" && form.end_at && form.scheduled_at && (
+                  <div className="flex items-center gap-3 rounded-xl border border-[#005F8C]/15 bg-[#005F8C]/5 px-4 py-3">
+                    <div className="text-center">
+                      <p className="mb-0.5 text-[10px] text-[#8d99a8]">開始</p>
+                      <p className="text-base font-semibold tabular-nums text-[#1a2332]">
+                        {new Date(form.scheduled_at).toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" })}
+                      </p>
+                    </div>
+                    <div className="flex flex-1 items-center gap-2">
+                      <div className="h-px flex-1 bg-[#005F8C]/25" />
+                      <span className="rounded-full border border-[#005F8C]/20 bg-white px-2.5 py-0.5 text-xs font-medium text-[#005F8C]">
+                        {form.duration}分
+                      </span>
+                      <div className="h-px flex-1 bg-[#005F8C]/25" />
+                    </div>
+                    <div className="text-center">
+                      <p className="mb-0.5 text-[10px] text-[#8d99a8]">終了</p>
+                      <p className="text-base font-semibold tabular-nums text-[#1a2332]">
+                        {new Date(form.end_at).toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" })}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {form.duration === "custom" && (
+                  <div className="space-y-1.5">
+                    <Label htmlFor="end_at_custom">終了日時</Label>
+                    <Input
+                      id="end_at_custom"
+                      type="datetime-local"
+                      value={form.end_at}
+                      onChange={(e) => set("end_at", e.target.value)}
+                      className="border-[#dce3ea]"
+                    />
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="space-y-1.5">
               <Label htmlFor="location">場所 <span className="text-[#c0392b]">*</span></Label>
@@ -951,7 +1037,7 @@ export function NewSessionForm({
                   <span className="w-24 shrink-0 text-[#8d99a8]">{form.type === "camp" ? "開始日時" : "日時"}</span>
                   <span className="text-[#1a2332]">{form.scheduled_at ? new Date(form.scheduled_at).toLocaleString("ja-JP") : "—"}</span>
                 </div>
-                {form.type === "camp" && form.end_at && (
+                {form.end_at && (
                   <div className="flex gap-2">
                     <span className="w-24 shrink-0 text-[#8d99a8]">終了日時</span>
                     <span className="text-[#1a2332]">{new Date(form.end_at).toLocaleString("ja-JP")}</span>

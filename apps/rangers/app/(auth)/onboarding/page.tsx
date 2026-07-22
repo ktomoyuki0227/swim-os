@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useTransition, Fragment } from "react"
+import { useState, useEffect, useTransition, Fragment, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { loadStripe } from "@stripe/stripe-js"
 import {
@@ -343,6 +343,8 @@ export default function OnboardingPage() {
   const [selectedPrefectures, setSelectedPrefectures] = useState<string[]>([])
   const [selectedSwimmerType, setSelectedSwimmerType] = useState<string>("")
   const [selectedSwimDisciplines, setSelectedSwimDisciplines] = useState<string[]>([])
+  const [prefDropdownOpen, setPrefDropdownOpen] = useState(false)
+  const prefDropdownRef = useRef<HTMLDivElement>(null)
 
   // Step 2–5: 基本情報
   const [form, setForm] = useState<FormState>({
@@ -364,6 +366,17 @@ export default function OnboardingPage() {
   })
   const [saveError, setSaveError] = useState<string | null>(null)
 
+  useEffect(() => {
+    if (!prefDropdownOpen) return
+    function handleClickOutside(e: MouseEvent) {
+      if (prefDropdownRef.current && !prefDropdownRef.current.contains(e.target as Node)) {
+        setPrefDropdownOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [prefDropdownOpen])
+
   const isValidPhone = (val: string) => /^\d{10,11}$/.test(val.replace(/[-\s]/g, ""))
 
   const toggleItem = (list: string[], item: string): string[] =>
@@ -373,7 +386,7 @@ export default function OnboardingPage() {
   const step1Valid =
     !!avatarFile &&
     !!selectedLevel &&
-    selectedSpecialties.length >= 2 &&
+    selectedSpecialties.length >= 1 &&
     selectedGoals.length >= 1 &&
     selectedPrefectures.length >= 1
 
@@ -553,6 +566,23 @@ export default function OnboardingPage() {
                 </div>
               </div>
 
+              {/* 水泳カテゴリ（任意） */}
+              <div className="space-y-2">
+                <Label className="text-sm text-[#5c6a7a]">
+                  水泳カテゴリ<span className="ml-1 text-xs text-[#8d99a8]">任意</span>
+                </Label>
+                <div className="flex flex-wrap gap-2">
+                  {SWIM_DISCIPLINES.map((d) => (
+                    <TagButton
+                      key={d}
+                      label={d}
+                      selected={selectedSwimDisciplines.includes(d)}
+                      onClick={() => setSelectedSwimDisciplines((prev) => toggleItem(prev, d))}
+                    />
+                  ))}
+                </div>
+              </div>
+
               {/* レベル */}
               <div className="space-y-2">
                 <Label className="text-sm text-[#5c6a7a]">
@@ -582,7 +612,7 @@ export default function OnboardingPage() {
                 <Label className="text-sm text-[#5c6a7a]">
                   種目・泳法<span className="ml-0.5 text-[#c0392b]">*</span>
                   <span className="ml-1.5 text-xs font-normal text-[#8d99a8]">
-                    2つ以上選択（{selectedSpecialties.length}個選択中）
+                    1つ以上選択（{selectedSpecialties.length}個選択中）
                   </span>
                 </Label>
                 <div className="flex flex-wrap gap-2">
@@ -622,18 +652,55 @@ export default function OnboardingPage() {
                 <Label className="text-sm text-[#5c6a7a]">
                   活動エリア<span className="ml-0.5 text-[#c0392b]">*</span>
                   <span className="ml-1.5 text-xs font-normal text-[#8d99a8]">
-                    1つ以上選択（{selectedPrefectures.length}個選択中）
+                    {selectedPrefectures.length === 0 ? "1つ以上選択" : `${selectedPrefectures.length}件選択中`}
                   </span>
                 </Label>
-                <div className="flex flex-wrap gap-2">
-                  {PREFECTURES.map((p) => (
-                    <TagButton
-                      key={p}
-                      label={p}
-                      selected={selectedPrefectures.includes(p)}
-                      onClick={() => setSelectedPrefectures((prev) => toggleItem(prev, p))}
-                    />
-                  ))}
+                <div className="relative" ref={prefDropdownRef}>
+                  <button
+                    type="button"
+                    onClick={() => setPrefDropdownOpen((o) => !o)}
+                    className="flex w-full items-center justify-between rounded-lg border border-[#dce3ea] px-3 py-2.5 text-sm transition-colors hover:border-[#005F8C]/40"
+                  >
+                    <span className={selectedPrefectures.length === 0 ? "text-[#8d99a8]" : "text-[#1a2634]"}>
+                      {selectedPrefectures.length === 0
+                        ? "都道府県を選択してください"
+                        : selectedPrefectures.slice(0, 4).join("・") + (selectedPrefectures.length > 4 ? ` 他${selectedPrefectures.length - 4}件` : "")}
+                    </span>
+                    <span className="ml-2 shrink-0 text-[#8d99a8] text-xs">{prefDropdownOpen ? "▲" : "▼"}</span>
+                  </button>
+                  {prefDropdownOpen && (
+                    <div className="absolute z-10 mt-1 w-full rounded-lg border border-[#dce3ea] bg-white shadow-lg">
+                      <div className="max-h-52 overflow-y-auto p-2">
+                        <div className="grid grid-cols-3 gap-0.5">
+                          {PREFECTURES.map((p) => (
+                            <button
+                              key={p}
+                              type="button"
+                              onClick={() => setSelectedPrefectures((prev) => toggleItem(prev, p))}
+                              className={`rounded px-2 py-1.5 text-left text-xs transition-colors ${
+                                selectedPrefectures.includes(p)
+                                  ? "bg-[#005F8C]/10 font-medium text-[#005F8C]"
+                                  : "text-[#5c6a7a] hover:bg-[#f5f8fa]"
+                              }`}
+                            >
+                              {p}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      {selectedPrefectures.length > 0 && (
+                        <div className="border-t border-[#dce3ea] px-3 py-2">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedPrefectures([])}
+                            className="text-xs text-[#8d99a8] hover:text-[#c0392b]"
+                          >
+                            選択をクリア
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -656,23 +723,6 @@ export default function OnboardingPage() {
                     >
                       {t}
                     </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* 水泳カテゴリ（任意） */}
-              <div className="space-y-2">
-                <Label className="text-sm text-[#5c6a7a]">
-                  水泳カテゴリ<span className="ml-1 text-xs text-[#8d99a8]">任意</span>
-                </Label>
-                <div className="flex flex-wrap gap-2">
-                  {SWIM_DISCIPLINES.map((d) => (
-                    <TagButton
-                      key={d}
-                      label={d}
-                      selected={selectedSwimDisciplines.includes(d)}
-                      onClick={() => setSelectedSwimDisciplines((prev) => toggleItem(prev, d))}
-                    />
                   ))}
                 </div>
               </div>
