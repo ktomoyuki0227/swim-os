@@ -39,7 +39,7 @@ export default function SearchPage() {
 
           <div className="absolute bottom-0 left-0 p-5">
             <p className="text-xl font-bold tracking-tight text-white">セッション</p>
-            <p className="mt-0.5 text-sm text-white/70">スイミングセッションを探す</p>
+            <p className="mt-0.5 text-sm text-white/70">練習・合宿・大会・イベントを探す</p>
           </div>
 
           <div className="absolute right-5 top-1/2 -translate-y-1/2">

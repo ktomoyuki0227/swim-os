@@ -314,7 +314,7 @@ export function PublicTeamView({ data, hasBottomNav = false, joinRequestStatus =
               </svg>
               参加申請中（承認待ち）
             </div>
-          ) : (
+          ) : team.is_recruiting ? (
             <Link
               href={`/teams/${team.id}/join`}
               className="flex w-full items-center justify-center rounded-full bg-[#005F8C] py-3.5 text-base font-bold text-white shadow-lg transition-colors hover:bg-[#004E73] active:scale-[0.98]"
@@ -322,6 +322,13 @@ export function PublicTeamView({ data, hasBottomNav = false, joinRequestStatus =
             >
               このグループに参加する
             </Link>
+          ) : (
+            <div
+              className="flex w-full items-center justify-center rounded-full bg-[#c8d8e8] py-3.5 text-base font-bold text-[#8d99a8] shadow-lg"
+              style={{ minHeight: "52px" }}
+            >
+              現在メンバーを募集していません
+            </div>
           )}
         </div>
       </div>

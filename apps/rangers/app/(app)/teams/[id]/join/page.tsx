@@ -16,12 +16,47 @@ export default async function TeamJoinPage({ params }: PageProps) {
   const admin = createAdminClient()
   const { data: team } = await admin
     .from("teams")
-    .select("id, name, description, avatar_url, has_annual_fee, has_monthly_fee, has_point_card, annual_fee_amount, monthly_fee_amount, point_card_count, point_card_price")
+    .select("id, name, description, avatar_url, is_recruiting, has_annual_fee, has_monthly_fee, has_point_card, annual_fee_amount, monthly_fee_amount, point_card_count, point_card_price")
     .eq("id", id)
     .eq("status", "active")
     .single()
 
   if (!team) notFound()
+
+  if (!team.is_recruiting) {
+    return (
+      <div className="mx-auto max-w-md py-4">
+        <div className="mb-6 rounded-2xl border border-[#dce3ea] bg-white p-6 shadow-sm">
+          <div className="mb-4 flex items-center gap-4">
+            <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-full border border-[#dce3ea] bg-[#e8f2f8]">
+              {team.avatar_url ? (
+                <Image src={team.avatar_url} alt={team.name} fill className="object-cover" sizes="64px" />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-2xl">🏊</div>
+              )}
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-[#1a2332]">{team.name}</h1>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-[#dce3ea] bg-white p-5 text-center">
+          <div className="mb-3 text-3xl">🔒</div>
+          <p className="font-semibold text-[#1a2332]">現在メンバーを募集していません</p>
+          <p className="mt-1 text-sm text-[#5c6a7a]">
+            このグループは現在、新しいメンバーの受付を停止しています。
+          </p>
+        </div>
+
+        <div className="mt-6 text-center">
+          <Link href={`/teams/${team.id}`} className="text-sm text-[#5c6a7a] hover:text-[#1a2332]">
+            ← グループページに戻る
+          </Link>
+        </div>
+      </div>
+    )
+  }
 
   const supabase = await createClient()
   const {
