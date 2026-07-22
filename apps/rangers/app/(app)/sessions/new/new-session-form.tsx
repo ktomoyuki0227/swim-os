@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useTransition, useEffect, useRef } from "react"
+import { createPortal } from "react-dom"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { createSession, getSession } from "@/actions/sessions"
@@ -67,7 +68,6 @@ type FormData = {
   min_participants: string
   max_participants: string
   cancellation_days: string
-  content: string
   is_external: boolean
 }
 
@@ -88,7 +88,6 @@ const DEFAULT_FORM: FormData = {
   min_participants: "",
   max_participants: "",
   cancellation_days: "",
-  content: "",
   is_external: false,
 }
 
@@ -164,14 +163,26 @@ export function NewSessionForm({
     { key: "age_group", label: "年齢区分", type: "text", required: false },
   ])
   const [templates, setTemplates] = useState<Record<string, unknown>[]>(initialTemplates)
+  const [openTagCategory, setOpenTagCategory] = useState<string | null>(null)
+  const [portalMounted, setPortalMounted] = useState(false)
   // サーバーで取得済みのグループIDを記憶しておき、同じグループでの再フェッチをスキップする
   const serverFetchedTeamId = useRef(initialTeamId)
 
   useEffect(() => {
+    setPortalMounted(true)
     createClient().auth.getUser().then(({ data }) => {
       if (data.user) setCurrentUserId(data.user.id)
     })
   }, [])
+
+  useEffect(() => {
+    if (openTagCategory !== null) {
+      document.body.style.overflow = "hidden"
+    } else {
+      document.body.style.overflow = ""
+    }
+    return () => { document.body.style.overflow = "" }
+  }, [openTagCategory])
 
   // teamId が URL になければ管理者グループを自動取得
   useEffect(() => {
@@ -295,7 +306,6 @@ export function NewSessionForm({
       min_participants: data.min_participants !== undefined ? String(data.min_participants) : prev.min_participants,
       max_participants: data.max_participants !== undefined ? String(data.max_participants) : prev.max_participants,
       cancellation_days: data.cancellation_days !== undefined ? String(data.cancellation_days) : prev.cancellation_days,
-      content: data.content ?? prev.content,
       is_external: data.is_external ?? prev.is_external,
     }))
     if (data.target_tags) setSelectedTags(data.target_tags)
@@ -311,7 +321,7 @@ export function NewSessionForm({
           description: data.description ?? undefined, member_price: data.member_price,
           guest_price: data.guest_price, allow_point_card: data.allow_point_card,
           min_participants: data.min_participants ?? undefined, max_participants: data.max_participants ?? undefined,
-          cancellation_days: data.cancellation_days ?? undefined, content: data.content ?? undefined,
+          cancellation_days: data.cancellation_days ?? undefined,
           is_external: data.is_external, target_tags: (data.target_tags as string[]) ?? [],
           competition_fields: data.competition_fields as CompetitionField[],
         })
@@ -324,7 +334,7 @@ export function NewSessionForm({
           description: (data.description as string) ?? undefined, member_price: data.member_price as number,
           guest_price: data.guest_price as number, allow_point_card: data.allow_point_card as boolean,
           min_participants: (data.min_participants as number) ?? undefined, max_participants: (data.max_participants as number) ?? undefined,
-          cancellation_days: (data.cancellation_days as number) ?? undefined, content: (data.content as string) ?? undefined,
+          cancellation_days: (data.cancellation_days as number) ?? undefined,
           is_external: data.is_external as boolean, target_tags: (data.target_tags as string[]) ?? [],
         })
       })
@@ -380,7 +390,6 @@ export function NewSessionForm({
       const result = await createSession(activeTeamId, {
         title: form.title,
         description: form.description || undefined,
-        content: form.content || undefined,
         type: form.type as "practice" | "camp" | "competition" | "event" | "meeting",
         scheduled_at: form.scheduled_at,
         end_at: form.end_at || undefined,
@@ -440,7 +449,7 @@ export function NewSessionForm({
                   description: (data.description as string) ?? undefined, member_price: data.member_price as number,
                   guest_price: data.guest_price as number, allow_point_card: data.allow_point_card as boolean,
                   min_participants: (data.min_participants as number) ?? undefined, max_participants: (data.max_participants as number) ?? undefined,
-                  cancellation_days: (data.cancellation_days as number) ?? undefined, content: (data.content as string) ?? undefined,
+                  cancellation_days: (data.cancellation_days as number) ?? undefined,
                   is_external: data.is_external as boolean, target_tags: (data.target_tags as string[]) ?? [],
                 })
               })
@@ -629,14 +638,17 @@ export function NewSessionForm({
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="description">説明</Label>
+              <Label htmlFor="description">
+                説明・練習メニュー
+                <span className="ml-1.5 text-xs font-normal text-[#8d99a8]">任意</span>
+              </Label>
               <Textarea
                 id="description"
                 value={form.description}
                 onChange={(e) => set("description", e.target.value)}
-                placeholder="セッションの概要を入力"
-                rows={2}
-                className="resize-none border-[#dce3ea]"
+                placeholder={"セッションの概要や練習内容を入力\n\n例）\nウォームアップ 400m\nドリル 4×50m\nメインセット 8×100m..."}
+                rows={5}
+                className="border-[#dce3ea]"
               />
             </div>
           </CardContent>
@@ -793,18 +805,6 @@ export function NewSessionForm({
               </div>
             </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="content">練習メニュー・内容</Label>
-              <Textarea
-                id="content"
-                value={form.content}
-                onChange={(e) => set("content", e.target.value)}
-                placeholder={"ウォームアップ 400m\nドリル 4×50m\n..."}
-                rows={5}
-                className="resize-none border-[#dce3ea] font-mono text-sm"
-              />
-            </div>
-
             {/* 試合エントリー設定 */}
             {form.type === "competition" && (
               <div className="space-y-3 rounded-xl border border-[#dce3ea] p-4">
@@ -888,48 +888,107 @@ export function NewSessionForm({
         )
 
         return (
-          <div className="grid gap-4 md:grid-cols-[200px_1fr]">
-            <Card className="border-[#dce3ea]">
-              <CardContent className="space-y-4 pt-4">
-                <p className="text-xs font-semibold text-[#5c6a7a]">タグで絞り込む</p>
-                <p className="text-xs text-[#8d99a8] leading-relaxed">タグを選ぶほどチェックが絞られます</p>
-                {Object.entries(tagsByCategory).map(([category, tags]) => (
-                  <div key={category}>
-                    <p className="mb-2 text-xs font-medium text-[#8d99a8]">{category}</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {tags.map((tag) => (
-                        <button
-                          key={tag.id}
-                          type="button"
-                          onClick={() =>
-                            setSelectedTags((prev) =>
-                              prev.includes(tag.id) ? prev.filter((t) => t !== tag.id) : [...prev, tag.id]
-                            )
-                          }
-                          className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
-                            selectedTags.includes(tag.id)
-                              ? "bg-[#005F8C] text-white"
-                              : "border border-[#dce3ea] bg-white text-[#5c6a7a] hover:border-[#005F8C] hover:text-[#005F8C]"
-                          }`}
-                        >
-                          {tag.label}
-                        </button>
-                      ))}
+          <div className="space-y-3">
+            {/* フィルターピル行 */}
+            <div className="flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {Object.entries(tagsByCategory).map(([category, tags]) => {
+                const selectedCount = tags.filter((t) => selectedTags.includes(t.id)).length
+                const isActive = selectedCount > 0
+                const isOpen = openTagCategory === category
+                return (
+                  <button
+                    key={category}
+                    type="button"
+                    onClick={() => setOpenTagCategory(isOpen ? null : category)}
+                    className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
+                      isActive
+                        ? "border-[#005F8C] bg-[#005F8C] text-white"
+                        : "border-[#dce3ea] bg-white text-[#1a2332] hover:border-[#005F8C] hover:text-[#005F8C]"
+                    }`}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
+                      <line x1="4" y1="6" x2="20" y2="6" /><line x1="8" y1="12" x2="16" y2="12" /><line x1="11" y1="18" x2="13" y2="18" />
+                    </svg>
+                    <span>{category}</span>
+                    {isActive && (
+                      <span className="flex h-4 w-4 items-center justify-center rounded-full bg-white/30 text-[10px] font-bold">
+                        {selectedCount}
+                      </span>
+                    )}
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true"
+                      className={`transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}>
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </button>
+                )
+              })}
+              {selectedTags.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedTags([])}
+                  className="shrink-0 rounded-full border border-[#dce3ea] bg-white px-3 py-1.5 text-sm text-[#c0392b] hover:border-[#c0392b]"
+                >
+                  リセット
+                </button>
+              )}
+            </div>
+
+            {/* カテゴリボトムシート */}
+            {portalMounted && openTagCategory !== null && (() => {
+              const sheetTags = tagsByCategory[openTagCategory] ?? []
+              return createPortal(
+                <>
+                  <div className="fixed inset-0 z-40 bg-black/40" onClick={() => setOpenTagCategory(null)} />
+                  <div className="fixed bottom-0 left-0 right-0 z-50 rounded-t-[20px] bg-white shadow-2xl">
+                    <div className="flex justify-center pb-1 pt-3">
+                      <div className="h-1 w-10 rounded-full bg-[#dce3ea]" />
+                    </div>
+                    <div className="flex items-center justify-between px-5 py-3">
+                      <h3 className="text-base font-semibold text-[#1a2332]">{openTagCategory}</h3>
+                      <button
+                        type="button"
+                        onClick={() => setOpenTagCategory(null)}
+                        className="flex h-8 w-8 items-center justify-center rounded-full bg-[#f2f7fa] text-[#5c6a7a] hover:bg-[#e0edf5]"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
+                          <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                      </button>
+                    </div>
+                    <div className="px-3 pb-10">
+                      {sheetTags.map((tag) => {
+                        const isSelected = selectedTags.includes(tag.id)
+                        return (
+                          <button
+                            key={tag.id}
+                            type="button"
+                            onClick={() =>
+                              setSelectedTags((prev) =>
+                                isSelected ? prev.filter((t) => t !== tag.id) : [...prev, tag.id]
+                              )
+                            }
+                            style={isSelected ? { backgroundColor: "rgba(0,95,140,0.08)" } : undefined}
+                            className={`flex w-full items-center justify-between rounded-xl px-4 py-3.5 text-sm transition-colors ${
+                              isSelected ? "font-semibold text-[#005F8C]" : "text-[#1a2332] hover:bg-[#f2f7fa]"
+                            }`}
+                          >
+                            <span>{tag.label}</span>
+                            {isSelected && (
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#005F8C" strokeWidth="2.5" aria-hidden="true">
+                                <polyline points="20 6 9 17 4 12" />
+                              </svg>
+                            )}
+                          </button>
+                        )
+                      })}
                     </div>
                   </div>
-                ))}
-                {selectedTags.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setSelectedTags([])}
-                    className="text-xs text-[#c0392b] hover:underline"
-                  >
-                    リセット（全員選択に戻す）
-                  </button>
-                )}
-              </CardContent>
-            </Card>
+                </>,
+                document.body
+              )
+            })()}
 
+            {/* メンバーリスト */}
             <Card className="border-[#dce3ea]">
               <CardContent className="pt-4">
                 <div className="mb-3 flex items-center justify-between">
@@ -1061,8 +1120,8 @@ export function NewSessionForm({
                 )}
                 {form.description && (
                   <div className="flex gap-2">
-                    <span className="w-24 shrink-0 text-[#8d99a8]">説明</span>
-                    <span className="text-[#1a2332]">{form.description}</span>
+                    <span className="w-24 shrink-0 text-[#8d99a8]">説明・メニュー</span>
+                    <span className="whitespace-pre-wrap text-[#1a2332]">{form.description}</span>
                   </div>
                 )}
               </div>
