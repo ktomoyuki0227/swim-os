@@ -39,6 +39,8 @@ interface PublicTeamViewProps {
   joinRequestStatus?: "pending" | "approved" | "rejected" | null
   /** ログイン状態（問い合わせボタンの表示制御に使用） */
   isLoggedIn?: boolean
+  /** 管理者がプレビュー表示している場合は true（参加CTAを非表示にする） */
+  isAdmin?: boolean
 }
 
 const SESSION_TYPE_LABEL: Record<string, string> = {
@@ -49,7 +51,7 @@ const SESSION_TYPE_LABEL: Record<string, string> = {
   meeting: "ミーティング",
 }
 
-export function PublicTeamView({ data, hasBottomNav = false, joinRequestStatus = null, isLoggedIn = false }: PublicTeamViewProps) {
+export function PublicTeamView({ data, hasBottomNav = false, joinRequestStatus = null, isLoggedIn = false, isAdmin = false }: PublicTeamViewProps) {
   const { team, coach, memberCount, sessions } = data
 
   const coachId = (coach?.id as string) ?? null
@@ -97,7 +99,7 @@ export function PublicTeamView({ data, hasBottomNav = false, joinRequestStatus =
 
       {/* ── コンテンツ ── */}
       {/* CTA 1ボタン分の高さ(~60px) + 位置オフセット分のパディング */}
-      <div className={`mx-auto max-w-lg px-4 ${hasBottomNav ? "pb-36" : "pb-28"}`}>
+      <div className={`mx-auto max-w-lg px-4 ${isAdmin ? "pb-8" : hasBottomNav ? "pb-36" : "pb-28"}`}>
         {/* チーム名 + 問い合わせアイコン */}
         <div className="flex items-center justify-between pt-4 pb-1">
           <h1 className="text-xl font-bold text-[#1a2332]">{team.name}</h1>
@@ -304,8 +306,8 @@ export function PublicTeamView({ data, hasBottomNav = false, joinRequestStatus =
         )}
       </div>
 
-      {/* ── 固定 CTA ── */}
-      <div className={`fixed ${ctaBottom} left-0 right-0 z-10 px-4 pb-2`}>
+      {/* ── 固定 CTA（管理者プレビュー時は非表示） ── */}
+      {!isAdmin && <div className={`fixed ${ctaBottom} left-0 right-0 z-10 px-4 pb-2`}>
         <div className="mx-auto flex max-w-lg flex-col gap-2">
           {joinRequestStatus === "pending" ? (
             <div className="flex w-full items-center justify-center gap-2 rounded-full bg-[#d97706] py-3.5 text-base font-bold text-white shadow-lg" style={{ minHeight: "52px" }}>
@@ -331,7 +333,7 @@ export function PublicTeamView({ data, hasBottomNav = false, joinRequestStatus =
             </div>
           )}
         </div>
-      </div>
+      </div>}
     </div>
   )
 }

@@ -2,10 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { createPortal } from "react-dom"
-import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { QRCodeSVG } from "qrcode.react"
-import { regenerateInviteCode } from "@/actions/teams"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import type { Team } from "@/types/database"
@@ -23,54 +20,25 @@ function CloseIcon() {
 }
 
 export function AdminActionButtons({ team }: AdminActionButtonsProps) {
-  const router = useRouter()
-  const [inviteOpen, setInviteOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
   useEffect(() => { setMounted(true) }, [])
 
-  // 招待モーダル用のローカル state
-  const [copied, setCopied] = useState(false)
-  const [isRegenerating, setIsRegenerating] = useState(false)
-  const [regenerateError, setRegenerateError] = useState<string | null>(null)
-
-  const inviteUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/teams/join/${team.invite_code}`
-
-  const handleCopy = async () => {
-    await navigator.clipboard.writeText(inviteUrl)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
-
-  const handleRegenerate = async () => {
-    if (!confirm("招待コードを再生成しますか？\n現在のリンクは使えなくなります。")) return
-    setIsRegenerating(true)
-    setRegenerateError(null)
-    const result = await regenerateInviteCode(team.id)
-    setIsRegenerating(false)
-    if ("error" in result && result.error) {
-      setRegenerateError(result.error)
-    } else {
-      router.refresh()
-    }
-  }
-
   return (
     <>
       <div className="flex items-center gap-2">
-        {/* 招待ボタン */}
-        <button
-          onClick={() => setInviteOpen(true)}
+        {/* プレビューボタン（ゲスト目線で見る） */}
+        <Link
+          href={`/teams/${team.id}/preview`}
           className="flex h-8 w-8 items-center justify-center rounded-full border border-[#dce3ea] bg-white text-[#005F8C] shadow-sm transition-colors hover:border-[#005F8C] hover:bg-[#e8f2f8]"
-          aria-label="招待"
-          title="招待"
+          aria-label="ゲスト目線で見る"
+          title="ゲスト目線で見る"
         >
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
-            <polyline points="16 6 12 2 8 6" />
-            <line x1="12" y1="2" x2="12" y2="15" />
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+            <circle cx="12" cy="12" r="3" />
           </svg>
-        </button>
+        </Link>
 
         {/* 設定ボタン */}
         <button
@@ -85,67 +53,6 @@ export function AdminActionButtons({ team }: AdminActionButtonsProps) {
           </svg>
         </button>
       </div>
-
-      {/* 招待モーダル */}
-      {mounted && inviteOpen && createPortal(
-        <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setInviteOpen(false)} />
-          <div className="relative z-10 w-full max-w-sm rounded-t-2xl bg-white sm:rounded-2xl">
-            {/* ヘッダー */}
-            <div className="flex items-center justify-between border-b border-[#dce3ea] px-5 py-3">
-              <h2 className="text-sm font-semibold text-[#1a2332]">招待</h2>
-              <button
-                onClick={() => setInviteOpen(false)}
-                className="flex h-7 w-7 items-center justify-center rounded-full text-[#5c6a7a] hover:bg-[#f2f7fa]"
-                aria-label="閉じる"
-              >
-                <CloseIcon />
-              </button>
-            </div>
-
-            {/* コンテンツ */}
-            <div className="flex flex-col items-center gap-3 px-5 py-4">
-              {/* QRコード */}
-              <div className="rounded-xl border border-[#dce3ea] bg-white p-3">
-                <QRCodeSVG value={inviteUrl} size={128} fgColor="#1a2332" bgColor="#ffffff" />
-              </div>
-              <p className="text-xs text-[#5c6a7a]">{team.name} への招待リンク</p>
-
-              {/* 招待リンク */}
-              <div className="w-full space-y-2">
-                <div className="flex items-center rounded-lg border border-[#dce3ea] bg-[#f2f7fa] px-3 py-2">
-                  <p className="flex-1 truncate text-xs text-[#5c6a7a]">{inviteUrl}</p>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    onClick={handleCopy}
-                    variant="outline"
-                    className="flex-1 rounded-full border-[#005F8C] text-[#005F8C]"
-                    style={{ minHeight: "44px" }}
-                  >
-                    {copied ? "コピーしました！" : "リンクをコピー"}
-                  </Button>
-                  <Button
-                    onClick={handleRegenerate}
-                    disabled={isRegenerating}
-                    variant="outline"
-                    className="rounded-full border-[#dce3ea] text-[#5c6a7a]"
-                    style={{ minHeight: "44px" }}
-                  >
-                    {isRegenerating ? "更新中..." : "再生成"}
-                  </Button>
-                </div>
-                {regenerateError && (
-                  <p className="rounded-lg border border-[#c0392b]/20 bg-[#fdecea] px-3 py-2 text-xs text-[#c0392b]">
-                    {regenerateError}
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
 
       {/* 設定モーダル */}
       {mounted && settingsOpen && createPortal(
