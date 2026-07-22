@@ -1,18 +1,12 @@
 export const dynamic = "force-dynamic"
 
 import Link from "next/link"
-import { redirect } from "next/navigation"
 import { getMyTeams } from "@/actions/teams"
 import { Card, CardContent } from "@/components/ui/card"
 import { TeamsClient } from "./teams-client"
 
 export default async function TeamsPage() {
   const { data: teams } = await getMyTeams()
-
-  if (teams && teams.length === 1) {
-    const team = teams[0] as Record<string, unknown>
-    redirect(`/teams/${team.id as string}`)
-  }
 
   if (!teams || teams.length === 0) {
     return (
