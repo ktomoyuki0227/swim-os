@@ -63,9 +63,6 @@ export async function createSession(teamId: string, data: unknown) {
 
   if (error) return { error: `セッションの作成に失敗しました: ${error.message}` }
 
-  // セッション作成のお知らせを自動生成
-  await createSessionAnnouncement(teamId, session, "created")
-
   // チームの全メンバー（管理者除く）に新規セッション通知
   const { data: members } = await adminClient
     .from("team_members")
@@ -177,6 +174,7 @@ export async function updateSession(sessionId: string, data: unknown) {
   }
 
   revalidatePath("/sessions")
+  revalidatePath(`/sessions/${sessionId}`)
   revalidatePath("/notifications")
   return { success: true }
 }
@@ -470,8 +468,31 @@ export async function confirmSession(sessionId: string) {
     .eq("id", sessionId)
   if (confirmErr) return { error: "セッション確定の更新に失敗しました" }
 
-  // お知らせを配信
-  await createSessionAnnouncement(session.team_id, session, "confirmed")
+  // 参加登録済みメンバーへ開催確定通知
+  const confirmedNotifAdmin = createAdminClient()
+  const { data: confirmedRegistrants } = await confirmedNotifAdmin
+    .from("session_registrations")
+    .select("swimmer_id")
+    .eq("session_id", sessionId)
+    .is("cancelled_at", null)
+    .neq("swimmer_id", user.id)
+  if (confirmedRegistrants && confirmedRegistrants.length > 0) {
+    const scheduledDate = new Date(session.scheduled_at).toLocaleDateString("ja-JP", {
+      month: "long",
+      day: "numeric",
+      weekday: "short",
+    })
+    await confirmedNotifAdmin.from("notifications").insert(
+      confirmedRegistrants.map((r) => ({
+        user_id: r.swimmer_id,
+        type: "session_confirmed",
+        title: `「${session.title}」が開催確定しました`,
+        body: `${scheduledDate}のセッションが開催確定です。忘れずにご参加ください`,
+        team_id: session.team_id,
+        link: `/teams/${session.team_id}/sessions/${sessionId}`,
+      }))
+    )
+  }
 
   revalidatePath("/sessions")
   revalidatePath("/notifications")
@@ -571,9 +592,6 @@ export async function cancelSession(sessionId: string) {
     .eq("id", sessionId)
 
   if (cancelErr) return { error: "セッションの中止に失敗しました" }
-
-  // お知らせを配信
-  await createSessionAnnouncement(session.team_id, session, "cancelled")
 
   // 参加登録済みメンバーへ個別中止通知
   const notifAdmin = createAdminClient()
