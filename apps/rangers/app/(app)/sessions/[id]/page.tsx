@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { getSession, getSessionRegistrations, getPriceViewers } from "@/actions/sessions"
+import { createClient, createAdminClient } from "@/lib/supabase/server"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { SessionActions } from "./session-actions"
@@ -24,8 +25,8 @@ const PAYMENT_STATUS_LABELS: Record<string, { label: string; className: string }
   pending: { label: "未払い", className: "bg-[#fdf6e3] text-[#b8860b] border-transparent" },
   paid: { label: "支払済", className: "bg-[#eaf7f0] text-[#0f8a4f] border-transparent" },
   failed: { label: "決済失敗", className: "bg-[#fdecea] text-[#c0392b] border-transparent" },
-  refunded: { label: "返金済", className: "bg-[#edf0f4] text-[#5c6a7a] border-transparent" },
-  free: { label: "無料", className: "bg-[#edf0f4] text-[#5c6a7a] border-transparent" },
+  refunded: { label: "返金済", className: "bg-[#edf0f4] text-[#475569] border-transparent" },
+  free: { label: "無料", className: "bg-[#edf0f4] text-[#475569] border-transparent" },
 }
 
 interface SessionDetailPageProps {
@@ -36,6 +37,9 @@ interface SessionDetailPageProps {
 export default async function SessionDetailPage({ params, searchParams }: SessionDetailPageProps) {
   const { id } = await params
   const { filter } = await searchParams
+
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
 
   const [sessionResult, registrationsResult, priceViewsResult] = await Promise.all([
     getSession(id),
@@ -51,6 +55,19 @@ export default async function SessionDetailPage({ params, searchParams }: Sessio
   const registrations = (registrationsResult.data || []) as Record<string, unknown>[]
   const priceViews = (priceViewsResult.data || []) as Record<string, unknown>[]
   const team = session.team as Record<string, unknown>
+
+  // 管理者かどうか確認（編集ボタン表示用）
+  let isAdmin = false
+  if (user) {
+    const { data: membership } = await createAdminClient()
+      .from("team_members")
+      .select("role")
+      .eq("team_id", session.team_id)
+      .eq("swimmer_id", user.id)
+      .eq("status", "active")
+      .maybeSingle()
+    isAdmin = membership?.role === "admin"
+  }
   const isCompetition = session.type === "competition"
   const competitionFields = (session.competition_fields || []) as { key: string; label: string }[]
 
@@ -83,19 +100,33 @@ export default async function SessionDetailPage({ params, searchParams }: Sessio
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <Link href={`/teams/${team?.id as string}?tab=sessions`} className="text-sm text-[#5c6a7a] hover:text-[#1a2332]">
+        <Link href={`/teams/${team?.id as string}?tab=sessions`} className="text-sm text-[#475569] hover:text-[#1a2332]">
           ← セッション管理
         </Link>
         <div className="mt-2 flex items-start justify-between gap-4">
           <div>
             <h1 className="text-lg font-semibold text-[#1a2332]">{session.title}</h1>
-            <p className="text-sm text-[#5c6a7a]">
+            <p className="text-sm text-[#475569]">
               {SESSION_TYPE_LABELS[session.type]} · {(team?.name as string) || ""}
             </p>
           </div>
-          <Badge className={status.className}>
-            {status.label}
-          </Badge>
+          <div className="flex items-center gap-2 shrink-0">
+            {isAdmin && session.session_status !== "cancelled" && (
+              <Link
+                href={`/sessions/${id}/edit`}
+                className="flex h-8 items-center gap-1.5 rounded-full border border-[#dce3ea] bg-white px-3 text-sm font-medium text-[#005F8C] shadow-sm transition-colors hover:border-[#005F8C] hover:bg-[#e8f2f8]"
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                </svg>
+                編集
+              </Link>
+            )}
+            <Badge className={status.className}>
+              {status.label}
+            </Badge>
+          </div>
         </div>
       </div>
 
@@ -103,7 +134,7 @@ export default async function SessionDetailPage({ params, searchParams }: Sessio
       <Card className="border-[#dce3ea]">
         <CardContent className="divide-y divide-[#dce3ea] p-0">
           <div className="flex items-center justify-between px-4 py-3">
-            <span className="text-sm text-[#5c6a7a]">{session.type === "camp" ? "開始日時" : "日時"}</span>
+            <span className="text-sm text-[#475569]">{session.type === "camp" ? "開始日時" : "日時"}</span>
             <span className="text-sm font-medium text-[#1a2332]">
               {scheduledDate.toLocaleDateString("ja-JP", {
                 year: "numeric",
@@ -117,7 +148,7 @@ export default async function SessionDetailPage({ params, searchParams }: Sessio
           </div>
           {session.type === "camp" && session.end_at && (
             <div className="flex items-center justify-between px-4 py-3">
-              <span className="text-sm text-[#5c6a7a]">終了日時</span>
+              <span className="text-sm text-[#475569]">終了日時</span>
               <span className="text-sm font-medium text-[#1a2332]">
                 {new Date(session.end_at).toLocaleDateString("ja-JP", {
                   month: "long",
@@ -130,38 +161,38 @@ export default async function SessionDetailPage({ params, searchParams }: Sessio
             </div>
           )}
           <div className="flex items-center justify-between px-4 py-3">
-            <span className="text-sm text-[#5c6a7a]">場所</span>
+            <span className="text-sm text-[#475569]">場所</span>
             <span className="text-sm font-medium text-[#1a2332]">{session.location || "未設定"}</span>
           </div>
           {session.meeting_point && (
             <div className="flex items-center justify-between px-4 py-3">
-              <span className="text-sm text-[#5c6a7a]">待ち合わせ場所</span>
+              <span className="text-sm text-[#475569]">待ち合わせ場所</span>
               <span className="text-sm font-medium text-[#1a2332]">{session.meeting_point}</span>
             </div>
           )}
           {session.gender_filter && session.gender_filter !== "all" && (
             <div className="flex items-center justify-between px-4 py-3">
-              <span className="text-sm text-[#5c6a7a]">対象性別</span>
+              <span className="text-sm text-[#475569]">対象性別</span>
               <span className="text-sm font-medium text-[#1a2332]">
                 {session.gender_filter === "male" ? "男性のみ" : "女性のみ"}
               </span>
             </div>
           )}
           <div className="flex items-center justify-between px-4 py-3">
-            <span className="text-sm text-[#5c6a7a]">参加費（メンバー）</span>
+            <span className="text-sm text-[#475569]">参加費（メンバー）</span>
             <span className="text-sm font-medium text-[#1a2332]">
               ¥{(session.member_price || 0).toLocaleString()}
             </span>
           </div>
           <div className="flex items-center justify-between px-4 py-3">
-            <span className="text-sm text-[#5c6a7a]">参加費（ゲスト）</span>
+            <span className="text-sm text-[#475569]">参加費（ゲスト）</span>
             <span className="text-sm font-medium text-[#1a2332]">
               ¥{(session.guest_price || 0).toLocaleString()}
             </span>
           </div>
           {session.registration_deadline && (
             <div className="flex items-center justify-between px-4 py-3">
-              <span className="text-sm text-[#5c6a7a]">申込締切</span>
+              <span className="text-sm text-[#475569]">申込締切</span>
               <span className="text-sm font-medium text-[#1a2332]">
                 {new Date(session.registration_deadline).toLocaleDateString("ja-JP", {
                   month: "long",
@@ -195,7 +226,7 @@ export default async function SessionDetailPage({ params, searchParams }: Sessio
           const isBelowMin = cancelRule && count < (cancelRule.cancel_below ?? 0)
           return (
             <div className={`rounded-[10px] border px-4 py-3 ${isBelowMin ? "border-[#c0392b]/30 bg-[#fdecea]" : "border-[#005F8C]/20 bg-[#005F8C]/5"}`}>
-              <p className={`text-xs font-semibold ${isBelowMin ? "text-[#c0392b]" : "text-[#005F8C]"}`}>
+              <p className={`text-sm font-semibold ${isBelowMin ? "text-[#c0392b]" : "text-[#005F8C]"}`}>
                 コース判定
               </p>
               <div className="mt-1 flex items-center gap-4">
@@ -210,12 +241,12 @@ export default async function SessionDetailPage({ params, searchParams }: Sessio
               </div>
               <div className="mt-1 flex flex-wrap gap-2">
                 {thresholds.filter((r) => r.courses !== undefined).map((r, i) => (
-                  <span key={i} className={`rounded-full px-1 py-0.5 text-xs ${count >= (r.min ?? 0) && count <= (r.max ?? Infinity) ? "bg-[#005F8C] text-white" : "bg-[#f2f7fa] text-[#5c6a7a]"}`}>
+                  <span key={i} className={`rounded-full px-1 py-0.5 text-sm ${count >= (r.min ?? 0) && count <= (r.max ?? Infinity) ? "bg-[#005F8C] text-white" : "bg-[#f2f7fa] text-[#475569]"}`}>
                     {r.min}〜{r.max}名: {r.courses}コース
                   </span>
                 ))}
                 {cancelRule && (
-                  <span className={`rounded-full px-1 py-0.5 text-xs ${isBelowMin ? "bg-[#c0392b] text-white" : "bg-[#f2f7fa] text-[#5c6a7a]"}`}>
+                  <span className={`rounded-full px-1 py-0.5 text-sm ${isBelowMin ? "bg-[#c0392b] text-white" : "bg-[#f2f7fa] text-[#475569]"}`}>
                     {cancelRule.cancel_below}名未満: 中止
                   </span>
                 )}
@@ -233,8 +264,8 @@ export default async function SessionDetailPage({ params, searchParams }: Sessio
                 <line x1="12" y1="17" x2="12.01" y2="17" />
               </svg>
               <div>
-                <p className="text-xs font-semibold text-[#b8860b]">コースルール</p>
-                <p className="mt-0.5 whitespace-pre-wrap text-xs text-[#b8860b]">{session.course_rules as string}</p>
+                <p className="text-sm font-semibold text-[#b8860b]">コースルール</p>
+                <p className="mt-0.5 whitespace-pre-wrap text-sm text-[#b8860b]">{session.course_rules as string}</p>
               </div>
             </div>
           </div>
@@ -246,9 +277,9 @@ export default async function SessionDetailPage({ params, searchParams }: Sessio
         <Card className="border-[#dce3ea]">
           <CardContent className="p-4 text-center">
             <p className="text-2xl font-bold text-[#005F8C]">{activeRegistrations.length}</p>
-            <p className="text-xs text-[#5c6a7a]">参加登録</p>
+            <p className="text-sm text-[#475569]">参加登録</p>
             {session.max_participants && (
-              <p className="text-xs text-[#8d99a8]">/ {session.max_participants}名</p>
+              <p className="text-sm text-[#64748b]">/ {session.max_participants}名</p>
             )}
           </CardContent>
         </Card>
@@ -257,7 +288,7 @@ export default async function SessionDetailPage({ params, searchParams }: Sessio
             <p className="text-2xl font-bold text-[#005F8C]">
               {activeRegistrations.filter((r) => r.payment_status === "paid").length}
             </p>
-            <p className="text-xs text-[#5c6a7a]">支払済み</p>
+            <p className="text-sm text-[#475569]">支払済み</p>
           </CardContent>
         </Card>
         <Card className="border-[#dce3ea]">
@@ -265,7 +296,7 @@ export default async function SessionDetailPage({ params, searchParams }: Sessio
             <p className="text-lg font-bold text-[#005F8C]">
               ¥{totalRevenue.toLocaleString()}
             </p>
-            <p className="text-xs text-[#5c6a7a]">確定収益</p>
+            <p className="text-sm text-[#475569]">確定収益</p>
           </CardContent>
         </Card>
       </div>
@@ -293,13 +324,13 @@ export default async function SessionDetailPage({ params, searchParams }: Sessio
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-[#dce3ea] bg-[#f2f7fa]">
-                    <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-[#5c6a7a]">名前</th>
+                    <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-[#475569]">名前</th>
                     {competitionFields.map((f) => (
-                      <th key={f.key} className="whitespace-nowrap px-3 py-2 text-left font-medium text-[#5c6a7a]">
+                      <th key={f.key} className="whitespace-nowrap px-3 py-2 text-left font-medium text-[#475569]">
                         {f.label}
                       </th>
                     ))}
-                    <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-[#5c6a7a]">支払</th>
+                    <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-[#475569]">支払</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -318,7 +349,7 @@ export default async function SessionDetailPage({ params, searchParams }: Sessio
                           </td>
                         ))}
                         <td className="whitespace-nowrap px-3 py-2">
-                          <Badge className={`text-xs ${payStatus.className}`}>
+                          <Badge className={`text-sm ${payStatus.className}`}>
                             {payStatus.label}
                           </Badge>
                         </td>
@@ -339,16 +370,16 @@ export default async function SessionDetailPage({ params, searchParams }: Sessio
             参加者一覧 ({activeRegistrations.length}名)
           </h2>
           {hasCashRegistrations && (
-            <div className="flex rounded-lg border border-[#dce3ea] bg-[#f2f7fa] p-0.5 text-xs">
+            <div className="flex rounded-lg border border-[#dce3ea] bg-[#f2f7fa] p-0.5 text-sm">
               <Link
                 href={`/sessions/${id}`}
-                className={`rounded-md px-3 py-1.5 font-medium transition-colors ${!isCashFilter ? "bg-white text-[#1a2332] shadow-sm" : "text-[#5c6a7a] hover:text-[#1a2332]"}`}
+                className={`rounded-md px-3 py-1.5 font-medium transition-colors ${!isCashFilter ? "bg-white text-[#1a2332] shadow-sm" : "text-[#475569] hover:text-[#1a2332]"}`}
               >
                 全員
               </Link>
               <Link
                 href={`/sessions/${id}?filter=cash`}
-                className={`rounded-md px-3 py-1.5 font-medium transition-colors ${isCashFilter ? "bg-white text-[#1a2332] shadow-sm" : "text-[#5c6a7a] hover:text-[#1a2332]"}`}
+                className={`rounded-md px-3 py-1.5 font-medium transition-colors ${isCashFilter ? "bg-white text-[#1a2332] shadow-sm" : "text-[#475569] hover:text-[#1a2332]"}`}
               >
                 現金のみ
               </Link>
@@ -374,7 +405,7 @@ export default async function SessionDetailPage({ params, searchParams }: Sessio
 
         {displayedRegistrations.length === 0 ? (
           <Card className="border-[#dce3ea]">
-            <CardContent className="py-8 text-center text-sm text-[#5c6a7a]">
+            <CardContent className="py-8 text-center text-sm text-[#475569]">
               {isCashFilter ? "現金払いの参加者はいません" : "まだ参加登録がありません"}
             </CardContent>
           </Card>
@@ -386,14 +417,14 @@ export default async function SessionDetailPage({ params, searchParams }: Sessio
               return (
                 <Card key={reg.id as string} className="border-[#dce3ea]">
                   <CardContent className="flex items-center gap-3 p-3">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#005F8C]/10 text-xs font-semibold text-[#005F8C]">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#005F8C]/10 text-sm font-semibold text-[#005F8C]">
                       {(swimmer?.name as string)?.[0] || "?"}
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium text-[#1a2332]">
                         {(swimmer?.name as string) || "不明"}
                       </p>
-                      <p className="text-xs text-[#5c6a7a]">
+                      <p className="text-sm text-[#475569]">
                         {reg.is_member ? "メンバー" : "ゲスト"}
                         {" · "}
                         {reg.payment_status === "free"
@@ -401,7 +432,7 @@ export default async function SessionDetailPage({ params, searchParams }: Sessio
                           : PAYMENT_METHOD_LABELS[reg.payment_method as string] || reg.payment_method as string}
                       </p>
                     </div>
-                    <Badge className={`text-xs ${payStatus.className}`}>
+                    <Badge className={`text-sm ${payStatus.className}`}>
                       {payStatus.label}
                     </Badge>
                   </CardContent>
@@ -415,7 +446,7 @@ export default async function SessionDetailPage({ params, searchParams }: Sessio
       {/* Cancelled */}
       {cancelledRegistrations.length > 0 && (
         <div>
-          <h2 className="mb-3 text-sm font-medium text-[#5c6a7a]">
+          <h2 className="mb-3 text-sm font-medium text-[#475569]">
             キャンセル済み ({cancelledRegistrations.length}名)
           </h2>
           <div className="space-y-2 opacity-60">
@@ -424,13 +455,13 @@ export default async function SessionDetailPage({ params, searchParams }: Sessio
               return (
                 <Card key={reg.id as string} className="border-[#dce3ea]">
                   <CardContent className="flex items-center gap-3 p-3">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#f2f7fa] text-xs font-semibold text-[#8d99a8]">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#f2f7fa] text-sm font-semibold text-[#64748b]">
                       {(swimmer?.name as string)?.[0] || "?"}
                     </div>
-                    <p className="text-sm text-[#5c6a7a]">
+                    <p className="text-sm text-[#475569]">
                       {(swimmer?.name as string) || "不明"}
                     </p>
-                    <span className="ml-auto text-xs text-[#8d99a8]">キャンセル</span>
+                    <span className="ml-auto text-sm text-[#64748b]">キャンセル</span>
                   </CardContent>
                 </Card>
               )
@@ -442,7 +473,7 @@ export default async function SessionDetailPage({ params, searchParams }: Sessio
       {/* Price Viewers */}
       {priceViews.length > 0 && (
         <div>
-          <h2 className="mb-3 text-sm font-medium text-[#5c6a7a]">
+          <h2 className="mb-3 text-sm font-medium text-[#475569]">
             料金閲覧者 ({priceViews.length}名)
           </h2>
           <Card className="border-[#dce3ea]">
@@ -452,12 +483,12 @@ export default async function SessionDetailPage({ params, searchParams }: Sessio
                 return (
                   <div key={pv.id as string} className="flex items-center justify-between px-4 py-2.5">
                     <div className="flex items-center gap-2">
-                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[#c0392b]/10 text-xs font-semibold text-[#c0392b]">
+                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[#c0392b]/10 text-sm font-semibold text-[#c0392b]">
                         {(viewer?.name as string)?.[0] || "?"}
                       </div>
                       <span className="text-sm text-[#1a2332]">{(viewer?.name as string) || "不明"}</span>
                     </div>
-                    <span className="text-xs text-[#8d99a8]">
+                    <span className="text-sm text-[#64748b]">
                       {new Date(pv.viewed_at as string).toLocaleDateString("ja-JP", {
                         month: "short",
                         day: "numeric",
