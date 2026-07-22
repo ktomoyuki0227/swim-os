@@ -38,15 +38,15 @@ export async function createSession(teamId: string, data: unknown) {
       description: parsed.data.description || null,
       content: parsed.data.content || null,
       type: parsed.data.type,
-      scheduled_at: new Date(parsed.data.scheduled_at).toISOString(),
-      end_at: parsed.data.end_at ? new Date(parsed.data.end_at).toISOString() : null,
+      scheduled_at: new Date(parsed.data.scheduled_at + '+09:00').toISOString(),
+      end_at: parsed.data.end_at ? new Date(parsed.data.end_at + '+09:00').toISOString() : null,
       location: parsed.data.location,
       meeting_point: parsed.data.meeting_point || null,
       gender_filter: parsed.data.gender_filter || "all",
       member_price: parsed.data.member_price,
       guest_price: parsed.data.guest_price,
       registration_deadline: parsed.data.registration_deadline
-        ? new Date(parsed.data.registration_deadline).toISOString()
+        ? new Date(parsed.data.registration_deadline + '+09:00').toISOString()
         : null,
       min_participants: parsed.data.min_participants || null,
       max_participants: parsed.data.max_participants || null,
@@ -129,6 +129,16 @@ export async function updateSession(sessionId: string, data: unknown) {
     delete updateData.member_price
     delete updateData.guest_price
   }
+  // datetime-local値はタイムゾーン情報がないためJSTとして解釈してUTCに変換
+  if (updateData.scheduled_at) {
+    updateData.scheduled_at = new Date(updateData.scheduled_at + '+09:00').toISOString()
+  }
+  if (updateData.end_at) {
+    updateData.end_at = new Date(updateData.end_at + '+09:00').toISOString()
+  }
+  if (updateData.registration_deadline) {
+    updateData.registration_deadline = new Date(updateData.registration_deadline + '+09:00').toISOString()
+  }
 
   // adminClientでRLSをバイパスして更新（user clientだとサイレントブロックの可能性あり）
   const { error } = await updateAdmin
@@ -142,7 +152,7 @@ export async function updateSession(sessionId: string, data: unknown) {
   const hasImportantChange =
     (parsed.data.title && parsed.data.title !== session.title) ||
     (parsed.data.scheduled_at &&
-      new Date(parsed.data.scheduled_at).toISOString() !== new Date(session.scheduled_at).toISOString()) ||
+      new Date(parsed.data.scheduled_at + '+09:00').toISOString() !== new Date(session.scheduled_at).toISOString()) ||
     (parsed.data.location && parsed.data.location !== session.location)
 
   if (hasImportantChange) {

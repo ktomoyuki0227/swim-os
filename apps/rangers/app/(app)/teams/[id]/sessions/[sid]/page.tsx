@@ -140,9 +140,10 @@ export default async function MemberSessionPage({ params }: SessionPageProps) {
                 month: "long",
                 day: "numeric",
                 weekday: "short",
+                timeZone: "Asia/Tokyo",
               })}
               {" "}
-              {scheduledDate.toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" })}
+              {scheduledDate.toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Tokyo" })}
             </span>
           </div>
           <div className="flex items-center justify-between px-4 py-3">
@@ -182,6 +183,7 @@ export default async function MemberSessionPage({ params }: SessionPageProps) {
                   day: "numeric",
                   hour: "2-digit",
                   minute: "2-digit",
+                  timeZone: "Asia/Tokyo",
                 })}
                 {isDeadlinePassed && " (締切済)"}
               </span>
