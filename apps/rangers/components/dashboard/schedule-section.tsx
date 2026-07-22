@@ -238,20 +238,20 @@ export function ScheduleSection({ sessions, teams }: Props) {
                       className="flex w-14 shrink-0 flex-col items-center rounded-[6px] py-2"
                       style={{ backgroundColor: `${session.team_color}18` }}
                     >
-                      <span className="text-sm font-medium" style={{ color: session.team_color }}>
+                      <span className="text-xs font-medium" style={{ color: session.team_color }}>
                         {new Date(session.scheduled_at).toLocaleDateString("ja-JP", { month: "short", timeZone: "UTC" })}
                       </span>
                       <span className="text-xl font-bold leading-tight" style={{ color: session.team_color }}>
                         {new Date(session.scheduled_at).getUTCDate()}
                       </span>
-                      <span className="text-sm" style={{ color: session.team_color }}>
+                      <span className="text-xs" style={{ color: session.team_color }}>
                         {new Date(session.scheduled_at).toLocaleDateString("ja-JP", { weekday: "short", timeZone: "UTC" })}
                       </span>
                     </div>
                     {/* 情報 */}
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-medium text-[#1a2332]">{session.title}</p>
-                      <p className="truncate text-sm text-[#475569]">
+                      <p className="truncate text-xs text-[#475569]">
                         {new Date(session.scheduled_at).toLocaleTimeString("ja-JP", {
                           hour: "2-digit",
                           minute: "2-digit",
@@ -259,22 +259,22 @@ export function ScheduleSection({ sessions, teams }: Props) {
                         })}
                         {session.location ? ` · ${session.location}` : ""}
                       </p>
-                      <p className="truncate text-sm text-[#64748b]">{session.team_name}</p>
+                      <p className="truncate text-xs text-[#64748b]">{session.team_name}</p>
                     </div>
                     {/* バッジ */}
                     {tab !== "past" && (
                       session.is_registered ? (
-                        <Badge className="shrink-0 bg-[#eaf7f0] text-[#0f8a4f] border-transparent text-sm">
+                        <Badge className="shrink-0 bg-[#eaf7f0] text-[#0f8a4f] border-transparent text-xs">
                           参加予定
                         </Badge>
                       ) : (
-                        <Badge className="shrink-0 bg-[#e8f2f8] text-[#005F8C] border-transparent text-sm">
+                        <Badge className="shrink-0 bg-[#e8f2f8] text-[#005F8C] border-transparent text-xs">
                           受付中
                         </Badge>
                       )
                     )}
                     {tab === "past" && (
-                      <Badge className="shrink-0 bg-[#edf0f4] text-[#475569] border-transparent text-sm">
+                      <Badge className="shrink-0 bg-[#edf0f4] text-[#475569] border-transparent text-xs">
                         {SESSION_TYPE_LABELS[session.type] || session.type}
                       </Badge>
                     )}

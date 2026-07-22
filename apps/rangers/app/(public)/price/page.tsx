@@ -64,7 +64,7 @@ export default function PricePage() {
             <ul className="mx-auto max-w-xs space-y-3">
               {freeItems.map((item) => (
                 <li key={item} className="flex items-center gap-3 text-sm">
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#eaf7f0] text-sm font-bold text-[#0f8a4f]">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#eaf7f0] text-xs font-bold text-[#0f8a4f]">
                     ✓
                   </span>
                   <span>{item}</span>
@@ -92,7 +92,7 @@ export default function PricePage() {
                 }`}
               >
                 <div
-                  className={`mb-1 text-sm font-semibold uppercase tracking-wider ${
+                  className={`mb-1 text-xs font-semibold uppercase tracking-wider ${
                     featured ? "text-[#005F8C]" : "text-[#475569]"
                   }`}
                 >
@@ -105,7 +105,7 @@ export default function PricePage() {
               </div>
             ))}
           </div>
-          <p className="mt-4 text-sm text-[#475569]">
+          <p className="mt-4 text-xs text-[#475569]">
             ※ 料金はコーチ・レッスン内容・地域によって異なります
           </p>
         </div>

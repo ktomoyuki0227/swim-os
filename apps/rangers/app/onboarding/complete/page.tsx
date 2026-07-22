@@ -60,12 +60,12 @@ export default async function OnboardingCompletePage() {
               { num: "3", title: "グループを作る", desc: "自分でグループを作って練習やイベントを管理しましょう", href: "/teams/new" },
             ].map(({ num, title, desc, href }) => (
               <Link key={num} href={href} className="flex items-start gap-3 rounded-xl p-3 transition-colors hover:bg-[#e8f2f8]">
-                <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#005F8C]/10 text-sm font-bold text-[#005F8C]">
+                <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#005F8C]/10 text-xs font-bold text-[#005F8C]">
                   {num}
                 </span>
                 <div>
                   <p className="text-sm font-medium">{title}</p>
-                  <p className="text-sm text-[#475569]">{desc}</p>
+                  <p className="text-xs text-[#475569]">{desc}</p>
                 </div>
               </Link>
             ))}

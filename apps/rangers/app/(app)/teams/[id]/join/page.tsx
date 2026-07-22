@@ -110,7 +110,7 @@ export default async function TeamJoinPage({ params }: PageProps) {
             <p className="mt-1 text-sm text-[#475569]">
               管理者が申請を確認しています。承認されると通知が届きます。
             </p>
-            <p className="mt-2 text-sm text-[#64748b]">
+            <p className="mt-2 text-xs text-[#64748b]">
               申請日: {new Date(pendingRequest.created_at).toLocaleDateString("ja-JP")}
             </p>
           </div>
@@ -138,7 +138,7 @@ export default async function TeamJoinPage({ params }: PageProps) {
             )}
           </div>
           <div>
-            <p className="mb-0.5 text-sm font-semibold uppercase tracking-wide text-[#005F8C]">
+            <p className="mb-0.5 text-xs font-semibold uppercase tracking-wide text-[#005F8C]">
               入会申請
             </p>
             <h1 className="text-xl font-bold text-[#1a2332]">{team.name}</h1>
@@ -177,7 +177,7 @@ export default async function TeamJoinPage({ params }: PageProps) {
           >
             ログインして参加
           </Link>
-          <p className="text-center text-sm text-[#64748b]">
+          <p className="text-center text-xs text-[#64748b]">
             アカウント登録・ログイン後、自動的にグループ参加画面に戻ります
           </p>
         </div>

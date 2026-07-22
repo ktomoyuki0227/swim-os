@@ -584,7 +584,7 @@ export function NewSessionForm({
                     </div>
                     <div className="flex flex-1 items-center gap-2">
                       <div className="h-px flex-1 bg-[#005F8C]/25" />
-                      <span className="rounded-full border border-[#005F8C]/20 bg-white px-2.5 py-0.5 text-sm font-medium text-[#005F8C]">
+                      <span className="rounded-full border border-[#005F8C]/20 bg-white px-2.5 py-0.5 text-xs font-medium text-[#005F8C]">
                         {form.duration}分
                       </span>
                       <div className="h-px flex-1 bg-[#005F8C]/25" />
@@ -640,7 +640,7 @@ export function NewSessionForm({
             <div className="space-y-1.5">
               <Label htmlFor="description">
                 説明・練習メニュー
-                <span className="ml-1.5 text-sm font-normal text-[#64748b]">任意</span>
+                <span className="ml-1.5 text-xs font-normal text-[#64748b]">任意</span>
               </Label>
               <Textarea
                 id="description"
@@ -809,7 +809,7 @@ export function NewSessionForm({
             {form.type === "competition" && (
               <div className="space-y-3 rounded-xl border border-[#dce3ea] p-4">
                 <p className="text-sm font-semibold text-[#1a2332]">エントリー入力項目</p>
-                <p className="text-sm text-[#475569]">参加者が登録時に入力するフィールドを設定します</p>
+                <p className="text-xs text-[#475569]">参加者が登録時に入力するフィールドを設定します</p>
                 {competitionFields.map((field, idx) => (
                   <div key={idx} className="flex items-center gap-2 rounded-lg border border-[#dce3ea] bg-white p-3">
                     <input
@@ -823,7 +823,7 @@ export function NewSessionForm({
                       className="min-w-0 flex-1 border-0 bg-transparent text-sm font-medium text-[#1a2332] outline-none"
                       placeholder="項目名"
                     />
-                    <label className="flex items-center gap-1 text-sm text-[#475569]">
+                    <label className="flex items-center gap-1 text-xs text-[#475569]">
                       <input
                         type="checkbox"
                         checked={field.required}
@@ -993,11 +993,11 @@ export function NewSessionForm({
               <CardContent className="pt-4">
                 <div className="mb-3 flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-semibold text-[#475569]">
+                    <p className="text-xs font-semibold text-[#475569]">
                       メンバー一覧（{selectedMemberIds.length}/{teamMembers.length}人 選択中）
                     </p>
                     {untaggedCount > 0 && (
-                      <p className="mt-0.5 text-sm text-[#64748b]">※ タグ未設定 {untaggedCount}人あり</p>
+                      <p className="mt-0.5 text-xs text-[#64748b]">※ タグ未設定 {untaggedCount}人あり</p>
                     )}
                   </div>
                   <button
@@ -1009,7 +1009,7 @@ export function NewSessionForm({
                         setSelectedMemberIds(teamMembers.map((m) => (m.swimmer as Record<string, unknown>).id as string))
                       }
                     }}
-                    className={`rounded-full px-2.5 py-1 text-sm font-medium transition-colors ${
+                    className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
                       allChecked
                         ? "bg-[#005F8C] text-white"
                         : "border border-[#dce3ea] bg-white text-[#475569] hover:border-[#005F8C]"
@@ -1055,13 +1055,13 @@ export function NewSessionForm({
                               </svg>
                             )}
                           </div>
-                          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#005F8C]/10 text-sm font-bold text-[#005F8C]">
+                          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#005F8C]/10 text-xs font-bold text-[#005F8C]">
                             {(swimmer.name as string)?.[0] || "?"}
                           </div>
                           <div className="min-w-0 flex-1">
                             <p className="truncate text-sm font-medium text-[#1a2332]">{swimmer.name as string}</p>
                             {memberTagLabels.length > 0 && (
-                              <p className="truncate text-sm text-[#64748b]">{memberTagLabels.join(" · ")}</p>
+                              <p className="truncate text-xs text-[#64748b]">{memberTagLabels.join(" · ")}</p>
                             )}
                           </div>
                         </button>
@@ -1082,7 +1082,7 @@ export function NewSessionForm({
             <p className="text-sm text-[#475569]">以下の内容でセッションを作成します。確認してください。</p>
 
             <div className="space-y-2">
-              <p className="text-sm font-semibold text-[#64748b] uppercase tracking-wide">基本情報</p>
+              <p className="text-xs font-semibold text-[#64748b] uppercase tracking-wide">基本情報</p>
               <div className="rounded-xl bg-[#f2f7fa] px-4 py-3 text-sm space-y-2">
                 <div className="flex gap-2">
                   <span className="w-24 shrink-0 text-[#64748b]">タイトル</span>
@@ -1128,7 +1128,7 @@ export function NewSessionForm({
             </div>
 
             <div className="space-y-2">
-              <p className="text-sm font-semibold text-[#64748b] uppercase tracking-wide">参加費</p>
+              <p className="text-xs font-semibold text-[#64748b] uppercase tracking-wide">参加費</p>
               <div className="rounded-xl bg-[#f2f7fa] px-4 py-3 text-sm space-y-2">
                 <div className="flex gap-2">
                   <span className="w-24 shrink-0 text-[#64748b]">メンバー</span>
@@ -1146,7 +1146,7 @@ export function NewSessionForm({
             </div>
 
             <div className="space-y-2">
-              <p className="text-sm font-semibold text-[#64748b] uppercase tracking-wide">詳細設定</p>
+              <p className="text-xs font-semibold text-[#64748b] uppercase tracking-wide">詳細設定</p>
               <div className="rounded-xl bg-[#f2f7fa] px-4 py-3 text-sm space-y-2">
                 {form.registration_deadline && (
                   <div className="flex gap-2">
@@ -1181,13 +1181,13 @@ export function NewSessionForm({
 
             {form.type === "competition" && competitionFields.length > 0 && (
               <div className="space-y-2">
-                <p className="text-sm font-semibold text-[#64748b] uppercase tracking-wide">エントリー項目</p>
+                <p className="text-xs font-semibold text-[#64748b] uppercase tracking-wide">エントリー項目</p>
                 <div className="rounded-xl bg-[#f2f7fa] px-4 py-3 text-sm space-y-1.5">
                   {competitionFields.map((f, i) => (
                     <div key={i} className="flex items-center gap-2">
                       <span className="text-[#1a2332]">{f.label || "（未入力）"}</span>
                       {f.required && (
-                        <span className="rounded-full bg-[#fdecea] px-1.5 py-0.5 text-sm font-medium text-[#c0392b]">必須</span>
+                        <span className="rounded-full bg-[#fdecea] px-1.5 py-0.5 text-xs font-medium text-[#c0392b]">必須</span>
                       )}
                     </div>
                   ))}
@@ -1196,7 +1196,7 @@ export function NewSessionForm({
             )}
 
             <div className="space-y-2">
-              <p className="text-sm font-semibold text-[#64748b] uppercase tracking-wide">配信対象</p>
+              <p className="text-xs font-semibold text-[#64748b] uppercase tracking-wide">配信対象</p>
               <div className="rounded-xl bg-[#f2f7fa] px-4 py-3 text-sm space-y-2">
                 {selectedTags.length > 0 && (
                   <div className="flex gap-2">

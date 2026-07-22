@@ -224,7 +224,7 @@ export function MemberList({
       <Card className="border-[#dce3ea]">
         <CardContent className="flex flex-col items-center justify-center py-10">
           <p className="text-sm text-[#475569]">まだメンバーがいません</p>
-          <p className="mt-1 text-sm text-[#64748b]">招待タブからリンクを共有してください</p>
+          <p className="mt-1 text-xs text-[#64748b]">招待タブからリンクを共有してください</p>
         </CardContent>
       </Card>
     )
@@ -273,9 +273,9 @@ export function MemberList({
                 <div className="min-w-0 flex-1">
                   <p className="font-medium text-[#1a2332]">{swimmer?.name || "不明"}</p>
                   {!!swimmer?.furigana && (
-                    <p className="text-sm text-[#64748b]">{swimmer.furigana}</p>
+                    <p className="text-xs text-[#64748b]">{swimmer.furigana}</p>
                   )}
-                  <p className="text-sm text-[#64748b]">
+                  <p className="text-xs text-[#64748b]">
                     参加 {new Date(member.joined_at).toLocaleDateString("ja-JP", { year: "numeric", month: "short", day: "numeric" })}
                   </p>
                 </div>
@@ -283,17 +283,17 @@ export function MemberList({
                 {/* バッジ・メニュー（右寄せ） */}
                 <div className="flex shrink-0 items-center gap-1.5">
                   {isAdmin && (
-                    <Badge className="border-transparent bg-[#e8f2f8] px-1.5 py-0 text-sm text-[#005F8C]">
+                    <Badge className="border-transparent bg-[#e8f2f8] px-1.5 py-0 text-xs text-[#005F8C]">
                       管理者
                     </Badge>
                   )}
                   <Badge
                     className={
                       isLowStamp
-                        ? "border-transparent bg-[#fdecea] px-1.5 py-0 text-sm text-[#c0392b]"
+                        ? "border-transparent bg-[#fdecea] px-1.5 py-0 text-xs text-[#c0392b]"
                         : isPointCard
-                          ? "border-transparent bg-[#fdf6e3] px-1.5 py-0 text-sm text-[#b8860b]"
-                          : "border-transparent bg-[#eaf7f0] px-1.5 py-0 text-sm text-[#0f8a4f]"
+                          ? "border-transparent bg-[#fdf6e3] px-1.5 py-0 text-xs text-[#b8860b]"
+                          : "border-transparent bg-[#eaf7f0] px-1.5 py-0 text-xs text-[#0f8a4f]"
                     }
                   >
                     {membershipLabel}
@@ -318,32 +318,32 @@ export function MemberList({
                   {(levelStars || (swimmer?.specialties ?? []).length > 0 || (swimmer?.swimming_goals ?? []).length > 0 || !!swimmer?.swimmer_type || (swimmer?.swim_disciplines ?? []).length > 0) && (
                     <div className="flex flex-wrap items-center gap-1">
                       {levelStars && swimmer?.level && (
-                        <span className="mr-1 text-sm font-medium text-[#64748b]">{levelStars} {swimmer.level}</span>
+                        <span className="mr-1 text-xs font-medium text-[#64748b]">{levelStars} {swimmer.level}</span>
                       )}
                       {swimmer?.specialties?.map((s) => (
-                        <span key={s} className="rounded-full bg-[#e8f2f8] px-2 py-0.5 text-sm text-[#005F8C]">
+                        <span key={s} className="rounded-full bg-[#e8f2f8] px-2 py-0.5 text-xs text-[#005F8C]">
                           {s}
                         </span>
                       ))}
                       {swimmer?.swimming_goals?.map((g) => (
-                        <span key={g} className="rounded-full bg-[#eaf7f0] px-2 py-0.5 text-sm text-[#0f8a4f]">
+                        <span key={g} className="rounded-full bg-[#eaf7f0] px-2 py-0.5 text-xs text-[#0f8a4f]">
                           {g}
                         </span>
                       ))}
                       {swimmer?.swimmer_type && (
-                        <span className="rounded-full bg-[#e8f2f8] px-2 py-0.5 text-sm text-[#005F8C]">
+                        <span className="rounded-full bg-[#e8f2f8] px-2 py-0.5 text-xs text-[#005F8C]">
                           {swimmer.swimmer_type}
                         </span>
                       )}
                       {swimmer?.swim_disciplines?.map((d) => (
-                        <span key={d} className="rounded-full bg-[#e8f2f8] px-2 py-0.5 text-sm text-[#005F8C]">
+                        <span key={d} className="rounded-full bg-[#e8f2f8] px-2 py-0.5 text-xs text-[#005F8C]">
                           {d}
                         </span>
                       ))}
                     </div>
                   )}
                   {/* 個人情報 */}
-                  <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-sm text-[#64748b]">
+                  <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-[#64748b]">
                     {!!swimmer?.gender && (
                       <span>
                         {swimmer.gender === "male" ? "男性" : swimmer.gender === "female" ? "女性" : "その他"}

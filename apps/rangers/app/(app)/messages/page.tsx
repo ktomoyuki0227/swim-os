@@ -98,7 +98,7 @@ export default async function MessagesPage() {
                 <div className="flex items-center justify-between">
                   <p className="font-medium text-[#1a2332]">{partner.name}</p>
                   {latestMessages[partner.id] && (
-                    <p className="text-sm text-[#64748b]">
+                    <p className="text-xs text-[#64748b]">
                       {new Date(latestMessages[partner.id].created_at).toLocaleDateString("ja-JP")}
                     </p>
                   )}
@@ -110,7 +110,7 @@ export default async function MessagesPage() {
                 )}
               </div>
               {(unreadCounts[partner.id] ?? 0) > 0 && (
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#005F8C] text-sm font-bold text-white">
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#005F8C] text-xs font-bold text-white">
                   {unreadCounts[partner.id]}
                 </span>
               )}

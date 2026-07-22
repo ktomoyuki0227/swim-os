@@ -157,7 +157,7 @@ export function Navigation({ userName, avatarUrl, unreadCount = 0, inactiveRoute
               <button
                 type="button"
                 onClick={() => setMenuOpen((v) => !v)}
-                className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-[#005F8C]/10 text-sm font-semibold text-[#005F8C] ring-1 ring-[#dce3ea] transition-opacity hover:opacity-80"
+                className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-[#005F8C]/10 text-xs font-semibold text-[#005F8C] ring-1 ring-[#dce3ea] transition-opacity hover:opacity-80"
                 aria-label={`${userName}のメニュー`}
               >
                 {avatarUrl ? (
@@ -210,7 +210,7 @@ export function Navigation({ userName, avatarUrl, unreadCount = 0, inactiveRoute
               key={link.href}
               href={link.href}
               className={cn(
-                "flex flex-1 flex-col items-center gap-0.5 py-2 text-sm font-medium transition-colors",
+                "flex flex-1 flex-col items-center gap-0.5 py-2 text-xs font-medium transition-colors",
                 isActive(link.href)
                   ? "text-[#005F8C]"
                   : "text-[#64748b]"

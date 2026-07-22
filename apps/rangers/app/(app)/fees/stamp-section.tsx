@@ -45,12 +45,12 @@ export function StampSection({ pointCardCount, members }: Props) {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-[#1a2332]">{name}</p>
-                <p className="text-sm text-[#475569]">
+                <p className="text-xs text-[#475569]">
                   {m.purchases.length}枚購入済 · 残り {m.stamp_remaining} 回
                 </p>
               </div>
               <span className="text-sm font-bold text-[#005F8C]">
-                {used}<span className="text-sm font-normal text-[#64748b]"> / {pointCardCount}</span>
+                {used}<span className="text-xs font-normal text-[#64748b]"> / {pointCardCount}</span>
               </span>
             </div>
 
@@ -70,7 +70,7 @@ export function StampSection({ pointCardCount, members }: Props) {
                   return (
                     <div
                       key={i}
-                      className={`flex h-7 w-7 items-center justify-center rounded-full border-2 text-sm font-bold transition-colors duration-300 ${
+                      className={`flex h-7 w-7 items-center justify-center rounded-full border-2 text-xs font-bold transition-colors duration-300 ${
                         isUsed
                           ? "border-[#005F8C] bg-[#005F8C] text-white"
                           : "border-[#dce3ea] bg-white text-[#64748b]"

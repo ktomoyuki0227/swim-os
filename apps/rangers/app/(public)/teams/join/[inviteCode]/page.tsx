@@ -68,7 +68,7 @@ export default async function TeamJoinPage({ params }: PageProps) {
 
       {/* グループカード */}
       <div className="mb-6 rounded-2xl border border-[#dce3ea] bg-white p-6 shadow-sm">
-        <p className="mb-1 text-sm font-semibold uppercase tracking-wide text-[#005F8C]">グループへの招待</p>
+        <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-[#005F8C]">グループへの招待</p>
         <h1 className="mb-2 text-2xl font-bold text-[#1a2332]">{team.name}</h1>
         {team.description && (
           <p className="text-sm leading-relaxed text-[#475569]">{team.description}</p>
@@ -102,7 +102,7 @@ export default async function TeamJoinPage({ params }: PageProps) {
           >
             ログインして参加
           </Link>
-          <p className="text-center text-sm text-[#64748b]">
+          <p className="text-center text-xs text-[#64748b]">
             アカウント登録・ログイン後、自動的にグループ参加画面に戻ります
           </p>
         </div>

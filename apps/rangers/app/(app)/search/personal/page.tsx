@@ -57,7 +57,7 @@ export default async function PersonalPage({ searchParams }: PersonalPageProps) 
           </div>
         ) : (
           <div className="space-y-2">
-            <p className="text-sm text-[#64748b]">{coaches.length}人のコーチ</p>
+            <p className="text-xs text-[#64748b]">{coaches.length}人のコーチ</p>
             {coaches.map((coach: Record<string, unknown>) => {
               const coachProfile = coach.coach as { name: string; avatar_url: string | null } | null
               const area = coach.activity_area as string | null
@@ -139,7 +139,7 @@ export default async function PersonalPage({ searchParams }: PersonalPageProps) 
 
                           {/* 行3: 頻度 + 曜日 */}
                           {(frequency || practiceDays.length > 0) && (
-                            <div className="flex items-center gap-1.5 overflow-hidden text-sm text-[#475569]">
+                            <div className="flex items-center gap-1.5 overflow-hidden text-xs text-[#475569]">
                               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
                                 <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
                                 <line x1="16" y1="2" x2="16" y2="6" />
@@ -167,7 +167,7 @@ export default async function PersonalPage({ searchParams }: PersonalPageProps) 
 
                           {/* 行4: 料金 */}
                           {guestPrice != null && (
-                            <div className="flex items-center gap-1 text-sm text-[#475569]">
+                            <div className="flex items-center gap-1 text-xs text-[#475569]">
                               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
                                 <line x1="12" y1="1" x2="12" y2="23" />
                                 <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
@@ -177,7 +177,7 @@ export default async function PersonalPage({ searchParams }: PersonalPageProps) 
                           )}
 
                           {/* 行5: 説明文 */}
-                          <p className={`line-clamp-2 text-sm ${description ? "text-[#475569]" : "text-[#c8d8e8]"}`}>
+                          <p className={`line-clamp-2 text-xs ${description ? "text-[#475569]" : "text-[#c8d8e8]"}`}>
                             {description ?? "説明はありません"}
                           </p>
                         </div>

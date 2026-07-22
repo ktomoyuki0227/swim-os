@@ -85,7 +85,7 @@ export default async function DashboardPage() {
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-[#1a2332]">グループを探す</p>
-                  <p className="mt-0.5 text-sm text-[#475569]">公開グループに参加</p>
+                  <p className="mt-0.5 text-xs text-[#475569]">公開グループに参加</p>
                 </div>
               </div>
             </Link>
@@ -102,7 +102,7 @@ export default async function DashboardPage() {
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-[#1a2332]">グループを作る</p>
-                  <p className="mt-0.5 text-sm text-[#475569]">コーチ・管理者として</p>
+                  <p className="mt-0.5 text-xs text-[#475569]">コーチ・管理者として</p>
                 </div>
               </div>
             </Link>
@@ -130,24 +130,24 @@ export default async function DashboardPage() {
                   <Card key={session.id as string} className="border-[#dce3ea] transition-all hover:border-[#005F8C]">
                     <CardContent className="flex items-center gap-4 p-4">
                       <div className="flex w-14 shrink-0 flex-col items-center rounded-[6px] bg-[#005F8C]/10 py-2">
-                        <span className="text-sm font-medium text-[#005F8C]">
+                        <span className="text-xs font-medium text-[#005F8C]">
                           {new Date(session.scheduled_at as string).toLocaleDateString("ja-JP", { month: "short" })}
                         </span>
                         <span className="text-xl font-bold leading-tight text-[#005F8C]">
                           {new Date(session.scheduled_at as string).getDate()}
                         </span>
-                        <span className="text-sm text-[#005F8C]">
+                        <span className="text-xs text-[#005F8C]">
                           {new Date(session.scheduled_at as string).toLocaleDateString("ja-JP", { weekday: "short" })}
                         </span>
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
                           <p className="truncate font-medium text-[#1a2332]">{session.title as string}</p>
-                          <Badge className="shrink-0 bg-[#edf0f4] text-[#475569] border-transparent text-sm">
+                          <Badge className="shrink-0 bg-[#edf0f4] text-[#475569] border-transparent text-xs">
                             {SESSION_TYPE_LABELS[session.type as string] || session.type as string}
                           </Badge>
                         </div>
-                        <p className="text-sm text-[#475569]">
+                        <p className="text-xs text-[#475569]">
                           {new Date(session.scheduled_at as string).toLocaleTimeString("ja-JP", {
                             hour: "2-digit",
                             minute: "2-digit",
@@ -155,11 +155,11 @@ export default async function DashboardPage() {
                           {session.location ? ` · ${session.location as string}` : ""}
                         </p>
                         {team && (
-                          <p className="text-sm text-[#475569]">{team.name as string}</p>
+                          <p className="text-xs text-[#475569]">{team.name as string}</p>
                         )}
                         <p className="mt-0.5 text-sm font-semibold text-[#005F8C]">
                           ¥{(session.guest_price as number || 0).toLocaleString()}
-                          <span className="text-sm font-normal text-[#475569]">（ゲスト）</span>
+                          <span className="text-xs font-normal text-[#475569]">（ゲスト）</span>
                         </p>
                       </div>
                     </CardContent>
@@ -266,7 +266,7 @@ export default async function DashboardPage() {
                       </div>
                     )}
                     <span
-                      className="absolute right-1.5 top-1.5 rounded-full px-2 py-0.5 text-sm font-semibold backdrop-blur-sm"
+                      className="absolute right-1.5 top-1.5 rounded-full px-2 py-0.5 text-xs font-semibold backdrop-blur-sm"
                       style={
                         isAdmin
                           ? { backgroundColor: "rgba(255,255,255,0.85)", color }
@@ -278,7 +278,7 @@ export default async function DashboardPage() {
                   </div>
                   {/* 下: グループ名 */}
                   <div className="px-2.5 py-2">
-                    <p className="line-clamp-2 text-sm font-semibold leading-snug text-[#1a2332]">
+                    <p className="line-clamp-2 text-xs font-semibold leading-snug text-[#1a2332]">
                       {team.name as string}
                     </p>
                   </div>

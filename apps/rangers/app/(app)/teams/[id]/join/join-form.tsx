@@ -97,7 +97,7 @@ export function JoinForm({
                   className="sr-only"
                 />
                 <span className="font-semibold text-[#1a2332]">{opt.label}</span>
-                <span className="text-sm text-[#475569]">{opt.desc}</span>
+                <span className="text-xs text-[#475569]">{opt.desc}</span>
               </label>
             ))}
           </div>
@@ -110,7 +110,7 @@ export function JoinForm({
       )}
 
       {/* 申請の注意書き */}
-      <div className="rounded-xl bg-[#f2f7fa] px-4 py-3 text-sm text-[#475569]">
+      <div className="rounded-xl bg-[#f2f7fa] px-4 py-3 text-xs text-[#475569]">
         参加申請後、管理者の承認をもって正式にグループへ参加となります。
         承認・不承認の結果はアプリ内の通知でお知らせします。
       </div>

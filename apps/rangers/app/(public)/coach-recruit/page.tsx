@@ -120,7 +120,7 @@ export default function CoachRecruitPage() {
                     {step}
                   </div>
                   <h3 className="mb-1.5 font-semibold">{title}</h3>
-                  <p className="mx-auto max-w-[130px] text-sm leading-relaxed text-[#475569]">
+                  <p className="mx-auto max-w-[130px] text-xs leading-relaxed text-[#475569]">
                     {desc}
                   </p>
                 </div>
@@ -151,7 +151,7 @@ export default function CoachRecruitPage() {
                   </div>
                   <div>
                     <p className="font-semibold">{title}</p>
-                    <p className="text-sm leading-relaxed text-[#475569]">{desc}</p>
+                    <p className="text-xs leading-relaxed text-[#475569]">{desc}</p>
                   </div>
                 </div>
                 {i < steps.length - 1 && (
@@ -184,14 +184,14 @@ export default function CoachRecruitPage() {
             <ul className="space-y-4">
               {requirements.map((req) => (
                 <li key={req} className="flex items-start gap-3 text-sm">
-                  <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#005F8C]/10 text-sm font-bold text-[#005F8C]">
+                  <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#005F8C]/10 text-xs font-bold text-[#005F8C]">
                     ✓
                   </span>
                   {req}
                 </li>
               ))}
             </ul>
-            <p className="mt-6 text-sm text-[#475569]">
+            <p className="mt-6 text-xs text-[#475569]">
               ※ 審査の結果、登録をお断りする場合があります。あらかじめご了承ください。
             </p>
           </div>

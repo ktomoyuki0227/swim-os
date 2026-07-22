@@ -54,13 +54,13 @@ export function SessionTabs({ registeredUpcoming, allUpcoming, pastSessions }: P
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
-            className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors
+            className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-colors
               ${tab === t.key ? "bg-white text-[#1a2332] shadow-sm" : "text-[#475569] hover:text-[#1a2332]"}`}
           >
             {t.label}
             {t.count > 0 && (
               <span
-                className={`rounded-full px-1.5 py-0.5 text-sm font-semibold
+                className={`rounded-full px-1.5 py-0.5 text-xs font-semibold
                   ${tab === t.key ? "bg-[#005F8C]/10 text-[#005F8C]" : "bg-[#dce3ea] text-[#475569]"}`}
               >
                 {t.count}
@@ -88,13 +88,13 @@ export function SessionTabs({ registeredUpcoming, allUpcoming, pastSessions }: P
                     className="flex w-14 shrink-0 flex-col items-center rounded-xl py-2"
                     style={{ backgroundColor: `${session.team_color}18` }}
                   >
-                    <span className="text-sm font-medium" style={{ color: session.team_color }}>
+                    <span className="text-xs font-medium" style={{ color: session.team_color }}>
                       {new Date(session.scheduled_at).toLocaleDateString("ja-JP", { month: "short" })}
                     </span>
                     <span className="text-xl font-bold leading-tight" style={{ color: session.team_color }}>
                       {new Date(session.scheduled_at).getDate()}
                     </span>
-                    <span className="text-sm" style={{ color: session.team_color }}>
+                    <span className="text-xs" style={{ color: session.team_color }}>
                       {new Date(session.scheduled_at).toLocaleDateString("ja-JP", { weekday: "short" })}
                     </span>
                   </div>
@@ -102,24 +102,24 @@ export function SessionTabs({ registeredUpcoming, allUpcoming, pastSessions }: P
                   {/* セッション情報 */}
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium text-[#1a2332]">{session.title}</p>
-                    <p className="text-sm text-[#475569]">
+                    <p className="text-xs text-[#475569]">
                       {new Date(session.scheduled_at).toLocaleTimeString("ja-JP", {
                         hour: "2-digit",
                         minute: "2-digit",
                       })}
                       {session.location ? ` · ${session.location}` : ""}
                     </p>
-                    <p className="text-sm text-[#64748b]">{session.team_name}</p>
+                    <p className="text-xs text-[#64748b]">{session.team_name}</p>
                   </div>
 
                   {/* バッジ */}
                   {tab !== "past" && (
                     session.is_registered ? (
-                      <Badge className="shrink-0 bg-[#eaf7f0] text-[#0f8a4f] border-transparent text-sm">
+                      <Badge className="shrink-0 bg-[#eaf7f0] text-[#0f8a4f] border-transparent text-xs">
                         参加予定
                       </Badge>
                     ) : (
-                      <Badge className="shrink-0 bg-[#e8f2f8] text-[#005F8C] border-transparent text-sm">
+                      <Badge className="shrink-0 bg-[#e8f2f8] text-[#005F8C] border-transparent text-xs">
                         受付中
                       </Badge>
                     )

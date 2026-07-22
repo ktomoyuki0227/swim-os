@@ -30,7 +30,7 @@ function TeamCard({ team }: { team: Team }) {
             </div>
           )}
           <span
-            className="absolute right-2 top-2 rounded-full px-2 py-0.5 text-sm font-semibold backdrop-blur-sm"
+            className="absolute right-2 top-2 rounded-full px-2 py-0.5 text-xs font-semibold backdrop-blur-sm"
             style={{ backgroundColor: "rgba(255,255,255,0.85)", color: isAdmin ? "#005F8C" : "#475569" }}
           >
             {isAdmin ? "管理者" : "メンバー"}
@@ -39,7 +39,7 @@ function TeamCard({ team }: { team: Team }) {
         <div className="px-3 py-2.5">
           <p className="line-clamp-2 text-sm font-semibold leading-snug text-[#1a2332]">{teamName}</p>
           {team.description ? (
-            <p className="mt-0.5 line-clamp-2 text-sm leading-relaxed text-[#475569]">
+            <p className="mt-0.5 line-clamp-2 text-xs leading-relaxed text-[#475569]">
               {team.description as string}
             </p>
           ) : null}
@@ -115,7 +115,7 @@ export function TeamsClient({ teams }: TeamsClientProps) {
           {teamGroups.length > 0 && (
             <div className="space-y-2.5">
               {hasBoth && (
-                <p className="text-sm font-semibold tracking-wide text-[#64748b]">チーム</p>
+                <p className="text-xs font-semibold tracking-wide text-[#64748b]">チーム</p>
               )}
               <TeamGrid teams={teamGroups} />
             </div>
@@ -124,7 +124,7 @@ export function TeamsClient({ teams }: TeamsClientProps) {
           {personalGroups.length > 0 && (
             <div className="space-y-2.5">
               {hasBoth && (
-                <p className="text-sm font-semibold tracking-wide text-[#64748b]">パーソナル</p>
+                <p className="text-xs font-semibold tracking-wide text-[#64748b]">パーソナル</p>
               )}
               <TeamGrid teams={personalGroups} />
             </div>

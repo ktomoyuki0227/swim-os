@@ -25,7 +25,7 @@ export function FeeFilters({ teams, selectedTeamId, selectedType, selectedPeriod
     <div className="flex flex-wrap gap-4 p-4">
       {/* Team selector */}
       <div className="flex flex-col gap-1">
-        <label className="text-sm text-[#475569]">グループ</label>
+        <label className="text-xs text-[#475569]">グループ</label>
         <select
           name="team"
           defaultValue={selectedTeamId}
@@ -49,7 +49,7 @@ export function FeeFilters({ teams, selectedTeamId, selectedType, selectedPeriod
       {/* Type selector — enabled tabs only */}
       {tabs.length > 0 && (
         <div className="flex flex-col gap-1">
-          <label className="text-sm text-[#475569]">種別</label>
+          <label className="text-xs text-[#475569]">種別</label>
           <div className="flex overflow-hidden rounded-lg border border-[#dce3ea]">
             {tabs.map(({ type, label }) => (
               <a
@@ -75,7 +75,7 @@ export function FeeFilters({ teams, selectedTeamId, selectedType, selectedPeriod
       {/* Period（回数券タブでは非表示）*/}
       {tabs.length > 0 && selectedType !== "stamp_card" && (
         <div className="flex flex-col gap-1">
-          <label className="text-sm text-[#475569]">
+          <label className="text-xs text-[#475569]">
             {selectedType === "annual" ? "年度" : "月"}
           </label>
           <input

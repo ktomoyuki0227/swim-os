@@ -142,7 +142,7 @@ export function AdminTeamActions({
                 </svg>
                 お知らせ
                 {announcements.length > 0 && (
-                  <span className="ml-auto rounded-full bg-[#edf0f4] px-2 py-0.5 text-sm text-[#475569]">{announcements.length}</span>
+                  <span className="ml-auto rounded-full bg-[#edf0f4] px-2 py-0.5 text-xs text-[#475569]">{announcements.length}</span>
                 )}
               </button>
               <div className="mx-3 h-px bg-[#e8edf2]" />
@@ -159,7 +159,7 @@ export function AdminTeamActions({
                 </svg>
                 申請
                 {joinRequests.length > 0 && (
-                  <span className="ml-auto rounded-full bg-[#005F8C] px-2 py-0.5 text-sm font-semibold text-white">{joinRequests.length}</span>
+                  <span className="ml-auto rounded-full bg-[#005F8C] px-2 py-0.5 text-xs font-semibold text-white">{joinRequests.length}</span>
                 )}
               </button>
             </div>

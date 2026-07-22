@@ -131,7 +131,7 @@ export default async function SessionsPage({ searchParams }: SessionsPageProps) 
         </div>
       ) : (
         <div className="space-y-2">
-          <p className="text-sm text-[#64748b]">{sessions.length}件のセッション</p>
+          <p className="text-xs text-[#64748b]">{sessions.length}件のセッション</p>
           {sessions.map((session: Record<string, unknown>) => {
             const team = session.team as Record<string, unknown> | null
             const teamId = team?.id as string | undefined
@@ -187,7 +187,7 @@ export default async function SessionsPage({ searchParams }: SessionsPageProps) 
                         </div>
 
                         {/* 行2: 日時 */}
-                        <div className="flex items-center gap-1 overflow-hidden text-sm text-[#475569]">
+                        <div className="flex items-center gap-1 overflow-hidden text-xs text-[#475569]">
                           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
                             <circle cx="12" cy="12" r="10" />
                             <polyline points="12 6 12 12 16 14" />
@@ -196,7 +196,7 @@ export default async function SessionsPage({ searchParams }: SessionsPageProps) 
                         </div>
 
                         {/* 行3: 場所 */}
-                        <div className="flex items-center gap-1 overflow-hidden text-sm text-[#475569]">
+                        <div className="flex items-center gap-1 overflow-hidden text-xs text-[#475569]">
                           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
                             <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
                             <circle cx="12" cy="10" r="3" />
@@ -207,7 +207,7 @@ export default async function SessionsPage({ searchParams }: SessionsPageProps) 
                         </div>
 
                         {/* 行4: チーム */}
-                        <div className="flex items-center gap-1 overflow-hidden text-sm">
+                        <div className="flex items-center gap-1 overflow-hidden text-xs">
                           <div className="relative h-4 w-4 shrink-0 overflow-hidden rounded-full bg-[#e8eff4]">
                             {team ? (
                               (team.avatar_url as string | null) ? (

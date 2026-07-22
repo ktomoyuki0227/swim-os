@@ -94,7 +94,7 @@ function TagButton({
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
+      className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
         selected
           ? "border-[#005F8C] bg-[#005F8C] text-white"
           : "border-[#dce3ea] text-[#475569] hover:border-[#005F8C]/40 hover:text-[#005F8C]"
@@ -184,7 +184,7 @@ function CardSetupForm({
     <div className="space-y-4">
       <div className="space-y-3">
         <div className="space-y-1">
-          <label className="text-sm font-medium text-[#475569]">カード番号</label>
+          <label className="text-xs font-medium text-[#475569]">カード番号</label>
           <div className="rounded-lg border border-[#dce3ea] bg-white px-3 py-3">
             <CardNumberElement
               options={{ style: stripeInputStyle }}
@@ -194,7 +194,7 @@ function CardSetupForm({
         </div>
         <div className="flex gap-3">
           <div className="flex-1 space-y-1">
-            <label className="text-sm font-medium text-[#475569]">有効期限</label>
+            <label className="text-xs font-medium text-[#475569]">有効期限</label>
             <div className="rounded-lg border border-[#dce3ea] bg-white px-3 py-3">
               <CardExpiryElement
                 options={{ style: stripeInputStyle }}
@@ -203,7 +203,7 @@ function CardSetupForm({
             </div>
           </div>
           <div className="flex-1 space-y-1">
-            <label className="text-sm font-medium text-[#475569]">セキュリティコード</label>
+            <label className="text-xs font-medium text-[#475569]">セキュリティコード</label>
             <div className="rounded-lg border border-[#dce3ea] bg-white px-3 py-3">
               <CardCvcElement
                 options={{ style: stripeInputStyle }}
@@ -214,7 +214,7 @@ function CardSetupForm({
         </div>
       </div>
       {formError && (
-        <p className="rounded-lg border border-[#c0392b]/20 bg-[#fdecea] px-3 py-2 text-sm text-[#c0392b]">
+        <p className="rounded-lg border border-[#c0392b]/20 bg-[#fdecea] px-3 py-2 text-xs text-[#c0392b]">
           {formError}
         </p>
       )}
@@ -224,13 +224,13 @@ function CardSetupForm({
           <button
             type="button"
             onClick={() => setShowTestCards((v) => !v)}
-            className="w-full text-center text-sm text-[#64748b] transition-colors hover:text-[#475569]"
+            className="w-full text-center text-xs text-[#64748b] transition-colors hover:text-[#475569]"
           >
             {showTestCards ? "▲ 閉じる" : "▼ テストカード（開発用）"}
           </button>
           {showTestCards && (
             <div className="mt-3 space-y-2 rounded-lg bg-[#f2f7fa] p-3">
-              <p className="text-sm font-medium text-[#1a2332]">テストカード（クリックで即時登録）</p>
+              <p className="text-xs font-medium text-[#1a2332]">テストカード（クリックで即時登録）</p>
               <div className="flex flex-col gap-1.5">
                 {TEST_CARDS.map((card) => (
                   <button
@@ -241,8 +241,8 @@ function CardSetupForm({
                     className="rounded-lg border border-[#dce3ea] bg-white px-3 py-2 text-left transition-colors hover:border-[#005F8C] hover:bg-white disabled:opacity-50"
                   >
                     <div className="flex items-center justify-between gap-2">
-                      <span className="font-mono text-sm font-semibold text-[#1a2332]">{card.number}</span>
-                      <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-sm font-medium ${
+                      <span className="font-mono text-xs font-semibold text-[#1a2332]">{card.number}</span>
+                      <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-xs font-medium ${
                         card.variant === "success" ? "bg-[#eaf7f0] text-[#0f8a4f]"
                         : card.variant === "warning" ? "bg-orange-100 text-orange-700"
                         : "bg-[#fdecea] text-[#c0392b]"
@@ -487,14 +487,14 @@ export default function OnboardingPage() {
         {ALL_STEPS.map(({ num, label }, i) => (
           <Fragment key={num}>
             <div className="flex flex-col items-center">
-              <div className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold transition-colors ${
+              <div className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold transition-colors ${
                 num < progressStep ? "bg-[#005F8C]/20 text-[#005F8C]"
                 : num === progressStep ? "bg-[#005F8C] text-white shadow-md"
                 : "bg-[#dce3ea] text-[#64748b]"
               }`}>
                 {num < progressStep ? "✓" : num}
               </div>
-              <p className={`mt-1 hidden text-sm sm:block ${num === progressStep ? "font-medium text-[#005F8C]" : "text-[#64748b]"}`}>
+              <p className={`mt-1 hidden text-xs sm:block ${num === progressStep ? "font-medium text-[#005F8C]" : "text-[#64748b]"}`}>
                 {label}
               </p>
             </div>
@@ -507,7 +507,7 @@ export default function OnboardingPage() {
 
       <Card className="border-[#dce3ea] bg-white shadow-lg">
         <CardHeader className="pb-2">
-          <p className="text-sm font-semibold uppercase tracking-widest text-[#005F8C]">
+          <p className="text-xs font-semibold uppercase tracking-widest text-[#005F8C]">
             STEP {progressStep} / {ALL_STEPS.length}
           </p>
           <h2 className="text-xl font-bold text-[#1a2332]">{currentStep.label}</h2>
@@ -532,7 +532,7 @@ export default function OnboardingPage() {
                   ) : (
                     <div className="flex h-full w-full flex-col items-center justify-center gap-1 text-[#64748b]">
                       <span className="text-2xl">📷</span>
-                      <span className="text-sm leading-tight">タップして追加</span>
+                      <span className="text-xs leading-tight">タップして追加</span>
                     </div>
                   )}
                 </button>
@@ -550,7 +550,7 @@ export default function OnboardingPage() {
                     reader.readAsDataURL(file)
                   }}
                 />
-                <div className="flex items-center gap-2 text-sm">
+                <div className="flex items-center gap-2 text-xs">
                   <span className={avatarFile ? "text-[#0f8a4f]" : "text-[#c0392b] font-medium"}>
                     {avatarFile ? "✓ 設定済み" : "プロフィール写真（必須）"}
                   </span>
@@ -569,7 +569,7 @@ export default function OnboardingPage() {
               {/* 水泳カテゴリ（任意） */}
               <div className="space-y-2">
                 <Label className="text-sm text-[#475569]">
-                  水泳カテゴリ<span className="ml-1 text-sm text-[#64748b]">任意</span>
+                  水泳カテゴリ<span className="ml-1 text-xs text-[#64748b]">任意</span>
                 </Label>
                 <div className="flex flex-wrap gap-2">
                   {SWIM_DISCIPLINES.map((d) => (
@@ -587,7 +587,7 @@ export default function OnboardingPage() {
               <div className="space-y-2">
                 <Label className="text-sm text-[#475569]">
                   水泳レベル<span className="ml-0.5 text-[#c0392b]">*</span>
-                  <span className="ml-1.5 text-sm font-normal text-[#64748b]">1つ選択</span>
+                  <span className="ml-1.5 text-xs font-normal text-[#64748b]">1つ選択</span>
                 </Label>
                 <div className="flex gap-3">
                   {SWIM_LEVELS.map((lvl) => (
@@ -611,7 +611,7 @@ export default function OnboardingPage() {
               <div className="space-y-2">
                 <Label className="text-sm text-[#475569]">
                   種目・泳法<span className="ml-0.5 text-[#c0392b]">*</span>
-                  <span className="ml-1.5 text-sm font-normal text-[#64748b]">
+                  <span className="ml-1.5 text-xs font-normal text-[#64748b]">
                     1つ以上選択（{selectedSpecialties.length}個選択中）
                   </span>
                 </Label>
@@ -631,7 +631,7 @@ export default function OnboardingPage() {
               <div className="space-y-2">
                 <Label className="text-sm text-[#475569]">
                   活動目的<span className="ml-0.5 text-[#c0392b]">*</span>
-                  <span className="ml-1.5 text-sm font-normal text-[#64748b]">
+                  <span className="ml-1.5 text-xs font-normal text-[#64748b]">
                     1つ以上選択（{selectedGoals.length}個選択中）
                   </span>
                 </Label>
@@ -651,7 +651,7 @@ export default function OnboardingPage() {
               <div className="space-y-2">
                 <Label className="text-sm text-[#475569]">
                   活動エリア<span className="ml-0.5 text-[#c0392b]">*</span>
-                  <span className="ml-1.5 text-sm font-normal text-[#64748b]">
+                  <span className="ml-1.5 text-xs font-normal text-[#64748b]">
                     {selectedPrefectures.length === 0 ? "1つ以上選択" : `${selectedPrefectures.length}件選択中`}
                   </span>
                 </Label>
@@ -666,7 +666,7 @@ export default function OnboardingPage() {
                         ? "都道府県を選択してください"
                         : selectedPrefectures.slice(0, 4).join("・") + (selectedPrefectures.length > 4 ? ` 他${selectedPrefectures.length - 4}件` : "")}
                     </span>
-                    <span className="ml-2 shrink-0 text-[#64748b] text-sm">{prefDropdownOpen ? "▲" : "▼"}</span>
+                    <span className="ml-2 shrink-0 text-[#64748b] text-xs">{prefDropdownOpen ? "▲" : "▼"}</span>
                   </button>
                   {prefDropdownOpen && (
                     <div className="absolute z-10 mt-1 w-full rounded-lg border border-[#dce3ea] bg-white shadow-lg">
@@ -677,7 +677,7 @@ export default function OnboardingPage() {
                               key={p}
                               type="button"
                               onClick={() => setSelectedPrefectures((prev) => toggleItem(prev, p))}
-                              className={`rounded px-2 py-1.5 text-left text-sm transition-colors ${
+                              className={`rounded px-2 py-1.5 text-left text-xs transition-colors ${
                                 selectedPrefectures.includes(p)
                                   ? "bg-[#005F8C]/10 font-medium text-[#005F8C]"
                                   : "text-[#475569] hover:bg-[#f5f8fa]"
@@ -693,7 +693,7 @@ export default function OnboardingPage() {
                           <button
                             type="button"
                             onClick={() => setSelectedPrefectures([])}
-                            className="text-sm text-[#64748b] hover:text-[#c0392b]"
+                            className="text-xs text-[#64748b] hover:text-[#c0392b]"
                           >
                             選択をクリア
                           </button>
@@ -707,7 +707,7 @@ export default function OnboardingPage() {
               {/* スイマータイプ（任意） */}
               <div className="space-y-2">
                 <Label className="text-sm text-[#475569]">
-                  スイマータイプ<span className="ml-1 text-sm text-[#64748b]">任意</span>
+                  スイマータイプ<span className="ml-1 text-xs text-[#64748b]">任意</span>
                 </Label>
                 <div className="flex gap-3">
                   {SWIMMER_TYPES.map((t) => (
@@ -730,7 +730,7 @@ export default function OnboardingPage() {
               {/* 自己紹介（任意） */}
               <div className="space-y-1.5">
                 <Label className="text-sm text-[#475569]">
-                  自己紹介<span className="ml-1 text-sm text-[#64748b]">任意</span>
+                  自己紹介<span className="ml-1 text-xs text-[#64748b]">任意</span>
                 </Label>
                 <Textarea
                   placeholder="例: マスターズ水泳歴10年。クロールと個人メドレーが得意です。"
@@ -838,7 +838,7 @@ export default function OnboardingPage() {
                   className="border-[#dce3ea]"
                   rows={3}
                 />
-                <p className="text-sm text-[#64748b]">グループからの郵便物等に使用される場合があります</p>
+                <p className="text-xs text-[#64748b]">グループからの郵便物等に使用される場合があります</p>
               </div>
               <div className="space-y-1.5">
                 <Label className="text-sm text-[#475569]">
@@ -851,7 +851,7 @@ export default function OnboardingPage() {
                   onChange={(e) => set("phone", e.target.value)}
                   className="border-[#dce3ea]"
                 />
-                <p className="text-sm text-[#64748b]">ハイフンなし10〜11桁で入力してください</p>
+                <p className="text-xs text-[#64748b]">ハイフンなし10〜11桁で入力してください</p>
               </div>
             </>
           )}
@@ -892,7 +892,7 @@ export default function OnboardingPage() {
                   onChange={(e) => set("emergency_contact", e.target.value)}
                   className="border-[#dce3ea]"
                 />
-                <p className="text-sm text-[#64748b]">ハイフンなし10〜11桁で入力してください</p>
+                <p className="text-xs text-[#64748b]">ハイフンなし10〜11桁で入力してください</p>
               </div>
             </>
           )}
@@ -1010,7 +1010,7 @@ export default function OnboardingPage() {
           {saveError}
         </p>
       )}
-      <p className="mt-4 text-center text-sm text-[#64748b]">
+      <p className="mt-4 text-center text-xs text-[#64748b]">
         入力した情報はいつでもプロフィールページから変更できます
       </p>
     </div>

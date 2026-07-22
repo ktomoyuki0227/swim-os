@@ -77,19 +77,19 @@ export function AdminActionButtons({ team }: AdminActionButtonsProps) {
                 <CardContent className="space-y-3">
                   <div className="flex flex-wrap gap-1.5 pb-1">
                     {team.has_session_fee && (
-                      <span className="rounded-full bg-[#e8f2f8] px-2.5 py-0.5 text-sm text-[#005F8C]">参加費</span>
+                      <span className="rounded-full bg-[#e8f2f8] px-2.5 py-0.5 text-xs text-[#005F8C]">参加費</span>
                     )}
                     {team.has_annual_fee && (
-                      <span className="rounded-full bg-[#e8f2f8] px-2.5 py-0.5 text-sm text-[#005F8C]">年会費</span>
+                      <span className="rounded-full bg-[#e8f2f8] px-2.5 py-0.5 text-xs text-[#005F8C]">年会費</span>
                     )}
                     {team.has_monthly_fee && (
-                      <span className="rounded-full bg-[#e8f2f8] px-2.5 py-0.5 text-sm text-[#005F8C]">月謝</span>
+                      <span className="rounded-full bg-[#e8f2f8] px-2.5 py-0.5 text-xs text-[#005F8C]">月謝</span>
                     )}
                     {team.has_point_card && (
-                      <span className="rounded-full bg-[#e8f2f8] px-2.5 py-0.5 text-sm text-[#005F8C]">回数券</span>
+                      <span className="rounded-full bg-[#e8f2f8] px-2.5 py-0.5 text-xs text-[#005F8C]">回数券</span>
                     )}
                     {!team.has_session_fee && !team.has_annual_fee && !team.has_monthly_fee && !team.has_point_card && (
-                      <span className="text-sm text-[#64748b]">料金体系なし</span>
+                      <span className="text-xs text-[#64748b]">料金体系なし</span>
                     )}
                   </div>
                   {team.has_session_fee && (
@@ -160,7 +160,7 @@ export function AdminActionButtons({ team }: AdminActionButtonsProps) {
                           {(team.practice_days ?? []).map((day: string) => (
                             <span
                               key={day}
-                              className="flex h-6 w-6 items-center justify-center rounded-full bg-[#e8f2f8] text-sm font-medium text-[#005F8C]"
+                              className="flex h-6 w-6 items-center justify-center rounded-full bg-[#e8f2f8] text-xs font-medium text-[#005F8C]"
                             >
                               {day}
                             </span>

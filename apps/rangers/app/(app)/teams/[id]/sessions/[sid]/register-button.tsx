@@ -74,7 +74,7 @@ export function RegisterButton({
             <p className="text-sm font-semibold text-[#1a2332]">エントリー情報</p>
             {competitionFields!.map((field) => (
               <div key={field.key} className="space-y-1">
-                <Label className="text-sm">
+                <Label className="text-xs">
                   {field.label}
                   {field.required && <span className="text-[#c0392b]"> *</span>}
                 </Label>
@@ -104,7 +104,7 @@ export function RegisterButton({
             </div>
             <div>
               <p className="font-medium text-[#1a2332]">無料で参加する</p>
-              <p className="text-sm text-[#475569]">会費会員のため参加費免除</p>
+              <p className="text-xs text-[#475569]">会費会員のため参加費免除</p>
             </div>
           </button>
         ) : (
@@ -132,23 +132,23 @@ export function RegisterButton({
                 </div>
                 <div className="flex-1">
                   <p className="font-medium text-[#1a2332]">クレジットカード</p>
-                  <p className="text-sm text-[#475569]">
+                  <p className="text-xs text-[#475569]">
                     {hasCard ? "登録済みカードで参加（開催確定時に決済）" : "カードを登録して参加"}
                   </p>
                 </div>
                 {hasCard && (
-                  <span className="rounded-full bg-[#eaf7f0] px-2 py-0.5 text-sm font-medium text-[#0f8a4f]">登録済</span>
+                  <span className="rounded-full bg-[#eaf7f0] px-2 py-0.5 text-xs font-medium text-[#0f8a4f]">登録済</span>
                 )}
               </button>
 
               {/* カード未登録の案内 */}
               {showNoCard && (
                 <div className="rounded-xl border border-[#fdecea] bg-[#fdecea]/60 p-3">
-                  <p className="text-sm font-medium text-[#c0392b]">クレジットカードが登録されていません</p>
-                  <p className="mt-0.5 text-sm text-[#475569]">お支払いページでカードを登録するとカード払いでご参加いただけます。</p>
+                  <p className="text-xs font-medium text-[#c0392b]">クレジットカードが登録されていません</p>
+                  <p className="mt-0.5 text-xs text-[#475569]">お支払いページでカードを登録するとカード払いでご参加いただけます。</p>
                   <Link
                     href="/payments"
-                    className="mt-1.5 inline-block text-sm font-medium text-[#005F8C] underline underline-offset-2"
+                    className="mt-1.5 inline-block text-xs font-medium text-[#005F8C] underline underline-offset-2"
                   >
                     カードを登録する →
                   </Link>
@@ -169,7 +169,7 @@ export function RegisterButton({
                 </div>
                 <div>
                   <p className="font-medium text-[#1a2332]">当日現金払い</p>
-                  <p className="text-sm text-[#475569]">当日会場でお支払い</p>
+                  <p className="text-xs text-[#475569]">当日会場でお支払い</p>
                 </div>
               </button>
 
@@ -187,7 +187,7 @@ export function RegisterButton({
                   </div>
                   <div>
                     <p className="font-medium text-[#1a2332]">回数券を使う</p>
-                    <p className="text-sm text-[#475569]">スタンプを1回消費</p>
+                    <p className="text-xs text-[#475569]">スタンプを1回消費</p>
                   </div>
                 </button>
               )}

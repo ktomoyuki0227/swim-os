@@ -117,7 +117,7 @@ function Step6PaymentSetup({ teamId }: { teamId: string }) {
         </div>
         <div>
           <p className="text-sm font-semibold text-[#1a2332]">グループが作成されました！</p>
-          <p className="text-sm text-[#475569]">あと1ステップで完了です</p>
+          <p className="text-xs text-[#475569]">あと1ステップで完了です</p>
         </div>
       </div>
 
@@ -127,7 +127,7 @@ function Step6PaymentSetup({ teamId }: { teamId: string }) {
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#005F8C]/10 text-lg">🏦</span>
           <div>
             <p className="text-sm font-semibold text-[#1a2332]">口座情報の登録</p>
-            <p className="mt-1 text-sm leading-relaxed text-[#475569]">
+            <p className="mt-1 text-xs leading-relaxed text-[#475569]">
               メンバーからの支払いを受け取るために、振込先の口座情報を登録してください。
               Stripeの安全な画面で本人確認と銀行口座の登録を行います。
             </p>
@@ -145,8 +145,8 @@ function Step6PaymentSetup({ teamId }: { teamId: string }) {
         </Button>
 
         <div className="space-y-1.5 rounded-[10px] bg-[#f2f7fa] p-3">
-          <p className="text-sm font-medium text-[#1a2332]">登録に必要なもの</p>
-          <ul className="space-y-1 text-sm text-[#475569]">
+          <p className="text-xs font-medium text-[#1a2332]">登録に必要なもの</p>
+          <ul className="space-y-1 text-xs text-[#475569]">
             <li className="flex items-center gap-1.5">
               <span className="text-[#005F8C]">•</span>本人確認書類（運転免許証 or パスポート）
             </li>
@@ -385,7 +385,7 @@ export default function NewTeamPage() {
               </div>
               <div>
                 <p className="text-base font-bold text-[#1a2332]">チーム</p>
-                <p className="mt-1 text-sm leading-relaxed text-[#475569]">クラブや水泳チームなど複数メンバーで活動するグループ</p>
+                <p className="mt-1 text-xs leading-relaxed text-[#475569]">クラブや水泳チームなど複数メンバーで活動するグループ</p>
               </div>
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#005F8C] text-white">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -409,7 +409,7 @@ export default function NewTeamPage() {
               </div>
               <div>
                 <p className="text-base font-bold text-[#1a2332]">パーソナル</p>
-                <p className="mt-1 text-sm leading-relaxed text-[#475569]">コーチと生徒の1対1または少人数のプライベートレッスン</p>
+                <p className="mt-1 text-xs leading-relaxed text-[#475569]">コーチと生徒の1対1または少人数のプライベートレッスン</p>
               </div>
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#0f8a4f] text-white">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -429,7 +429,7 @@ export default function NewTeamPage() {
           {teamType && (
             <div className="flex items-center gap-2">
               <span
-                className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-semibold"
+                className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold"
                 style={teamType === "team"
                   ? { backgroundColor: "#e8f2f8", color: "#005F8C" }
                   : { backgroundColor: "#eaf7f0", color: "#0f8a4f" }
@@ -466,7 +466,7 @@ export default function NewTeamPage() {
               <div className="space-y-1.5">
                 <Label htmlFor="description">
                   グループの説明
-                  <span className="ml-1 text-sm font-normal text-[#64748b]">（任意）</span>
+                  <span className="ml-1 text-xs font-normal text-[#64748b]">（任意）</span>
                 </Label>
                 <Textarea
                   id="description" name="description"
@@ -516,7 +516,7 @@ export default function NewTeamPage() {
             <CardContent className="space-y-4 pt-5">
               <div>
                 <p className="text-sm font-semibold text-[#1a2332]">詳細設定</p>
-                <p className="mt-0.5 text-sm text-[#475569]">すべて任意です。後から変更できます。</p>
+                <p className="mt-0.5 text-xs text-[#475569]">すべて任意です。後から変更できます。</p>
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="activity_area">活動エリア</Label>
@@ -538,7 +538,7 @@ export default function NewTeamPage() {
                 </select>
               </div>
               <div className="space-y-2">
-                <Label>練習曜日<span className="ml-1 text-sm font-normal text-[#64748b]">（複数選択可）</span></Label>
+                <Label>練習曜日<span className="ml-1 text-xs font-normal text-[#64748b]">（複数選択可）</span></Label>
                 <div className="flex flex-wrap gap-2">
                   {PRACTICE_DAYS.map((day) => {
                     const checked = form.practice_days.includes(day)
@@ -588,7 +588,7 @@ export default function NewTeamPage() {
             <CardContent className="space-y-5 pt-5">
               <div>
                 <p className="text-sm font-semibold text-[#1a2332]">画像設定</p>
-                <p className="mt-0.5 text-sm text-[#475569]">任意です。後から変更できます。</p>
+                <p className="mt-0.5 text-xs text-[#475569]">任意です。後から変更できます。</p>
               </div>
 
               {/* カバー画像 */}
@@ -604,14 +604,14 @@ export default function NewTeamPage() {
                   ) : (
                     <div className="flex h-full w-full flex-col items-center justify-center gap-1">
                       <span className="text-2xl">🖼</span>
-                      <p className="text-sm text-[#64748b]">クリックして画像を選択</p>
-                      <p className="text-sm text-[#64748b]">JPEG / PNG / WebP・5MB以下</p>
+                      <p className="text-xs text-[#64748b]">クリックして画像を選択</p>
+                      <p className="text-xs text-[#64748b]">JPEG / PNG / WebP・5MB以下</p>
                     </div>
                   )}
                 </div>
                 <input ref={coverInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => handleFileSelect(e, "cover")} />
                 {images.coverPreview && (
-                  <button type="button" className="text-sm text-[#64748b] hover:text-[#475569]" onClick={() => setImages((prev) => ({ ...prev, coverFile: null, coverPreview: null }))}>
+                  <button type="button" className="text-xs text-[#64748b] hover:text-[#475569]" onClick={() => setImages((prev) => ({ ...prev, coverFile: null, coverPreview: null }))}>
                     × 削除
                   </button>
                 )}
@@ -635,9 +635,9 @@ export default function NewTeamPage() {
                     <button type="button" onClick={() => iconInputRef.current?.click()} className="rounded-[10px] border border-[#dce3ea] px-3 py-2 text-sm text-[#475569] transition-colors hover:border-[#005F8C]/50" style={{ minHeight: 44 }}>
                       画像を選択
                     </button>
-                    <p className="mt-1 text-sm text-[#64748b]">JPEG / PNG / WebP・5MB以下</p>
+                    <p className="mt-1 text-xs text-[#64748b]">JPEG / PNG / WebP・5MB以下</p>
                     {images.iconPreview && (
-                      <button type="button" className="mt-1 text-sm text-[#64748b] hover:text-[#475569]" onClick={() => setImages((prev) => ({ ...prev, iconFile: null, iconPreview: null }))}>
+                      <button type="button" className="mt-1 text-xs text-[#64748b] hover:text-[#475569]" onClick={() => setImages((prev) => ({ ...prev, iconFile: null, iconPreview: null }))}>
                         × 削除
                       </button>
                     )}
@@ -670,14 +670,14 @@ export default function NewTeamPage() {
               <h3 className="text-sm font-semibold text-[#1a2332]">メンバーシップ</h3>
               <PricingSimulatorButton memberPrice={1000} onApply={handleSimulatorApply} />
             </div>
-            <p className="mb-2 text-sm text-[#475569]">継続的な会費を設定する場合に有効にしてください</p>
+            <p className="mb-2 text-xs text-[#475569]">継続的な会費を設定する場合に有効にしてください</p>
             <div className="space-y-2">
               {/* 年会費 */}
               <div className={`overflow-hidden rounded-[14px] border transition-colors ${hasAnnualFee ? "border-[#005F8C]/30" : "border-[#dce3ea]"}`}>
                 <div className="flex items-center gap-3 px-4 py-3">
                   <div className="flex-1">
                     <p className="text-sm font-medium text-[#1a2332]">年会費</p>
-                    <p className="text-sm text-[#475569]">年1回の会費を徴収</p>
+                    <p className="text-xs text-[#475569]">年1回の会費を徴収</p>
                   </div>
                   <button type="button" onClick={() => setHasAnnualFee(!hasAnnualFee)}
                     className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${hasAnnualFee ? "bg-[#005F8C]" : "bg-[#dce3ea]"}`}>
@@ -687,7 +687,7 @@ export default function NewTeamPage() {
                 {hasAnnualFee && (
                   <div className="border-t border-[#dce3ea]/50 bg-[#f2f7fa]/50 px-4 py-3">
                     <div className="space-y-1">
-                      <Label htmlFor="annual_fee_amount" className="text-sm">金額</Label>
+                      <Label htmlFor="annual_fee_amount" className="text-xs">金額</Label>
                       <div className="relative w-40">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#475569]">¥</span>
                         <Input id="annual_fee_amount" name="annual_fee_amount" type="number" min="0" step="100" placeholder="0" className="border-[#dce3ea] pl-7" />
@@ -702,7 +702,7 @@ export default function NewTeamPage() {
                 <div className="flex items-center gap-3 px-4 py-3">
                   <div className="flex-1">
                     <p className="text-sm font-medium text-[#1a2332]">月謝</p>
-                    <p className="text-sm text-[#475569]">毎月の月謝を徴収</p>
+                    <p className="text-xs text-[#475569]">毎月の月謝を徴収</p>
                   </div>
                   <button type="button" onClick={() => setHasMonthlyFee(!hasMonthlyFee)}
                     className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${hasMonthlyFee ? "bg-[#005F8C]" : "bg-[#dce3ea]"}`}>
@@ -712,7 +712,7 @@ export default function NewTeamPage() {
                 {hasMonthlyFee && (
                   <div className="border-t border-[#dce3ea]/50 bg-[#f2f7fa]/50 px-4 py-3">
                     <div className="space-y-1">
-                      <Label htmlFor="monthly_fee_amount" className="text-sm">金額</Label>
+                      <Label htmlFor="monthly_fee_amount" className="text-xs">金額</Label>
                       <div className="relative w-40">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#475569]">¥</span>
                         <Input id="monthly_fee_amount" name="monthly_fee_amount" type="number" min="0" step="100" placeholder="0" className="border-[#dce3ea] pl-7" />
@@ -739,7 +739,7 @@ export default function NewTeamPage() {
                 <div className="flex items-center gap-3 px-4 py-3">
                   <div className="flex-1">
                     <p className="text-sm font-medium text-[#1a2332]">参加費を設定する</p>
-                    <p className="text-sm text-[#475569]">練習・イベントごとに料金を徴収</p>
+                    <p className="text-xs text-[#475569]">練習・イベントごとに料金を徴収</p>
                   </div>
                   <button type="button" onClick={() => setHasSessionFee(!hasSessionFee)}
                     className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${hasSessionFee ? "bg-[#005F8C]" : "bg-[#dce3ea]"}`}>
@@ -750,14 +750,14 @@ export default function NewTeamPage() {
                   <div className="border-t border-[#dce3ea]/50 bg-[#f2f7fa]/50 px-4 py-3 space-y-3">
                     <div className="grid gap-3 grid-cols-2">
                       <div className="space-y-1">
-                        <Label htmlFor="default_member_price" className="text-sm">メンバー料金</Label>
+                        <Label htmlFor="default_member_price" className="text-xs">メンバー料金</Label>
                         <div className="relative">
                           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#475569]">¥</span>
                           <Input id="default_member_price" name="default_member_price" type="number" min="0" step="100" placeholder="1000" className="border-[#dce3ea] pl-7" />
                         </div>
                       </div>
                       <div className="space-y-1">
-                        <Label htmlFor="default_guest_price" className="text-sm">ゲスト料金</Label>
+                        <Label htmlFor="default_guest_price" className="text-xs">ゲスト料金</Label>
                         <div className="relative">
                           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#475569]">¥</span>
                           <Input id="default_guest_price" name="default_guest_price" type="number" min="0" step="100" placeholder="1500" className="border-[#dce3ea] pl-7" />
@@ -765,10 +765,10 @@ export default function NewTeamPage() {
                       </div>
                     </div>
                     <div className="space-y-1">
-                      <Label htmlFor="cancellation_days" className="text-sm">キャンセル期限</Label>
+                      <Label htmlFor="cancellation_days" className="text-xs">キャンセル期限</Label>
                       <div className="flex items-center gap-2">
                         <Input id="cancellation_days" name="cancellation_days" type="number" min="0" max="30" placeholder="3" className="w-20 border-[#dce3ea]" />
-                        <span className="text-sm text-[#475569]">日前まで無料キャンセル可</span>
+                        <span className="text-xs text-[#475569]">日前まで無料キャンセル可</span>
                       </div>
                     </div>
 
@@ -776,16 +776,16 @@ export default function NewTeamPage() {
                     <div className="border-t border-[#dce3ea]/30 pt-3 space-y-2">
                       <label className="flex cursor-pointer items-center gap-2.5">
                         <input type="checkbox" checked={hasPointCard} onChange={(e) => setHasPointCard(e.target.checked)} className="h-4 w-4 rounded border-[#dce3ea] accent-[#005F8C]" />
-                        <p className="text-sm font-medium text-[#1a2332]">回数券での支払いを受け付ける</p>
+                        <p className="text-xs font-medium text-[#1a2332]">回数券での支払いを受け付ける</p>
                       </label>
                       {hasPointCard && (
                         <div className="ml-6 grid gap-3 grid-cols-2">
                           <div className="space-y-1">
-                            <Label htmlFor="point_card_count" className="text-sm">1枚の回数</Label>
+                            <Label htmlFor="point_card_count" className="text-xs">1枚の回数</Label>
                             <Input id="point_card_count" name="point_card_count" type="number" min="1" max="100" placeholder="10" className="border-[#dce3ea]" />
                           </div>
                           <div className="space-y-1">
-                            <Label htmlFor="point_card_price" className="text-sm">販売価格（任意）</Label>
+                            <Label htmlFor="point_card_price" className="text-xs">販売価格（任意）</Label>
                             <div className="relative">
                               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#475569]">¥</span>
                               <Input id="point_card_price" name="point_card_price" type="number" min="0" step="100" placeholder="未設定" className="border-[#dce3ea] pl-7" />

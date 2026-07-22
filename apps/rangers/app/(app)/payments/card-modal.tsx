@@ -110,7 +110,7 @@ export function CardModal({ cardDetails, hasCard }: CardModalProps) {
                       {CARD_BRAND_LABELS[cardDetails.brand] ?? cardDetails.brand}{" "}
                       <span className="font-mono">•••• {cardDetails.last4}</span>
                     </p>
-                    <p className="text-sm text-[#475569]">
+                    <p className="text-xs text-[#475569]">
                       有効期限: {String(cardDetails.expMonth).padStart(2, "0")}/{cardDetails.expYear}
                     </p>
                   </div>

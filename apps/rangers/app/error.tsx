@@ -28,7 +28,7 @@ export default function Error({ error, reset }: ErrorProps) {
         予期せぬエラーが発生しました。再試行するか、ホームに戻ってください。
       </p>
       {error.digest && (
-        <p className="text-sm text-[#475569]">
+        <p className="text-xs text-[#475569]">
           エラーID: <code className="font-mono">{error.digest}</code>
         </p>
       )}

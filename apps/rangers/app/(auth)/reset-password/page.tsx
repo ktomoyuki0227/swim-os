@@ -87,7 +87,7 @@ export default function ResetPasswordPage() {
                 aria-invalid={mismatch}
               />
               {mismatch && (
-                <p role="alert" className="text-sm text-[#c0392b]">
+                <p role="alert" className="text-xs text-[#c0392b]">
                   パスワードが一致しません
                 </p>
               )}

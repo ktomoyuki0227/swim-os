@@ -104,7 +104,7 @@ export function ContactInfoButton({ teamId, contactEmail, contactPhone, isLogged
               )}
             </div>
 
-            <p className="mt-4 text-sm text-[#64748b]">
+            <p className="mt-4 text-xs text-[#64748b]">
               こちらの連絡先までお気軽にご連絡ください。
             </p>
 

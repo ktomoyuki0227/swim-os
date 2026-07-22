@@ -266,7 +266,7 @@ export function EditTeamForm({ team, stripeEnabled, connectStatus }: EditTeamFor
             <div className="space-y-1.5">
               <Label htmlFor="activity_area">
                 活動エリア
-                <span className="ml-1 text-sm font-normal text-[#64748b]">（任意）</span>
+                <span className="ml-1 text-xs font-normal text-[#64748b]">（任意）</span>
               </Label>
               <Input
                 id="activity_area"
@@ -280,7 +280,7 @@ export function EditTeamForm({ team, stripeEnabled, connectStatus }: EditTeamFor
             <div className="space-y-1.5">
               <Label htmlFor="main_pool">
                 主な使用プール
-                <span className="ml-1 text-sm font-normal text-[#64748b]">（任意）</span>
+                <span className="ml-1 text-xs font-normal text-[#64748b]">（任意）</span>
               </Label>
               <Input
                 id="main_pool"
@@ -294,7 +294,7 @@ export function EditTeamForm({ team, stripeEnabled, connectStatus }: EditTeamFor
             <div className="space-y-1.5">
               <Label htmlFor="contact_email">
                 問い合わせ用メールアドレス
-                <span className="ml-1 text-sm font-normal text-[#64748b]">（任意）</span>
+                <span className="ml-1 text-xs font-normal text-[#64748b]">（任意）</span>
               </Label>
               <Input
                 id="contact_email"
@@ -309,7 +309,7 @@ export function EditTeamForm({ team, stripeEnabled, connectStatus }: EditTeamFor
             <div className="space-y-1.5">
               <Label htmlFor="contact_phone">
                 問い合わせ用電話番号
-                <span className="ml-1 text-sm font-normal text-[#64748b]">（任意）</span>
+                <span className="ml-1 text-xs font-normal text-[#64748b]">（任意）</span>
               </Label>
               <Input
                 id="contact_phone"
@@ -320,12 +320,12 @@ export function EditTeamForm({ team, stripeEnabled, connectStatus }: EditTeamFor
                 maxLength={20}
                 className="border-[#dce3ea]"
               />
-              <p className="text-sm text-[#64748b]">ハイフンなし11桁で入力してください</p>
+              <p className="text-xs text-[#64748b]">ハイフンなし11桁で入力してください</p>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="practice_frequency">
                 練習ペース
-                <span className="ml-1 text-sm font-normal text-[#64748b]">（任意）</span>
+                <span className="ml-1 text-xs font-normal text-[#64748b]">（任意）</span>
               </Label>
               <select
                 id="practice_frequency"
@@ -342,7 +342,7 @@ export function EditTeamForm({ team, stripeEnabled, connectStatus }: EditTeamFor
             <div className="space-y-2">
               <Label>
                 練習曜日
-                <span className="ml-1 text-sm font-normal text-[#64748b]">（任意・複数選択可）</span>
+                <span className="ml-1 text-xs font-normal text-[#64748b]">（任意・複数選択可）</span>
               </Label>
               <div className="flex flex-wrap gap-2">
                 {PRACTICE_DAYS.map((day) => {
@@ -389,7 +389,7 @@ export function EditTeamForm({ team, stripeEnabled, connectStatus }: EditTeamFor
                     {isRecruiting ? "メンバー募集中" : "募集停止中"}
                   </span>
                 </div>
-                <p className="mt-1.5 text-sm text-[#64748b]">公開ページに表示されます</p>
+                <p className="mt-1.5 text-xs text-[#64748b]">公開ページに表示されます</p>
               </div>
             </div>
           </CardContent>
@@ -399,7 +399,7 @@ export function EditTeamForm({ team, stripeEnabled, connectStatus }: EditTeamFor
         <Card className="border-[#dce3ea]">
           <CardHeader className="pb-3">
             <CardTitle className="text-base font-semibold text-[#1a2332]">画像設定</CardTitle>
-            <p className="text-sm text-[#475569]">変更したい画像のみ選択してください。</p>
+            <p className="text-xs text-[#475569]">変更したい画像のみ選択してください。</p>
           </CardHeader>
           <CardContent className="space-y-5">
             {/* カバー画像 */}
@@ -420,8 +420,8 @@ export function EditTeamForm({ team, stripeEnabled, connectStatus }: EditTeamFor
                 ) : (
                   <div className="flex h-full w-full flex-col items-center justify-center gap-1">
                     <span className="text-2xl">🖼</span>
-                    <p className="text-sm text-[#64748b]">クリックして画像を選択</p>
-                    <p className="text-sm text-[#64748b]">JPEG / PNG / WebP・5MB以下</p>
+                    <p className="text-xs text-[#64748b]">クリックして画像を選択</p>
+                    <p className="text-xs text-[#64748b]">JPEG / PNG / WebP・5MB以下</p>
                   </div>
                 )}
               </div>
@@ -435,7 +435,7 @@ export function EditTeamForm({ team, stripeEnabled, connectStatus }: EditTeamFor
               {coverPreview && (
                 <button
                   type="button"
-                  className="text-sm text-[#c0392b] hover:underline"
+                  className="text-xs text-[#c0392b] hover:underline"
                   onClick={() => {
                     setCoverFile(null)
                     setCoverPreview(null)
@@ -476,11 +476,11 @@ export function EditTeamForm({ team, stripeEnabled, connectStatus }: EditTeamFor
                   >
                     画像を選択
                   </button>
-                  <p className="mt-1 text-sm text-[#64748b]">JPEG / PNG / WebP・5MB以下</p>
+                  <p className="mt-1 text-xs text-[#64748b]">JPEG / PNG / WebP・5MB以下</p>
                   {iconPreview && (
                     <button
                       type="button"
-                      className="mt-1 text-sm text-[#c0392b] hover:underline"
+                      className="mt-1 text-xs text-[#c0392b] hover:underline"
                       onClick={() => {
                         setIconFile(null)
                         setIconPreview(null)
@@ -509,13 +509,13 @@ export function EditTeamForm({ team, stripeEnabled, connectStatus }: EditTeamFor
             <h3 className="text-sm font-semibold text-[#1a2332]">メンバーシップ</h3>
             <PricingSimulatorButton memberPrice={team.default_member_price ?? 1000} onApply={handleSimulatorApply} />
           </div>
-          <p className="mb-2 text-sm text-[#475569]">継続的な会費を設定する場合に有効にしてください</p>
+          <p className="mb-2 text-xs text-[#475569]">継続的な会費を設定する場合に有効にしてください</p>
           <div className="space-y-2">
             <div className={`overflow-hidden rounded-[14px] border transition-colors ${hasAnnualFee ? "border-[#005F8C]/30" : "border-[#dce3ea]"}`}>
               <div className="flex items-center gap-3 px-4 py-3">
                 <div className="flex-1">
                   <p className="text-sm font-medium text-[#1a2332]">年会費</p>
-                  <p className="text-sm text-[#475569]">年1回の会費を徴収</p>
+                  <p className="text-xs text-[#475569]">年1回の会費を徴収</p>
                 </div>
                 <button type="button" onClick={() => setHasAnnualFee(!hasAnnualFee)}
                   className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${hasAnnualFee ? "bg-[#005F8C]" : "bg-[#dce3ea]"}`}>
@@ -525,7 +525,7 @@ export function EditTeamForm({ team, stripeEnabled, connectStatus }: EditTeamFor
               {hasAnnualFee && (
                 <div className="border-t border-[#dce3ea]/50 bg-[#f2f7fa]/50 px-4 py-3">
                   <div className="space-y-1">
-                    <Label htmlFor="annual_fee_amount" className="text-sm">金額</Label>
+                    <Label htmlFor="annual_fee_amount" className="text-xs">金額</Label>
                     <div className="relative w-40">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#475569]">¥</span>
                       <Input id="annual_fee_amount" name="annual_fee_amount" type="number" min="0" step="100" defaultValue={team.annual_fee_amount ?? ""} placeholder="0" className="border-[#dce3ea] pl-7" />
@@ -539,7 +539,7 @@ export function EditTeamForm({ team, stripeEnabled, connectStatus }: EditTeamFor
               <div className="flex items-center gap-3 px-4 py-3">
                 <div className="flex-1">
                   <p className="text-sm font-medium text-[#1a2332]">月謝</p>
-                  <p className="text-sm text-[#475569]">毎月の月謝を徴収</p>
+                  <p className="text-xs text-[#475569]">毎月の月謝を徴収</p>
                 </div>
                 <button type="button" onClick={() => setHasMonthlyFee(!hasMonthlyFee)}
                   className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${hasMonthlyFee ? "bg-[#005F8C]" : "bg-[#dce3ea]"}`}>
@@ -549,7 +549,7 @@ export function EditTeamForm({ team, stripeEnabled, connectStatus }: EditTeamFor
               {hasMonthlyFee && (
                 <div className="border-t border-[#dce3ea]/50 bg-[#f2f7fa]/50 px-4 py-3">
                   <div className="space-y-1">
-                    <Label htmlFor="monthly_fee_amount" className="text-sm">金額</Label>
+                    <Label htmlFor="monthly_fee_amount" className="text-xs">金額</Label>
                     <div className="relative w-40">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#475569]">¥</span>
                       <Input id="monthly_fee_amount" name="monthly_fee_amount" type="number" min="0" step="100" defaultValue={team.monthly_fee_amount ?? ""} placeholder="0" className="border-[#dce3ea] pl-7" />
@@ -575,7 +575,7 @@ export function EditTeamForm({ team, stripeEnabled, connectStatus }: EditTeamFor
               <div className="flex items-center gap-3 px-4 py-3">
                 <div className="flex-1">
                   <p className="text-sm font-medium text-[#1a2332]">参加費を設定する</p>
-                  <p className="text-sm text-[#475569]">練習・イベントごとに料金を徴収</p>
+                  <p className="text-xs text-[#475569]">練習・イベントごとに料金を徴収</p>
                 </div>
                 <button type="button" onClick={() => setHasSessionFee(!hasSessionFee)}
                   className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${hasSessionFee ? "bg-[#005F8C]" : "bg-[#dce3ea]"}`}>
@@ -586,14 +586,14 @@ export function EditTeamForm({ team, stripeEnabled, connectStatus }: EditTeamFor
                 <div className="border-t border-[#dce3ea]/50 bg-[#f2f7fa]/50 px-4 py-3 space-y-3">
                   <div className="grid gap-3 grid-cols-2">
                     <div className="space-y-1">
-                      <Label htmlFor="default_member_price" className="text-sm">メンバー料金</Label>
+                      <Label htmlFor="default_member_price" className="text-xs">メンバー料金</Label>
                       <div className="relative">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#475569]">¥</span>
                         <Input id="default_member_price" name="default_member_price" type="number" min="0" step="100" defaultValue={team.default_member_price ?? 0} className="border-[#dce3ea] pl-7" />
                       </div>
                     </div>
                     <div className="space-y-1">
-                      <Label htmlFor="default_guest_price" className="text-sm">ゲスト料金</Label>
+                      <Label htmlFor="default_guest_price" className="text-xs">ゲスト料金</Label>
                       <div className="relative">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#475569]">¥</span>
                         <Input id="default_guest_price" name="default_guest_price" type="number" min="0" step="100" defaultValue={team.default_guest_price ?? 0} className="border-[#dce3ea] pl-7" />
@@ -601,25 +601,25 @@ export function EditTeamForm({ team, stripeEnabled, connectStatus }: EditTeamFor
                     </div>
                   </div>
                   <div className="space-y-1">
-                    <Label htmlFor="cancellation_days" className="text-sm">キャンセル期限</Label>
+                    <Label htmlFor="cancellation_days" className="text-xs">キャンセル期限</Label>
                     <div className="flex items-center gap-2">
                       <Input id="cancellation_days" name="cancellation_days" type="number" min="0" max="30" defaultValue={team.cancellation_days ?? 3} className="w-20 border-[#dce3ea]" />
-                      <span className="text-sm text-[#475569]">日前まで無料キャンセル可</span>
+                      <span className="text-xs text-[#475569]">日前まで無料キャンセル可</span>
                     </div>
                   </div>
                   <div className="border-t border-[#dce3ea]/30 pt-3 space-y-2">
                     <label className="flex cursor-pointer items-center gap-2.5">
                       <input type="checkbox" checked={hasPointCard} onChange={(e) => setHasPointCard(e.target.checked)} className="h-4 w-4 rounded border-[#dce3ea] accent-[#005F8C]" />
-                      <p className="text-sm font-medium text-[#1a2332]">回数券での支払いを受け付ける</p>
+                      <p className="text-xs font-medium text-[#1a2332]">回数券での支払いを受け付ける</p>
                     </label>
                     {hasPointCard && (
                       <div className="ml-6 grid gap-3 grid-cols-2">
                         <div className="space-y-1">
-                          <Label htmlFor="point_card_count" className="text-sm">1枚の回数</Label>
+                          <Label htmlFor="point_card_count" className="text-xs">1枚の回数</Label>
                           <Input id="point_card_count" name="point_card_count" type="number" min="1" max="100" defaultValue={team.point_card_count ?? 10} className="border-[#dce3ea]" />
                         </div>
                         <div className="space-y-1">
-                          <Label htmlFor="point_card_price" className="text-sm">販売価格（任意）</Label>
+                          <Label htmlFor="point_card_price" className="text-xs">販売価格（任意）</Label>
                           <div className="relative">
                             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#475569]">¥</span>
                             <Input id="point_card_price" name="point_card_price" type="number" min="0" step="100" defaultValue={team.point_card_price ?? ""} placeholder="未設定" className="border-[#dce3ea] pl-7" />
@@ -638,7 +638,7 @@ export function EditTeamForm({ team, stripeEnabled, connectStatus }: EditTeamFor
         <Card className="border-[#dce3ea]">
           <CardHeader className="pb-3">
             <CardTitle className="text-base font-semibold text-[#1a2332]">グループのステータス</CardTitle>
-            <p className="text-sm text-[#475569]">非アクティブにすると公開ページから非表示になります。</p>
+            <p className="text-xs text-[#475569]">非アクティブにすると公開ページから非表示になります。</p>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-3 rounded-xl border border-[#dce3ea] p-3">
@@ -659,7 +659,7 @@ export function EditTeamForm({ team, stripeEnabled, connectStatus }: EditTeamFor
               <span className="text-sm font-medium text-[#1a2332]">
                 {isActive ? "アクティブ" : "非アクティブ"}
               </span>
-              <span className="ml-auto text-sm text-[#64748b]">
+              <span className="ml-auto text-xs text-[#64748b]">
                 {isActive ? "公開中" : "非公開"}
               </span>
             </div>
@@ -695,7 +695,7 @@ export function EditTeamForm({ team, stripeEnabled, connectStatus }: EditTeamFor
             <CardTitle className="text-base font-semibold text-[#1a2332]">
               Stripe Connect（売上受取設定）
             </CardTitle>
-            <p className="text-sm text-[#475569]">
+            <p className="text-xs text-[#475569]">
               セッション参加費の売上をこのグループの Stripe アカウントに自動送金します。設定するとプラットフォーム手数料を差し引いた金額がグループに入金されます。
             </p>
           </CardHeader>
@@ -738,7 +738,7 @@ export function EditTeamForm({ team, stripeEnabled, connectStatus }: EditTeamFor
               </Button>
             </div>
             {team.stripe_onboarding_completed && (
-              <p className="text-sm text-[#64748b]">
+              <p className="text-xs text-[#64748b]">
                 Stripe ダッシュボードから売上・入金状況を確認できます。設定を変更する場合は「設定を続ける」から Stripe 管理画面にアクセスしてください。
               </p>
             )}

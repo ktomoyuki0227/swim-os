@@ -79,7 +79,7 @@ export default async function TeamsPage({ searchParams }: TeamsPageProps) {
           </div>
         ) : (
           <div className="space-y-2">
-            <p className="text-sm text-[#64748b]">{teams.length}件のチーム</p>
+            <p className="text-xs text-[#64748b]">{teams.length}件のチーム</p>
             {teams.map((team: Record<string, unknown>) => {
               const area = team.activity_area as string | null
               const pool = team.main_pool as string | null
@@ -161,7 +161,7 @@ export default async function TeamsPage({ searchParams }: TeamsPageProps) {
 
                           {/* 行3: 頻度 + 曜日 */}
                           {(frequency || practiceDays.length > 0) && (
-                            <div className="flex items-center gap-1.5 overflow-hidden text-sm text-[#475569]">
+                            <div className="flex items-center gap-1.5 overflow-hidden text-xs text-[#475569]">
                               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
                                 <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
                                 <line x1="16" y1="2" x2="16" y2="6" />
@@ -189,7 +189,7 @@ export default async function TeamsPage({ searchParams }: TeamsPageProps) {
 
                           {/* 行4: メインプール */}
                           {pool && (
-                            <div className="flex items-center gap-1 overflow-hidden text-sm text-[#475569]">
+                            <div className="flex items-center gap-1 overflow-hidden text-xs text-[#475569]">
                               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
                                 <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
                                 <circle cx="12" cy="10" r="3" />
@@ -199,7 +199,7 @@ export default async function TeamsPage({ searchParams }: TeamsPageProps) {
                           )}
 
                           {/* 行5: 説明文 */}
-                          <p className={`line-clamp-2 text-sm ${description ? "text-[#475569]" : "text-[#c8d8e8]"}`}>
+                          <p className={`line-clamp-2 text-xs ${description ? "text-[#475569]" : "text-[#c8d8e8]"}`}>
                             {description ?? "説明はありません"}
                           </p>
                         </div>

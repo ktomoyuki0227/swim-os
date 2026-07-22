@@ -25,7 +25,7 @@ export default function RegisterSentPage() {
                 >
                   {done ? "✓" : num}
                 </div>
-                <span className={`text-sm ${active ? "font-medium text-[#005F8C]" : "text-[#64748b]"}`}>
+                <span className={`text-xs ${active ? "font-medium text-[#005F8C]" : "text-[#64748b]"}`}>
                   {label}
                 </span>
               </div>

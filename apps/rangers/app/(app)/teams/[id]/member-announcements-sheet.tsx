@@ -124,7 +124,7 @@ export function MemberAnnouncementsSheet({ announcements: initialAnnouncements, 
                               {announcement.body && (
                                 <p className="mt-1 text-sm text-[#475569]">{announcement.body}</p>
                               )}
-                              <p className="mt-2 text-sm text-[#64748b]">
+                              <p className="mt-2 text-xs text-[#64748b]">
                                 {new Date(announcement.created_at).toLocaleDateString("ja-JP")}
                               </p>
                             </div>

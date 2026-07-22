@@ -18,7 +18,7 @@ export default function RegisterConfirmPage() {
             ご登録いただいたメールアドレスに確認メールを送信しました。
             メール内のリンクをクリックして、アカウントを有効化してください。
           </p>
-          <p className="text-sm text-[#475569]">
+          <p className="text-xs text-[#475569]">
             メールが届かない場合は、迷惑メールフォルダもご確認ください。
           </p>
           <Link href="/login">

@@ -136,18 +136,18 @@ export function PublicTeamView({ data, hasBottomNav = false, joinRequestStatus =
             <div className="min-w-0 flex-1">
               {team.is_recruiting && (
                 <div className="mb-1.5">
-                  <span className="inline-block rounded-full bg-[#d97706] px-2.5 py-0.5 text-sm font-semibold text-white">
+                  <span className="inline-block rounded-full bg-[#d97706] px-2.5 py-0.5 text-xs font-semibold text-white">
                     メンバー募集中
                   </span>
                 </div>
               )}
               {coachCareer && (
-                <p className="text-sm text-[#475569]">{coachCareer}</p>
+                <p className="text-xs text-[#475569]">{coachCareer}</p>
               )}
               <div className="mt-1.5 flex items-center gap-1">
                 <span className="text-base">👥</span>
                 <span className="text-sm font-semibold text-[#1a2332]">{memberCount}</span>
-                <span className="text-sm text-[#475569]">人のメンバー</span>
+                <span className="text-xs text-[#475569]">人のメンバー</span>
               </div>
             </div>
           </div>
@@ -156,7 +156,7 @@ export function PublicTeamView({ data, hasBottomNav = false, joinRequestStatus =
           <div className="mt-5 space-y-3">
             {activityArea && (
               <div className="flex items-start gap-3">
-                <span className="shrink-0 rounded-md border border-[#dce3ea] px-2 py-0.5 text-sm text-[#475569]">
+                <span className="shrink-0 rounded-md border border-[#dce3ea] px-2 py-0.5 text-xs text-[#475569]">
                   活動エリア
                 </span>
                 <p className="text-sm text-[#1a2332]">{activityArea}</p>
@@ -164,7 +164,7 @@ export function PublicTeamView({ data, hasBottomNav = false, joinRequestStatus =
             )}
             {team.main_pool && (
               <div className="flex items-start gap-3">
-                <span className="shrink-0 rounded-md border border-[#dce3ea] px-2 py-0.5 text-sm text-[#475569]">
+                <span className="shrink-0 rounded-md border border-[#dce3ea] px-2 py-0.5 text-xs text-[#475569]">
                   使用プール
                 </span>
                 <p className="text-sm text-[#1a2332]">{team.main_pool}</p>
@@ -172,7 +172,7 @@ export function PublicTeamView({ data, hasBottomNav = false, joinRequestStatus =
             )}
             {team.practice_frequency && (
               <div className="flex items-start gap-3">
-                <span className="shrink-0 rounded-md border border-[#dce3ea] px-2 py-0.5 text-sm text-[#475569]">
+                <span className="shrink-0 rounded-md border border-[#dce3ea] px-2 py-0.5 text-xs text-[#475569]">
                   練習頻度
                 </span>
                 <p className="text-sm text-[#1a2332]">{team.practice_frequency}</p>
@@ -180,14 +180,14 @@ export function PublicTeamView({ data, hasBottomNav = false, joinRequestStatus =
             )}
             {team.practice_days && team.practice_days.length > 0 && (
               <div className="flex items-start gap-3">
-                <span className="shrink-0 rounded-md border border-[#dce3ea] px-2 py-0.5 text-sm text-[#475569]">
+                <span className="shrink-0 rounded-md border border-[#dce3ea] px-2 py-0.5 text-xs text-[#475569]">
                   練習曜日
                 </span>
                 <div className="flex flex-wrap gap-1">
                   {team.practice_days.map((day) => (
                     <span
                       key={day}
-                      className="flex h-7 w-7 items-center justify-center rounded-full bg-[#e8f2f8] text-sm font-medium text-[#005F8C]"
+                      className="flex h-7 w-7 items-center justify-center rounded-full bg-[#e8f2f8] text-xs font-medium text-[#005F8C]"
                     >
                       {day}
                     </span>
@@ -197,7 +197,7 @@ export function PublicTeamView({ data, hasBottomNav = false, joinRequestStatus =
             )}
             {coachBio && (
               <div className="flex items-start gap-3">
-                <span className="shrink-0 rounded-md border border-[#dce3ea] px-2 py-0.5 text-sm text-[#475569]">
+                <span className="shrink-0 rounded-md border border-[#dce3ea] px-2 py-0.5 text-xs text-[#475569]">
                   グループ紹介
                 </span>
                 <p className="text-sm leading-relaxed text-[#1a2332]">{coachBio}</p>
@@ -208,7 +208,7 @@ export function PublicTeamView({ data, hasBottomNav = false, joinRequestStatus =
           {/* コーチ情報 */}
           {coachName && (
             <div className="mt-5 border-t border-[#e8edf2] pt-4">
-              <p className="mb-2 text-sm font-medium text-[#64748b]">管理者・コーチ</p>
+              <p className="mb-2 text-xs font-medium text-[#64748b]">管理者・コーチ</p>
               {coachId ? (
                 <Link
                   href={`/profiles/${coachId}`}
@@ -226,7 +226,7 @@ export function PublicTeamView({ data, hasBottomNav = false, joinRequestStatus =
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold text-[#1a2332]">{coachName}</p>
                     {coachCareer && (
-                      <p className="text-sm text-[#64748b]">{coachCareer}</p>
+                      <p className="text-xs text-[#64748b]">{coachCareer}</p>
                     )}
                   </div>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -247,7 +247,7 @@ export function PublicTeamView({ data, hasBottomNav = false, joinRequestStatus =
                   <div>
                     <p className="text-sm font-semibold text-[#1a2332]">{coachName}</p>
                     {coachCareer && (
-                      <p className="text-sm text-[#64748b]">{coachCareer}</p>
+                      <p className="text-xs text-[#64748b]">{coachCareer}</p>
                     )}
                   </div>
                 </div>
@@ -269,28 +269,28 @@ export function PublicTeamView({ data, hasBottomNav = false, joinRequestStatus =
                     className="flex items-center gap-4 rounded-2xl bg-white px-4 py-3.5 shadow-sm"
                   >
                     <div className="flex w-12 shrink-0 flex-col items-center rounded-xl bg-[#005F8C]/10 py-2">
-                      <span className="text-sm font-medium text-[#005F8C]">
+                      <span className="text-xs font-medium text-[#005F8C]">
                         {date.toLocaleDateString("ja-JP", { month: "short" })}
                       </span>
                       <span className="text-xl font-bold leading-tight text-[#005F8C]">
                         {date.getDate()}
                       </span>
-                      <span className="text-sm text-[#005F8C]">
+                      <span className="text-xs text-[#005F8C]">
                         {date.toLocaleDateString("ja-JP", { weekday: "short" })}
                       </span>
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-medium text-[#1a2332]">{session.title as string}</p>
-                      <p className="text-sm text-[#475569]">
+                      <p className="text-xs text-[#475569]">
                         {date.toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" })}
                         {session.location ? ` · ${session.location as string}` : ""}
                       </p>
                     </div>
                     <div className="flex shrink-0 flex-col items-end gap-1">
-                      <span className="rounded-full bg-[#e8f2f8] px-2 py-0.5 text-sm font-medium text-[#005F8C]">
+                      <span className="rounded-full bg-[#e8f2f8] px-2 py-0.5 text-xs font-medium text-[#005F8C]">
                         {SESSION_TYPE_LABEL[session.type as string] ?? (session.type as string)}
                       </span>
-                      <span className="text-sm font-semibold text-[#1a2332]">
+                      <span className="text-xs font-semibold text-[#1a2332]">
                         ¥{((session.member_price as number) || 0).toLocaleString()}〜
                       </span>
                     </div>

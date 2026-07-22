@@ -27,7 +27,7 @@ type EditingSection = "basic" | "swimmer" | "emergency" | "registration" | "publ
 function ProfileRow({ label, value, muted }: { label: string; value: string | null | undefined; muted?: boolean }) {
   return (
     <div className="flex items-start justify-between gap-4 border-b border-[#f2f7fa] py-3 last:border-0">
-      <span className="min-w-[7rem] shrink-0 text-sm text-[#64748b]">{label}</span>
+      <span className="min-w-[7rem] shrink-0 text-xs text-[#64748b]">{label}</span>
       <span className={value && !muted ? "text-right text-sm text-[#1a2332]" : "text-right text-sm text-[#64748b]"}>
         {value || "未設定"}
       </span>
@@ -38,7 +38,7 @@ function ProfileRow({ label, value, muted }: { label: string; value: string | nu
 function ProfileBlockRow({ label, value }: { label: string; value: string | null | undefined }) {
   return (
     <div className="border-b border-[#f2f7fa] py-3 last:border-0">
-      <span className="text-sm text-[#64748b]">{label}</span>
+      <span className="text-xs text-[#64748b]">{label}</span>
       <p className={`mt-0.5 whitespace-pre-wrap text-sm leading-relaxed ${value ? "text-[#1a2332]" : "text-[#64748b]"}`}>
         {value || "未設定"}
       </p>
@@ -69,7 +69,7 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
 function PrivacyBadge({ type }: { type: "private" | "public" }) {
   if (type === "private") {
     return (
-      <span className="flex items-center gap-1 text-sm text-[#64748b]">
+      <span className="flex items-center gap-1 text-xs text-[#64748b]">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
           <path d="M7 11V7a5 5 0 0 1 10 0v4" />
@@ -79,7 +79,7 @@ function PrivacyBadge({ type }: { type: "private" | "public" }) {
     )
   }
   return (
-    <span className="flex items-center gap-1 text-sm text-[#005F8C]">
+    <span className="flex items-center gap-1 text-xs text-[#005F8C]">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="12" cy="12" r="10" />
         <line x1="2" y1="12" x2="22" y2="12" />
@@ -131,17 +131,17 @@ function TagRow({ label, items, maxVisible = Infinity }: { label: string; items:
 
   return (
     <div className="border-b border-[#f2f7fa] py-3 last:border-0">
-      <span className="mb-1.5 block text-sm text-[#64748b]">{label}</span>
+      <span className="mb-1.5 block text-xs text-[#64748b]">{label}</span>
       {items.length > 0 ? (
         <div className="flex flex-wrap gap-1.5">
           {visible.map((item) => (
-            <span key={item} className="rounded-full bg-[#005F8C]/10 px-[10px] py-[3px] text-sm text-[#005F8C]">{item}</span>
+            <span key={item} className="rounded-full bg-[#005F8C]/10 px-[10px] py-[3px] text-xs text-[#005F8C]">{item}</span>
           ))}
           {shouldCollapse && (
             <button
               type="button"
               onClick={() => setExpanded(true)}
-              className="text-sm text-[#005F8C] underline underline-offset-2 transition-colors hover:text-[#004E73]"
+              className="text-xs text-[#005F8C] underline underline-offset-2 transition-colors hover:text-[#004E73]"
             >
               +{hiddenCount}件
             </button>
@@ -150,7 +150,7 @@ function TagRow({ label, items, maxVisible = Infinity }: { label: string; items:
             <button
               type="button"
               onClick={() => setExpanded(false)}
-              className="text-sm text-[#005F8C] underline underline-offset-2 transition-colors hover:text-[#004E73]"
+              className="text-xs text-[#005F8C] underline underline-offset-2 transition-colors hover:text-[#004E73]"
             >
               折りたたむ
             </button>
@@ -207,7 +207,7 @@ function PrefectureMultiSelect({
       {selected.length > 0 && (
         <div className="flex flex-wrap gap-1">
           {selected.map((p) => (
-            <span key={p} className="flex items-center gap-1 rounded-full bg-[#005F8C]/10 px-[10px] py-[3px] text-sm text-[#005F8C]">
+            <span key={p} className="flex items-center gap-1 rounded-full bg-[#005F8C]/10 px-[10px] py-[3px] text-xs text-[#005F8C]">
               {p}
               <button type="button" onClick={() => toggle(p)} className="leading-none hover:text-[#c0392b]">×</button>
             </span>
@@ -218,7 +218,7 @@ function PrefectureMultiSelect({
         <div className="rounded-[10px] border border-[#dce3ea] bg-white p-3">
           <div className="grid grid-cols-3 gap-x-2 gap-y-1 sm:grid-cols-4">
             {PREFECTURES.map((p) => (
-              <label key={p} className="flex cursor-pointer items-center gap-1.5 rounded-[6px] px-1 py-1 text-sm hover:bg-[#f2f7fa]">
+              <label key={p} className="flex cursor-pointer items-center gap-1.5 rounded-[6px] px-1 py-1 text-xs hover:bg-[#f2f7fa]">
                 <input
                   type="checkbox"
                   checked={selected.includes(p)}
@@ -701,19 +701,19 @@ export default function ProfilePage() {
           {!isLoading && (
             <div className="rounded-[14px] bg-[#f2f7fa] px-4 py-3">
               <div className="mb-1.5 flex items-center justify-between">
-                <span className="text-sm text-[#475569]">プロフィール完成度</span>
+                <span className="text-xs text-[#475569]">プロフィール完成度</span>
                 <div className="flex items-center gap-2">
                   {remainingCount > 0 && (
-                    <span className="text-sm text-[#64748b]">あと{remainingCount}項目</span>
+                    <span className="text-xs text-[#64748b]">あと{remainingCount}項目</span>
                   )}
-                  <span className="text-sm font-semibold text-[#005F8C]">{completeness}%</span>
+                  <span className="text-xs font-semibold text-[#005F8C]">{completeness}%</span>
                 </div>
               </div>
               <div className="h-2 rounded-full bg-[#dce3ea]">
                 <div className="h-2 rounded-full bg-[#005F8C] transition-all duration-500" style={{ width: `${completeness}%` }} />
               </div>
               {completeness === 100 && (
-                <p className="mt-1.5 text-sm text-[#005F8C]">
+                <p className="mt-1.5 text-xs text-[#005F8C]">
                   プロフィールが完成しました！
                 </p>
               )}
@@ -729,7 +729,7 @@ export default function ProfilePage() {
             <div className="flex items-center gap-2">
               <PrivacyBadge type="private" />
               {editingSection === null && !isLoading && <PencilButton onClick={() => setEditingSection("basic")} />}
-              {editingSection === "basic" && <span className="text-sm font-medium text-[#005F8C]">編集中</span>}
+              {editingSection === "basic" && <span className="text-xs font-medium text-[#005F8C]">編集中</span>}
             </div>
           </div>
         </CardHeader>
@@ -768,7 +768,7 @@ export default function ProfilePage() {
                 <div className="flex min-h-[48px] items-center rounded-[10px] bg-[#f2f7fa] px-4 text-sm text-[#64748b]">
                   {email}
                 </div>
-                <p className="text-sm text-[#64748b]">メールアドレスはアカウント設定から変更できます</p>
+                <p className="text-xs text-[#64748b]">メールアドレスはアカウント設定から変更できます</p>
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="phone" className="text-sm text-[#475569]">電話番号</Label>
@@ -802,7 +802,7 @@ export default function ProfilePage() {
             <div className="flex shrink-0 items-center gap-2">
               <PrivacyBadge type="public" />
               {editingSection === null && !isLoading && <PencilButton onClick={() => setEditingSection("swimmer")} />}
-              {editingSection === "swimmer" && <span className="text-sm font-medium text-[#005F8C]">編集中</span>}
+              {editingSection === "swimmer" && <span className="text-xs font-medium text-[#005F8C]">編集中</span>}
             </div>
           </div>
         </CardHeader>
@@ -871,9 +871,9 @@ export default function ProfilePage() {
           ) : (
             <div className="space-y-1">
               <div className="border-b border-[#f2f7fa] py-3">
-                <span className="mb-1.5 block text-sm text-[#64748b]">レベル</span>
+                <span className="mb-1.5 block text-xs text-[#64748b]">レベル</span>
                 {selectedLevel ? (
-                  <span className="rounded-full bg-[#f2f7fa] px-[10px] py-[3px] text-sm text-[#475569]">{selectedLevel}</span>
+                  <span className="rounded-full bg-[#f2f7fa] px-[10px] py-[3px] text-xs text-[#475569]">{selectedLevel}</span>
                 ) : (
                   <span className="text-sm text-[#64748b]">未設定</span>
                 )}
@@ -883,9 +883,9 @@ export default function ProfilePage() {
               <TagRow label="活動目的" items={swimmingGoals} />
               <TagRow label="参加スタイル" items={participationStyles} />
               <div className="border-b border-[#f2f7fa] py-3">
-                <span className="mb-1.5 block text-sm text-[#64748b]">スイマータイプ</span>
+                <span className="mb-1.5 block text-xs text-[#64748b]">スイマータイプ</span>
                 {selectedSwimmerType ? (
-                  <span className="rounded-full bg-[#f2f7fa] px-[10px] py-[3px] text-sm text-[#475569]">{selectedSwimmerType}</span>
+                  <span className="rounded-full bg-[#f2f7fa] px-[10px] py-[3px] text-xs text-[#475569]">{selectedSwimmerType}</span>
                 ) : (
                   <span className="text-sm text-[#64748b]">未設定</span>
                 )}
@@ -904,7 +904,7 @@ export default function ProfilePage() {
             <div className="flex items-center gap-2">
               <PrivacyBadge type="private" />
               {editingSection === null && !isLoading && <PencilButton onClick={() => setEditingSection("emergency")} />}
-              {editingSection === "emergency" && <span className="text-sm font-medium text-[#005F8C]">編集中</span>}
+              {editingSection === "emergency" && <span className="text-xs font-medium text-[#005F8C]">編集中</span>}
             </div>
           </div>
         </CardHeader>
@@ -947,7 +947,7 @@ export default function ProfilePage() {
             <div className="flex items-center gap-2">
               <PrivacyBadge type="private" />
               {editingSection === null && !isLoading && <PencilButton onClick={() => setEditingSection("registration")} />}
-              {editingSection === "registration" && <span className="text-sm font-medium text-[#005F8C]">編集中</span>}
+              {editingSection === "registration" && <span className="text-xs font-medium text-[#005F8C]">編集中</span>}
             </div>
           </div>
         </CardHeader>
@@ -1009,18 +1009,18 @@ export default function ProfilePage() {
           <div className="flex items-center justify-between gap-2">
             <div className="min-w-0">
               <CardTitle className="text-base text-[#1a2332]">公開プロフィール</CardTitle>
-              <p className="mt-0.5 text-sm text-[#64748b]">他のユーザーに公開されます</p>
+              <p className="mt-0.5 text-xs text-[#64748b]">他のユーザーに公開されます</p>
             </div>
             <div className="flex shrink-0 items-center gap-2">
               <PrivacyBadge type="public" />
               {editingSection === null && !isLoading && <PencilButton onClick={() => setEditingSection("public")} />}
-              {editingSection === "public" && <span className="text-sm font-medium text-[#005F8C]">編集中</span>}
+              {editingSection === "public" && <span className="text-xs font-medium text-[#005F8C]">編集中</span>}
             </div>
           </div>
           {editingSection === null && userId && (
             <Link
               href={`/profiles/${userId}`}
-              className="mt-2 inline-flex items-center gap-1 text-sm text-[#005F8C] hover:underline"
+              className="mt-2 inline-flex items-center gap-1 text-xs text-[#005F8C] hover:underline"
             >
               公開プレビューを見る
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

@@ -225,7 +225,7 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
                   <p className="text-sm font-semibold text-[#1a2332]">
                     {formatMonthKey(monthKey)}
                   </p>
-                  <p className="text-sm text-[#475569]">
+                  <p className="text-xs text-[#475569]">
                     {monthItems.length}件 · ¥{totalAmount.toLocaleString()}
                   </p>
                 </div>
@@ -257,7 +257,7 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
                           <p className="truncate text-sm font-medium text-[#1a2332]">
                             {item.label}
                           </p>
-                          <p className="truncate text-sm text-[#475569]">{item.teamName}</p>
+                          <p className="truncate text-xs text-[#475569]">{item.teamName}</p>
                         </div>
 
                         {/* 金額 + 異常ステータスバッジ */}
@@ -267,7 +267,7 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
                           </p>
                           {ALERT_STATUS_LABELS[item.status] && (
                             <span
-                              className={`mt-0.5 inline-block rounded-full px-2 py-0.5 text-sm font-medium ${ALERT_STATUS_STYLES[item.status]}`}
+                              className={`mt-0.5 inline-block rounded-full px-2 py-0.5 text-xs font-medium ${ALERT_STATUS_STYLES[item.status]}`}
                             >
                               {ALERT_STATUS_LABELS[item.status]}
                             </span>

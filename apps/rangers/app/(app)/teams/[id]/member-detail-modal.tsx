@@ -266,7 +266,7 @@ export function MemberDetailModal({
             <div>
               <p className="font-semibold text-[#1a2332]">{swimmer?.name || "不明"}</p>
               {swimmer?.furigana && (
-                <p className="text-sm text-[#64748b]">{swimmer.furigana}</p>
+                <p className="text-xs text-[#64748b]">{swimmer.furigana}</p>
               )}
             </div>
           </div>
@@ -302,7 +302,7 @@ export function MemberDetailModal({
             <div className="divide-y divide-[#e8edf2]">
               {/* メンバー情報 */}
               <div className="pb-3">
-                <p className="mb-2 text-sm font-medium text-[#64748b]">メンバー情報</p>
+                <p className="mb-2 text-xs font-medium text-[#64748b]">メンバー情報</p>
                 <InfoRow label="役割" value={member.role === "admin" ? "管理者" : "一般メンバー"} />
                 <InfoRow label="会員種別" value={membershipLabel} />
                 <InfoRow label="参加日" value={joinedAt} />
@@ -310,7 +310,7 @@ export function MemberDetailModal({
 
               {/* 基本情報 */}
               <div className="py-3">
-                <p className="mb-2 text-sm font-medium text-[#64748b]">基本情報</p>
+                <p className="mb-2 text-xs font-medium text-[#64748b]">基本情報</p>
                 <InfoRow label="メールアドレス" value={emailLoading ? "取得中..." : email ?? "—"} />
                 <InfoRow label="電話番号" value={swimmer?.phone} />
                 <InfoRow label="性別" value={genderLabel} />
@@ -321,7 +321,7 @@ export function MemberDetailModal({
               {/* 緊急連絡先 */}
               {(swimmer?.emergency_contact || swimmer?.emergency_contact_name) && (
                 <div className="py-3">
-                  <p className="mb-2 text-sm font-medium text-[#64748b]">緊急連絡先</p>
+                  <p className="mb-2 text-xs font-medium text-[#64748b]">緊急連絡先</p>
                   <InfoRow label="氏名" value={swimmer?.emergency_contact_name} />
                   <InfoRow label="続柄" value={swimmer?.emergency_contact_relation} />
                   <InfoRow label="電話番号" value={swimmer?.emergency_contact} />
@@ -330,7 +330,7 @@ export function MemberDetailModal({
 
               {/* 水泳情報 */}
               <div className="py-3">
-                <p className="mb-2 text-sm font-medium text-[#64748b]">水泳情報</p>
+                <p className="mb-2 text-xs font-medium text-[#64748b]">水泳情報</p>
                 <InfoRow label="レベル" value={swimmer?.level} />
                 <InfoRow label="スイマータイプ" value={swimmer?.swimmer_type} />
                 {(swimmer?.swim_disciplines ?? []).length > 0 && (
@@ -356,7 +356,7 @@ export function MemberDetailModal({
               {/* 登録情報 */}
               {(swimmer?.masters_registered || swimmer?.jsa_registered) && (
                 <div className="py-3">
-                  <p className="mb-2 text-sm font-medium text-[#64748b]">登録情報</p>
+                  <p className="mb-2 text-xs font-medium text-[#64748b]">登録情報</p>
                   {swimmer?.masters_registered && (
                     <InfoRow label="マスターズ登録" value={swimmer.masters_number ? `登録済（${swimmer.masters_number}）` : "登録済"} />
                   )}
@@ -433,14 +433,14 @@ export function MemberDetailModal({
                 <p className="mb-2.5 text-sm font-medium text-[#1a2332]">タグ</p>
                 {Object.entries(tagsByCategory).map(([category, tags]) => (
                   <div key={category} className="mb-3">
-                    <p className="mb-1.5 text-sm text-[#64748b]">{category}</p>
+                    <p className="mb-1.5 text-xs text-[#64748b]">{category}</p>
                     <div className="flex flex-wrap gap-2">
                       {tags.map((tag) => (
                         <button
                           key={tag.id}
                           type="button"
                           onClick={() => toggleTag(tag.id)}
-                          className={`rounded-full border px-3 py-1 text-sm font-medium transition-colors ${
+                          className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
                             selectedTags.includes(tag.id)
                               ? "border-[#005F8C] bg-[#e8f2f8] text-[#005F8C]"
                               : "border-[#dce3ea] text-[#475569] hover:border-[#005F8C]"
@@ -458,7 +458,7 @@ export function MemberDetailModal({
               <div>
                 <p className="mb-2.5 text-sm font-medium text-[#1a2332]">グループでの役割</p>
                 {isSelf ? (
-                  <p className="text-sm text-[#64748b]">自分の役割は変更できません</p>
+                  <p className="text-xs text-[#64748b]">自分の役割は変更できません</p>
                 ) : (
                   <div className="flex gap-2">
                     {(["member", "admin"] as const).map((r) => (

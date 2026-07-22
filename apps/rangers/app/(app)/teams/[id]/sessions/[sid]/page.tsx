@@ -121,7 +121,7 @@ export default async function MemberSessionPage({ params }: SessionPageProps) {
         <div className="mt-2 flex items-start justify-between gap-3">
           <div>
             <h1 className="text-xl font-bold text-[#1a2332]">{session.title}</h1>
-            <p className="text-sm text-[#475569]">{SESSION_TYPE_LABELS[session.type]}</p>
+            <p className="text-xs text-[#475569]">{SESSION_TYPE_LABELS[session.type]}</p>
           </div>
           <Badge className={status.className}>
             {status.label}
@@ -204,7 +204,7 @@ export default async function MemberSessionPage({ params }: SessionPageProps) {
               </svg>
               <div>
                 <p className="font-medium text-[#0f8a4f]">参加登録済み</p>
-                <p className="text-sm text-[#475569]">
+                <p className="text-xs text-[#475569]">
                   {myRegistration.payment_status === "free"
                     ? "参加費免除（会費会員）"
                     : myRegistration.payment_method === "cash"
@@ -221,7 +221,7 @@ export default async function MemberSessionPage({ params }: SessionPageProps) {
           {canCancel ? (
             <CancelButton sessionId={sessionId} />
           ) : isPast && myRegistration ? (
-            <div className="rounded-xl border border-[#dce3ea] bg-[#f2f7fa] p-3 text-center text-sm text-[#64748b]">
+            <div className="rounded-xl border border-[#dce3ea] bg-[#f2f7fa] p-3 text-center text-xs text-[#64748b]">
               開催日を過ぎたためキャンセルできません
             </div>
           ) : null}

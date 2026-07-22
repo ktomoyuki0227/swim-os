@@ -11,7 +11,7 @@ export function PublicFooter() {
         <p className="mb-6 text-sm leading-relaxed text-[#64748b]">
           マスターズ水泳グループのスケジュール管理・参加登録・会費管理をひとつのアプリで。
         </p>
-        <div className="border-t border-white/10 pt-6 text-sm text-[#64748b]">
+        <div className="border-t border-white/10 pt-6 text-xs text-[#64748b]">
           © 2025 Rangers — Groove House
         </div>
       </div>

@@ -102,13 +102,13 @@ export function JoinRequestsTab({ teamId, initialRequests }: JoinRequestsTabProp
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium text-[#1a2332]">{swimmer?.name ?? "不明"}</p>
                 {swimmer?.furigana && (
-                  <p className="text-sm text-[#64748b]">{swimmer.furigana}</p>
+                  <p className="text-xs text-[#64748b]">{swimmer.furigana}</p>
                 )}
                 <div className="mt-0.5 flex items-center gap-2">
-                  <span className="rounded-full bg-[#e8f2f8] px-2 py-0.5 text-sm font-medium text-[#005F8C]">
+                  <span className="rounded-full bg-[#e8f2f8] px-2 py-0.5 text-xs font-medium text-[#005F8C]">
                     {MEMBERSHIP_TYPE_LABEL[req.membership_type] ?? req.membership_type}
                   </span>
-                  <span className="text-sm text-[#64748b]">
+                  <span className="text-xs text-[#64748b]">
                     {new Date(req.created_at).toLocaleDateString("ja-JP")}
                   </span>
                 </div>
@@ -118,7 +118,7 @@ export function JoinRequestsTab({ teamId, initialRequests }: JoinRequestsTabProp
               <div className="flex shrink-0 flex-col gap-1.5">
                 <Button
                   size="sm"
-                  className="h-8 rounded-full bg-[#005F8C] px-4 text-sm hover:bg-[#004E73]"
+                  className="h-8 rounded-full bg-[#005F8C] px-4 text-xs hover:bg-[#004E73]"
                   onClick={() => handleApprove(req.id)}
                   disabled={isProcessing}
                 >
@@ -127,7 +127,7 @@ export function JoinRequestsTab({ teamId, initialRequests }: JoinRequestsTabProp
                 <Button
                   size="sm"
                   variant="outline"
-                  className="h-8 rounded-full border-[#dce3ea] px-4 text-sm text-[#475569] hover:bg-[#f2f7fa]"
+                  className="h-8 rounded-full border-[#dce3ea] px-4 text-xs text-[#475569] hover:bg-[#f2f7fa]"
                   onClick={() => handleReject(req.id)}
                   disabled={isProcessing}
                 >

@@ -155,7 +155,7 @@ export function MemberSessionList({ teamId, sessions }: MemberSessionListProps) 
                           {SESSION_TYPE_LABELS[nextSession.type] || nextSession.type}
                         </Badge>
                       </div>
-                      <p className="text-sm text-[#475569]">
+                      <p className="text-xs text-[#475569]">
                         {new Date(nextSession.scheduled_at).toLocaleTimeString("ja-JP", {
                           hour: "2-digit",
                           minute: "2-digit",
@@ -167,18 +167,18 @@ export function MemberSessionList({ teamId, sessions }: MemberSessionListProps) 
                           ¥{(nextSession.member_price || 0).toLocaleString()}
                         </span>
                         {nextSession.is_registered ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-[#eaf7f0] px-2.5 py-0.5 text-sm font-semibold text-[#0f8a4f]">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-[#eaf7f0] px-2.5 py-0.5 text-xs font-semibold text-[#0f8a4f]">
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                               <polyline points="20 6 9 17 4 12" />
                             </svg>
                             参加予定
                           </span>
                         ) : canRegister ? (
-                          <span className="inline-flex items-center rounded-full bg-[#005F8C] px-3 py-0.5 text-sm font-semibold text-white">
+                          <span className="inline-flex items-center rounded-full bg-[#005F8C] px-3 py-0.5 text-xs font-semibold text-white">
                             参加する →
                           </span>
                         ) : (
-                          <Badge className={`text-sm ${
+                          <Badge className={`text-xs ${
                             isConfirmed
                               ? "bg-[#eaf7f0] text-[#0f8a4f] border-transparent"
                               : "bg-[#edf0f4] text-[#475569] border-transparent"
@@ -222,14 +222,14 @@ export function MemberSessionList({ teamId, sessions }: MemberSessionListProps) 
                           {SESSION_TYPE_LABELS[session.type] || session.type}
                         </Badge>
                       </div>
-                      <p className="text-sm text-[#475569]">
+                      <p className="text-xs text-[#475569]">
                         {new Date(session.scheduled_at).toLocaleTimeString("ja-JP", {
                           hour: "2-digit",
                           minute: "2-digit",
                         })}
                         {session.location ? ` · ${session.location}` : ""}
                       </p>
-                      <p className="mt-0.5 text-sm font-medium text-[#005F8C]">
+                      <p className="mt-0.5 text-xs font-medium text-[#005F8C]">
                         ¥{(session.member_price || 0).toLocaleString()}
                       </p>
                     </div>
@@ -237,21 +237,21 @@ export function MemberSessionList({ teamId, sessions }: MemberSessionListProps) 
                       {(() => {
                         if (filter === "past") {
                           return session.is_registered ? (
-                            <Badge className="bg-[#eaf7f0] text-[#0f8a4f] border-transparent text-sm">参加済</Badge>
+                            <Badge className="bg-[#eaf7f0] text-[#0f8a4f] border-transparent text-xs">参加済</Badge>
                           ) : null
                         }
                         const isDeadlinePassed = session.registration_deadline &&
                           new Date(session.registration_deadline) < now
                         if (session.session_status === "confirmed") {
-                          return <Badge className="bg-[#eaf7f0] text-[#0f8a4f] border-transparent text-sm">開催確定</Badge>
+                          return <Badge className="bg-[#eaf7f0] text-[#0f8a4f] border-transparent text-xs">開催確定</Badge>
                         }
                         if (isDeadlinePassed) {
-                          return <Badge className="bg-[#edf0f4] text-[#475569] border-transparent text-sm">締切済</Badge>
+                          return <Badge className="bg-[#edf0f4] text-[#475569] border-transparent text-xs">締切済</Badge>
                         }
-                        return <Badge className="bg-[#e8f2f8] text-[#005F8C] border-transparent text-sm">受付中</Badge>
+                        return <Badge className="bg-[#e8f2f8] text-[#005F8C] border-transparent text-xs">受付中</Badge>
                       })()}
                       {filter === "upcoming" && session.is_registered && (
-                        <Badge className="bg-[#eaf7f0] text-[#0f8a4f] border-transparent text-sm">参加予定</Badge>
+                        <Badge className="bg-[#eaf7f0] text-[#0f8a4f] border-transparent text-xs">参加予定</Badge>
                       )}
                     </div>
                   </CardContent>

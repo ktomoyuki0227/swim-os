@@ -115,13 +115,13 @@ typography:
     letterSpacing: 0
   small:
     fontFamily: "'Noto Sans JP', system-ui, sans-serif"
-    fontSize: 14px
+    fontSize: 12px
     fontWeight: 400
     lineHeight: 1.4
     letterSpacing: 0
   tab-label:
     fontFamily: "'Noto Sans JP', system-ui, sans-serif"
-    fontSize: 14px
+    fontSize: 12px
     fontWeight: 500
     lineHeight: 1.0
     letterSpacing: 0.5px

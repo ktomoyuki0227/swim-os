@@ -137,7 +137,7 @@ export default function AboutPage() {
                     {step}
                   </div>
                   <h3 className="mb-1.5 font-semibold">{title}</h3>
-                  <p className="mx-auto max-w-[120px] text-sm leading-relaxed text-[#475569]">
+                  <p className="mx-auto max-w-[120px] text-xs leading-relaxed text-[#475569]">
                     {desc}
                   </p>
                 </div>
@@ -172,7 +172,7 @@ export default function AboutPage() {
                   </div>
                   <div>
                     <h3 className="font-semibold">{title}</h3>
-                    <p className="text-sm leading-relaxed text-[#475569]">{desc}</p>
+                    <p className="text-xs leading-relaxed text-[#475569]">{desc}</p>
                   </div>
                 </div>
                 {i < steps.length - 1 && (
