@@ -139,13 +139,13 @@ export function MemberSessionList({ teamId, sessions }: MemberSessionListProps) 
                   <div className="flex items-center gap-3">
                     <div className="flex w-14 shrink-0 flex-col items-center rounded-[8px] bg-[#005F8C] py-2">
                       <span className="text-[10px] font-medium text-white/80">
-                        {new Date(nextSession.scheduled_at).toLocaleDateString("ja-JP", { month: "short", timeZone: "Asia/Tokyo" })}
+                        {new Date(nextSession.scheduled_at).toLocaleDateString("ja-JP", { month: "short" })}
                       </span>
                       <span className="text-xl font-bold leading-tight text-white">
-                        {new Date(nextSession.scheduled_at).toLocaleDateString("en-US", { day: "numeric", timeZone: "Asia/Tokyo" })}
+                        {new Date(nextSession.scheduled_at).getDate()}
                       </span>
                       <span className="text-[10px] font-medium text-white/80">
-                        {new Date(nextSession.scheduled_at).toLocaleDateString("ja-JP", { weekday: "short", timeZone: "Asia/Tokyo" })}
+                        {new Date(nextSession.scheduled_at).toLocaleDateString("ja-JP", { weekday: "short" })}
                       </span>
                     </div>
                     <div className="min-w-0 flex-1">
@@ -159,7 +159,6 @@ export function MemberSessionList({ teamId, sessions }: MemberSessionListProps) 
                         {new Date(nextSession.scheduled_at).toLocaleTimeString("ja-JP", {
                           hour: "2-digit",
                           minute: "2-digit",
-                          timeZone: "Asia/Tokyo",
                         })}
                         {nextSession.location ? ` · ${nextSession.location}` : ""}
                       </p>
@@ -207,13 +206,13 @@ export function MemberSessionList({ teamId, sessions }: MemberSessionListProps) 
                   <CardContent className="flex items-center gap-3 px-3 py-0">
                     <div className="flex w-12 shrink-0 flex-col items-center rounded-[6px] bg-[#005F8C]/10 py-1.5">
                       <span className="text-[10px] font-medium text-[#005F8C]">
-                        {new Date(session.scheduled_at).toLocaleDateString("ja-JP", { month: "short", timeZone: "Asia/Tokyo" })}
+                        {new Date(session.scheduled_at).toLocaleDateString("ja-JP", { month: "short" })}
                       </span>
                       <span className="text-lg font-bold leading-tight text-[#005F8C]">
-                        {new Date(session.scheduled_at).toLocaleDateString("en-US", { day: "numeric", timeZone: "Asia/Tokyo" })}
+                        {new Date(session.scheduled_at).getDate()}
                       </span>
                       <span className="text-[10px] text-[#005F8C]">
-                        {new Date(session.scheduled_at).toLocaleDateString("ja-JP", { weekday: "short", timeZone: "Asia/Tokyo" })}
+                        {new Date(session.scheduled_at).toLocaleDateString("ja-JP", { weekday: "short" })}
                       </span>
                     </div>
                     <div className="min-w-0 flex-1">
@@ -227,7 +226,6 @@ export function MemberSessionList({ teamId, sessions }: MemberSessionListProps) 
                         {new Date(session.scheduled_at).toLocaleTimeString("ja-JP", {
                           hour: "2-digit",
                           minute: "2-digit",
-                          timeZone: "Asia/Tokyo",
                         })}
                         {session.location ? ` · ${session.location}` : ""}
                       </p>

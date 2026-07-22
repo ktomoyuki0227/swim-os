@@ -20,7 +20,7 @@ interface Props {
 const WEEKDAYS = ["月", "火", "水", "木", "金", "土", "日"]
 
 function toDateKey(date: Date) {
-  return date.toLocaleDateString("sv-SE", { timeZone: "Asia/Tokyo" })
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`
 }
 
 function generateDays(year: number, month: number): (number | null)[] {
@@ -181,7 +181,7 @@ export function SessionCalendar({ sessions }: Props) {
                   <div className="min-w-0">
                     <p className="truncate text-xs font-medium text-[#1a2332]">{s.title}</p>
                     <p className="truncate text-xs text-[#8d99a8]">
-                      {new Date(s.scheduled_at).toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Tokyo" })}
+                      {new Date(s.scheduled_at).toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" })}
                       {s.team_name ? ` · ${s.team_name}` : ""}
                     </p>
                   </div>
