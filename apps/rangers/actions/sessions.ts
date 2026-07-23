@@ -75,17 +75,23 @@ export async function createSession(teamId: string, data: unknown) {
       month: "long",
       day: "numeric",
       weekday: "short",
+      timeZone: "Asia/Tokyo",
     })
-    await adminClient.from("notifications").insert(
-      members.map((m) => ({
-        user_id: m.swimmer_id,
-        type: "session_added",
-        title: `新しいセッションが追加されました`,
-        body: `「${session.title}」${scheduledDate}`,
-        team_id: teamId,
-        link: `/teams/${teamId}/sessions/${session.id}`,
-      }))
-    )
+    try {
+      const { error: notifError } = await adminClient.from("notifications").insert(
+        members.map((m) => ({
+          user_id: m.swimmer_id,
+          type: "session_added",
+          title: `新しいセッションが追加されました`,
+          body: `「${session.title}」${scheduledDate}`,
+          team_id: teamId,
+          link: `/teams/${teamId}/sessions/${session.id}`,
+        }))
+      )
+      if (notifError) console.error("[createSession] notification insert failed:", notifError.message)
+    } catch (err) {
+      console.error("[createSession] notification insert threw:", err)
+    }
   }
 
   revalidatePath("/sessions")
@@ -1271,7 +1277,7 @@ export async function recordPriceView(sessionId: string) {
 export async function getPriceViewers(sessionId: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect("/login")
+  if (!user) return { data: [] }
 
   const priceAdmin = createAdminClient()
 
@@ -1280,7 +1286,7 @@ export async function getPriceViewers(sessionId: string) {
     .from("practice_sessions")
     .select("team_id")
     .eq("id", sessionId)
-    .single()
+    .maybeSingle()
   if (!session) return { data: [] }
 
   const { data: adminMembership } = await priceAdmin
@@ -1290,7 +1296,7 @@ export async function getPriceViewers(sessionId: string) {
     .eq("swimmer_id", user.id)
     .eq("role", "admin")
     .eq("status", "active")
-    .single()
+    .maybeSingle()
   if (!adminMembership) return { error: "権限がありません", data: [] }
 
   const { data, error } = await priceAdmin
@@ -1315,7 +1321,7 @@ export async function getSessionRegistrations(sessionId: string) {
     .from("practice_sessions")
     .select("team_id")
     .eq("id", sessionId)
-    .single()
+    .maybeSingle()
   if (!session) return { data: [], count: 0 }
 
   const { data: adminMembership } = await regAdmin
@@ -1325,7 +1331,7 @@ export async function getSessionRegistrations(sessionId: string) {
     .eq("swimmer_id", user.id)
     .eq("role", "admin")
     .eq("status", "active")
-    .single()
+    .maybeSingle()
   if (!adminMembership) return { error: "権限がありません", data: [], count: 0 }
 
   // adminClientで全参加者を取得（user clientはRLSで自分の登録しか見えない）

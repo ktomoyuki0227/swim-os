@@ -34,7 +34,7 @@ export default async function AppLayout({
 
   if (!profile) {
     // プロフィールなし = 不完全なアカウント状態。サインアウトしてから /login に戻す
-    await supabase.auth.signOut()
+    try { await supabase.auth.signOut() } catch { /* ネットワーク障害時もリダイレクトを続行 */ }
     redirect("/login")
   }
 
