@@ -20,7 +20,7 @@ interface Props {
 const WEEKDAYS = ["月", "火", "水", "木", "金", "土", "日"]
 
 function toDateKey(date: Date) {
-  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}-${String(date.getUTCDate()).padStart(2, "0")}`
+  return date.toLocaleDateString('sv', { timeZone: 'Asia/Tokyo' })
 }
 
 function generateDays(year: number, month: number): (number | null)[] {
@@ -35,8 +35,9 @@ function generateDays(year: number, month: number): (number | null)[] {
 
 export function SessionCalendar({ sessions }: Props) {
   const today = new Date()
-  const [year, setYear] = useState(today.getFullYear())
-  const [month, setMonth] = useState(today.getMonth())
+  const todayJST = today.toLocaleDateString('sv', { timeZone: 'Asia/Tokyo' }) // "YYYY-MM-DD"
+  const [year, setYear] = useState(parseInt(todayJST.slice(0, 4)))
+  const [month, setMonth] = useState(parseInt(todayJST.slice(5, 7)) - 1)
   const [selectedKey, setSelectedKey] = useState<string | null>(toDateKey(today))
 
   const days = generateDays(year, month)
@@ -181,7 +182,7 @@ export function SessionCalendar({ sessions }: Props) {
                   <div className="min-w-0">
                     <p className="truncate text-xs font-medium text-[#1a2332]">{s.title}</p>
                     <p className="truncate text-xs text-[#64748b]">
-                      {new Date(s.scheduled_at).toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" })}
+                      {new Date(s.scheduled_at).toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Tokyo" })}
                       {s.team_name ? ` · ${s.team_name}` : ""}
                     </p>
                   </div>

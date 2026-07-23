@@ -142,7 +142,7 @@ export default async function SessionsPage({ searchParams }: SessionsPageProps) 
             const guestPrice = (session.guest_price as number) || 0
 
             const location = session.location as string | null
-            const dateStr = `${scheduledAt.getMonth() + 1}/${scheduledAt.getDate()}(${scheduledAt.toLocaleDateString("ja-JP", { weekday: "short" })}) ${scheduledAt.toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" })}`
+            const dateStr = `${parseInt(scheduledAt.toLocaleDateString("ja-JP", { month: "numeric", timeZone: "Asia/Tokyo" }))}/${parseInt(scheduledAt.toLocaleDateString("ja-JP", { day: "numeric", timeZone: "Asia/Tokyo" }))}(${scheduledAt.toLocaleDateString("ja-JP", { weekday: "short", timeZone: "Asia/Tokyo" })}) ${scheduledAt.toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Tokyo" })}`
 
             return (
               <Link key={session.id as string} href={href} className="block">
@@ -159,13 +159,13 @@ export default async function SessionsPage({ searchParams }: SessionsPageProps) 
                         style={{ backgroundColor: style.bg }}
                       >
                         <span className="text-[10px] font-semibold leading-none" style={{ color: style.text }}>
-                          {scheduledAt.toLocaleDateString("ja-JP", { month: "short" })}
+                          {scheduledAt.toLocaleDateString("ja-JP", { month: "short", timeZone: "Asia/Tokyo" })}
                         </span>
                         <span className="mt-0.5 text-[22px] font-bold leading-none" style={{ color: style.text }}>
-                          {scheduledAt.getDate()}
+                          {parseInt(scheduledAt.toLocaleDateString("ja-JP", { day: "numeric", timeZone: "Asia/Tokyo" }))}
                         </span>
                         <span className="mt-0.5 text-[10px] leading-none" style={{ color: style.text }}>
-                          {scheduledAt.toLocaleDateString("ja-JP", { weekday: "short" })}
+                          {scheduledAt.toLocaleDateString("ja-JP", { weekday: "short", timeZone: "Asia/Tokyo" })}
                         </span>
                       </div>
 

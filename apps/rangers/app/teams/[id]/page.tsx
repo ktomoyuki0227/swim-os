@@ -5,7 +5,6 @@ import { notFound, redirect } from "next/navigation"
 import { createClient, createAdminClient } from "@/lib/supabase/server"
 import { getTeam, getTeamMembers, getTeamFeeStats, getPublicTeam } from "@/actions/teams"
 import { getTeamSessions } from "@/actions/sessions"
-import { getTeamAnnouncements } from "@/actions/announcements"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -16,7 +15,6 @@ import { PublicFooter } from "@/components/layout/public-footer"
 import { PublicTeamView } from "@/components/teams/public-team-view"
 import { AdminActionButtons } from "@/app/(app)/teams/[id]/admin-action-buttons"
 import { MemberList } from "@/app/(app)/teams/[id]/member-list"
-import { AnnouncementsSection } from "@/app/(app)/teams/[id]/announcements-section"
 import { JoinRequestsTab } from "@/app/(app)/teams/[id]/join-requests-tab"
 import { getTeamJoinRequests, getMyJoinRequest } from "@/actions/join-requests"
 import { ContactInfoButton } from "@/components/teams/contact-info-button"
@@ -114,11 +112,10 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
 
   // ─── 管理者ビュー ─────────────────────────────────────────────────
   if (isAdmin) {
-    const [teamResult, membersResult, sessionsResult, announcementsResult, feeStatsResult, joinRequestsResult] = await Promise.all([
+    const [teamResult, membersResult, sessionsResult, feeStatsResult, joinRequestsResult] = await Promise.all([
       getTeam(id),
       getTeamMembers(id),
       getTeamSessions(id),
-      getTeamAnnouncements(id),
       getTeamFeeStats(id),
       getTeamJoinRequests(id),
     ])
@@ -133,13 +130,6 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
           s.session_status === "open" || s.session_status === "confirmed"
       )
       .slice(0, 10)
-    const announcements = (announcementsResult.data || []) as Array<{
-      id: string
-      title: string
-      body: string | null
-      created_at: string
-    }>
-
     const joinRequests = joinRequestsResult.data || []
 
     const adminMembers = members.filter((m: Record<string, unknown>) => m.role === "admin")
@@ -216,7 +206,6 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
               teamId={id}
               members={members}
               currentUserId={user.id}
-              announcements={announcements}
               joinRequests={joinRequests}
               hasAnnualFee={team.has_annual_fee ?? false}
               hasMonthlyFee={team.has_monthly_fee ?? false}
@@ -290,6 +279,7 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
                                 weekday: "short",
                                 hour: "2-digit",
                                 minute: "2-digit",
+                                timeZone: "Asia/Tokyo",
                               })}
                               {session.location ? ` · ${session.location as string}` : ""}
                             </p>

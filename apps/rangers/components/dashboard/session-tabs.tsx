@@ -89,13 +89,13 @@ export function SessionTabs({ registeredUpcoming, allUpcoming, pastSessions }: P
                     style={{ backgroundColor: `${session.team_color}18` }}
                   >
                     <span className="text-xs font-medium" style={{ color: session.team_color }}>
-                      {new Date(session.scheduled_at).toLocaleDateString("ja-JP", { month: "short" })}
+                      {new Date(session.scheduled_at).toLocaleDateString("ja-JP", { month: "short", timeZone: "Asia/Tokyo" })}
                     </span>
                     <span className="text-xl font-bold leading-tight" style={{ color: session.team_color }}>
-                      {new Date(session.scheduled_at).getDate()}
+                      {parseInt(new Date(session.scheduled_at).toLocaleDateString("ja-JP", { day: "numeric", timeZone: "Asia/Tokyo" }))}
                     </span>
                     <span className="text-xs" style={{ color: session.team_color }}>
-                      {new Date(session.scheduled_at).toLocaleDateString("ja-JP", { weekday: "short" })}
+                      {new Date(session.scheduled_at).toLocaleDateString("ja-JP", { weekday: "short", timeZone: "Asia/Tokyo" })}
                     </span>
                   </div>
 
@@ -106,6 +106,7 @@ export function SessionTabs({ registeredUpcoming, allUpcoming, pastSessions }: P
                       {new Date(session.scheduled_at).toLocaleTimeString("ja-JP", {
                         hour: "2-digit",
                         minute: "2-digit",
+                        timeZone: "Asia/Tokyo",
                       })}
                       {session.location ? ` · ${session.location}` : ""}
                     </p>

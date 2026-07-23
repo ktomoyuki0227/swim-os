@@ -425,13 +425,13 @@ export default async function HomePage() {
                     <div className="flex items-center gap-4 rounded-2xl border border-[#dce3ea] bg-white p-4 transition hover:border-[#005F8C] hover:shadow-sm">
                       <div className="flex w-14 shrink-0 flex-col items-center rounded-xl bg-[#005F8C]/10 py-2 text-center">
                         <span className="text-[10px] font-medium text-[#005F8C]">
-                          {scheduledAt.toLocaleDateString("ja-JP", { month: "short" })}
+                          {scheduledAt.toLocaleDateString("ja-JP", { month: "short", timeZone: "Asia/Tokyo" })}
                         </span>
                         <span className="text-xl font-bold leading-tight text-[#005F8C]">
-                          {scheduledAt.getDate()}
+                          {parseInt(scheduledAt.toLocaleDateString("ja-JP", { day: "numeric", timeZone: "Asia/Tokyo" }))}
                         </span>
                         <span className="text-[10px] text-[#005F8C]">
-                          {scheduledAt.toLocaleDateString("ja-JP", { weekday: "short" })}
+                          {scheduledAt.toLocaleDateString("ja-JP", { weekday: "short", timeZone: "Asia/Tokyo" })}
                         </span>
                       </div>
                       <div className="min-w-0 flex-1">
@@ -445,7 +445,7 @@ export default async function HomePage() {
                         </div>
                         <p className="font-medium text-[#1a2332]">{session.title as string}</p>
                         <p className="text-xs text-[#475569]">
-                          {scheduledAt.toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" })}
+                          {scheduledAt.toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Tokyo" })}
                           {session.location ? ` · ${session.location as string}` : ""}
                           {team ? ` · ${team.name}` : ""}
                         </p>

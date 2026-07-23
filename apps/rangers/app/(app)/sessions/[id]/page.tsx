@@ -141,9 +141,10 @@ export default async function SessionDetailPage({ params, searchParams }: Sessio
                 month: "long",
                 day: "numeric",
                 weekday: "short",
+                timeZone: "Asia/Tokyo",
               })}
               {" "}
-              {scheduledDate.toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" })}
+              {scheduledDate.toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Tokyo" })}
             </span>
           </div>
           {session.type === "camp" && session.end_at && (
@@ -154,9 +155,10 @@ export default async function SessionDetailPage({ params, searchParams }: Sessio
                   month: "long",
                   day: "numeric",
                   weekday: "short",
+                  timeZone: "Asia/Tokyo",
                 })}
                 {" "}
-                {new Date(session.end_at).toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" })}
+                {new Date(session.end_at).toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Tokyo" })}
               </span>
             </div>
           )}
@@ -199,6 +201,7 @@ export default async function SessionDetailPage({ params, searchParams }: Sessio
                   day: "numeric",
                   hour: "2-digit",
                   minute: "2-digit",
+                  timeZone: "Asia/Tokyo",
                 })}
               </span>
             </div>
@@ -494,6 +497,7 @@ export default async function SessionDetailPage({ params, searchParams }: Sessio
                         day: "numeric",
                         hour: "2-digit",
                         minute: "2-digit",
+                        timeZone: "Asia/Tokyo",
                       })}
                     </span>
                   </div>

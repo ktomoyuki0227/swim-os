@@ -270,19 +270,19 @@ export function PublicTeamView({ data, hasBottomNav = false, joinRequestStatus =
                   >
                     <div className="flex w-12 shrink-0 flex-col items-center rounded-xl bg-[#005F8C]/10 py-2">
                       <span className="text-xs font-medium text-[#005F8C]">
-                        {date.toLocaleDateString("ja-JP", { month: "short" })}
+                        {date.toLocaleDateString("ja-JP", { month: "short", timeZone: "Asia/Tokyo" })}
                       </span>
                       <span className="text-xl font-bold leading-tight text-[#005F8C]">
-                        {date.getDate()}
+                        {parseInt(date.toLocaleDateString("ja-JP", { day: "numeric", timeZone: "Asia/Tokyo" }))}
                       </span>
                       <span className="text-xs text-[#005F8C]">
-                        {date.toLocaleDateString("ja-JP", { weekday: "short" })}
+                        {date.toLocaleDateString("ja-JP", { weekday: "short", timeZone: "Asia/Tokyo" })}
                       </span>
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-medium text-[#1a2332]">{session.title as string}</p>
                       <p className="text-xs text-[#475569]">
-                        {date.toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" })}
+                        {date.toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Tokyo" })}
                         {session.location ? ` · ${session.location as string}` : ""}
                       </p>
                     </div>

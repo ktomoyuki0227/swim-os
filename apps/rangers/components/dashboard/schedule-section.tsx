@@ -239,13 +239,13 @@ export function ScheduleSection({ sessions, teams }: Props) {
                       style={{ backgroundColor: `${session.team_color}18` }}
                     >
                       <span className="text-xs font-medium" style={{ color: session.team_color }}>
-                        {new Date(session.scheduled_at).toLocaleDateString("ja-JP", { month: "short", timeZone: "UTC" })}
+                        {new Date(session.scheduled_at).toLocaleDateString("ja-JP", { month: "short", timeZone: "Asia/Tokyo" })}
                       </span>
                       <span className="text-xl font-bold leading-tight" style={{ color: session.team_color }}>
-                        {new Date(session.scheduled_at).getUTCDate()}
+                        {parseInt(new Date(session.scheduled_at).toLocaleDateString("ja-JP", { day: "numeric", timeZone: "Asia/Tokyo" }))}
                       </span>
                       <span className="text-xs" style={{ color: session.team_color }}>
-                        {new Date(session.scheduled_at).toLocaleDateString("ja-JP", { weekday: "short", timeZone: "UTC" })}
+                        {new Date(session.scheduled_at).toLocaleDateString("ja-JP", { weekday: "short", timeZone: "Asia/Tokyo" })}
                       </span>
                     </div>
                     {/* 情報 */}
@@ -255,7 +255,7 @@ export function ScheduleSection({ sessions, teams }: Props) {
                         {new Date(session.scheduled_at).toLocaleTimeString("ja-JP", {
                           hour: "2-digit",
                           minute: "2-digit",
-                          timeZone: "UTC",
+                          timeZone: "Asia/Tokyo",
                         })}
                         {session.location ? ` · ${session.location}` : ""}
                       </p>

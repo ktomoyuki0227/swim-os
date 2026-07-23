@@ -131,13 +131,13 @@ export default async function DashboardPage() {
                     <CardContent className="flex items-center gap-4 p-4">
                       <div className="flex w-14 shrink-0 flex-col items-center rounded-[6px] bg-[#005F8C]/10 py-2">
                         <span className="text-xs font-medium text-[#005F8C]">
-                          {new Date(session.scheduled_at as string).toLocaleDateString("ja-JP", { month: "short" })}
+                          {new Date(session.scheduled_at as string).toLocaleDateString("ja-JP", { month: "short", timeZone: "Asia/Tokyo" })}
                         </span>
                         <span className="text-xl font-bold leading-tight text-[#005F8C]">
-                          {new Date(session.scheduled_at as string).getDate()}
+                          {parseInt(new Date(session.scheduled_at as string).toLocaleDateString("ja-JP", { day: "numeric", timeZone: "Asia/Tokyo" }))}
                         </span>
                         <span className="text-xs text-[#005F8C]">
-                          {new Date(session.scheduled_at as string).toLocaleDateString("ja-JP", { weekday: "short" })}
+                          {new Date(session.scheduled_at as string).toLocaleDateString("ja-JP", { weekday: "short", timeZone: "Asia/Tokyo" })}
                         </span>
                       </div>
                       <div className="min-w-0 flex-1">
@@ -151,6 +151,7 @@ export default async function DashboardPage() {
                           {new Date(session.scheduled_at as string).toLocaleTimeString("ja-JP", {
                             hour: "2-digit",
                             minute: "2-digit",
+                            timeZone: "Asia/Tokyo",
                           })}
                           {session.location ? ` · ${session.location as string}` : ""}
                         </p>
