@@ -1,14 +1,13 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import { createPortal } from "react-dom"
 import Link from "next/link"
 import { MemberList } from "./member-list"
-import { AnnouncementsSection } from "./announcements-section"
 import { JoinRequestsTab } from "./join-requests-tab"
 import type { TeamMemberWithProfile } from "@/types/database"
 
-type SheetType = "members" | "announcements" | "requests" | null
+type SheetType = "members" | "requests" | null
 
 interface JoinRequest {
   id: string
@@ -21,7 +20,6 @@ interface Props {
   teamId: string
   members: TeamMemberWithProfile[]
   currentUserId: string
-  announcements: Array<{ id: string; title: string; body: string | null; created_at: string }>
   joinRequests: JoinRequest[]
   hasAnnualFee: boolean
   hasMonthlyFee: boolean
@@ -33,7 +31,6 @@ export function AdminTeamActions({
   teamId,
   members,
   currentUserId,
-  announcements,
   joinRequests,
   hasAnnualFee,
   hasMonthlyFee,
@@ -41,9 +38,7 @@ export function AdminTeamActions({
   pointCardCount,
 }: Props) {
   const [openSheet, setOpenSheet] = useState<SheetType>(null)
-  const [moreOpen, setMoreOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
-  const moreRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => { setMounted(true) }, [])
 
@@ -61,21 +56,8 @@ export function AdminTeamActions({
     }
   }, [openSheet])
 
-  // その他ドロップダウン: 外部クリック
-  useEffect(() => {
-    if (!moreOpen) return
-    const handleClick = (e: MouseEvent) => {
-      if (moreRef.current && !moreRef.current.contains(e.target as Node)) {
-        setMoreOpen(false)
-      }
-    }
-    document.addEventListener("mousedown", handleClick)
-    return () => document.removeEventListener("mousedown", handleClick)
-  }, [moreOpen])
-
   const sheetTitles: Record<string, string> = {
     members: `メンバー (${members.length})`,
-    announcements: `お知らせ (${announcements.length})`,
     requests: `申請 (${joinRequests.length})`,
   }
 
@@ -114,57 +96,25 @@ export function AdminTeamActions({
           <span className="text-[11px] font-medium leading-tight">メンバー</span>
         </button>
 
-        {/* その他 */}
-        <div className="relative" ref={moreRef}>
-          <button
-            onClick={() => setMoreOpen(!moreOpen)}
-            className="flex w-full flex-col items-center justify-center gap-1 rounded-[14px] border border-[#dce3ea] bg-white px-2 py-2.5 text-[#1a2332] transition-colors hover:border-[#005F8C] hover:bg-[#f2f7fa]"
-            style={{ minHeight: 56 }}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#005F8C" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="1" />
-              <circle cx="19" cy="12" r="1" />
-              <circle cx="5" cy="12" r="1" />
-            </svg>
-            <span className="text-[11px] font-medium leading-tight">その他</span>
-          </button>
-
-          {moreOpen && (
-            <div className="absolute right-0 top-full z-[200] mt-1 w-44 overflow-hidden rounded-[10px] border border-[#dce3ea] bg-white shadow-[0_4px_16px_rgba(0,0,0,0.10)]">
-              <button
-                onClick={() => { setMoreOpen(false); setOpenSheet("announcements") }}
-                className="flex w-full items-center gap-3 px-4 text-sm text-[#1a2332] transition-colors hover:bg-[#f2f7fa]"
-                style={{ minHeight: 44 }}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#475569" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                  <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-                </svg>
-                お知らせ
-                {announcements.length > 0 && (
-                  <span className="ml-auto rounded-full bg-[#edf0f4] px-2 py-0.5 text-xs text-[#475569]">{announcements.length}</span>
-                )}
-              </button>
-              <div className="mx-3 h-px bg-[#e8edf2]" />
-              <button
-                onClick={() => { setMoreOpen(false); setOpenSheet("requests") }}
-                className="flex w-full items-center gap-3 px-4 text-sm text-[#1a2332] transition-colors hover:bg-[#f2f7fa]"
-                style={{ minHeight: 44 }}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#475569" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-                  <circle cx="9" cy="7" r="4" />
-                  <line x1="19" y1="8" x2="19" y2="14" />
-                  <line x1="22" y1="11" x2="16" y2="11" />
-                </svg>
-                申請
-                {joinRequests.length > 0 && (
-                  <span className="ml-auto rounded-full bg-[#005F8C] px-2 py-0.5 text-xs font-semibold text-white">{joinRequests.length}</span>
-                )}
-              </button>
-            </div>
+        {/* 申請 */}
+        <button
+          onClick={() => setOpenSheet("requests")}
+          className="relative flex flex-col items-center justify-center gap-1 rounded-[14px] border border-[#dce3ea] bg-white px-2 py-2.5 text-[#1a2332] transition-colors hover:border-[#005F8C] hover:bg-[#f2f7fa]"
+          style={{ minHeight: 56 }}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#005F8C" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <line x1="19" y1="8" x2="19" y2="14" />
+            <line x1="22" y1="11" x2="16" y2="11" />
+          </svg>
+          <span className="text-[11px] font-medium leading-tight">申請</span>
+          {joinRequests.length > 0 && (
+            <span className="absolute right-1.5 top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#005F8C] px-1 text-[10px] font-bold text-white">
+              {joinRequests.length}
+            </span>
           )}
-        </div>
+        </button>
       </div>
 
       {/* ── ボトムシート（Portal で body 直下に描画） ── */}
@@ -206,9 +156,6 @@ export function AdminTeamActions({
                   hasPointCard={hasPointCard}
                   pointCardCount={pointCardCount}
                 />
-              )}
-              {openSheet === "announcements" && (
-                <AnnouncementsSection teamId={teamId} announcements={announcements} />
               )}
               {openSheet === "requests" && (
                 <JoinRequestsTab teamId={teamId} initialRequests={joinRequests} />
