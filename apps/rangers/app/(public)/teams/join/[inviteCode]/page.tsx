@@ -49,7 +49,7 @@ export default async function TeamJoinPage({ params }: PageProps) {
       .select("id")
       .eq("team_id", team.id)
       .eq("swimmer_id", user.id)
-      .single()
+      .maybeSingle()
 
     if (existing) {
       redirect(`/teams/${team.id}`)

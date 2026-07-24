@@ -79,7 +79,7 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
     .eq("team_id", id)
     .eq("swimmer_id", user.id)
     .eq("status", "active")
-    .single()
+    .maybeSingle()
 
   const isAdmin = myMembership?.role === "admin"
   const isMember = !!myMembership

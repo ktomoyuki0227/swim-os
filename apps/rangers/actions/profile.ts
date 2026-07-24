@@ -128,7 +128,7 @@ export async function getProfile() {
     .eq("id", user.id)
     .maybeSingle()
 
-  if (error) throw error
+  if (error) return null
 
   return data
 }

@@ -71,23 +71,23 @@ export async function startMonthlySubscription(teamId: string, swimmerId: string
     .single()
   const name = profile?.name ?? ""
 
-  // Stripe Customer 取得/作成
-  const customerId = await getOrCreateStripeCustomer(swimmerId, email, name)
-
-  // Stripe Product 取得/作成
-  const productId = await getOrCreateStripeProduct(
-    teamId,
-    team.name,
-    team.stripe_product_id
-  )
-
-  // Stripe Price 取得/作成
-  const priceId = await getOrCreateMonthlyPrice(
-    teamId,
-    team.monthly_fee_amount,
-    productId,
-    team.stripe_monthly_price_id
-  )
+  // Stripe Customer / Product / Price 取得または作成
+  let customerId: string
+  let productId: string
+  let priceId: string
+  try {
+    customerId = await getOrCreateStripeCustomer(swimmerId, email, name)
+    productId = await getOrCreateStripeProduct(teamId, team.name, team.stripe_product_id)
+    priceId = await getOrCreateMonthlyPrice(
+      teamId,
+      team.monthly_fee_amount,
+      productId,
+      team.stripe_monthly_price_id
+    )
+  } catch (err) {
+    console.error("[subscriptions] Stripe setup failed:", err)
+    return { error: err instanceof Error ? err.message : "Stripe の準備に失敗しました" }
+  }
 
   // Stripe Subscription 作成
   let subscription: Awaited<ReturnType<typeof stripe.subscriptions.create>>

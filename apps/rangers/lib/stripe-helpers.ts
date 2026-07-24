@@ -24,11 +24,17 @@ export async function getOrCreateStripeCustomer(
   }
 
   // name が空文字の場合は Stripe に渡さない（ダッシュボードの検索性向上のため）
-  const customer = await stripe.customers.create({
-    email,
-    ...(name.trim() ? { name: name.trim() } : {}),
-    metadata: { supabase_user_id: userId },
-  })
+  let customer: Awaited<ReturnType<typeof stripe.customers.create>>
+  try {
+    customer = await stripe.customers.create({
+      email,
+      ...(name.trim() ? { name: name.trim() } : {}),
+      metadata: { supabase_user_id: userId },
+    })
+  } catch (err) {
+    console.error("[stripe] customers.create failed:", err)
+    throw new Error("Stripe カスタマーの作成に失敗しました。時間を置いて再試行してください。")
+  }
 
   // stripe_customer_id がまだ null の行のみ更新（並行リクエストによる二重作成を防ぐ）
   const { data: saved } = await admin
@@ -64,10 +70,16 @@ export async function getOrCreateStripeProduct(
 ): Promise<string> {
   if (existingProductId) return existingProductId
 
-  const product = await stripe.products.create({
-    name: `月謝 - ${teamName}`,
-    metadata: { team_id: teamId },
-  })
+  let product: Awaited<ReturnType<typeof stripe.products.create>>
+  try {
+    product = await stripe.products.create({
+      name: `月謝 - ${teamName}`,
+      metadata: { team_id: teamId },
+    })
+  } catch (err) {
+    console.error("[stripe] products.create failed:", err)
+    throw new Error("Stripe プロダクトの作成に失敗しました。時間を置いて再試行してください。")
+  }
 
   const admin = createAdminClient()
   await admin.from("teams").update({ stripe_product_id: product.id }).eq("id", teamId)
@@ -94,13 +106,19 @@ export async function getOrCreateMonthlyPrice(
   }
 
   // 新しい Price を作成
-  const price = await stripe.prices.create({
-    product: productId,
-    unit_amount: amount,
-    currency: "jpy",
-    recurring: { interval: "month" },
-    metadata: { team_id: teamId },
-  })
+  let price: Awaited<ReturnType<typeof stripe.prices.create>>
+  try {
+    price = await stripe.prices.create({
+      product: productId,
+      unit_amount: amount,
+      currency: "jpy",
+      recurring: { interval: "month" },
+      metadata: { team_id: teamId },
+    })
+  } catch (err) {
+    console.error("[stripe] prices.create failed:", err)
+    throw new Error("Stripe 料金プランの作成に失敗しました。時間を置いて再試行してください。")
+  }
 
   const admin = createAdminClient()
   await admin.from("teams").update({ stripe_monthly_price_id: price.id }).eq("id", teamId)

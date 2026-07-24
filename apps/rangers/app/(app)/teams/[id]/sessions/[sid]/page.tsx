@@ -45,12 +45,12 @@ export default async function MemberSessionPage({ params }: SessionPageProps) {
         .eq("team_id", session.team_id)
         .eq("swimmer_id", user.id)
         .eq("status", "active")
-        .single(),
+        .maybeSingle(),
       supabase
         .from("profiles")
         .select("stripe_payment_method_id")
         .eq("id", user.id)
-        .single(),
+        .maybeSingle(),
     ])
     isMember = !!membership
     membershipType = membership?.membership_type ?? null
@@ -72,7 +72,7 @@ export default async function MemberSessionPage({ params }: SessionPageProps) {
       .eq("session_id", sessionId)
       .eq("swimmer_id", user.id)
       .is("cancelled_at", null)
-      .single()
+      .maybeSingle()
     myRegistration = reg
   }
 
