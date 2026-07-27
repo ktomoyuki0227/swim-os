@@ -1058,12 +1058,27 @@ export async function retryPayment(registrationId: string) {
       return { error: "Stripe未設定環境では再決済できません" }
     }
     const retryAdmin = createAdminClient()
+
+    // payment_status を条件付きUPDATEで原子的に failed -> pending へ遷移させる。
+    // confirmSessionと同様、retryPaymentが同時に2回呼ばれても片方だけが成功し、
+    // もう片方は0件更新で即座に中断するため、再決済の重複実行を防げる。
+    const { data: claimed, error: claimErr } = await retryAdmin
+      .from("session_registrations")
+      .update({ payment_status: "pending" })
+      .eq("id", registrationId)
+      .eq("payment_status", "failed")
+      .select("id")
+      .maybeSingle()
+    if (claimErr || !claimed) return { error: "既に再決済処理が実行されています" }
+
     const { data: swimmer } = await retryAdmin
       .from("profiles")
       .select("stripe_customer_id, stripe_payment_method_id")
       .eq("id", registration.swimmer_id)
       .single()
     if (!swimmer?.stripe_customer_id || !swimmer?.stripe_payment_method_id) {
+      // "pending" のまま放置すると再試行できなくなるため "failed" に戻す
+      await retryAdmin.from("session_registrations").update({ payment_status: "failed" }).eq("id", registrationId)
       return { error: "カード情報が登録されていません" }
     }
     const retrySession = registration.session as { member_price: number; guest_price: number; team_id: string; session_status: string }
@@ -1098,17 +1113,22 @@ export async function retryPayment(registrationId: string) {
         transfer_data: { destination: retryTeam.stripe_account_id },
       } : {}),
     }).catch(() => null)
-    if (!pi) return { error: "再決済の準備に失敗しました" }
+    if (!pi) {
+      // "pending" のまま放置すると再試行できなくなるため "failed" に戻す
+      await retryAdmin.from("session_registrations").update({ payment_status: "failed" }).eq("id", registrationId)
+      return { error: "再決済の準備に失敗しました" }
+    }
 
-    // Step 2: PI idをDBに保存し payment_status を "pending" に戻す（confirmより先）
-    // payment_status を "pending" に戻すことで、Step3後のDB更新失敗時に
-    // webhookが .eq("payment_status","pending") フィルタで確実にレコードを拾える
+    // Step 2: PI idをDBに保存（confirmより先）— webhookが後から拾える状態にする
+    // payment_status は claim 時点で既に "pending" になっている
     const { error: piSaveErr } = await retryAdmin
       .from("session_registrations")
-      .update({ stripe_payment_intent_id: pi.id, payment_status: "pending" })
+      .update({ stripe_payment_intent_id: pi.id })
       .eq("id", registrationId)
     if (piSaveErr) {
       await stripe.paymentIntents.cancel(pi.id).catch(() => null)
+      // "pending" のまま放置すると再試行できなくなるため "failed" に戻す
+      await retryAdmin.from("session_registrations").update({ payment_status: "failed" }).eq("id", registrationId)
       return { error: "再決済の準備中にエラーが発生しました" }
     }
 
