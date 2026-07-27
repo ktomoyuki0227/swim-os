@@ -146,15 +146,11 @@ function CardForm({ clientSecret, onSuccess }: { clientSecret: string; onSuccess
 
 function CardSetupStep({ onSuccess }: { onSuccess: () => void }) {
   const [clientSecret, setClientSecret] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [fetchError, setFetchError] = useState(false)
+  const [loading, setLoading] = useState(!!stripePromise)
+  const [fetchError, setFetchError] = useState(!stripePromise)
 
   useEffect(() => {
-    if (!stripePromise) {
-      setFetchError(true)
-      setLoading(false)
-      return
-    }
+    if (!stripePromise) return
 
     fetch("/api/stripe/setup-intent", { method: "POST" })
       .then((res) => {

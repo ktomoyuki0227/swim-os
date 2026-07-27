@@ -9,7 +9,7 @@ export const loginSchema = z.object({
 export const registerSchema = z.object({
   name: z.string().min(1, "名前を入力してください"),
   email: z.email("有効なメールアドレスを入力してください"),
-  password: z.string().min(6, "パスワードは6文字以上で入力してください"),
+  password: z.string().min(8, "パスワードは8文字以上で入力してください"),
 })
 
 export const lessonSchema = z.object({
@@ -57,6 +57,7 @@ export const teamSchema = z.object({
   cover_image_url: z.string().url().optional(),
   avatar_url: z.string().url().optional(),
   is_recruiting: z.boolean().default(true),
+  show_member_count: z.boolean().default(true),
   activity_area: z.string().max(100).optional(),
   practice_frequency: z.string()
     .refine((v) => (PRACTICE_FREQUENCIES as readonly string[]).includes(v), "無効な練習頻度です")
@@ -80,6 +81,7 @@ export const teamSchema = z.object({
   contact_phone: z.string().max(20).optional(),
   fee_members_exempt_session: z.boolean().default(false),
   team_type: z.enum(["team", "personal"]).default("team"),
+  instructor_title: z.string().max(100).optional(),
 })
 
 export const sessionSchema = z.object({
@@ -115,7 +117,13 @@ export const sessionSchema = z.object({
     required: z.boolean(),
     options: z.array(z.string()).optional(),
   })).optional(),
-})
+}).refine(
+  (data) =>
+    data.min_participants === undefined ||
+    data.max_participants === undefined ||
+    data.min_participants <= data.max_participants,
+  { message: "最小催行人数は最大参加人数以下にしてください", path: ["min_participants"] }
+)
 
 // グループ更新用（更新可能フィールドのみ。coach_id / invite_code / team_type は除外）
 // team_type は作成時のみ設定可能。作成後の変更は不可。
@@ -124,6 +132,7 @@ export const teamUpdateSchema = z.object({
   description: z.string().max(2000, "2000文字以内").optional(),
   cover_image_url: z.string().url().optional(),
   is_recruiting: z.boolean().optional(),
+  show_member_count: z.boolean().optional(),
   activity_area: z.string().max(100).optional(),
   practice_frequency: z.string()
     .refine((v) => (PRACTICE_FREQUENCIES as readonly string[]).includes(v), "無効な練習頻度です")
@@ -186,6 +195,24 @@ export const sessionUpdateSchema = z.object({
     options: z.array(z.string()).optional(),
   })).optional(),
   status: z.enum(["published", "draft"]).optional(),
+}).refine(
+  (data) =>
+    data.min_participants === undefined ||
+    data.max_participants === undefined ||
+    data.min_participants <= data.max_participants,
+  { message: "最小催行人数は最大参加人数以下にしてください", path: ["min_participants"] }
+)
+
+export const messageSchema = z.object({
+  receiver_id: z.string().min(1, "宛先が不正です"),
+  content: z.string().min(1, "メッセージを入力してください").max(2000, "メッセージは2000文字以内で入力してください"),
+})
+
+export const scheduleRequestSchema = z.object({
+  instructor_id: z.string().min(1, "宛先が不正です"),
+  lesson_id: z.string().nullable().optional(),
+  message: z.string().min(1, "メッセージを入力してください").max(2000, "メッセージは2000文字以内で入力してください"),
+  preferred_dates: z.array(z.string()).max(20, "候補日は20件以内にしてください"),
 })
 
 export const announcementSchema = z.object({

@@ -49,7 +49,7 @@ const navLinks = [
   },
   {
     href: "/payments",
-    label: "お支払い",
+    label: "通帳",
     icon: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <rect x="2" y="5" width="20" height="14" rx="2" />

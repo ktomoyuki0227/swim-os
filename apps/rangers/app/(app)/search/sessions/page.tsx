@@ -25,7 +25,7 @@ const SESSION_TYPE_STYLES: Record<string, { bar: string; bg: string; text: strin
 }
 const DEFAULT_STYLE = { bar: "#64748b", bg: "rgba(100,116,139,0.09)", text: "#475569" }
 
-import { MAX_PRICE, DEFAULT_MAX_PRICE } from "../session-price-config"
+import { DEFAULT_MAX_PRICE } from "../session-price-config"
 
 interface SessionsPageProps {
   searchParams: Promise<{ q?: string; sessionType?: string; sort?: string; dateRange?: string; minPrice?: string; maxPrice?: string }>

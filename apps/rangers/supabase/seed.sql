@@ -9,7 +9,7 @@
 --   Step 2: チーム・セッションデータ投入
 --     npx supabase db query --linked --file supabase/seed_data.sql
 --
--- テストアカウント（全パスワード: test1234）:
+-- テストアカウント（全パスワード: Delta-coach8820!）:
 --   test1@example.com → 山田 健太 ★チーム管理者
 --   test2@example.com → 鈴木 太郎（レギュラー会員）
 --   test3@example.com → 佐藤 花子（回数券会員・スタンプ残7回）

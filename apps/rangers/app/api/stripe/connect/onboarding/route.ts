@@ -85,6 +85,20 @@ export async function GET(req: NextRequest) {
   if (!user) return NextResponse.redirect(new URL("/login", req.url))
 
   const admin = createAdminClient()
+
+  // admin 権限チェック（POST と同様。teamId は公開ページ等で第三者にも把握され得るため必須）
+  const { data: adminMembership } = await admin
+    .from("team_members")
+    .select("id")
+    .eq("team_id", teamId)
+    .eq("swimmer_id", user.id)
+    .eq("role", "admin")
+    .eq("status", "active")
+    .single()
+  if (!adminMembership) {
+    return NextResponse.redirect(new URL(`/teams/${teamId}?connectError=true`, req.url))
+  }
+
   const { data: team } = await admin
     .from("teams")
     .select("name, stripe_account_id")

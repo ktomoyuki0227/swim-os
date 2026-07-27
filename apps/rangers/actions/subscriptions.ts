@@ -9,6 +9,7 @@ import {
   getOrCreateStripeProduct,
   getOrCreateMonthlyPrice,
 } from "@/lib/stripe-helpers"
+import { isTeamAdmin } from "@/lib/auth/require-team-admin"
 
 /** 月謝 Subscription を開始する（管理者のみ） */
 export async function startMonthlySubscription(teamId: string, swimmerId: string) {
@@ -23,15 +24,7 @@ export async function startMonthlySubscription(teamId: string, swimmerId: string
   const admin = createAdminClient()
 
   // admin 権限チェック
-  const { data: adminMembership } = await admin
-    .from("team_members")
-    .select("id")
-    .eq("team_id", teamId)
-    .eq("swimmer_id", user.id)
-    .eq("role", "admin")
-    .eq("status", "active")
-    .single()
-  if (!adminMembership) return { error: "権限がありません" }
+  if (!(await isTeamAdmin(admin, teamId, user.id))) return { error: "権限がありません" }
 
   // 対象メンバー情報を取得
   const { data: member } = await admin
@@ -143,15 +136,7 @@ export async function cancelMonthlySubscription(teamId: string, swimmerId: strin
   const admin = createAdminClient()
 
   // admin 権限チェック
-  const { data: adminMembership } = await admin
-    .from("team_members")
-    .select("id")
-    .eq("team_id", teamId)
-    .eq("swimmer_id", user.id)
-    .eq("role", "admin")
-    .eq("status", "active")
-    .single()
-  if (!adminMembership) return { error: "権限がありません" }
+  if (!(await isTeamAdmin(admin, teamId, user.id))) return { error: "権限がありません" }
 
   // 対象メンバー情報を取得
   const { data: member } = await admin
@@ -200,15 +185,7 @@ export async function syncSubscriptionStatus(teamId: string, swimmerId: string) 
 
   const admin = createAdminClient()
 
-  const { data: adminMembership } = await admin
-    .from("team_members")
-    .select("id")
-    .eq("team_id", teamId)
-    .eq("swimmer_id", user.id)
-    .eq("role", "admin")
-    .eq("status", "active")
-    .single()
-  if (!adminMembership) return { error: "権限がありません" }
+  if (!(await isTeamAdmin(admin, teamId, user.id))) return { error: "権限がありません" }
 
   const { data: member } = await admin
     .from("team_members")

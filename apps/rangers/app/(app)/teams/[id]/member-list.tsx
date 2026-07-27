@@ -2,19 +2,13 @@
 
 import { useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { AlertTriangle, CheckCircle2 } from "lucide-react"
 import { removeMember } from "@/actions/teams"
 import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/components/toast"
 import { MemberDetailModal } from "./member-detail-modal"
 import type { TeamMemberWithProfile } from "@/types/database"
 
-
-const LEVEL_STARS: Record<string, string> = {
-  "上級": "★★★",
-  "中級": "★★☆",
-  "初級": "★☆☆",
-}
 
 function getMembershipLabel(member: TeamMemberWithProfile): string {
   if (member.membership_type === "point_card") {
@@ -180,6 +174,14 @@ interface MemberListProps {
   hasMonthlyFee: boolean
   hasPointCard: boolean
   pointCardCount: number
+  /** 今期(年会費=今年/月謝=今月/回数券)の支払いが未確認のメンバーID */
+  unpaidSwimmerIds: string[]
+}
+
+function unpaidToggleClass(isActive: boolean): string {
+  return `rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+    isActive ? "bg-[#005F8C] text-white" : "text-[#475569] hover:bg-[#f2f7fa]"
+  }`
 }
 
 export function MemberList({
@@ -190,12 +192,19 @@ export function MemberList({
   hasMonthlyFee,
   hasPointCard,
   pointCardCount,
+  unpaidSwimmerIds,
 }: MemberListProps) {
   const router = useRouter()
   const [removingId, setRemovingId] = useState<string | null>(null)
   const [detailMember, setDetailMember] = useState<TeamMemberWithProfile | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null)
+  const [unpaidOnly, setUnpaidOnly] = useState(false)
   const { showToast } = useToast()
+
+  const unpaidSet = new Set(unpaidSwimmerIds)
+  const visibleMembers = unpaidOnly
+    ? members.filter((m) => !!m.swimmer?.id && unpaidSet.has(m.swimmer.id))
+    : members
 
   const openMember = (swimmerId: string) => {
     const found = members.find((m) => m.swimmer?.id === swimmerId) ?? null
@@ -232,148 +241,100 @@ export function MemberList({
 
   return (
     <>
+    {/* 未払いのみ表示トグル */}
+    <div className="mb-3 flex items-center justify-between">
+      <p className="text-xs text-[#64748b]">{visibleMembers.length}人を表示</p>
+      <div className="inline-flex rounded-full border border-[#dce3ea] bg-white p-0.5">
+        <button type="button" onClick={() => setUnpaidOnly(false)} className={unpaidToggleClass(!unpaidOnly)}>
+          すべて
+        </button>
+        <button type="button" onClick={() => setUnpaidOnly(true)} className={unpaidToggleClass(unpaidOnly)}>
+          未払いのみ
+        </button>
+      </div>
+    </div>
+
+    {visibleMembers.length === 0 ? (
+      <Card className="border-[#dce3ea]">
+        <CardContent className="flex flex-col items-center justify-center py-10">
+          <p className="text-sm text-[#475569]">未払いのメンバーはいません</p>
+        </CardContent>
+      </Card>
+    ) : (
     <div className="space-y-2">
-      {members.map((member) => {
+      {visibleMembers.map((member) => {
         const swimmer = member.swimmer
         const isAdmin = member.role === "admin"
-        const isPointCard = member.membership_type === "point_card"
-        const isLowStamp = isPointCard && member.stamp_remaining !== undefined && member.stamp_remaining <= 3
         const membershipLabel = getMembershipLabel(member)
-
-        const levelStars = swimmer?.level ? LEVEL_STARS[swimmer.level] ?? null : null
-
-        const hasDetails =
-          !!swimmer?.level ||
-          (swimmer?.specialties || []).length > 0 ||
-          (swimmer?.swimming_goals || []).length > 0 ||
-          !!swimmer?.swimmer_type ||
-          (swimmer?.swim_disciplines || []).length > 0 ||
-          !!swimmer?.gender ||
-          (swimmer?.prefectures || []).length > 0 ||
-          !!swimmer?.address ||
-          !!swimmer?.masters_registered ||
-          !!swimmer?.jsa_registered
+        const roleLabel = isAdmin ? "管理者" : "メンバー"
+        const hasFeeObligation =
+          !isAdmin &&
+          (member.membership_type === "annual" ||
+            member.membership_type === "monthly" ||
+            member.membership_type === "point_card")
+        const isUnpaid = hasFeeObligation && !!swimmer?.id && unpaidSet.has(swimmer.id)
 
         return (
           <Card key={member.id} className="border-[#dce3ea]">
-            <CardContent className="px-4 py-0">
-              {/* 上段: アイコン・名前・フリガナ → バッジ・メニュー（1行） */}
-              <div className="flex items-center gap-3">
-                {/* アバター */}
-                <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#005F8C]/10 text-sm font-semibold text-[#005F8C]">
-                  {swimmer?.avatar_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={swimmer.avatar_url} alt={swimmer.name || ""} className="h-full w-full object-cover" />
-                  ) : (
-                    swimmer?.name?.[0] || "?"
-                  )}
-                </div>
-
-                {/* 名前・フリガナ・参加日 */}
-                <div className="min-w-0 flex-1">
-                  <p className="font-medium text-[#1a2332]">{swimmer?.name || "不明"}</p>
-                  {!!swimmer?.furigana && (
-                    <p className="text-xs text-[#64748b]">{swimmer.furigana}</p>
-                  )}
-                  <p className="text-xs text-[#64748b]">
-                    参加 {new Date(member.joined_at).toLocaleDateString("ja-JP", { year: "numeric", month: "short", day: "numeric" })}
-                  </p>
-                </div>
-
-                {/* バッジ・メニュー（右寄せ） */}
-                <div className="flex shrink-0 items-center gap-1.5">
-                  {isAdmin && (
-                    <Badge className="border-transparent bg-[#e8f2f8] px-1.5 py-0 text-xs text-[#005F8C]">
-                      管理者
-                    </Badge>
-                  )}
-                  <Badge
-                    className={
-                      isLowStamp
-                        ? "border-transparent bg-[#fdecea] px-1.5 py-0 text-xs text-[#c0392b]"
-                        : isPointCard
-                          ? "border-transparent bg-[#fdf6e3] px-1.5 py-0 text-xs text-[#b8860b]"
-                          : "border-transparent bg-[#eaf7f0] px-1.5 py-0 text-xs text-[#0f8a4f]"
-                    }
-                  >
-                    {membershipLabel}
-                  </Badge>
-                  {swimmer?.id && (
-                    <MemberMenu
-                      swimmerId={swimmer.id}
-                      memberName={swimmer.name || "不明"}
-                      isAdmin={isAdmin}
-                      isRemoving={removingId === swimmer.id}
-                      onOpen={openMember}
-                      onRemove={openDelete}
-                    />
-                  )}
-                </div>
+            <CardContent className="flex items-center gap-3 px-3 py-2">
+              {/* アバター */}
+              <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#005F8C]/10 text-xs font-semibold text-[#005F8C]">
+                {swimmer?.avatar_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={swimmer.avatar_url} alt={swimmer.name || ""} className="h-full w-full object-cover" />
+                ) : (
+                  swimmer?.name?.[0] || "?"
+                )}
               </div>
 
-              {/* 下段: タグ・詳細情報（全幅） */}
-              {hasDetails && (
-                <div className="mt-2 space-y-1">
-                  {/* 種目・目的・スイマータイプ・水泳カテゴリタグ */}
-                  {(levelStars || (swimmer?.specialties ?? []).length > 0 || (swimmer?.swimming_goals ?? []).length > 0 || !!swimmer?.swimmer_type || (swimmer?.swim_disciplines ?? []).length > 0) && (
-                    <div className="flex flex-wrap items-center gap-1">
-                      {levelStars && swimmer?.level && (
-                        <span className="mr-1 text-xs font-medium text-[#64748b]">{levelStars} {swimmer.level}</span>
-                      )}
-                      {swimmer?.specialties?.map((s) => (
-                        <span key={s} className="rounded-full bg-[#e8f2f8] px-2 py-0.5 text-xs text-[#005F8C]">
-                          {s}
-                        </span>
-                      ))}
-                      {swimmer?.swimming_goals?.map((g) => (
-                        <span key={g} className="rounded-full bg-[#eaf7f0] px-2 py-0.5 text-xs text-[#0f8a4f]">
-                          {g}
-                        </span>
-                      ))}
-                      {swimmer?.swimmer_type && (
-                        <span className="rounded-full bg-[#e8f2f8] px-2 py-0.5 text-xs text-[#005F8C]">
-                          {swimmer.swimmer_type}
-                        </span>
-                      )}
-                      {swimmer?.swim_disciplines?.map((d) => (
-                        <span key={d} className="rounded-full bg-[#e8f2f8] px-2 py-0.5 text-xs text-[#005F8C]">
-                          {d}
-                        </span>
-                      ))}
-                    </div>
+              {/* 名前(ふりがな) / ロール・会費種別 */}
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium text-[#1a2332]">
+                  {swimmer?.name || "不明"}
+                  {!!swimmer?.furigana && (
+                    <span className="ml-1 text-xs font-normal text-[#64748b]">（{swimmer.furigana}）</span>
                   )}
-                  {/* 個人情報 */}
-                  <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-[#64748b]">
-                    {!!swimmer?.gender && (
-                      <span>
-                        {swimmer.gender === "male" ? "男性" : swimmer.gender === "female" ? "女性" : "その他"}
-                      </span>
-                    )}
-                    {(swimmer?.prefectures ?? []).length > 0 && (
-                      <span>
-                        {(() => {
-                          const prefs = swimmer?.prefectures ?? []
-                          const shown = prefs.slice(0, 2).join("・")
-                          const rest = prefs.length - 2
-                          return rest > 0 ? `${shown} +${rest}` : shown
-                        })()}
-                      </span>
-                    )}
-                    {!!swimmer?.address && <span>{swimmer.address}</span>}
-                    {!!swimmer?.masters_registered && (
-                      <span>マスターズ登録済{swimmer.masters_number ? `（${swimmer.masters_number}）` : ""}</span>
-                    )}
-                    {!!swimmer?.jsa_registered && (
-                      <span>JSA登録済{swimmer.jsa_number ? `（${swimmer.jsa_number}）` : ""}</span>
-                    )}
-                  </div>
-                </div>
+                </p>
+                <p className="truncate text-xs text-[#64748b]">
+                  {roleLabel} ・ {membershipLabel}
+                </p>
+              </div>
+
+              {/* 今月の支払い状況（全カード共通の固定幅・固定位置） */}
+              <div className="flex w-[90px] shrink-0 justify-end">
+                {hasFeeObligation ? (
+                  isUnpaid ? (
+                    <span className="flex items-center gap-1 rounded-full bg-[#fdf6e3] px-2 py-1 text-xs font-semibold text-[#b8860b]">
+                      <AlertTriangle className="h-3 w-3 shrink-0" aria-hidden="true" />
+                      未払い
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-1 rounded-full bg-[#eaf7f0] px-2 py-1 text-xs font-semibold text-[#0f8a4f]">
+                      <CheckCircle2 className="h-3 w-3 shrink-0" aria-hidden="true" />
+                      支払済み
+                    </span>
+                  )
+                ) : (
+                  <span className="text-xs text-[#c8d0d8]">ー</span>
+                )}
+              </div>
+
+              {swimmer?.id && (
+                <MemberMenu
+                  swimmerId={swimmer.id}
+                  memberName={swimmer.name || "不明"}
+                  isAdmin={isAdmin}
+                  isRemoving={removingId === swimmer.id}
+                  onOpen={openMember}
+                  onRemove={openDelete}
+                />
               )}
             </CardContent>
           </Card>
         )
       })}
     </div>
+    )}
 
     {detailMember && (
       <MemberDetailModal

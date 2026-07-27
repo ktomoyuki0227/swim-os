@@ -181,22 +181,23 @@ export default async function DashboardPage() {
   })
 
   type SessionRaw = Record<string, unknown> & { team_name: string; team_color: string }
-  const allSessions: SessionRaw[] = []
 
-  for (const team of allTeams.slice(0, 8)) {
-    const { data: sessions } = await getTeamSessions(team.id as string)
-    if (sessions) {
-      allSessions.push(
-        ...sessions
-          .filter((s: Record<string, unknown>) => s.session_status !== "cancelled")
-          .map((s: Record<string, unknown>) => ({
-            ...s,
-            team_name: team.name as string,
-            team_color: teamColors[team.id as string],
-          }))
-      )
-    }
-  }
+  const featuredTeams = allTeams.slice(0, 8)
+  const teamSessionResults = await Promise.all(
+    featuredTeams.map((team) => getTeamSessions(team.id as string))
+  )
+
+  const allSessions: SessionRaw[] = featuredTeams.flatMap((team, idx) => {
+    const { data: sessions } = teamSessionResults[idx]
+    if (!sessions) return []
+    return sessions
+      .filter((s: Record<string, unknown>) => s.session_status !== "cancelled")
+      .map((s: Record<string, unknown>) => ({
+        ...s,
+        team_name: team.name as string,
+        team_color: teamColors[team.id as string],
+      }))
+  })
 
   const { data: myRegistrations } = await supabase
     .from("session_registrations")

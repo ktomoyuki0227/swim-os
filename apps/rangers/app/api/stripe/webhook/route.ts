@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import type Stripe from "stripe"
 import { stripe } from "@/lib/stripe"
 import { createAdminClient } from "@/lib/supabase/server"
+import { notifyUser, notifyUsers } from "@/lib/notifications"
 
 // Route Handler は body parsing を自動で行わない（req.text() で生バイトを取得）
 export const dynamic = "force-dynamic"
@@ -47,6 +48,15 @@ async function handlePaymentIntentFailed(paymentIntent: Stripe.PaymentIntent) {
   if (error) {
     console.error(`[webhook] payment_intent.payment_failed (${paymentIntent.id}): DB update failed`, error)
     throw error
+  }
+
+  // Connect 送金記録を failed に更新（confirm前にpendingで作成されているため対象行は存在する）
+  if (paymentIntent.transfer_data) {
+    await admin
+      .from("transfer_records")
+      .update({ status: "failed" })
+      .eq("stripe_payment_intent_id", paymentIntent.id)
+      .eq("status", "pending")
   }
 }
 
@@ -104,8 +114,7 @@ async function handleInvoicePaid(invoice: Stripe.Invoice) {
 
   // 月謝決済通知（新規 INSERT 成功時のみ。二重通知防止のため unique_violation は除外）
   if (!error) {
-    await admin.from("notifications").insert({
-      user_id: swimmer_id,
+    await notifyUser(swimmer_id, {
       type: "payment_charged",
       title: `${period.replace("-", "年")}月の月謝が引き落とされました`,
       body: `¥${invoice.amount_paid.toLocaleString()}が引き落とされました`,
@@ -149,9 +158,8 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
     .eq("role", "admin")
     .eq("status", "active")
 
-  for (const adminMember of admins ?? []) {
-    await admin.from("notifications").insert({
-      user_id: adminMember.swimmer_id,
+  if (admins && admins.length > 0) {
+    await notifyUsers(admins.map((a) => a.swimmer_id), {
       type: "payment_failed",
       title: "メンバーの月謝決済に失敗しました",
       body: "月謝の自動引き落としに失敗しました。Stripe ダッシュボードで詳細を確認してください。",
@@ -161,8 +169,7 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
   }
 
   // 本人に通知
-  await admin.from("notifications").insert({
-    user_id: swimmer_id,
+  await notifyUser(swimmer_id, {
     type: "payment_failed",
     title: "月謝の決済に失敗しました",
     body: "今月の月謝引き落としに失敗しました。登録カードを確認してください。",

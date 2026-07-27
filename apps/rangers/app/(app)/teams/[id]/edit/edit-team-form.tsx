@@ -22,6 +22,7 @@ interface Team {
   avatar_url: string | null
   cover_image_url: string | null
   is_recruiting: boolean
+  show_member_count: boolean
   status: string | null
   activity_area: string | null
   practice_frequency: string | null
@@ -65,6 +66,7 @@ export function EditTeamForm({ team, stripeEnabled, connectStatus }: EditTeamFor
   }, [])
 
   const [isRecruiting, setIsRecruiting] = useState(team.is_recruiting)
+  const [showMemberCount, setShowMemberCount] = useState(team.show_member_count)
   const [isActive, setIsActive] = useState((team.status ?? "active") === "active")
   const [practiceDays, setPracticeDays] = useState<string[]>(team.practice_days ?? [])
   const [hasSessionFee, setHasSessionFee] = useState(team.has_session_fee)
@@ -91,10 +93,16 @@ export function EditTeamForm({ team, stripeEnabled, connectStatus }: EditTeamFor
     const preview = URL.createObjectURL(file)
     if (type === "cover") {
       setCoverFile(file)
-      setCoverPreview(preview)
+      setCoverPreview((prev) => {
+        if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev)
+        return preview
+      })
     } else {
       setIconFile(file)
-      setIconPreview(preview)
+      setIconPreview((prev) => {
+        if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev)
+        return preview
+      })
     }
   }
 
@@ -185,6 +193,7 @@ export function EditTeamForm({ team, stripeEnabled, connectStatus }: EditTeamFor
         practice_days: practiceDays,
         main_pool: (data.get("main_pool") as string) || null,
         is_recruiting: isRecruiting,
+        show_member_count: showMemberCount,
         status: isActive ? "active" : "inactive",
         has_session_fee: hasSessionFee,
         has_annual_fee: hasAnnualFee,
@@ -392,6 +401,30 @@ export function EditTeamForm({ team, stripeEnabled, connectStatus }: EditTeamFor
                 <p className="mt-1.5 text-xs text-[#64748b]">公開ページに表示されます</p>
               </div>
             </div>
+            <div className="space-y-2">
+              <Label>メンバー数の表示</Label>
+              <div className="rounded-[10px] border border-[#dce3ea] p-3">
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowMemberCount((v) => !v)}
+                    className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
+                      showMemberCount ? "bg-[#005F8C]" : "bg-[#dce3ea]"
+                    }`}
+                  >
+                    <span
+                      className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
+                        showMemberCount ? "translate-x-5" : "translate-x-0"
+                      }`}
+                    />
+                  </button>
+                  <span className="text-sm font-medium text-[#1a2332]">
+                    {showMemberCount ? "表示する" : "表示しない"}
+                  </span>
+                </div>
+                <p className="mt-1.5 text-xs text-[#64748b]">公開ページに「〇人のメンバー」を表示します</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
@@ -438,7 +471,10 @@ export function EditTeamForm({ team, stripeEnabled, connectStatus }: EditTeamFor
                   className="text-xs text-[#c0392b] hover:underline"
                   onClick={() => {
                     setCoverFile(null)
-                    setCoverPreview(null)
+                    setCoverPreview((prev) => {
+                      if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev)
+                      return null
+                    })
                   }}
                 >
                   × 削除
@@ -483,7 +519,10 @@ export function EditTeamForm({ team, stripeEnabled, connectStatus }: EditTeamFor
                       className="mt-1 text-xs text-[#c0392b] hover:underline"
                       onClick={() => {
                         setIconFile(null)
-                        setIconPreview(null)
+                        setIconPreview((prev) => {
+                          if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev)
+                          return null
+                        })
                       }}
                     >
                       × 削除

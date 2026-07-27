@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition, useEffect } from "react"
+import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { updateSession } from "@/actions/sessions"
@@ -78,11 +78,10 @@ type FormData = {
 
 interface EditSessionFormProps {
   session: Record<string, unknown>
-  teamId: string
   teamName: string
 }
 
-export function EditSessionForm({ session, teamId, teamName }: EditSessionFormProps) {
+export function EditSessionForm({ session, teamName }: EditSessionFormProps) {
   const router = useRouter()
   const { showToast } = useToast()
   const [isPending, startTransition] = useTransition()
@@ -125,16 +124,18 @@ export function EditSessionForm({ session, teamId, teamName }: EditSessionFormPr
   const set = (key: keyof FormData, value: string | boolean) =>
     setForm((prev) => ({ ...prev, [key]: value }))
 
-  // duration → end_at 自動計算（camp・custom 以外）
-  useEffect(() => {
-    if (form.type === "camp") return
-    if (!form.duration || form.duration === "custom") return
-    const minutes = parseInt(form.duration, 10)
-    if (isNaN(minutes)) return
-    const computed = calcEndAt(form.scheduled_at, minutes)
-    setForm((prev) => ({ ...prev, end_at: computed }))
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form.scheduled_at, form.duration, form.type])
+  // 開始日時・所要時間からend_atを自動計算する（camp種別・custom所要時間は対象外）
+  const recalcEndAt = (next: FormData): FormData => {
+    if (next.type === "camp") return next
+    if (next.duration === "custom") return next
+    if (!next.duration) return next
+    const minutes = parseInt(next.duration, 10)
+    if (isNaN(minutes)) return next
+    return { ...next, end_at: calcEndAt(next.scheduled_at, minutes) }
+  }
+  // 開始日時 or 所要時間の変更イベントで end_at を自動計算する
+  const setScheduledAt = (value: string) => setForm((prev) => recalcEndAt({ ...prev, scheduled_at: value }))
+  const setDuration = (value: string) => setForm((prev) => recalcEndAt({ ...prev, duration: value }))
 
   const tagsByCategory = SYSTEM_TAGS.reduce((acc, tag) => {
     if (!acc[tag.category]) acc[tag.category] = []
@@ -151,6 +152,12 @@ export function EditSessionForm({ session, teamId, teamName }: EditSessionFormPr
       const scheduled = new Date(form.scheduled_at)
       if (deadline >= scheduled) {
         showToast("申込締切は開始日時より前に設定してください", "error")
+        return
+      }
+    }
+    if (form.min_participants && form.max_participants) {
+      if (parseInt(form.min_participants, 10) > parseInt(form.max_participants, 10)) {
+        showToast("最低参加人数は定員以下にしてください", "error")
         return
       }
     }
@@ -258,7 +265,7 @@ export function EditSessionForm({ session, teamId, teamName }: EditSessionFormPr
               id="scheduled_at"
               type="datetime-local"
               value={form.scheduled_at}
-              onChange={(e) => set("scheduled_at", e.target.value)}
+              onChange={(e) => setScheduledAt(e.target.value)}
               className="border-[#dce3ea]"
             />
           </div>
@@ -280,7 +287,7 @@ export function EditSessionForm({ session, teamId, teamName }: EditSessionFormPr
               <select
                 id="duration"
                 value={form.duration}
-                onChange={(e) => set("duration", e.target.value)}
+                onChange={(e) => setDuration(e.target.value)}
                 className="h-10 w-full rounded-lg border border-[#dce3ea] bg-white px-3 text-sm text-[#1a2332] focus:outline-none focus:ring-2 focus:ring-[#005F8C]/30"
               >
                 <option value="">未設定</option>

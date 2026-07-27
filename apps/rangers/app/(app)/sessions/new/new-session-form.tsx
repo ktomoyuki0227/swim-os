@@ -8,6 +8,7 @@ import { createSession, getSession } from "@/actions/sessions"
 import { getTeamTemplates, getTemplate } from "@/actions/templates"
 import { getTeamMembers, getMyTeams } from "@/actions/teams"
 import { createClient } from "@/lib/supabase/client"
+import { useMounted } from "@/hooks/use-mounted"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -49,6 +50,73 @@ function calcEndAt(scheduledAt: string, durationMinutes: number): string {
   d.setMinutes(d.getMinutes() + durationMinutes)
   const pad = (n: number) => String(n).padStart(2, "0")
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+/** タグ選択に応じて対象メンバーIDをAND条件で絞り込む */
+function matchMemberIdsByTags(members: Record<string, unknown>[], selectedTags: string[]): string[] {
+  if (selectedTags.length === 0) {
+    return members.map((m) => (m.swimmer as Record<string, unknown>).id as string)
+  }
+  const matched = members.filter((m) => {
+    const swimmer = m.swimmer as Record<string, unknown>
+    return selectedTags.every((tag) => {
+      if (tag === "level_beginner") return swimmer.level === "初級"
+      if (tag === "level_intermediate") return swimmer.level === "中級"
+      if (tag === "level_advanced") return swimmer.level === "上級"
+      if (tag.startsWith("stroke_")) {
+        const labelMap: Record<string, string> = {
+          stroke_freestyle: "クロール",
+          stroke_backstroke: "背泳ぎ",
+          stroke_breaststroke: "平泳ぎ",
+          stroke_butterfly: "バタフライ",
+          stroke_medley: "個人メドレー",
+        }
+        const label = labelMap[tag]
+        return label && Array.isArray(swimmer.specialties) && (swimmer.specialties as string[]).includes(label)
+      }
+      if (tag.startsWith("purpose_")) {
+        const labelMap: Record<string, string> = {
+          purpose_health: "健康維持",
+          purpose_competitive: "競技・タイム向上",
+        }
+        const label = labelMap[tag]
+        return label !== undefined && Array.isArray(swimmer.swimming_goals) && (swimmer.swimming_goals as string[]).includes(label)
+      }
+      if (tag.startsWith("swimmer_type_")) {
+        const labelMap: Record<string, string> = {
+          swimmer_type_player: "選手",
+          swimmer_type_masters: "マスターズ",
+        }
+        const label = labelMap[tag]
+        return label !== undefined && swimmer.swimmer_type === label
+      }
+      if (tag.startsWith("discipline_")) {
+        const labelMap: Record<string, string> = {
+          discipline_swimming: "競泳",
+          discipline_synchro: "AS（シンクロ）",
+          discipline_openwater: "オープンウォーター",
+          discipline_diving: "飛び込み",
+          discipline_waterpolo: "水球",
+        }
+        const label = labelMap[tag]
+        return label !== undefined &&
+          Array.isArray(swimmer.swim_disciplines) &&
+          (swimmer.swim_disciplines as string[]).includes(label)
+      }
+      return true
+    })
+  })
+  return matched.map((m) => (m.swimmer as Record<string, unknown>).id as string)
+}
+
+/** 開始日時・所要時間からend_atを自動計算する（camp種別・custom所要時間は対象外） */
+function recalcEndAt(next: FormData): FormData {
+  if (next.type === "camp") return next
+  if (next.duration === "custom") return next
+  if (!next.duration) return { ...next, end_at: "" }
+  const minutes = parseInt(next.duration, 10)
+  if (isNaN(minutes)) return next
+  return { ...next, end_at: calcEndAt(next.scheduled_at, minutes) }
 }
 
 type FormData = {
@@ -151,7 +219,6 @@ export function NewSessionForm({
   const [form, setForm] = useState<FormData>(DEFAULT_FORM)
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [teamMembers, setTeamMembers] = useState<Record<string, unknown>[]>([])
-  const [membersLoading, setMembersLoading] = useState(false)
   const [membersLoaded, setMembersLoaded] = useState(false)
   const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([])
   const [adminTeams, setAdminTeams] = useState<Record<string, unknown>[]>([])
@@ -164,12 +231,16 @@ export function NewSessionForm({
   ])
   const [templates, setTemplates] = useState<Record<string, unknown>[]>(initialTemplates)
   const [openTagCategory, setOpenTagCategory] = useState<string | null>(null)
-  const [portalMounted, setPortalMounted] = useState(false)
+  const portalMounted = useMounted()
   // サーバーで取得済みのグループIDを記憶しておき、同じグループでの再フェッチをスキップする
   const serverFetchedTeamId = useRef(initialTeamId)
+  const fetchingMembersRef = useRef(false)
+  const hasInitialTemplatesRef = useRef(initialTemplates.length > 0)
+  // 「タグ変更のたびにselectedMemberIdsをリセットする」ための直前値比較（レンダー中のstate調整）。
+  // refでの比較はReact Compilerのreact-hooks/refsルールに抵触するためuseStateで保持する。
+  const [prevSelectedTags, setPrevSelectedTags] = useState(selectedTags)
 
   useEffect(() => {
-    setPortalMounted(true)
     createClient().auth.getUser().then(({ data }) => {
       if (data.user) setCurrentUserId(data.user.id)
     })
@@ -184,31 +255,28 @@ export function NewSessionForm({
     return () => { document.body.style.overflow = "" }
   }, [openTagCategory])
 
-  // teamId が URL になければ管理者グループを自動取得
+  // teamId が URL になければ管理者グループを自動取得（teamIdがある場合はuseStateの初期値で既に反映済み）
   useEffect(() => {
-    if (teamId) {
-      setActiveTeamId(teamId)
-      return
-    }
+    if (teamId) return
     getMyTeams().then(({ data }) => {
       const adminOnly = (data || []).filter((t) => (t as Record<string, unknown>).my_role === "admin")
       setAdminTeams(adminOnly)
       if (adminOnly.length === 1) setActiveTeamId((adminOnly[0] as Record<string, unknown>).id as string)
     })
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [teamId])
 
   // activeTeamId が変わったらテンプレートを取得（サーバー取得済みの場合はスキップ）
   useEffect(() => {
     if (!activeTeamId) return
-    if (activeTeamId === serverFetchedTeamId.current && initialTemplates.length > 0) return
+    if (activeTeamId === serverFetchedTeamId.current && hasInitialTemplatesRef.current) return
     getTeamTemplates(activeTeamId).then(({ data }) => setTemplates(data || []))
   }, [activeTeamId])
 
-  // step3 になったらメンバーを取得（currentUserId 確定後に実行）
+  // step3 になったらメンバーを取得（currentUserId 確定後に実行）。ローディング表示はレンダー時に導出する
+  const membersLoading = step === 3 && !!activeTeamId && !!currentUserId && !membersLoaded
   useEffect(() => {
-    if (step !== 3 || !activeTeamId || !currentUserId || membersLoaded || membersLoading) return
-    setMembersLoading(true)
+    if (!membersLoading || fetchingMembersRef.current || !activeTeamId) return
+    fetchingMembersRef.current = true
     getTeamMembers(activeTeamId).then(({ data }) => {
       const members = (data || []).filter(
         (m) => (m.swimmer as Record<string, unknown>).id !== currentUserId
@@ -216,70 +284,16 @@ export function NewSessionForm({
       setTeamMembers(members)
       setSelectedMemberIds(members.map((m) => (m.swimmer as Record<string, unknown>).id as string))
       setMembersLoaded(true)
-      setMembersLoading(false)
+      fetchingMembersRef.current = false
     })
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, activeTeamId, currentUserId])
+  }, [membersLoading, activeTeamId, currentUserId])
 
   // タグ変更 → selectedMemberIds をプロフィールフィールドで AND フィルタ
-  useEffect(() => {
-    if (!membersLoaded) return
-    if (selectedTags.length === 0) {
-      setSelectedMemberIds(teamMembers.map((m) => (m.swimmer as Record<string, unknown>).id as string))
-    } else {
-      const matched = teamMembers.filter((m) => {
-        const swimmer = m.swimmer as Record<string, unknown>
-        return selectedTags.every((tag) => {
-          if (tag === "level_beginner") return swimmer.level === "初級"
-          if (tag === "level_intermediate") return swimmer.level === "中級"
-          if (tag === "level_advanced") return swimmer.level === "上級"
-          if (tag.startsWith("stroke_")) {
-            const labelMap: Record<string, string> = {
-              stroke_freestyle: "クロール",
-              stroke_backstroke: "背泳ぎ",
-              stroke_breaststroke: "平泳ぎ",
-              stroke_butterfly: "バタフライ",
-              stroke_medley: "個人メドレー",
-            }
-            const label = labelMap[tag]
-            return label && Array.isArray(swimmer.specialties) && (swimmer.specialties as string[]).includes(label)
-          }
-          if (tag.startsWith("purpose_")) {
-            const labelMap: Record<string, string> = {
-              purpose_health: "健康維持",
-              purpose_competitive: "競技・タイム向上",
-            }
-            const label = labelMap[tag]
-            return label !== undefined && Array.isArray(swimmer.swimming_goals) && (swimmer.swimming_goals as string[]).includes(label)
-          }
-          if (tag.startsWith("swimmer_type_")) {
-            const labelMap: Record<string, string> = {
-              swimmer_type_player: "選手",
-              swimmer_type_masters: "マスターズ",
-            }
-            const label = labelMap[tag]
-            return label !== undefined && swimmer.swimmer_type === label
-          }
-          if (tag.startsWith("discipline_")) {
-            const labelMap: Record<string, string> = {
-              discipline_swimming: "競泳",
-              discipline_synchro: "AS（シンクロ）",
-              discipline_openwater: "オープンウォーター",
-              discipline_diving: "飛び込み",
-              discipline_waterpolo: "水球",
-            }
-            const label = labelMap[tag]
-            return label !== undefined &&
-              Array.isArray(swimmer.swim_disciplines) &&
-              (swimmer.swim_disciplines as string[]).includes(label)
-          }
-          return true
-        })
-      })
-      setSelectedMemberIds(matched.map((m) => (m.swimmer as Record<string, unknown>).id as string))
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedTags, membersLoaded])
+  // (レンダー中にstateを調整する公式パターン。effectにすると1テンポ遅れて再レンダーが増える)
+  if (membersLoaded && selectedTags !== prevSelectedTags) {
+    setPrevSelectedTags(selectedTags)
+    setSelectedMemberIds(matchMemberIdsByTags(teamMembers, selectedTags))
+  }
 
   type PrefillInput = Partial<Omit<FormData, "member_price" | "guest_price" | "min_participants" | "max_participants" | "cancellation_days">> & {
     member_price?: string | number
@@ -342,19 +356,12 @@ export function NewSessionForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [copySessionId, templateId])
 
-  // 開始日時 or 所要時間が変わったら end_at を自動計算（camp 以外かつ custom 以外）
-  useEffect(() => {
-    if (form.type === "camp") return
-    if (!form.duration || form.duration === "custom") return
-    const minutes = parseInt(form.duration, 10)
-    if (isNaN(minutes)) return
-    const computed = calcEndAt(form.scheduled_at, minutes)
-    setForm((prev) => ({ ...prev, end_at: computed }))
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form.scheduled_at, form.duration, form.type])
-
   const set = (key: keyof FormData, value: string | boolean) =>
     setForm((prev) => ({ ...prev, [key]: value }))
+
+  // 開始日時 or 所要時間の変更イベントで end_at を自動計算する（camp 以外かつ custom 以外）
+  const setScheduledAt = (value: string) => setForm((prev) => recalcEndAt({ ...prev, scheduled_at: value }))
+  const setDuration = (value: string) => setForm((prev) => recalcEndAt({ ...prev, duration: value }))
 
   const validateStep = () => {
     if (step === 0) {
@@ -367,6 +374,11 @@ export function NewSessionForm({
         const deadline = new Date(form.registration_deadline)
         const scheduled = new Date(form.scheduled_at)
         if (deadline >= scheduled) return "申込締切は開始日時より前に設定してください"
+      }
+      if (form.min_participants && form.max_participants) {
+        if (parseInt(form.min_participants, 10) > parseInt(form.max_participants, 10)) {
+          return "最低参加人数は定員以下にしてください"
+        }
       }
     }
     return null
@@ -540,7 +552,7 @@ export function NewSessionForm({
                 id="scheduled_at"
                 type="datetime-local"
                 value={form.scheduled_at}
-                onChange={(e) => set("scheduled_at", e.target.value)}
+                onChange={(e) => setScheduledAt(e.target.value)}
                 className="border-[#dce3ea]"
               />
             </div>
@@ -562,10 +574,7 @@ export function NewSessionForm({
                 <select
                   id="duration"
                   value={form.duration}
-                  onChange={(e) => {
-                    set("duration", e.target.value)
-                    if (e.target.value !== "custom") set("end_at", "")
-                  }}
+                  onChange={(e) => setDuration(e.target.value)}
                   className="h-10 w-40 rounded-lg border border-[#dce3ea] bg-white px-3 text-sm text-[#1a2332] focus:outline-none focus:ring-2 focus:ring-[#005F8C]/30"
                 >
                   <option value="">選択しない</option>

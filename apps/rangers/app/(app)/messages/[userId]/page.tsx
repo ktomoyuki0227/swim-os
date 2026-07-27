@@ -32,23 +32,17 @@ export default async function MessageThreadPage({ params }: MessageThreadPagePro
 
   if (!partner) notFound()
 
-  // 既読にする
-  await markMessagesRead(userId)
-
-  // メッセージ取得（自分→相手 & 相手→自分）
-  const { data: messages } = await supabase
-    .from("messages")
-    .select("*")
-    .or(
-      `and(sender_id.eq.${user.id},receiver_id.eq.${userId}),and(sender_id.eq.${userId},receiver_id.eq.${user.id})`
-    )
-    .order("created_at", { ascending: true })
-
-  const { data: myProfile } = await supabase
-    .from("profiles")
-    .select("name, avatar_url")
-    .eq("id", user.id)
-    .single()
+  // 既読処理とメッセージ取得は互いに独立しているため並列実行する
+  const [, { data: messages }] = await Promise.all([
+    markMessagesRead(userId),
+    supabase
+      .from("messages")
+      .select("*")
+      .or(
+        `and(sender_id.eq.${user.id},receiver_id.eq.${userId}),and(sender_id.eq.${userId},receiver_id.eq.${user.id})`
+      )
+      .order("created_at", { ascending: true }),
+  ])
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col" style={{ height: "calc(100vh - 80px)" }}>

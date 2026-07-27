@@ -26,8 +26,10 @@ export default async function FeesPage({ searchParams }: FeesPageProps) {
   const params = await searchParams
   const { data: teams } = await getMyTeams()
   const adminTeams = ((teams || []) as Record<string, unknown>[]).filter((t) => t.my_role === "admin")
+  const adminTeamIds = new Set(adminTeams.map((t) => t.id as string))
 
-  const selectedTeamId = params.team || (adminTeams[0]?.id as string) || ""
+  const selectedTeamId =
+    (params.team && adminTeamIds.has(params.team) ? params.team : (adminTeams[0]?.id as string)) || ""
   const selectedType = (params.type as "annual" | "monthly" | "stamp_card") || "annual"
   const now = new Date()
   const defaultPeriod =

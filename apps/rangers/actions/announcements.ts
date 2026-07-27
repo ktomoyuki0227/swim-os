@@ -4,6 +4,8 @@ import { createClient, createAdminClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { announcementSchema } from "@/lib/validations"
+import { isTeamAdmin } from "@/lib/auth/require-team-admin"
+import { notifyUsers } from "@/lib/notifications"
 
 export async function createAnnouncement(teamId: string, data: unknown) {
   const parsed = announcementSchema.safeParse(data)
@@ -15,15 +17,7 @@ export async function createAnnouncement(teamId: string, data: unknown) {
 
   // admin権限チェック（team_members は RLS バイパスが必要）
   const adminClient = createAdminClient()
-  const { data: adminMembership } = await adminClient
-    .from("team_members")
-    .select("id")
-    .eq("team_id", teamId)
-    .eq("swimmer_id", user.id)
-    .eq("role", "admin")
-    .eq("status", "active")
-    .single()
-  if (!adminMembership) return { error: "権限がありません" }
+  if (!(await isTeamAdmin(adminClient, teamId, user.id))) return { error: "権限がありません" }
 
   const { data: announcement, error } = await supabase
     .from("announcements")
@@ -49,16 +43,13 @@ export async function createAnnouncement(teamId: string, data: unknown) {
     .eq("status", "active")
     .neq("swimmer_id", user.id)
   if (members && members.length > 0) {
-    await adminClient.from("notifications").insert(
-      members.map((m) => ({
-        user_id: m.swimmer_id,
-        type: "team_announcement",
-        title: parsed.data.title,
-        body: parsed.data.body || null,
-        team_id: teamId,
-        link: `/teams/${teamId}`,
-      }))
-    )
+    await notifyUsers(members.map((m) => m.swimmer_id), {
+      type: "team_announcement",
+      title: parsed.data.title,
+      body: parsed.data.body || null,
+      team_id: teamId,
+      link: `/teams/${teamId}`,
+    })
   }
 
   revalidatePath("/teams")
@@ -113,15 +104,7 @@ export async function getAnnouncementReads(announcementId: string) {
   if (!announcement) return { data: [] }
 
   const admin2 = createAdminClient()
-  const { data: adminMembership } = await admin2
-    .from("team_members")
-    .select("id")
-    .eq("team_id", announcement.team_id)
-    .eq("swimmer_id", user.id)
-    .eq("role", "admin")
-    .eq("status", "active")
-    .single()
-  if (!adminMembership) return { error: "権限がありません" }
+  if (!(await isTeamAdmin(admin2, announcement.team_id, user.id))) return { error: "権限がありません" }
 
   const { data, error } = await supabase
     .from("announcement_reads")

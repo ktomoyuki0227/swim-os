@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { createPortal } from "react-dom"
+import { useMounted } from "@/hooks/use-mounted"
 
 interface MemberItem {
   id: string
@@ -18,10 +19,8 @@ interface MemberPreviewBarProps {
 
 export function MemberPreviewBar({ members }: MemberPreviewBarProps) {
   const [open, setOpen] = useState(false)
-  const [mounted, setMounted] = useState(false)
+  const mounted = useMounted()
   const previewMembers = members.slice(0, 3)
-
-  useEffect(() => { setMounted(true) }, [])
 
   useEffect(() => {
     if (!open) return

@@ -1,5 +1,7 @@
 "use client"
 
+import { useRouter } from "next/navigation"
+
 interface FeeFiltersProps {
   teams: { id: string; name: string }[]
   selectedTeamId: string
@@ -13,6 +15,7 @@ interface FeeFiltersProps {
 }
 
 export function FeeFilters({ teams, selectedTeamId, selectedType, selectedPeriod, teamFeeFlags }: FeeFiltersProps) {
+  const router = useRouter()
   const now = new Date()
 
   const tabs = [
@@ -34,7 +37,7 @@ export function FeeFilters({ teams, selectedTeamId, selectedType, selectedPeriod
             url.searchParams.set("team", e.target.value)
             url.searchParams.delete("type")
             url.searchParams.delete("period")
-            window.location.href = url.toString()
+            router.push(`${url.pathname}${url.search}`)
           }}
           className="h-9 rounded-lg border border-[#dce3ea] px-3 text-sm text-[#1a2332] focus:outline-none"
         >
@@ -83,7 +86,7 @@ export function FeeFilters({ teams, selectedTeamId, selectedType, selectedPeriod
             defaultValue={selectedPeriod}
             onBlur={(e) => {
               if (e.target.value) {
-                window.location.href = `/fees?team=${selectedTeamId}&type=${selectedType}&period=${e.target.value}`
+                router.push(`/fees?team=${selectedTeamId}&type=${selectedType}&period=${e.target.value}`)
               }
             }}
             className="h-9 rounded-lg border border-[#dce3ea] px-3 text-sm text-[#1a2332] focus:outline-none"

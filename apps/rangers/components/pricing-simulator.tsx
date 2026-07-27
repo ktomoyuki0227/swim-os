@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { createPortal } from "react-dom"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { useMounted } from "@/hooks/use-mounted"
 
 interface ApplyValues {
   pointCardPrice?: number
@@ -18,16 +19,14 @@ interface PricingSimulatorProps {
 
 export function PricingSimulatorButton({ memberPrice, onApply }: PricingSimulatorProps) {
   const [open, setOpen] = useState(false)
-  const [mounted, setMounted] = useState(false)
+  const mounted = useMounted()
 
   // 入力値を親側で保持（ポップアップを閉じても残る）
   const [savedInputs, setSavedInputs] = useState({
     avgAttendance: "",
     cardSessions: "",
-    inputMemberPrice: "",
+    inputMemberPrice: memberPrice > 0 ? String(memberPrice) : "",
   })
-
-  useEffect(() => { setMounted(true) }, [])
 
   useEffect(() => {
     if (!open) return

@@ -1,10 +1,11 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { createPortal } from "react-dom"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { useMounted } from "@/hooks/use-mounted"
 import type { Team } from "@/types/database"
 
 interface AdminActionButtonsProps {
@@ -21,8 +22,7 @@ function CloseIcon() {
 
 export function AdminActionButtons({ team }: AdminActionButtonsProps) {
   const [settingsOpen, setSettingsOpen] = useState(false)
-  const [mounted, setMounted] = useState(false)
-  useEffect(() => { setMounted(true) }, [])
+  const mounted = useMounted()
 
   return (
     <>

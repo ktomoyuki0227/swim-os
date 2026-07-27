@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
 import { usePathname } from "next/navigation"
 
 type NavState = "idle" | "loading" | "completing"
@@ -8,17 +8,25 @@ type NavState = "idle" | "loading" | "completing"
 export function NavigationProgress() {
   const pathname = usePathname()
   const [navState, setNavState] = useState<NavState>("idle")
-  const prevRef = useRef(pathname)
+  const [committedPathname, setCommittedPathname] = useState(pathname)
 
-  // ナビゲーション完了 → バーを100%に伸ばしてフェードアウト
+  // ナビゲーション完了検知（レンダー中に直接状態を調整する。
+  // 「propsの変化に応じてstateを調整する」React推奨パターンのため、
+  // effect内での同期的setStateにはならない）
+  if (pathname !== committedPathname) {
+    setCommittedPathname(pathname)
+    if (navState === "loading") {
+      setNavState("completing")
+    }
+  }
+
+  // completing → idle: バーを100%に伸ばしてフェードアウトさせるためのタイマー
+  // （タイマーという外部システムとの同期なのでeffect内でOK。setStateはコールバック内）
   useEffect(() => {
-    if (prevRef.current === pathname) return
-    prevRef.current = pathname
-    if (navState !== "loading") return
-    setNavState("completing")
+    if (navState !== "completing") return
     const t = setTimeout(() => setNavState("idle"), 400)
     return () => clearTimeout(t)
-  }, [pathname, navState])
+  }, [navState])
 
   // リンククリック検知
   useEffect(() => {
@@ -59,9 +67,9 @@ export function NavigationProgress() {
           }}
         />
       </div>
-      {/* 右下スピナー（loading中のみ表示、完了と同時に消える） */}
+      {/* 右下スピナー（loading中のみ表示、完了と同時に消える。モバイルのフッターナビと被らない位置） */}
       {navState === "loading" && (
-        <div className="fixed bottom-20 right-4 z-[1000] md:bottom-8 md:right-8">
+        <div className="pointer-events-none fixed bottom-20 right-4 z-[1000] md:bottom-8 md:right-8">
           <div className="h-9 w-9 animate-spin rounded-full border-[3px] border-[#005F8C]/20 border-t-[#005F8C]" />
         </div>
       )}

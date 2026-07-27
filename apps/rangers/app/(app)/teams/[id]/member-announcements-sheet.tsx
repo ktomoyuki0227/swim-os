@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react"
 import { createPortal } from "react-dom"
 import { Card, CardContent } from "@/components/ui/card"
 import { MarkReadButton } from "./mark-read-button"
+import { useMounted } from "@/hooks/use-mounted"
 
 interface Announcement {
   id: string
@@ -15,15 +16,12 @@ interface Announcement {
 
 interface MemberAnnouncementsSheetProps {
   announcements: Announcement[]
-  unreadCount: number
 }
 
-export function MemberAnnouncementsSheet({ announcements: initialAnnouncements, unreadCount: initialUnread }: MemberAnnouncementsSheetProps) {
+export function MemberAnnouncementsSheet({ announcements: initialAnnouncements }: MemberAnnouncementsSheetProps) {
   const [open, setOpen] = useState(false)
-  const [mounted, setMounted] = useState(false)
+  const mounted = useMounted()
   const [readIds, setReadIds] = useState<Set<string>>(new Set())
-
-  useEffect(() => { setMounted(true) }, [])
 
   // 動的な未読数（実データとローカル既読の両方を考慮）
   const currentUnread = initialAnnouncements.filter(

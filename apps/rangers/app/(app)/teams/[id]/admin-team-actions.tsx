@@ -3,8 +3,10 @@
 import { useState, useEffect } from "react"
 import { createPortal } from "react-dom"
 import Link from "next/link"
+import { AlertTriangle } from "lucide-react"
 import { MemberList } from "./member-list"
 import { JoinRequestsTab } from "./join-requests-tab"
+import { useMounted } from "@/hooks/use-mounted"
 import type { TeamMemberWithProfile } from "@/types/database"
 
 type SheetType = "members" | "requests" | null
@@ -16,6 +18,14 @@ interface JoinRequest {
   swimmer: { id: string; name: string; avatar_url: string | null; furigana: string | null }
 }
 
+interface FeeStats {
+  paid: number
+  subscriptionUnpaid: number
+  stampUnpaid: number
+  total: number
+  unpaidSwimmerIds: string[]
+}
+
 interface Props {
   teamId: string
   members: TeamMemberWithProfile[]
@@ -25,6 +35,7 @@ interface Props {
   hasMonthlyFee: boolean
   hasPointCard: boolean
   pointCardCount: number
+  feeStats: FeeStats | null
 }
 
 export function AdminTeamActions({
@@ -36,11 +47,11 @@ export function AdminTeamActions({
   hasMonthlyFee,
   hasPointCard,
   pointCardCount,
+  feeStats,
 }: Props) {
   const [openSheet, setOpenSheet] = useState<SheetType>(null)
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => { setMounted(true) }, [])
+  const mounted = useMounted()
+  const unpaidCount = feeStats ? feeStats.subscriptionUnpaid + feeStats.stampUnpaid : 0
 
   // シート: ESC + スクロールロック
   useEffect(() => {
@@ -57,7 +68,7 @@ export function AdminTeamActions({
   }, [openSheet])
 
   const sheetTitles: Record<string, string> = {
-    members: `メンバー (${members.length})`,
+    members: `メンバー/会費 (${members.length})`,
     requests: `申請 (${joinRequests.length})`,
   }
 
@@ -81,10 +92,10 @@ export function AdminTeamActions({
           <span className="text-[11px] font-medium leading-tight">セッション作成</span>
         </Link>
 
-        {/* メンバー */}
+        {/* メンバー/会費 */}
         <button
           onClick={() => setOpenSheet("members")}
-          className="flex flex-col items-center justify-center gap-1 rounded-[14px] border border-[#dce3ea] bg-white px-2 py-2.5 text-[#1a2332] transition-colors hover:border-[#005F8C] hover:bg-[#f2f7fa]"
+          className="relative flex flex-col items-center justify-center gap-1 rounded-[14px] border border-[#dce3ea] bg-white px-2 py-2.5 text-[#1a2332] transition-colors hover:border-[#005F8C] hover:bg-[#f2f7fa]"
           style={{ minHeight: 56 }}
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#005F8C" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -93,7 +104,13 @@ export function AdminTeamActions({
             <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
             <path d="M16 3.13a4 4 0 0 1 0 7.75" />
           </svg>
-          <span className="text-[11px] font-medium leading-tight">メンバー</span>
+          <span className="text-[11px] font-medium leading-tight">メンバー/会費</span>
+          {unpaidCount > 0 && (
+            <span className="absolute right-1.5 top-1.5 flex items-center gap-0.5 rounded-full bg-[#fdf6e3] px-1.5 py-[3px] text-[10px] font-bold text-[#b8860b]">
+              <AlertTriangle className="h-2.5 w-2.5" aria-hidden="true" />
+              {unpaidCount}
+            </span>
+          )}
         </button>
 
         {/* 申請 */}
@@ -155,10 +172,11 @@ export function AdminTeamActions({
                   hasMonthlyFee={hasMonthlyFee}
                   hasPointCard={hasPointCard}
                   pointCardCount={pointCardCount}
+                  unpaidSwimmerIds={feeStats?.unpaidSwimmerIds ?? []}
                 />
               )}
               {openSheet === "requests" && (
-                <JoinRequestsTab teamId={teamId} initialRequests={joinRequests} />
+                <JoinRequestsTab initialRequests={joinRequests} />
               )}
             </div>
           </div>

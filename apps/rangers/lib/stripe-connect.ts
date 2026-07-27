@@ -79,7 +79,9 @@ export async function getPlatformFeePercent(): Promise<number> {
     .eq("key", "platform_fee_percent")
     .maybeSingle()
   const parsed = data ? parseFloat(data.value) : NaN
-  return Number.isFinite(parsed) ? parsed : 10
+  if (!Number.isFinite(parsed)) return 10
+  // 設定ミスで負値や100超が入っても不正な手数料計算に繋がらないようクランプする
+  return Math.min(100, Math.max(0, parsed))
 }
 
 /**

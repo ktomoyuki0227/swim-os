@@ -6,6 +6,8 @@ import { redirect } from "next/navigation"
 import { teamSchema, teamUpdateSchema } from "@/lib/validations"
 import { SWIMMER_TYPES, SWIM_DISCIPLINES, SWIM_LEVELS, SYSTEM_TAGS } from "@/types/database"
 import type { MembershipType } from "@/types/database"
+import { isTeamAdmin } from "@/lib/auth/require-team-admin"
+import { notifyUser, notifyUsers } from "@/lib/notifications"
 
 export async function uploadTeamImage(
   formData: FormData
@@ -71,6 +73,8 @@ export async function createTeam(data: unknown) {
       contact_email: parsed.data.contact_email || null,
       contact_phone: parsed.data.contact_phone || null,
       team_type: parsed.data.team_type ?? "team",
+      instructor_title: parsed.data.instructor_title || null,
+      show_member_count: parsed.data.show_member_count ?? true,
     })
     .select()
     .single()
@@ -98,8 +102,7 @@ export async function createTeam(data: unknown) {
   }
 
   // チーム作成ウェルカム通知（RLS で INSERT が blocked されるため adminClient を使用）
-  await createAdminClient().from("notifications").insert({
-    user_id: user.id,
+  await notifyUser(user.id, {
     type: "team_created",
     title: `「${team.name}」を作成しました`,
     body: "メンバーを招待してセッションを追加しましょう",
@@ -121,15 +124,7 @@ export async function updateTeam(teamId: string, data: unknown) {
   if (!user) redirect("/login")
 
   const admin = createAdminClient()
-  const { data: adminMembership } = await admin
-    .from("team_members")
-    .select("id")
-    .eq("team_id", teamId)
-    .eq("swimmer_id", user.id)
-    .eq("role", "admin")
-    .eq("status", "active")
-    .single()
-  if (!adminMembership) return { error: "権限がありません" }
+  if (!(await isTeamAdmin(admin, teamId, user.id))) return { error: "権限がありません" }
 
   const { error } = await admin
     .from("teams")
@@ -222,8 +217,12 @@ export async function joinTeamByCode(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
 
+  const admin = createAdminClient()
+
   // 招待コードでグループを検索
-  const { data: team, error: teamError } = await supabase
+  // 参加前の非メンバーは teams_select 系RLSで大半のプライベートチームが見えないため、
+  // 招待コード自体を知っていることを認可の根拠として adminClient で検索する
+  const { data: team, error: teamError } = await admin
     .from("teams")
     .select("*")
     .eq("invite_code", inviteCode)
@@ -254,42 +253,43 @@ export async function joinTeamByCode(
   if (joinError) return { error: "グループへの参加に失敗しました" }
 
   // 年会費会員なら年会費レコードを自動生成
+  // fees_insert_admin ポリシーは管理者のみ許可のため、参加した本人（非管理者）による
+  // 通常クライアントでのINSERTは常にRLS違反で失敗する。adminClientで作成する。
   if (membershipType === "annual" && team.annual_fee_amount) {
     const currentYear = new Date().getFullYear().toString()
     // 年会費生成失敗はグループ参加を妨げない（非致命的）
-    await supabase.from("membership_fees").insert({
+    const { error: feeError } = await admin.from("membership_fees").insert({
       team_id: team.id,
       swimmer_id: user.id,
       type: "annual",
       period: currentYear,
       amount: team.annual_fee_amount,
     })
+    if (feeError) {
+      console.error("[joinTeamByCode] Failed to create annual fee record:", feeError)
+    }
   }
 
   // 参加者名を取得して管理者へ通知
-  const adminForNotif = createAdminClient()
-  const { data: joinerProfile } = await adminForNotif
+  const { data: joinerProfile } = await admin
     .from("profiles")
     .select("name")
     .eq("id", user.id)
     .single()
-  const { data: teamAdmins } = await adminForNotif
+  const { data: teamAdmins } = await admin
     .from("team_members")
     .select("swimmer_id")
     .eq("team_id", team.id)
     .eq("role", "admin")
     .eq("status", "active")
   if (teamAdmins && teamAdmins.length > 0) {
-    await adminForNotif.from("notifications").insert(
-      teamAdmins.map((a) => ({
-        user_id: a.swimmer_id,
-        type: "member_joined",
-        title: `${joinerProfile?.name ?? "新しいメンバー"}さんが「${team.name}」に参加しました`,
-        body: null,
-        team_id: team.id,
-        link: `/teams/${team.id}?tab=members`,
-      }))
-    )
+    await notifyUsers(teamAdmins.map((a) => a.swimmer_id), {
+      type: "member_joined",
+      title: `${joinerProfile?.name ?? "新しいメンバー"}さんが「${team.name}」に参加しました`,
+      body: null,
+      team_id: team.id,
+      link: `/teams/${team.id}?tab=members`,
+    })
   }
 
   revalidatePath("/teams")
@@ -304,15 +304,7 @@ export async function getTeamMembers(teamId: string) {
 
   // RLS バイパスが必要なため adminClient で admin チェック
   const admin = createAdminClient()
-  const { data: adminMembership } = await admin
-    .from("team_members")
-    .select("id")
-    .eq("team_id", teamId)
-    .eq("swimmer_id", user.id)
-    .eq("role", "admin")
-    .eq("status", "active")
-    .single()
-  if (!adminMembership) return { data: [], error: "権限がありません" }
+  if (!(await isTeamAdmin(admin, teamId, user.id))) return { data: [], error: "権限がありません" }
   const { data, error } = await admin
     .from("team_members")
     .select("*, swimmer:profiles(id, name, avatar_url, furigana, gender, birthday, phone, address, emergency_contact, emergency_contact_name, emergency_contact_relation, masters_registered, masters_number, jsa_registered, jsa_number, specialties, prefectures, swimming_goals, participation_styles, level, swimmer_type, swim_disciplines)")
@@ -330,15 +322,7 @@ export async function getMemberEmail(teamId: string, swimmerId: string): Promise
   if (!user) return { error: "ログインが必要です" }
 
   const admin = createAdminClient()
-  const { data: adminMembership } = await admin
-    .from("team_members")
-    .select("id")
-    .eq("team_id", teamId)
-    .eq("swimmer_id", user.id)
-    .eq("role", "admin")
-    .eq("status", "active")
-    .single()
-  if (!adminMembership) return { error: "権限がありません" }
+  if (!(await isTeamAdmin(admin, teamId, user.id))) return { error: "権限がありません" }
 
   const { data: authUser, error } = await admin.auth.admin.getUserById(swimmerId)
   if (error || !authUser?.user?.email) return { error: "メールアドレスを取得できませんでした" }
@@ -351,15 +335,7 @@ export async function removeMember(teamId: string, swimmerId: string) {
   if (!user) redirect("/login")
 
   const admin = createAdminClient()
-  const { data: adminMembership } = await admin
-    .from("team_members")
-    .select("id")
-    .eq("team_id", teamId)
-    .eq("swimmer_id", user.id)
-    .eq("role", "admin")
-    .eq("status", "active")
-    .single()
-  if (!adminMembership) return { error: "権限がありません" }
+  if (!(await isTeamAdmin(admin, teamId, user.id))) return { error: "権限がありません" }
 
   // 最後の管理者の削除を防ぐ
   const { data: targetMember } = await admin
@@ -410,15 +386,7 @@ export async function updateMembershipType(
     .single()
   if (!tm) return { error: "メンバーが見つかりません" }
 
-  const { data: adminMembership } = await admin
-    .from("team_members")
-    .select("id")
-    .eq("team_id", tm.team_id)
-    .eq("swimmer_id", user.id)
-    .eq("role", "admin")
-    .eq("status", "active")
-    .single()
-  if (!adminMembership) return { error: "権限がありません" }
+  if (!(await isTeamAdmin(admin, tm.team_id, user.id))) return { error: "権限がありません" }
 
   const { error } = await admin
     .from("team_members")
@@ -508,24 +476,15 @@ export async function regenerateInviteCode(teamId: string) {
   if (!user) redirect("/login")
 
   const admin = createAdminClient()
-  const { data: adminMembership } = await admin
-    .from("team_members")
-    .select("id")
-    .eq("team_id", teamId)
-    .eq("swimmer_id", user.id)
-    .eq("role", "admin")
-    .eq("status", "active")
-    .single()
-  if (!adminMembership) return { error: "権限がありません" }
+  if (!(await isTeamAdmin(admin, teamId, user.id))) return { error: "権限がありません" }
 
-  const { data, error } = await supabase
-    .rpc("gen_random_uuid")
+  // gen_random_uuid はpublicスキーマの公開RPCとして定義されていないため
+  // Node標準のcrypto.randomUUID()を使う
+  const newInviteCode = crypto.randomUUID()
 
-  if (error) return { error: "招待コードの再生成に失敗しました" }
-
-  const { error: updateError } = await supabase
+  const { error: updateError } = await admin
     .from("teams")
-    .update({ invite_code: data })
+    .update({ invite_code: newInviteCode })
     .eq("id", teamId)
 
   if (updateError) return { error: "招待コードの更新に失敗しました" }
@@ -541,15 +500,7 @@ export async function getTeamFeeStats(teamId: string) {
 
   // RLS バイパスが必要なため adminClient で admin チェック
   const admin = createAdminClient()
-  const { data: adminMembership } = await admin
-    .from("team_members")
-    .select("id")
-    .eq("team_id", teamId)
-    .eq("swimmer_id", user.id)
-    .eq("role", "admin")
-    .eq("status", "active")
-    .single()
-  if (!adminMembership) return { error: "権限がありません" }
+  if (!(await isTeamAdmin(admin, teamId, user.id))) return { error: "権限がありません" }
   const currentYear = new Date().getFullYear().toString()
 
   // 全アクティブメンバーを取得（管理者は会費不要のため除外）
@@ -561,7 +512,7 @@ export async function getTeamFeeStats(teamId: string) {
     .neq("role", "admin")
 
   if (!members || members.length === 0) {
-    return { data: { paid: 0, subscriptionUnpaid: 0, stampUnpaid: 0, total: 0 } }
+    return { data: { paid: 0, subscriptionUnpaid: 0, stampUnpaid: 0, total: 0, unpaidSwimmerIds: [] as string[] } }
   }
 
   const total = members.length
@@ -570,8 +521,7 @@ export async function getTeamFeeStats(teamId: string) {
   const pointCardIds = members.filter((m) => m.membership_type === "point_card").map((m) => m.swimmer_id)
 
   // 年会費メンバー: 今年の年会費ステータスを確認
-  let annualPaid = 0
-  let annualUnpaid = 0
+  let annualUnpaidIds: string[] = []
   if (annualIds.length > 0) {
     const { data: fees } = await admin
       .from("membership_fees")
@@ -582,14 +532,14 @@ export async function getTeamFeeStats(teamId: string) {
       .in("swimmer_id", annualIds)
 
     const feeMap = new Map((fees || []).map((f) => [f.swimmer_id, f.status]))
-    annualPaid = annualIds.filter((id) => feeMap.get(id) === "paid").length
-    annualUnpaid = annualIds.length - annualPaid
+    annualUnpaidIds = annualIds.filter((id) => feeMap.get(id) !== "paid")
   }
+  const annualUnpaid = annualUnpaidIds.length
+  const annualPaid = annualIds.length - annualUnpaid
 
   // 月謝メンバー: 今月の月謝ステータスを確認
   const currentMonth = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}`
-  let monthlyPaid = 0
-  let monthlyUnpaid = 0
+  let monthlyUnpaidIds: string[] = []
   if (monthlyIds.length > 0) {
     const { data: fees } = await admin
       .from("membership_fees")
@@ -600,16 +550,16 @@ export async function getTeamFeeStats(teamId: string) {
       .in("swimmer_id", monthlyIds)
 
     const feeMap = new Map((fees || []).map((f) => [f.swimmer_id, f.status]))
-    monthlyPaid = monthlyIds.filter((id) => feeMap.get(id) === "paid").length
-    monthlyUnpaid = monthlyIds.length - monthlyPaid
+    monthlyUnpaidIds = monthlyIds.filter((id) => feeMap.get(id) !== "paid")
   }
+  const monthlyUnpaid = monthlyUnpaidIds.length
+  const monthlyPaid = monthlyIds.length - monthlyUnpaid
 
   const subscriptionPaid = annualPaid + monthlyPaid
   const subscriptionUnpaid = annualUnpaid + monthlyUnpaid
 
   // 回数券メンバー（point_card）: 未払い・失敗の購入記録があるか確認
-  let stampPaid = 0
-  let stampUnpaid = 0
+  let stampUnpaidIds: string[] = []
   if (pointCardIds.length > 0) {
     const { data: unpaidStamps } = await admin
       .from("stamp_purchases")
@@ -618,14 +568,15 @@ export async function getTeamFeeStats(teamId: string) {
       .in("status", ["unpaid", "failed"])
       .in("swimmer_id", pointCardIds)
 
-    const stampUnpaidIds = new Set((unpaidStamps || []).map((s) => s.swimmer_id))
-    stampUnpaid = stampUnpaidIds.size
-    stampPaid = pointCardIds.length - stampUnpaid
+    stampUnpaidIds = Array.from(new Set((unpaidStamps || []).map((s) => s.swimmer_id)))
   }
+  const stampUnpaid = stampUnpaidIds.length
+  const stampPaid = pointCardIds.length - stampUnpaid
 
   const paid = subscriptionPaid + stampPaid
+  const unpaidSwimmerIds = [...annualUnpaidIds, ...monthlyUnpaidIds, ...stampUnpaidIds]
 
-  return { data: { paid, subscriptionUnpaid, stampUnpaid, total } }
+  return { data: { paid, subscriptionUnpaid, stampUnpaid, total, unpaidSwimmerIds } }
 }
 
 export async function updateMemberInfo(
@@ -655,15 +606,7 @@ export async function updateMemberInfo(
   const admin = createAdminClient()
 
   // 操作者が管理者かチェック
-  const { data: adminMembership } = await admin
-    .from("team_members")
-    .select("id")
-    .eq("team_id", teamId)
-    .eq("swimmer_id", user.id)
-    .eq("role", "admin")
-    .eq("status", "active")
-    .single()
-  if (!adminMembership) return { error: "権限がありません" }
+  if (!(await isTeamAdmin(admin, teamId, user.id))) return { error: "権限がありません" }
 
   // 自分自身のロール変更禁止（管理者が自分を降格するのを防ぐ）
   if (swimmerId === user.id && data.role !== "admin") {
@@ -739,15 +682,7 @@ export async function updateMemberProfileTags(
 
   const admin = createAdminClient()
 
-  const { data: adminMembership } = await admin
-    .from("team_members")
-    .select("id")
-    .eq("team_id", teamId)
-    .eq("swimmer_id", user.id)
-    .eq("role", "admin")
-    .eq("status", "active")
-    .single()
-  if (!adminMembership) return { error: "権限がありません" }
+  if (!(await isTeamAdmin(admin, teamId, user.id))) return { error: "権限がありません" }
 
   // 入力値ホワイトリストバリデーション
   if (data.level !== null && !(SWIM_LEVELS as readonly string[]).includes(data.level)) {
@@ -803,7 +738,7 @@ export async function getPublicTeam(teamId: string) {
 
   const { data: team, error } = await admin
     .from("teams")
-    .select("id, name, description, avatar_url, cover_image_url, is_recruiting, activity_area, practice_frequency, practice_days, main_pool, status, has_annual_fee, has_monthly_fee, has_point_card, annual_fee_amount, monthly_fee_amount, point_card_count, point_card_price, contact_email, contact_phone")
+    .select("id, name, description, avatar_url, cover_image_url, is_recruiting, show_member_count, activity_area, practice_frequency, practice_days, main_pool, status, has_annual_fee, has_monthly_fee, has_point_card, annual_fee_amount, monthly_fee_amount, point_card_count, point_card_price, contact_email, contact_phone")
     .eq("id", teamId)
     .eq("status", "active")
     .single()

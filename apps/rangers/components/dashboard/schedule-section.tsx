@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { SessionCalendar } from "@/components/session-calendar"
 import type { CalendarSession } from "@/components/session-calendar"
+import { useMounted } from "@/hooks/use-mounted"
 
 type Tab = "all" | "registered" | "past"
 
@@ -55,7 +56,7 @@ export function ScheduleSection({ sessions, teams }: Props) {
     () => new Set(teams.map((t) => t.id))
   )
   const [openSheet, setOpenSheet] = useState<SheetType>(null)
-  const [mounted, setMounted] = useState(false)
+  const mounted = useMounted()
 
   const now = new Date()
 
@@ -102,8 +103,6 @@ export function ScheduleSection({ sessions, teams }: Props) {
     tab === "registered" ? "参加予定のセッションはありません" :
     tab === "past" ? "過去の参加セッションはありません" :
     "セッションはありません"
-
-  useEffect(() => { setMounted(true) }, [])
 
   // ESCキーでシート閉じる + 背景スクロールロック
   useEffect(() => {

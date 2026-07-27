@@ -16,6 +16,30 @@ const SESSION_TYPE_LABELS: Record<string, string> = {
   meeting: "ミーティング",
 }
 
+const PARTICIPANT_STATUS_LABELS: Record<string, string> = {
+  paid: "支払済み",
+  pending: "確定待ち",
+  failed: "決済失敗",
+  unpaid: "未払い",
+  refunded: "返金済",
+  free: "免除",
+}
+
+const PARTICIPANT_STATUS_STYLES: Record<string, string> = {
+  paid: "bg-[#eaf7f0] text-[#0f8a4f]",
+  pending: "bg-[#edf0f4] text-[#475569]",
+  failed: "bg-[#fdecea] text-[#c0392b]",
+  unpaid: "bg-[#fdf6e3] text-[#b8860b]",
+  refunded: "bg-[#edf0f4] text-[#475569]",
+  free: "bg-[#e8f2f8] text-[#005F8C]",
+}
+
+const PARTICIPANT_METHOD_LABELS: Record<string, string> = {
+  cash: "現金",
+  point_card: "回数券",
+  card: "カード",
+}
+
 interface SessionPageProps {
   params: Promise<{ id: string; sid: string }>
 }
@@ -35,13 +59,14 @@ export default async function MemberSessionPage({ params }: SessionPageProps) {
 
   // メンバーか確認 & カード登録状況を取得
   let isMember = false
+  let isAdmin = false
   let membershipType: string | null = null
   let hasCard = false
   if (user) {
     const [{ data: membership }, { data: profileData }] = await Promise.all([
       supabase
         .from("team_members")
-        .select("id, membership_type")
+        .select("id, membership_type, role")
         .eq("team_id", session.team_id)
         .eq("swimmer_id", user.id)
         .eq("status", "active")
@@ -53,8 +78,36 @@ export default async function MemberSessionPage({ params }: SessionPageProps) {
         .maybeSingle(),
     ])
     isMember = !!membership
+    isAdmin = membership?.role === "admin"
     membershipType = membership?.membership_type ?? null
     hasCard = !!profileData?.stripe_payment_method_id
+  }
+
+  // 管理者向け: 参加者ごとの支払いステータス一覧
+  // registrations_select_admin ポリシーにより通常クライアントで取得可能
+  type ParticipantRow = {
+    id: string
+    payment_status: string
+    payment_method: string | null
+    is_member: boolean
+    swimmer: { id: string; name: string } | null
+  }
+  let participants: ParticipantRow[] = []
+  if (isAdmin) {
+    const { data } = await supabase
+      .from("session_registrations")
+      .select("id, payment_status, payment_method, is_member, swimmer:profiles(id, name)")
+      .eq("session_id", sessionId)
+      .is("cancelled_at", null)
+      .order("registered_at", { ascending: true })
+
+    participants = (data ?? []).map((r) => ({
+      id: r.id,
+      payment_status: r.payment_status,
+      payment_method: r.payment_method,
+      is_member: r.is_member,
+      swimmer: Array.isArray(r.swimmer) ? (r.swimmer[0] ?? null) : r.swimmer,
+    }))
   }
 
   const teamInfo = session.team as { fee_members_exempt_session?: boolean } | null
@@ -247,6 +300,44 @@ export default async function MemberSessionPage({ params }: SessionPageProps) {
             ? "申込期限を過ぎています"
             : "参加受付終了"}
         </div>
+      )}
+
+      {/* 参加者ごとの支払いステータス（管理者のみ） */}
+      {isAdmin && (
+        <Card className="border-[#dce3ea]">
+          <CardContent className="p-0">
+            <h2 className="px-4 pt-4 text-sm font-semibold text-[#1a2332]">
+              参加者（{participants.length}人）
+            </h2>
+            {participants.length === 0 ? (
+              <p className="px-4 py-4 text-sm text-[#475569]">まだ参加登録がありません</p>
+            ) : (
+              <div className="mt-2 divide-y divide-[#f2f7fa]">
+                {participants.map((p) => (
+                  <div key={p.id} className="flex items-center justify-between gap-3 px-4 py-2.5">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-[#1a2332]">
+                        {p.swimmer?.name ?? "不明"}
+                      </p>
+                      {p.payment_method && PARTICIPANT_METHOD_LABELS[p.payment_method] && (
+                        <p className="text-xs text-[#64748b]">
+                          {PARTICIPANT_METHOD_LABELS[p.payment_method]}
+                        </p>
+                      )}
+                    </div>
+                    <span
+                      className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
+                        PARTICIPANT_STATUS_STYLES[p.payment_status] ?? "bg-[#edf0f4] text-[#475569]"
+                      }`}
+                    >
+                      {PARTICIPANT_STATUS_LABELS[p.payment_status] ?? p.payment_status}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       )}
 
       {/* Content */}

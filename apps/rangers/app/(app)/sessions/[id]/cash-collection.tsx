@@ -11,11 +11,10 @@ interface CashRegistration {
 }
 
 interface CashCollectionPanelProps {
-  sessionId: string
   registrations: CashRegistration[]
 }
 
-export function CashCollectionPanel({ sessionId, registrations }: CashCollectionPanelProps) {
+export function CashCollectionPanel({ registrations }: CashCollectionPanelProps) {
   const pendingCount = registrations.filter((r) => r.paymentStatus === "pending").length
   const paidCount = registrations.filter((r) => r.paymentStatus === "paid").length
 

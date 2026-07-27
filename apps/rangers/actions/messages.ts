@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache"
 import { createClient } from "@/lib/supabase/server"
+import { messageSchema, scheduleRequestSchema } from "@/lib/validations"
 
 export async function sendMessage(formData: FormData) {
   const supabase = await createClient()
@@ -11,12 +12,14 @@ export async function sendMessage(formData: FormData) {
     return { error: "ログインが必要です" }
   }
 
-  const receiverId = formData.get("receiver_id") as string
-  const content = (formData.get("content") as string)?.trim()
-
-  if (!receiverId || !content) {
-    return { error: "メッセージを入力してください" }
+  const parsed = messageSchema.safeParse({
+    receiver_id: formData.get("receiver_id"),
+    content: (formData.get("content") as string)?.trim(),
+  })
+  if (!parsed.success) {
+    return { error: parsed.error.issues.map((i) => i.message).join("・") }
   }
+  const { receiver_id: receiverId, content } = parsed.data
 
   const { error } = await supabase.from("messages").insert({
     sender_id: user.id,
@@ -41,21 +44,22 @@ export async function sendScheduleRequest(formData: FormData) {
     return { error: "ログインが必要です" }
   }
 
-  const instructorId = formData.get("instructor_id") as string
-  const lessonId = formData.get("lesson_id") as string | null
-  const message = (formData.get("message") as string)?.trim()
-  const preferredDates = formData.getAll("preferred_dates") as string[]
-
-  if (!instructorId || !message) {
-    return { error: "必須項目を入力してください" }
+  const parsed = scheduleRequestSchema.safeParse({
+    instructor_id: formData.get("instructor_id"),
+    lesson_id: (formData.get("lesson_id") as string | null) || null,
+    message: (formData.get("message") as string)?.trim(),
+    preferred_dates: formData.getAll("preferred_dates") as string[],
+  })
+  if (!parsed.success) {
+    return { error: parsed.error.issues.map((i) => i.message).join("・") }
   }
 
   const { error } = await supabase.from("schedule_requests").insert({
     swimmer_id: user.id,
-    instructor_id: instructorId,
-    lesson_id: lessonId || null,
-    message,
-    preferred_dates: preferredDates,
+    instructor_id: parsed.data.instructor_id,
+    lesson_id: parsed.data.lesson_id,
+    message: parsed.data.message,
+    preferred_dates: parsed.data.preferred_dates,
   })
 
   if (error) {
@@ -77,4 +81,7 @@ export async function markMessagesRead(senderId: string) {
     .eq("sender_id", senderId)
     .eq("receiver_id", user.id)
     .is("read_at", null)
+
+  revalidatePath("/messages")
+  revalidatePath(`/messages/${senderId}`)
 }

@@ -4,6 +4,7 @@ import { createClient, createAdminClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { templateUpdateSchema } from "@/lib/validations"
+import { isTeamAdmin } from "@/lib/auth/require-team-admin"
 
 export async function saveAsTemplate(sessionId: string, name: string) {
   const supabase = await createClient()
@@ -20,15 +21,9 @@ export async function saveAsTemplate(sessionId: string, name: string) {
 
   if (sessionError || !session) return { error: "セッションが見つかりません" }
 
-  const { data: adminMembership } = await admin
-    .from("team_members")
-    .select("id")
-    .eq("team_id", session.team_id)
-    .eq("swimmer_id", user.id)
-    .eq("role", "admin")
-    .eq("status", "active")
-    .single()
-  if (!adminMembership) return { error: "権限がありません" }
+  if (!(await isTeamAdmin(admin, session.team_id, user.id))) {
+    return { error: "権限がありません" }
+  }
 
   const { data: template, error } = await admin
     .from("session_templates")
@@ -67,15 +62,7 @@ export async function getTeamTemplates(teamId: string) {
 
   const admin = createAdminClient()
 
-  const { data: adminMembership } = await admin
-    .from("team_members")
-    .select("id")
-    .eq("team_id", teamId)
-    .eq("swimmer_id", user.id)
-    .eq("role", "admin")
-    .eq("status", "active")
-    .single()
-  if (!adminMembership) return { data: [] }
+  if (!(await isTeamAdmin(admin, teamId, user.id))) return { data: [] }
 
   const { data, error } = await admin
     .from("session_templates")
@@ -101,15 +88,7 @@ export async function getTemplate(templateId: string) {
     .single()
   if (error || !data) return { data: null }
 
-  const { data: adminMembership } = await admin
-    .from("team_members")
-    .select("id")
-    .eq("team_id", data.team_id)
-    .eq("swimmer_id", user.id)
-    .eq("role", "admin")
-    .eq("status", "active")
-    .single()
-  if (!adminMembership) return { data: null }
+  if (!(await isTeamAdmin(admin, data.team_id, user.id))) return { data: null }
 
   return { data }
 }
@@ -134,15 +113,9 @@ export async function updateTemplate(
     .single()
   if (!tmpl) return { error: "テンプレートが見つかりません" }
 
-  const { data: adminMembership } = await admin
-    .from("team_members")
-    .select("id")
-    .eq("team_id", tmpl.team_id)
-    .eq("swimmer_id", user.id)
-    .eq("role", "admin")
-    .eq("status", "active")
-    .single()
-  if (!adminMembership) return { error: "権限がありません" }
+  if (!(await isTeamAdmin(admin, tmpl.team_id, user.id))) {
+    return { error: "権限がありません" }
+  }
 
   const { error } = await admin
     .from("session_templates")
@@ -169,15 +142,9 @@ export async function deleteTemplate(templateId: string) {
     .single()
   if (!tmpl) return { error: "テンプレートが見つかりません" }
 
-  const { data: adminMembership } = await admin
-    .from("team_members")
-    .select("id")
-    .eq("team_id", tmpl.team_id)
-    .eq("swimmer_id", user.id)
-    .eq("role", "admin")
-    .eq("status", "active")
-    .single()
-  if (!adminMembership) return { error: "権限がありません" }
+  if (!(await isTeamAdmin(admin, tmpl.team_id, user.id))) {
+    return { error: "権限がありません" }
+  }
 
   const { error } = await admin
     .from("session_templates")
@@ -208,15 +175,9 @@ export async function createSessionFromTemplate(
 
   if (!template) return { error: "テンプレートが見つかりません" }
 
-  const { data: adminMembership } = await admin
-    .from("team_members")
-    .select("id")
-    .eq("team_id", template.team_id)
-    .eq("swimmer_id", user.id)
-    .eq("role", "admin")
-    .eq("status", "active")
-    .single()
-  if (!adminMembership) return { error: "権限がありません" }
+  if (!(await isTeamAdmin(admin, template.team_id, user.id))) {
+    return { error: "権限がありません" }
+  }
 
   let registrationDeadline: string | null = null
   if (template.deadline_days) {

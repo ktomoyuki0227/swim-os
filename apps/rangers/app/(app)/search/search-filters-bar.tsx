@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { createPortal } from "react-dom"
 import { useRouter } from "next/navigation"
+import { useMounted } from "@/hooks/use-mounted"
 
 const SESSION_TYPE_OPTIONS = [
   { key: "all", label: "すべて" },
@@ -55,11 +56,7 @@ export function SearchFiltersBar({
 }: SearchFiltersBarProps) {
   const router = useRouter()
   const [openGroup, setOpenGroup] = useState<string | null>(null)
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
+  const mounted = useMounted()
 
   // ボトムシート表示中はボディのスクロールを止める
   useEffect(() => {

@@ -124,7 +124,12 @@ function TagGroup({
 
 function TagRow({ label, items, maxVisible = Infinity }: { label: string; items: string[]; maxVisible?: number }) {
   const [expanded, setExpanded] = useState(false)
-  useEffect(() => { setExpanded(false) }, [items])
+  // items が変わったら展開状態をリセットする（レンダー中にstateを調整する公式パターン）
+  const [prevItems, setPrevItems] = useState(items)
+  if (items !== prevItems) {
+    setPrevItems(items)
+    setExpanded(false)
+  }
   const shouldCollapse = !expanded && items.length > maxVisible
   const visible = shouldCollapse ? items.slice(0, maxVisible) : items
   const hiddenCount = Math.max(0, items.length - maxVisible)

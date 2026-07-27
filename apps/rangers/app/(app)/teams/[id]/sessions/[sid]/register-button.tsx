@@ -145,7 +145,7 @@ export function RegisterButton({
               {showNoCard && (
                 <div className="rounded-xl border border-[#fdecea] bg-[#fdecea]/60 p-3">
                   <p className="text-xs font-medium text-[#c0392b]">クレジットカードが登録されていません</p>
-                  <p className="mt-0.5 text-xs text-[#475569]">お支払いページでカードを登録するとカード払いでご参加いただけます。</p>
+                  <p className="mt-0.5 text-xs text-[#475569]">通帳ページでカードを登録するとカード払いでご参加いただけます。</p>
                   <Link
                     href="/payments"
                     className="mt-1.5 inline-block text-xs font-medium text-[#005F8C] underline underline-offset-2"

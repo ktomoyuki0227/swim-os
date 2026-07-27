@@ -18,6 +18,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { completeOnboarding, type OnboardingData } from "@/actions/onboarding"
 import { uploadAvatar } from "@/actions/profile"
+import { safeRedirectPath } from "@/lib/utils"
 import { updatePaymentMethod } from "@/actions/payments"
 import { SWIM_SPECIALTIES, SWIMMING_GOALS, SWIM_LEVELS, PREFECTURES, SWIMMER_TYPES, SWIM_DISCIPLINES } from "@/types/database"
 
@@ -272,12 +273,10 @@ function CardSetupForm({
 
 function StripeStep({ onSuccess }: { onSuccess: (paymentMethodId: string) => void }) {
   const [clientSecret, setClientSecret] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [fetchError, setFetchError] = useState(false)
+  const [loading, setLoading] = useState(!!stripePromise)
+  const [fetchError, setFetchError] = useState(!stripePromise)
 
-  const fetchIntent = () => {
-    setLoading(true)
-    setFetchError(false)
+  const runFetchIntent = () => {
     fetch("/api/stripe/setup-intent", { method: "POST" })
       .then((res) => {
         if (!res.ok) throw new Error("server error")
@@ -291,10 +290,15 @@ function StripeStep({ onSuccess }: { onSuccess: (paymentMethodId: string) => voi
       .finally(() => setLoading(false))
   }
 
+  const retryFetchIntent = () => {
+    setLoading(true)
+    setFetchError(false)
+    runFetchIntent()
+  }
+
   useEffect(() => {
-    if (!stripePromise) { setFetchError(true); setLoading(false); return }
-    fetchIntent()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (!stripePromise) return
+    runFetchIntent()
   }, [])
 
   if (loading) {
@@ -311,7 +315,7 @@ function StripeStep({ onSuccess }: { onSuccess: (paymentMethodId: string) => voi
         <p className="rounded-lg border border-[#c0392b]/20 bg-[#fdecea] px-4 py-3 text-sm text-[#c0392b]">
           お支払い情報の読み込みに失敗しました。再度お試しください。
         </p>
-        <Button onClick={fetchIntent} className="w-full rounded-full bg-[#005F8C] text-white hover:bg-[#004E73]" style={{ minHeight: "44px" }}>
+        <Button onClick={retryFetchIntent} className="w-full rounded-full bg-[#005F8C] text-white hover:bg-[#004E73]" style={{ minHeight: "44px" }}>
           再試行
         </Button>
       </div>
@@ -468,8 +472,7 @@ export default function OnboardingPage() {
       const result = await completeOnboarding(data)
       if (!result.error) {
         const params = new URLSearchParams(window.location.search)
-        const next = params.get("next")
-        const destination = next && next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard"
+        const destination = safeRedirectPath(params.get("next"))
         router.push(destination)
       } else {
         setSaveError("保存に失敗しました。もう一度お試しください。")

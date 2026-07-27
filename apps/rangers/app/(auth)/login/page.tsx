@@ -4,7 +4,7 @@ import { useState, useActionState, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -13,24 +13,51 @@ import type { AuthState } from "@/actions/auth"
 
 const initialState: AuthState = { error: null }
 
+// テスト・デモ環境でのみ表示するクイックログイン一覧。
+// 実在するテストアカウント一覧をワンクリックで入力できてしまうため、
+// 明示的に NEXT_PUBLIC_ENABLE_DEMO_LOGIN=true を設定したデプロイでのみ有効にする。
+const isDemoLoginEnabled = process.env.NEXT_PUBLIC_ENABLE_DEMO_LOGIN === "true"
+
+const DEMO_ACCOUNTS = [
+  {
+    email: "test1@example.com",
+    label: "山田 健太",
+    role: "マウントリバー 管理者",
+    desc: "マウントリバー水泳クラブのグループ管理者。セッション作成・メンバー管理・会費管理。東京マスターズのメンバーでもある。",
+  },
+  {
+    email: "test2@example.com",
+    label: "鈴木 太郎",
+    role: "東京マスターズ 管理者",
+    desc: "東京マスターズ水泳クラブのグループ管理者。マウントリバーのレギュラー会員（現金払い）でもある。年会費未払い。",
+  },
+  {
+    email: "test3@example.com",
+    label: "佐藤 花子",
+    role: "回数券会員",
+    desc: "両グループのメンバー。スタンプ残7回・point_card支払い・年会費支払い済み。",
+  },
+  {
+    email: "test4@example.com",
+    label: "田中 新太郎",
+    role: "新規ユーザー",
+    desc: "グループ未所属。オンボーディング導線を確認したいときに使用。",
+    highlight: true,
+  },
+]
+const DEMO_ACCOUNT_PASSWORD = "Delta-coach8820!"
+
 function LoginForm() {
-  const [showDevLogin, setShowDevLogin] = useState(false)
+  const [showDemoAccounts, setShowDemoAccounts] = useState(false)
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [state, formAction, isPending] = useActionState(login, initialState)
   const searchParams = useSearchParams()
   const invite = searchParams.get("invite")
 
-  const handleLineLogin = () => {
-    // LINEログイン本実装前の検証用：新規ユーザー（グループ未所属）としてデモログイン
-    setEmail("test4@example.com")
-    setPassword("test1234")
-    setShowDevLogin(true)
-  }
-
   const fillAccount = (e: string) => {
     setEmail(e)
-    setPassword("test1234")
+    setPassword(DEMO_ACCOUNT_PASSWORD)
   }
 
   return (
@@ -46,16 +73,52 @@ function LoginForm() {
           <p className="mt-1 text-sm text-[#475569]">マスターズ水泳グループ管理</p>
         </CardHeader>
         <CardContent className="space-y-6 pt-4">
-          <button
-            onClick={handleLineLogin}
-            className="flex w-full items-center justify-center gap-3 rounded-full bg-[#06C755] px-6 py-3.5 text-base font-semibold text-white transition-colors hover:bg-[#05b04c]"
-            style={{ minHeight: "48px" }}
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.627-.63h2.386c.349 0 .63.285.63.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.627-.63.349 0 .631.285.631.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.281.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314" />
-            </svg>
-            LINEでログイン（次フェーズ実装予定）
-          </button>
+          <form action={formAction} className="space-y-3">
+            {invite && <input type="hidden" name="invite" value={invite} />}
+            {state.error && (
+              <p className="rounded-[10px] border border-[#c0392b]/20 bg-[#fdecea] px-3 py-2 text-xs text-[#c0392b]">
+                {state.error}
+              </p>
+            )}
+            <div className="space-y-1">
+              <Label htmlFor="email" className="text-xs text-[#475569]">メールアドレス</Label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="h-10 border-[#dce3ea] text-sm"
+                required
+              />
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password" className="text-xs text-[#475569]">パスワード</Label>
+                <Link href="/forgot-password" className="text-xs text-[#005F8C] hover:underline">
+                  パスワードをお忘れですか？
+                </Link>
+              </div>
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="h-10 border-[#dce3ea] text-sm"
+                required
+              />
+            </div>
+            <Button
+              type="submit"
+              disabled={isPending}
+              className="w-full rounded-full bg-[#005F8C] text-white hover:bg-[#004E73]"
+              style={{ minHeight: "48px" }}
+            >
+              {isPending ? "ログイン中..." : "ログイン"}
+            </Button>
+          </form>
 
           <p className="text-center text-xs text-[#64748b]">
             ログインすることで、利用規約とプライバシーポリシーに同意したものとみなされます。
@@ -68,91 +131,25 @@ function LoginForm() {
             </Link>
           </p>
 
-          {/* デモ用ログイン（開発・テスト用） */}
-          <div className="border-t border-[#dce3ea] pt-4">
-            <button
-              type="button"
-              onClick={() => setShowDevLogin((v) => !v)}
-              className="w-full text-center text-xs text-[#64748b] hover:text-[#475569]"
-            >
-              {showDevLogin ? "▲ 閉じる" : "▼ デモ用ログイン（開発用）"}
-            </button>
+          {/* デモ用クイックログイン（開発・テスト用。NEXT_PUBLIC_ENABLE_DEMO_LOGIN=true のデプロイのみ表示） */}
+          {isDemoLoginEnabled && (
+            <div className="border-t border-[#dce3ea] pt-4">
+              <button
+                type="button"
+                onClick={() => setShowDemoAccounts((v) => !v)}
+                className="w-full text-center text-xs text-[#64748b] hover:text-[#475569]"
+              >
+                {showDemoAccounts ? "▲ 閉じる" : "▼ デモ用クイックログイン（開発用）"}
+              </button>
 
-            {showDevLogin && (
-              <form action={formAction} className="mt-4 space-y-3">
-                {invite && <input type="hidden" name="invite" value={invite} />}
-                {state.error && (
-                  <p className="rounded-[10px] border border-[#c0392b]/20 bg-[#fdecea] px-3 py-2 text-xs text-[#c0392b]">
-                    {state.error}
+              {showDemoAccounts && (
+                <div className="mt-4 rounded-lg bg-[#f2f7fa] p-3 text-xs text-[#475569] space-y-2">
+                  <p className="font-medium text-[#1a2332]">
+                    テストアカウント（パスワード共通: {DEMO_ACCOUNT_PASSWORD}）
                   </p>
-                )}
-                <div className="space-y-1">
-                  <Label htmlFor="email" className="text-xs text-[#475569]">メールアドレス</Label>
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    placeholder="test1@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="h-9 border-[#dce3ea] text-sm"
-                    required
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="password" className="text-xs text-[#475569]">パスワード</Label>
-                  <Input
-                    id="password"
-                    name="password"
-                    type="password"
-                    placeholder="test1234"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="h-9 border-[#dce3ea] text-sm"
-                    required
-                  />
-                </div>
-                <Button
-                  type="submit"
-                  disabled={isPending}
-                  variant="outline"
-                  className="w-full rounded-full border-[#dce3ea] text-sm text-[#475569]"
-                  style={{ minHeight: "44px" }}
-                >
-                  {isPending ? "ログイン中..." : "メールでログイン"}
-                </Button>
-
-                {/* クイック切り替え */}
-                <div className="rounded-lg bg-[#f2f7fa] p-3 text-xs text-[#475569] space-y-2">
-                  <p className="font-medium text-[#1a2332]">テストアカウント（パスワード共通: test1234）</p>
+                  <p className="text-[#64748b]">タップすると上のフォームに自動入力されます。「ログイン」を押して進んでください。</p>
                   <div className="flex flex-col gap-1.5">
-                    {[
-                      {
-                        email: "test1@example.com",
-                        label: "山田 健太",
-                        role: "マウントリバー 管理者",
-                        desc: "マウントリバー水泳クラブのグループ管理者。セッション作成・メンバー管理・会費管理。東京マスターズのメンバーでもある。",
-                      },
-                      {
-                        email: "test2@example.com",
-                        label: "鈴木 太郎",
-                        role: "東京マスターズ 管理者",
-                        desc: "東京マスターズ水泳クラブのグループ管理者。マウントリバーのレギュラー会員（現金払い）でもある。年会費未払い。",
-                      },
-                      {
-                        email: "test3@example.com",
-                        label: "佐藤 花子",
-                        role: "回数券会員",
-                        desc: "両グループのメンバー。スタンプ残7回・point_card支払い・年会費支払い済み。",
-                      },
-                      {
-                        email: "test4@example.com",
-                        label: "田中 新太郎",
-                        role: "新規ユーザー",
-                        desc: "グループ未所属。LINEログイン後のオンボーディング導線を確認したいときに使用。",
-                        highlight: true,
-                      },
-                    ].map((a) => (
+                    {DEMO_ACCOUNTS.map((a) => (
                       <button
                         key={a.email}
                         type="button"
@@ -182,9 +179,9 @@ function LoginForm() {
                     ))}
                   </div>
                 </div>
-              </form>
-            )}
-          </div>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
       <p className="mt-6 text-center text-sm text-[#64748b]">

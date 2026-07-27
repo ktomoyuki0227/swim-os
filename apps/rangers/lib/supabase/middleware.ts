@@ -30,6 +30,10 @@ export async function updateSession(request: NextRequest) {
           )
         },
       },
+      cookieOptions: {
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+      },
     }
   )
 
@@ -80,7 +84,11 @@ export async function updateSession(request: NextRequest) {
   }
 
   // ログイン済みユーザーが認証ページにアクセスした場合はダッシュボードへリダイレクト
-  if (user && isAuthPage) {
+  // ただし /reset-password はパスワードリカバリー用のセッションで到達するため除外する
+  // （除外しないと /auth/callback がリカバリーセッションを確立した直後に
+  // 「ログイン済み」と誤判定され、パスワード再設定フォームに一切到達できなくなる）
+  const isResetPasswordPage = request.nextUrl.pathname.startsWith("/reset-password")
+  if (user && isAuthPage && !isResetPasswordPage) {
     const url = request.nextUrl.clone()
     url.pathname = "/dashboard"
     const redirectResponse = NextResponse.redirect(url)

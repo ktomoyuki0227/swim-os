@@ -28,6 +28,19 @@ export async function GET(req: NextRequest) {
 
   const admin = createAdminClient()
 
+  // admin 権限チェック（teamId は公開ページ等で第三者にも把握され得るため必須）
+  const { data: adminMembership } = await admin
+    .from("team_members")
+    .select("id")
+    .eq("team_id", teamId)
+    .eq("swimmer_id", user.id)
+    .eq("role", "admin")
+    .eq("status", "active")
+    .single()
+  if (!adminMembership) {
+    return NextResponse.redirect(new URL(`/teams/${teamId}?connectError=true`, req.url))
+  }
+
   const { data: team } = await admin
     .from("teams")
     .select("stripe_account_id")

@@ -15,8 +15,7 @@ export function MessageInput({ receiverId }: MessageInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const { showToast } = useToast()
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
+  function submitMessage() {
     if (!content.trim()) return
 
     const fd = new FormData()
@@ -24,20 +23,29 @@ export function MessageInput({ receiverId }: MessageInputProps) {
     fd.append("content", content.trim())
 
     startTransition(async () => {
-      const res = await sendMessage(fd)
-      if (res.error) {
-        showToast(res.error, "error")
-      } else {
-        setContent("")
-        textareaRef.current?.focus()
+      try {
+        const res = await sendMessage(fd)
+        if (res.error) {
+          showToast(res.error, "error")
+        } else {
+          setContent("")
+          textareaRef.current?.focus()
+        }
+      } catch {
+        showToast("送信に失敗しました", "error")
       }
     })
   }
 
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    submitMessage()
+  }
+
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
-    if (e.key === "Enter" && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault()
-      handleSubmit(e as unknown as React.FormEvent)
+      submitMessage()
     }
   }
 

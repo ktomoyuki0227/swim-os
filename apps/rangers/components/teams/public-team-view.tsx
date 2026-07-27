@@ -1,14 +1,16 @@
 import Image from "next/image"
 import Link from "next/link"
 import { ContactInfoButton } from "./contact-info-button"
+import type { SessionType } from "@/types/database"
 
 interface PublicSession {
-  id: unknown
-  title: unknown
-  scheduled_at: unknown
-  location: unknown
-  member_price: unknown
-  type: unknown
+  id: string
+  title: string
+  scheduled_at: string
+  location: string | null
+  member_price: number
+  guest_price: number
+  type: SessionType
 }
 
 interface PublicTeamData {
@@ -19,6 +21,7 @@ interface PublicTeamData {
     avatar_url: string | null
     cover_image_url: string | null
     is_recruiting: boolean
+    show_member_count: boolean
     activity_area: string | null
     practice_frequency: string | null
     practice_days: string[]
@@ -144,11 +147,13 @@ export function PublicTeamView({ data, hasBottomNav = false, joinRequestStatus =
               {coachCareer && (
                 <p className="text-xs text-[#475569]">{coachCareer}</p>
               )}
-              <div className="mt-1.5 flex items-center gap-1">
-                <span className="text-base">👥</span>
-                <span className="text-sm font-semibold text-[#1a2332]">{memberCount}</span>
-                <span className="text-xs text-[#475569]">人のメンバー</span>
-              </div>
+              {team.show_member_count && (
+                <div className="mt-1.5 flex items-center gap-1">
+                  <span className="text-base">👥</span>
+                  <span className="text-sm font-semibold text-[#1a2332]">{memberCount}</span>
+                  <span className="text-xs text-[#475569]">人のメンバー</span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -262,10 +267,10 @@ export function PublicTeamView({ data, hasBottomNav = false, joinRequestStatus =
             <h2 className="mb-3 text-base font-bold text-[#1a2332]">直近のセッション</h2>
             <div className="space-y-2.5">
               {sessions.map((session) => {
-                const date = new Date(session.scheduled_at as string)
+                const date = new Date(session.scheduled_at)
                 return (
                   <div
-                    key={session.id as string}
+                    key={session.id}
                     className="flex items-center gap-4 rounded-2xl bg-white px-4 py-3.5 shadow-sm"
                   >
                     <div className="flex w-12 shrink-0 flex-col items-center rounded-xl bg-[#005F8C]/10 py-2">
@@ -280,18 +285,18 @@ export function PublicTeamView({ data, hasBottomNav = false, joinRequestStatus =
                       </span>
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate font-medium text-[#1a2332]">{session.title as string}</p>
+                      <p className="truncate font-medium text-[#1a2332]">{session.title}</p>
                       <p className="text-xs text-[#475569]">
                         {date.toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Tokyo" })}
-                        {session.location ? ` · ${session.location as string}` : ""}
+                        {session.location ? ` · ${session.location}` : ""}
                       </p>
                     </div>
                     <div className="flex shrink-0 flex-col items-end gap-1">
                       <span className="rounded-full bg-[#e8f2f8] px-2 py-0.5 text-xs font-medium text-[#005F8C]">
-                        {SESSION_TYPE_LABEL[session.type as string] ?? (session.type as string)}
+                        {SESSION_TYPE_LABEL[session.type] ?? session.type}
                       </span>
                       <span className="text-xs font-semibold text-[#1a2332]">
-                        ¥{((session.member_price as number) || 0).toLocaleString()}〜
+                        ¥{(session.member_price || 0).toLocaleString()}〜
                       </span>
                     </div>
                   </div>

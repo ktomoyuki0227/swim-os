@@ -8,7 +8,7 @@ import { CardModal } from "./card-modal"
 import { PaymentHistoryFilters } from "./payment-history-filters"
 
 export const metadata: Metadata = {
-  title: "お支払い",
+  title: "通帳",
 }
 
 // 異常ステータスのみ表示（paid / pending は省略）
@@ -24,19 +24,56 @@ const ALERT_STATUS_STYLES: Record<string, string> = {
   unpaid: "bg-[#fdf6e3] text-[#b8860b]",
 }
 
+type PaymentDirection = "expense" | "income"
+
 type PaymentItem = {
   id: string
   itemType: "session" | "annual" | "monthly"
+  direction: PaymentDirection
   label: string
   teamId: string
   teamName: string
+  /** 収入の場合のみ：支払った相手の名前 */
+  payerName?: string
   amount: number
   status: string
   date: Date
 }
 
 interface PaymentsPageProps {
-  searchParams: Promise<{ type?: string; sort?: string }>
+  searchParams: Promise<{ type?: string; sort?: string; direction?: string; status?: string }>
+}
+
+type IncomeSession = {
+  id: string
+  title: string | null
+  scheduled_at: string
+  member_price: number | null
+  guest_price: number | null
+  team_id: string
+}
+
+type IncomeRegistration = {
+  id: string
+  payment_status: string
+  payment_method: string | null
+  registered_at: string
+  is_member: boolean
+  cancelled_at: string | null
+  swimmer_id: string
+  session_id: string
+}
+
+type IncomeFee = {
+  id: string
+  type: string
+  period: string
+  amount: number
+  status: string
+  paid_at: string | null
+  created_at: string
+  team_id: string
+  swimmer_id: string
 }
 
 /** itemType に応じた左カラーバーの色 */
@@ -50,6 +87,34 @@ function formatMonthKey(key: string): string {
   return `${year}年${Number(month)}月`
 }
 
+/** Asia/Tokyo タイムゾーン基準で年・月・日を取得する（サーバーのタイムゾーンに依存しないため） */
+function getJstDateParts(date: Date): { year: number; month: number; day: number } {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Tokyo",
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+  }).formatToParts(date)
+  const partMap = Object.fromEntries(parts.map((p) => [p.type, p.value]))
+  return {
+    year: Number(partMap.year),
+    month: Number(partMap.month),
+    day: Number(partMap.day),
+  }
+}
+
+/** "2025-07" 形式の月次グループキーをJST基準で生成する */
+function getJstMonthKey(date: Date): string {
+  const { year, month } = getJstDateParts(date)
+  return `${year}-${String(month).padStart(2, "0")}`
+}
+
+/** "M/D" 形式でJST基準の日付表示文字列を生成する */
+function formatJstMonthDay(date: Date): string {
+  const { month, day } = getJstDateParts(date)
+  return `${month}/${day}`
+}
+
 export default async function PaymentsPage({ searchParams }: PaymentsPageProps) {
   const supabase = await createClient()
   const {
@@ -58,10 +123,10 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
   if (!user) redirect("/login")
 
   const params = await searchParams
-  // "session" | "fee" | "" (すべて)
-  const filterType = params.type ?? ""
-  // "asc" (古い順) | "" (新着順・デフォルト)
-  const filterSort = params.sort ?? ""
+  const filterType = params.type ?? ""           // "session" | "fee" | ""（すべて）
+  const filterSort = params.sort ?? ""            // "asc"（古い順） | ""（新着順）
+  const filterDirection = params.direction ?? ""  // "expense" | "income" | ""（すべて）
+  const filterStatus = params.status ?? ""        // "unpaid"（要対応のみ） | ""（すべて）
 
   const { data: profile } = await supabase
     .from("profiles")
@@ -79,7 +144,7 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
     }
   }
 
-  // ① セッション参加履歴
+  // ① セッション参加履歴（支出）
   const { data: sessionRegs } = await supabase
     .from("session_registrations")
     .select(
@@ -91,15 +156,59 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
     .eq("swimmer_id", user.id)
     .order("registered_at", { ascending: false })
 
-  // ② 会費履歴
+  // ② 会費履歴（支出）
   const { data: membershipFees } = await supabase
     .from("membership_fees")
     .select(`id, type, period, amount, status, paid_at, created_at, team_id`)
     .eq("swimmer_id", user.id)
     .order("created_at", { ascending: false })
 
-  // ③ チーム情報を一括取得（ネスト JOIN の RLS 問題を避けるため分離）
-  const teamIdSet = new Set<string>()
+  // ③ 自分が管理者を務めるチーム（収入の対象範囲）
+  const { data: adminMemberships } = await supabase
+    .from("team_members")
+    .select("team_id")
+    .eq("swimmer_id", user.id)
+    .eq("role", "admin")
+    .eq("status", "active")
+  const adminTeamIds = (adminMemberships ?? []).map((m) => m.team_id)
+  const isTeamAdmin = adminTeamIds.length > 0
+
+  // ④ 収入側データ（自分が管理者のチームに対する、他メンバーの支払い）
+  //    registrations_select_admin / fees_select_admin ポリシーにより通常クライアントで取得可能
+  let incomeRegs: IncomeRegistration[] = []
+  let incomeSessionById = new Map<string, IncomeSession>()
+  let incomeFees: IncomeFee[] = []
+
+  if (isTeamAdmin) {
+    const { data: incomeSessions } = await supabase
+      .from("practice_sessions")
+      .select("id, title, scheduled_at, member_price, guest_price, team_id")
+      .in("team_id", adminTeamIds)
+
+    incomeSessionById = new Map((incomeSessions ?? []).map((s) => [s.id, s]))
+    const incomeSessionIds = Array.from(incomeSessionById.keys())
+
+    if (incomeSessionIds.length > 0) {
+      const { data: regs } = await supabase
+        .from("session_registrations")
+        .select(
+          "id, payment_status, payment_method, registered_at, is_member, cancelled_at, swimmer_id, session_id"
+        )
+        .in("session_id", incomeSessionIds)
+        .neq("swimmer_id", user.id)
+      incomeRegs = regs ?? []
+    }
+
+    const { data: fees } = await supabase
+      .from("membership_fees")
+      .select("id, type, period, amount, status, paid_at, created_at, team_id, swimmer_id")
+      .in("team_id", adminTeamIds)
+      .neq("swimmer_id", user.id)
+    incomeFees = fees ?? []
+  }
+
+  // ⑤ チーム情報を一括取得（ネスト JOIN の RLS 問題を避けるため分離）
+  const teamIdSet = new Set<string>(adminTeamIds)
   for (const reg of sessionRegs ?? []) {
     const session = Array.isArray(reg.session) ? (reg.session[0] ?? null) : reg.session
     const teamId = session?.team_id as string | null
@@ -114,9 +223,20 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
       : { data: [] as { id: string; name: string }[] }
   const teamById = new Map((teamsData ?? []).map((t) => [t.id, t.name]))
 
+  // ⑥ 支払者（収入の相手）のプロフィールを一括取得
+  const payerIdSet = new Set<string>()
+  for (const reg of incomeRegs) payerIdSet.add(reg.swimmer_id)
+  for (const fee of incomeFees) payerIdSet.add(fee.swimmer_id)
+  const { data: payersData } =
+    payerIdSet.size > 0
+      ? await supabase.from("profiles").select("id, name").in("id", Array.from(payerIdSet))
+      : { data: [] as { id: string; name: string }[] }
+  const payerNameById = new Map((payersData ?? []).map((p) => [p.id, p.name]))
+
   // ——— 統合リストを作成 ———
   const items: PaymentItem[] = []
 
+  // 支出：セッション参加費
   for (const reg of sessionRegs ?? []) {
     // キャンセル済み & 支払い未確定は除外
     if (reg.cancelled_at && reg.payment_status === "pending") continue
@@ -133,6 +253,7 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
     items.push({
       id: reg.id,
       itemType: "session",
+      direction: "expense",
       label: session.title ?? "セッション",
       teamId,
       teamName,
@@ -142,6 +263,7 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
     })
   }
 
+  // 支出：会費
   for (const fee of membershipFees ?? []) {
     const teamId = fee.team_id
     if (!teamId) continue
@@ -156,9 +278,58 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
     items.push({
       id: fee.id,
       itemType: fee.type as "annual" | "monthly",
+      direction: "expense",
       label,
       teamId,
       teamName,
+      amount: fee.amount,
+      status: fee.status,
+      date: new Date(fee.paid_at ?? fee.created_at),
+    })
+  }
+
+  // 収入：セッション参加費（自分が管理するチームへの、他メンバーの支払い）
+  for (const reg of incomeRegs) {
+    if (reg.cancelled_at && reg.payment_status === "pending") continue
+    if (reg.payment_status === "free") continue
+
+    const session = incomeSessionById.get(reg.session_id)
+    if (!session) continue
+    const teamName = teamById.get(session.team_id)
+    if (!teamName) continue
+
+    items.push({
+      id: reg.id,
+      itemType: "session",
+      direction: "income",
+      label: session.title ?? "セッション",
+      teamId: session.team_id,
+      teamName,
+      payerName: payerNameById.get(reg.swimmer_id) ?? "不明",
+      amount: reg.is_member ? (session.member_price ?? 0) : (session.guest_price ?? 0),
+      status: reg.payment_status,
+      date: new Date(session.scheduled_at ?? reg.registered_at),
+    })
+  }
+
+  // 収入：会費（自分が管理するチームへの、他メンバーの会費）
+  for (const fee of incomeFees) {
+    const teamName = teamById.get(fee.team_id)
+    if (!teamName) continue
+
+    const label =
+      fee.type === "annual"
+        ? `年会費 ${fee.period}年`
+        : `月謝 ${fee.period.replace("-", "年")}月`
+
+    items.push({
+      id: fee.id,
+      itemType: fee.type as "annual" | "monthly",
+      direction: "income",
+      label,
+      teamId: fee.team_id,
+      teamName,
+      payerName: payerNameById.get(fee.swimmer_id) ?? "不明",
       amount: fee.amount,
       status: fee.status,
       date: new Date(fee.paid_at ?? fee.created_at),
@@ -173,19 +344,18 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
   )
 
   // フィルター適用
-  // "session" → セッション参加費のみ
-  // "fee"     → 月謝・年会費のみ
-  // ""        → すべて
   const filtered = items.filter((item) => {
-    if (filterType === "session") return item.itemType === "session"
-    if (filterType === "fee") return item.itemType === "annual" || item.itemType === "monthly"
+    if (filterType === "session" && item.itemType !== "session") return false
+    if (filterType === "fee" && item.itemType !== "annual" && item.itemType !== "monthly") return false
+    if (filterDirection && item.direction !== filterDirection) return false
+    if (filterStatus === "unpaid" && !ALERT_STATUS_LABELS[item.status]) return false
     return true
   })
 
   // 年月でグループ化
   const groupedByMonth = new Map<string, PaymentItem[]>()
   for (const item of filtered) {
-    const key = `${item.date.getFullYear()}-${String(item.date.getMonth() + 1).padStart(2, "0")}`
+    const key = getJstMonthKey(item.date)
     if (!groupedByMonth.has(key)) groupedByMonth.set(key, [])
     groupedByMonth.get(key)!.push(item)
   }
@@ -197,26 +367,38 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
     <div className="mx-auto max-w-2xl space-y-4">
       {/* ページヘッダー */}
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-[#1a2332]">お支払い</h1>
+        <h1 className="text-lg font-semibold text-[#1a2332]">通帳</h1>
         {/* クレジットカード管理ボタン */}
         <CardModal cardDetails={cardDetails} hasCard={!!cardDetails} />
       </div>
 
       {/* フィルターチップ */}
-      <PaymentHistoryFilters selectedType={filterType} selectedSort={filterSort} />
+      <PaymentHistoryFilters
+        selectedType={filterType}
+        selectedSort={filterSort}
+        selectedDirection={filterDirection}
+        selectedStatus={filterStatus}
+        showDirectionFilter={isTeamAdmin}
+      />
 
-      {/* 支払い履歴 */}
+      {/* 通帳明細 */}
       {filtered.length === 0 ? (
         <div className="rounded-[14px] border border-[#dce3ea] bg-white px-6 py-16 text-center">
           <p className="text-sm text-[#475569]">
-            {items.length === 0 ? "支払い履歴がありません" : "条件に一致する履歴がありません"}
+            {items.length === 0 ? "まだ入出金の記録がありません" : "条件に一致する記録がありません"}
           </p>
         </div>
       ) : (
         <div className="space-y-5">
           {sortedMonthKeys.map((monthKey) => {
             const monthItems = groupedByMonth.get(monthKey)!
-            const totalAmount = monthItems.reduce((sum, item) => sum + item.amount, 0)
+            const totalExpense = monthItems
+              .filter((i) => i.direction === "expense")
+              .reduce((sum, i) => sum + i.amount, 0)
+            const totalIncome = monthItems
+              .filter((i) => i.direction === "income")
+              .reduce((sum, i) => sum + i.amount, 0)
+            const net = totalIncome - totalExpense
 
             return (
               <div key={monthKey}>
@@ -226,7 +408,7 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
                     {formatMonthKey(monthKey)}
                   </p>
                   <p className="text-xs text-[#475569]">
-                    {monthItems.length}件 · ¥{totalAmount.toLocaleString()}
+                    合計 {net >= 0 ? "+" : "−"}¥{Math.abs(net).toLocaleString()}
                   </p>
                 </div>
 
@@ -245,25 +427,32 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
                         {/* 日付（月/日） */}
                         <div className="w-9 shrink-0 text-center">
                           <p className="text-sm font-medium tabular-nums text-[#1a2332]">
-                            {item.date.getMonth() + 1}/{item.date.getDate()}
+                            {formatJstMonthDay(item.date)}
                           </p>
                         </div>
 
                         {/* 縦区切り線 */}
                         <div className="h-8 w-px shrink-0 bg-[#edf0f4]" />
 
-                        {/* 摘要：セッション名 + グループ名 */}
+                        {/* 摘要：セッション名 + グループ名（収入は支払者名も） */}
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-sm font-medium text-[#1a2332]">
                             {item.label}
                           </p>
-                          <p className="truncate text-xs text-[#475569]">{item.teamName}</p>
+                          <p className="truncate text-xs text-[#475569]">
+                            {item.direction === "income" && item.payerName
+                              ? `${item.teamName} · ${item.payerName}さん`
+                              : item.teamName}
+                          </p>
                         </div>
 
                         {/* 金額 + 異常ステータスバッジ */}
                         <div className="shrink-0 text-right">
-                          <p className="text-sm font-semibold text-[#1a2332]">
-                            ¥{item.amount.toLocaleString()}
+                          <p
+                            className="text-sm font-semibold"
+                            style={{ color: item.direction === "income" ? "#005F8C" : "#1a2332" }}
+                          >
+                            {item.direction === "income" ? "+" : "−"}¥{item.amount.toLocaleString()}
                           </p>
                           {ALERT_STATUS_LABELS[item.status] && (
                             <span

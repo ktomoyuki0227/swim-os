@@ -28,7 +28,9 @@ const STEPS = [
 interface FormData {
   name: string
   description: string
+  instructor_title: string
   is_recruiting: boolean
+  show_member_count: boolean
   activity_area: string
   main_pool: string
   practice_frequency: string
@@ -85,7 +87,7 @@ function StepIndicator({ current }: { current: number }) {
   )
 }
 
-function Step6PaymentSetup({ teamId }: { teamId: string }) {
+function Step6PaymentSetup({ teamId, typeLabel }: { teamId: string; typeLabel: string }) {
   const [isLoading, setIsLoading] = useState(false)
   const { showToast } = useToast()
 
@@ -116,7 +118,7 @@ function Step6PaymentSetup({ teamId }: { teamId: string }) {
           </svg>
         </div>
         <div>
-          <p className="text-sm font-semibold text-[#1a2332]">グループが作成されました！</p>
+          <p className="text-sm font-semibold text-[#1a2332]">{typeLabel}が作成されました！</p>
           <p className="text-xs text-[#475569]">あと1ステップで完了です</p>
         </div>
       </div>
@@ -167,12 +169,15 @@ export default function NewTeamPage() {
 
   const [step, setStep] = useState(0)
   const [teamType, setTeamType] = useState<TeamType | null>(null)
+  const typeLabel = teamType === "personal" ? "パーソナル" : "チーム"
 
   // Form state
   const [form, setForm] = useState<FormData>({
     name: "",
     description: "",
+    instructor_title: "",
     is_recruiting: true,
+    show_member_count: true,
     activity_area: "",
     main_pool: "",
     practice_frequency: "",
@@ -227,6 +232,7 @@ export default function NewTeamPage() {
       ...prev,
       name: fd.get("name") as string,
       description: (fd.get("description") as string) || "",
+      instructor_title: (fd.get("instructor_title") as string) || "",
     }))
     setStep(2)
     window.scrollTo({ top: 0, behavior: "smooth" })
@@ -252,9 +258,15 @@ export default function NewTeamPage() {
     if (!file) return
     const preview = URL.createObjectURL(file)
     if (type === "cover") {
-      setImages((prev) => ({ ...prev, coverFile: file, coverPreview: preview }))
+      setImages((prev) => {
+        if (prev.coverPreview) URL.revokeObjectURL(prev.coverPreview)
+        return { ...prev, coverFile: file, coverPreview: preview }
+      })
     } else {
-      setImages((prev) => ({ ...prev, iconFile: file, iconPreview: preview }))
+      setImages((prev) => {
+        if (prev.iconPreview) URL.revokeObjectURL(prev.iconPreview)
+        return { ...prev, iconFile: file, iconPreview: preview }
+      })
     }
   }
 
@@ -320,6 +332,8 @@ export default function NewTeamPage() {
       contact_phone: form.contact_phone || undefined,
       fee_members_exempt_session: false,
       team_type: teamType ?? "team",
+      instructor_title: teamType === "personal" ? (form.instructor_title || undefined) : undefined,
+      show_member_count: form.show_member_count,
     }
 
     startTransition(async () => {
@@ -357,7 +371,7 @@ export default function NewTeamPage() {
             <polyline points="15 18 9 12 15 6" />
           </svg>
         </BackLink>
-        <h1 className="text-xl font-bold text-[#1a2332]">グループを作成</h1>
+        <h1 className="text-xl font-bold text-[#1a2332]">{teamType ? `${typeLabel}を作成` : "グループを作成"}</h1>
       </div>
 
       {/* ステップインジケーター */}
@@ -453,7 +467,7 @@ export default function NewTeamPage() {
             <CardContent className="space-y-4 pt-5">
               <div className="space-y-1.5">
                 <Label htmlFor="name">
-                  グループ名 <span className="text-[#c0392b]">*</span>
+                  {typeLabel}名 <span className="text-[#c0392b]">*</span>
                 </Label>
                 <Input
                   id="name" name="name"
@@ -465,7 +479,7 @@ export default function NewTeamPage() {
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="description">
-                  グループの説明
+                  {typeLabel}の説明
                   <span className="ml-1 text-xs font-normal text-[#64748b]">（任意）</span>
                 </Label>
                 <Textarea
@@ -476,8 +490,23 @@ export default function NewTeamPage() {
                   className="resize-none border-[#dce3ea]"
                 />
               </div>
+              {teamType === "personal" && (
+                <div className="space-y-1.5">
+                  <Label htmlFor="instructor_title">
+                    肩書き
+                    <span className="ml-1 text-xs font-normal text-[#64748b]">（任意）</span>
+                  </Label>
+                  <Input
+                    id="instructor_title" name="instructor_title"
+                    placeholder="例: 水泳コーチ"
+                    defaultValue={form.instructor_title}
+                    maxLength={100}
+                    className="border-[#dce3ea]"
+                  />
+                </div>
+              )}
               <div className="space-y-2">
-                <Label>メンバー募集</Label>
+                <Label>{teamType === "personal" ? "生徒募集" : "メンバー募集"}</Label>
                 <div className="flex items-center gap-3 rounded-[10px] border border-[#dce3ea] p-3">
                   <button
                     type="button"
@@ -491,9 +520,31 @@ export default function NewTeamPage() {
                     }`} />
                   </button>
                   <span className="text-sm font-medium text-[#1a2332]">
-                    {form.is_recruiting ? "メンバー募集中" : "募集停止中"}
+                    {form.is_recruiting
+                      ? (teamType === "personal" ? "生徒募集中" : "メンバー募集中")
+                      : "募集停止中"}
                   </span>
                 </div>
+              </div>
+              <div className="space-y-2">
+                <Label>メンバー数の表示</Label>
+                <div className="flex items-center gap-3 rounded-[10px] border border-[#dce3ea] p-3">
+                  <button
+                    type="button"
+                    onClick={() => setForm((prev) => ({ ...prev, show_member_count: !prev.show_member_count }))}
+                    className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
+                      form.show_member_count ? "bg-[#005F8C]" : "bg-[#dce3ea]"
+                    }`}
+                  >
+                    <span className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
+                      form.show_member_count ? "translate-x-5" : "translate-x-0"
+                    }`} />
+                  </button>
+                  <span className="text-sm font-medium text-[#1a2332]">
+                    {form.show_member_count ? "表示する" : "表示しない"}
+                  </span>
+                </div>
+                <p className="text-xs text-[#64748b]">公開ページに「〇人のメンバー」を表示します</p>
               </div>
             </CardContent>
           </Card>
@@ -593,7 +644,7 @@ export default function NewTeamPage() {
 
               {/* カバー画像 */}
               <div className="space-y-2">
-                <Label>グループイメージ画像</Label>
+                <Label>{typeLabel}イメージ画像</Label>
                 <div
                   className="relative w-full cursor-pointer overflow-hidden rounded-[10px] border border-dashed border-[#dce3ea] bg-[#f2f7fa] transition-colors hover:border-[#005F8C]/50"
                   style={{ aspectRatio: "16/5" }}
@@ -611,15 +662,18 @@ export default function NewTeamPage() {
                 </div>
                 <input ref={coverInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => handleFileSelect(e, "cover")} />
                 {images.coverPreview && (
-                  <button type="button" className="text-xs text-[#64748b] hover:text-[#475569]" onClick={() => setImages((prev) => ({ ...prev, coverFile: null, coverPreview: null }))}>
+                  <button type="button" className="text-xs text-[#64748b] hover:text-[#475569]" onClick={() => setImages((prev) => {
+                    if (prev.coverPreview) URL.revokeObjectURL(prev.coverPreview)
+                    return { ...prev, coverFile: null, coverPreview: null }
+                  })}>
                     × 削除
                   </button>
                 )}
               </div>
 
-              {/* グループアイコン */}
+              {/* アイコン */}
               <div className="space-y-2">
-                <Label>グループアイコン</Label>
+                <Label>{typeLabel}アイコン</Label>
                 <div className="flex items-center gap-4">
                   <div
                     className="relative h-20 w-20 shrink-0 cursor-pointer overflow-hidden rounded-full border border-dashed border-[#dce3ea] bg-[#f2f7fa] transition-colors hover:border-[#005F8C]/50"
@@ -637,7 +691,10 @@ export default function NewTeamPage() {
                     </button>
                     <p className="mt-1 text-xs text-[#64748b]">JPEG / PNG / WebP・5MB以下</p>
                     {images.iconPreview && (
-                      <button type="button" className="mt-1 text-xs text-[#64748b] hover:text-[#475569]" onClick={() => setImages((prev) => ({ ...prev, iconFile: null, iconPreview: null }))}>
+                      <button type="button" className="mt-1 text-xs text-[#64748b] hover:text-[#475569]" onClick={() => setImages((prev) => {
+                        if (prev.iconPreview) URL.revokeObjectURL(prev.iconPreview)
+                        return { ...prev, iconFile: null, iconPreview: null }
+                      })}>
                         × 削除
                       </button>
                     )}
@@ -805,7 +862,7 @@ export default function NewTeamPage() {
               ← 戻る
             </Button>
             <Button type="submit" disabled={isPending} className="flex-1 rounded-full bg-[#005F8C] hover:bg-[#004E73]" style={{ minHeight: 48 }}>
-              {isPending ? "作成中..." : "グループを作成"}
+              {isPending ? "作成中..." : `${typeLabel}を作成`}
             </Button>
           </div>
         </form>
@@ -813,7 +870,7 @@ export default function NewTeamPage() {
 
       {/* ===== Step 5: 決済設定 ===== */}
       {step === 5 && createdTeamId && (
-        <Step6PaymentSetup teamId={createdTeamId} />
+        <Step6PaymentSetup teamId={createdTeamId} typeLabel={typeLabel} />
       )}
     </div>
   )

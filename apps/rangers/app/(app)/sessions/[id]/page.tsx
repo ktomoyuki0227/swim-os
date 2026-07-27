@@ -393,7 +393,6 @@ export default async function SessionDetailPage({ params, searchParams }: Sessio
         {isCashFilter && hasCashRegistrations && (
           <div className="mb-3">
             <CashCollectionPanel
-              sessionId={id}
               registrations={displayedRegistrations.map((r) => {
                 const swimmer = r.swimmer as Record<string, unknown> | null
                 return {

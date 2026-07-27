@@ -26,11 +26,10 @@ interface JoinRequest {
 }
 
 interface JoinRequestsTabProps {
-  teamId: string
   initialRequests: JoinRequest[]
 }
 
-export function JoinRequestsTab({ teamId, initialRequests }: JoinRequestsTabProps) {
+export function JoinRequestsTab({ initialRequests }: JoinRequestsTabProps) {
   const [requests, setRequests] = useState(initialRequests)
   const [processingId, setProcessingId] = useState<string | null>(null)
   const { showToast } = useToast()

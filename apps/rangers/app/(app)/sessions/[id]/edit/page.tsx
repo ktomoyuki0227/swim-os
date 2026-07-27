@@ -38,7 +38,6 @@ export default async function EditSessionPage({ params }: PageProps) {
   return (
     <EditSessionForm
       session={session}
-      teamId={session.team_id as string}
       teamName={(team?.name as string) || ""}
     />
   )

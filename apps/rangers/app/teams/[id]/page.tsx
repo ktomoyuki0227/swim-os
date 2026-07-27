@@ -6,16 +6,12 @@ import { createClient, createAdminClient } from "@/lib/supabase/server"
 import { getTeam, getTeamMembers, getTeamFeeStats, getPublicTeam } from "@/actions/teams"
 import { getTeamSessions } from "@/actions/sessions"
 import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Navigation } from "@/components/navigation"
-import { ToastProvider } from "@/components/toast"
+import { AppShell } from "@/components/app-shell"
 import { PublicHeader } from "@/components/layout/public-header"
 import { PublicFooter } from "@/components/layout/public-footer"
 import { PublicTeamView } from "@/components/teams/public-team-view"
 import { AdminActionButtons } from "@/app/(app)/teams/[id]/admin-action-buttons"
-import { MemberList } from "@/app/(app)/teams/[id]/member-list"
-import { JoinRequestsTab } from "@/app/(app)/teams/[id]/join-requests-tab"
 import { getTeamJoinRequests, getMyJoinRequest } from "@/actions/join-requests"
 import { ContactInfoButton } from "@/components/teams/contact-info-button"
 import { AdminTeamActions } from "@/app/(app)/teams/[id]/admin-team-actions"
@@ -24,14 +20,12 @@ import { MemberSessionList } from "@/app/(app)/teams/[id]/member-session-list"
 import { MemberPreviewBar } from "@/app/(app)/teams/[id]/member-preview-bar"
 import { StripeSetupBanner } from "@/app/(app)/teams/[id]/stripe-setup-banner"
 import { BackLink } from "@/components/back-link"
-import Image from "next/image"
 
 interface TeamPageProps {
   params: Promise<{ id: string }>
-  searchParams: Promise<{ tab?: string }>
 }
 
-export default async function TeamPage({ params, searchParams }: TeamPageProps) {
+export default async function TeamPage({ params }: TeamPageProps) {
   const { id } = await params
 
   const supabase = await createClient()
@@ -95,20 +89,19 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
     const joinRequestStatus = (joinRequestResult.data?.status ?? null) as "pending" | "approved" | "rejected" | null
 
     return (
-      <ToastProvider>
-        <Navigation userName={profile.name} avatarUrl={profile.avatar_url} inactiveRoutes={["/teams"]} />
-        <main className="mx-auto w-full max-w-5xl flex-1 overflow-x-hidden px-4 py-6 pb-24 md:pb-6">
-          {/* -mx-4 -mt-6 は layout の padding を打ち消して PublicTeamView をフルブリードにする */}
-          <div className="-mx-4 -mt-6">
-            <PublicTeamView data={publicResult.data} hasBottomNav={true} joinRequestStatus={joinRequestStatus} isLoggedIn={true} />
-          </div>
-        </main>
-      </ToastProvider>
+      <AppShell
+        userName={profile.name}
+        avatarUrl={profile.avatar_url}
+        inactiveRoutes={["/teams"]}
+        mainClassName="mx-auto w-full max-w-5xl flex-1 overflow-x-hidden px-4 py-6 pb-24 md:pb-6"
+      >
+        {/* -mx-4 -mt-6 は layout の padding を打ち消して PublicTeamView をフルブリードにする */}
+        <div className="-mx-4 -mt-6">
+          <PublicTeamView data={publicResult.data} hasBottomNav={true} joinRequestStatus={joinRequestStatus} isLoggedIn={true} />
+        </div>
+      </AppShell>
     )
   }
-
-  const defaultTab = isAdmin ? "members" : "sessions"
-  const { tab = defaultTab } = await searchParams
 
   // ─── 管理者ビュー ─────────────────────────────────────────────────
   if (isAdmin) {
@@ -131,14 +124,17 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
       )
       .slice(0, 10)
     const joinRequests = joinRequestsResult.data || []
+    const feeStats = feeStatsResult.data ?? null
 
     const adminMembers = members.filter((m: Record<string, unknown>) => m.role === "admin")
     const previewMembers = members.slice(0, 3)
 
     return (
-      <ToastProvider>
-        <Navigation userName={profile.name} avatarUrl={profile.avatar_url} />
-        <main className="mx-auto w-full max-w-5xl flex-1 overflow-x-hidden px-4 py-4 pb-24 md:pb-6">
+      <AppShell
+        userName={profile.name}
+        avatarUrl={profile.avatar_url}
+        mainClassName="mx-auto w-full max-w-5xl flex-1 overflow-x-hidden px-4 py-4 pb-24 md:pb-6"
+      >
           <div className="space-y-4">
 
             {/* ── トップバー ── */}
@@ -211,6 +207,7 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
               hasMonthlyFee={team.has_monthly_fee ?? false}
               hasPointCard={team.has_point_card ?? false}
               pointCardCount={team.point_card_count ?? 0}
+              feeStats={feeStats}
             />
 
             {/* ── 主催者 ── */}
@@ -302,8 +299,7 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
             </div>
 
           </div>
-        </main>
-      </ToastProvider>
+      </AppShell>
     )
   }
 
@@ -345,8 +341,6 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
     registeredSessionIds = new Set((regs || []).map((r) => r.session_id))
   }
 
-  const previewMembers = allMembers.slice(0, 3)
-
   // MemberSessionList に渡すデータ
   const sessionItems = allSessions.map((s) => ({
     id: s.id as string,
@@ -361,10 +355,12 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
   }))
 
   return (
-    <ToastProvider>
-      <Navigation userName={profile.name} avatarUrl={profile.avatar_url} />
-      <main className="mx-auto w-full max-w-5xl flex-1 overflow-x-hidden px-4 py-4 pb-24 md:pb-6">
-        <div className="space-y-4">
+    <AppShell
+      userName={profile.name}
+      avatarUrl={profile.avatar_url}
+      mainClassName="mx-auto w-full max-w-5xl flex-1 overflow-x-hidden px-4 py-4 pb-24 md:pb-6"
+    >
+      <div className="space-y-4">
 
           {/* ── トップバー ── */}
           <div className="flex items-center justify-between">
@@ -409,8 +405,7 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
           {/* ── セッション一覧（今後/過去切り替え） ── */}
           <MemberSessionList teamId={id} sessions={sessionItems} />
 
-        </div>
-      </main>
-    </ToastProvider>
+      </div>
+    </AppShell>
   )
 }

@@ -3,6 +3,7 @@
 import { createClient, createAdminClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
+import { isTeamAdmin } from "@/lib/auth/require-team-admin"
 
 export async function getStampMembers(teamId: string) {
   const supabase = await createClient()
@@ -11,15 +12,7 @@ export async function getStampMembers(teamId: string) {
 
   const admin = createAdminClient()
 
-  const { data: adminCheck } = await admin
-    .from("team_members")
-    .select("id")
-    .eq("team_id", teamId)
-    .eq("swimmer_id", user.id)
-    .eq("role", "admin")
-    .eq("status", "active")
-    .single()
-  if (!adminCheck) return { data: [] }
+  if (!(await isTeamAdmin(admin, teamId, user.id))) return { data: [] }
 
   // 回数券会員一覧
   const { data: members } = await admin
@@ -61,21 +54,26 @@ export async function addStampPurchase(
   amount: number,
   note?: string
 ) {
+  if (!Number.isInteger(cardCount) || cardCount <= 0) return { error: "枚数は1以上の整数を入力してください" }
+  if (!Number.isInteger(stampCount) || stampCount <= 0) return { error: "回数券の回数は1以上の整数を入力してください" }
+  if (!Number.isInteger(amount) || amount < 0) return { error: "金額は0以上の整数を入力してください" }
+
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
 
   const admin = createAdminClient()
 
-  const { data: adminCheck } = await admin
+  if (!(await isTeamAdmin(admin, teamId, user.id))) return { error: "権限がありません" }
+
+  const { data: tm } = await admin
     .from("team_members")
     .select("id")
     .eq("team_id", teamId)
-    .eq("swimmer_id", user.id)
-    .eq("role", "admin")
+    .eq("swimmer_id", swimmerId)
     .eq("status", "active")
     .single()
-  if (!adminCheck) return { error: "権限がありません" }
+  if (!tm) return { error: "対象メンバーが見つかりません" }
 
   // 購入記録を追加
   const { error: purchaseError } = await admin
@@ -91,20 +89,16 @@ export async function addStampPurchase(
 
   if (purchaseError) return { error: "購入記録の追加に失敗しました" }
 
-  // stamp_remaining を加算
+  // stamp_remaining をアトミックに加算（read-modify-writeによるlost update防止）
   const addedStamps = cardCount * stampCount
-  const { data: tm } = await admin
-    .from("team_members")
-    .select("stamp_remaining")
-    .eq("team_id", teamId)
-    .eq("swimmer_id", swimmerId)
-    .single()
-
-  await admin
-    .from("team_members")
-    .update({ stamp_remaining: (tm?.stamp_remaining ?? 0) + addedStamps })
-    .eq("team_id", teamId)
-    .eq("swimmer_id", swimmerId)
+  const { error: incrementError } = await admin.rpc("increment_stamp_by", {
+    p_team_member_id: tm.id,
+    p_count: addedStamps,
+  })
+  if (incrementError) {
+    console.error("[addStampPurchase] increment_stamp_by failed:", incrementError)
+    return { error: "スタンプ残数の更新に失敗しました" }
+  }
 
   revalidatePath("/fees")
   return { success: true }

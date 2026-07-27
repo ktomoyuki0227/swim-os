@@ -5,6 +5,7 @@ import { createPortal } from "react-dom"
 import { useRouter } from "next/navigation"
 import { X, Check } from "lucide-react"
 import { MAX_PRICE, DEFAULT_MAX_PRICE, PRICE_STEP as STEP } from "./session-price-config"
+import { useMounted } from "@/hooks/use-mounted"
 
 const DATE_RANGE_OPTIONS = [
   { key: "all", label: "すべて" },
@@ -65,46 +66,6 @@ function getPriceLabel(minPrice: number, maxPrice: number): string {
   if (isMinDefault) return `〜¥${maxPrice.toLocaleString()}`
   if (isMaxDefault) return `¥${minPrice.toLocaleString()}〜`
   return `¥${minPrice.toLocaleString()}〜¥${maxPrice.toLocaleString()}`
-}
-
-// ---- フィルターチップ ----
-function FilterChip({
-  label,
-  active,
-  isOpen,
-  onClick,
-  icon,
-}: {
-  label: string
-  active: boolean
-  isOpen: boolean
-  onClick: () => void
-  icon?: React.ReactNode
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      style={{
-        minHeight: "36px",
-        background: active ? "#005F8C" : "#f2f7fa",
-        color: active ? "#fff" : "#475569",
-        border: active ? "1.5px solid #005F8C" : "1.5px solid #e0eaef",
-      }}
-      className="flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-medium transition-all"
-    >
-      {icon}
-      <span>{label}</span>
-      <svg
-        width="12" height="12" viewBox="0 0 24 24" fill="none"
-        stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
-        className={`transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
-        aria-hidden="true"
-      >
-        <polyline points="6 9 12 15 18 9" />
-      </svg>
-    </button>
-  )
 }
 
 // ---- ボトムシート（スライドアップ） ----
@@ -248,25 +209,24 @@ export function SessionFiltersBar({
 }: SessionFiltersBarProps) {
   const router = useRouter()
   const [openSheet, setOpenSheet] = useState<"filter" | "price" | "sort" | null>(null)
-  const [mounted, setMounted] = useState(false)
+  const mounted = useMounted()
 
   const [tempDateRange, setTempDateRange] = useState(dateRange)
   const [tempSessionType, setTempSessionType] = useState(sessionType)
   const [tempMin, setTempMin] = useState(minPrice)
   const [tempMax, setTempMax] = useState(maxPrice)
 
-  useEffect(() => { setMounted(true) }, [])
-
-  useEffect(() => {
-    if (openSheet === "filter") {
-      setTempDateRange(dateRange)
-      setTempSessionType(sessionType)
-    }
-    if (openSheet === "price") {
-      setTempMin(minPrice)
-      setTempMax(maxPrice)
-    }
-  }, [openSheet, dateRange, sessionType, minPrice, maxPrice])
+  // シートを開くタイミングで一時編集用stateを現在値にリセットする（effectではなくイベント起点で行う）
+  function openFilterSheet() {
+    setTempDateRange(dateRange)
+    setTempSessionType(sessionType)
+    setOpenSheet("filter")
+  }
+  function openPriceSheet() {
+    setTempMin(minPrice)
+    setTempMax(maxPrice)
+    setOpenSheet("price")
+  }
 
   useEffect(() => {
     document.body.style.overflow = openSheet ? "hidden" : ""
@@ -319,11 +279,6 @@ export function SessionFiltersBar({
   const priceLabel = getPriceLabel(minPrice, maxPrice)
   const sortLabel = SORT_LABELS[sort] ?? "並び替え"
 
-  const filterLabel = (() => {
-    const count = (dateRange !== "all" ? 1 : 0) + (sessionType !== "all" ? 1 : 0)
-    return count > 1 ? `絞り込み (${count})` : "絞り込み"
-  })()
-
   return (
     <>
       {/* フィルター行 */}
@@ -331,7 +286,7 @@ export function SessionFiltersBar({
         {/* 絞り込み */}
         <button
           type="button"
-          onClick={() => setOpenSheet(openSheet === "filter" ? null : "filter")}
+          onClick={() => (openSheet === "filter" ? setOpenSheet(null) : openFilterSheet())}
           style={{ minHeight: "44px" }}
           className={`flex flex-1 items-center justify-center gap-1 text-sm transition-colors ${
             filterActive ? "font-semibold text-[#005F8C]" : "text-[#475569]"
@@ -345,7 +300,7 @@ export function SessionFiltersBar({
         {/* 料金範囲 */}
         <button
           type="button"
-          onClick={() => setOpenSheet(openSheet === "price" ? null : "price")}
+          onClick={() => (openSheet === "price" ? setOpenSheet(null) : openPriceSheet())}
           style={{ minHeight: "44px" }}
           className={`flex flex-1 items-center justify-center gap-1 text-sm transition-colors ${
             priceActive ? "font-semibold text-[#005F8C]" : "text-[#475569]"

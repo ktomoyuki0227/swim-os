@@ -4,6 +4,8 @@ import { createClient, createAdminClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import type { MembershipType } from "@/types/database"
+import { isTeamAdmin } from "@/lib/auth/require-team-admin"
+import { notifyUser, notifyUsers } from "@/lib/notifications"
 
 const VALID_MEMBERSHIP_TYPES: MembershipType[] = ["annual", "monthly", "point_card"]
 
@@ -83,17 +85,14 @@ export async function requestJoinTeam(
 
   if (admins && admins.length > 0) {
     const applicantName = profile?.name ?? "新しいユーザー"
-    await admin.from("notifications").insert(
-      admins.map((a) => ({
-        user_id: a.swimmer_id,
-        type: "join_request_received",
-        title: `${team.name}への参加申請が届きました`,
-        body: `${applicantName}さんが参加を申請しました`,
-        link: `/teams/${teamId}?tab=requests`,
-        team_id: teamId,
-        metadata: { applicant_id: user.id },
-      }))
-    )
+    await notifyUsers(admins.map((a) => a.swimmer_id), {
+      type: "join_request_received",
+      title: `${team.name}への参加申請が届きました`,
+      body: `${applicantName}さんが参加を申請しました`,
+      link: `/teams/${teamId}?tab=requests`,
+      team_id: teamId,
+      metadata: { applicant_id: user.id },
+    })
   }
 
   revalidatePath(`/teams/${teamId}`)
@@ -137,16 +136,9 @@ export async function approveJoinRequest(
   if (!request) return { error: "申請が見つかりません" }
 
   // 管理者権限チェック
-  const { data: adminMembership } = await admin
-    .from("team_members")
-    .select("id")
-    .eq("team_id", request.team_id)
-    .eq("swimmer_id", user.id)
-    .eq("role", "admin")
-    .eq("status", "active")
-    .maybeSingle()
-
-  if (!adminMembership) return { error: "権限がありません" }
+  if (!(await isTeamAdmin(admin, request.team_id, user.id))) {
+    return { error: "権限がありません" }
+  }
 
   // チーム情報を取得
   const { data: team } = await admin
@@ -190,8 +182,7 @@ export async function approveJoinRequest(
     .eq("id", requestId)
 
   // 申請者に承認通知を送信
-  await admin.from("notifications").insert({
-    user_id: request.swimmer_id,
+  await notifyUser(request.swimmer_id, {
     type: "join_request_approved",
     title: `${team.name}への参加が承認されました`,
     body: "グループページからセッションの確認や申し込みができます",
@@ -214,16 +205,13 @@ export async function approveJoinRequest(
     .eq("status", "active")
     .neq("swimmer_id", user.id)
   if (otherAdmins && otherAdmins.length > 0) {
-    await admin.from("notifications").insert(
-      otherAdmins.map((a) => ({
-        user_id: a.swimmer_id,
-        type: "member_joined",
-        title: `${joinerProfile?.name ?? "新しいメンバー"}さんが「${team.name}」に参加しました`,
-        body: null,
-        team_id: request.team_id,
-        link: `/teams/${request.team_id}?tab=members`,
-      }))
-    )
+    await notifyUsers(otherAdmins.map((a) => a.swimmer_id), {
+      type: "member_joined",
+      title: `${joinerProfile?.name ?? "新しいメンバー"}さんが「${team.name}」に参加しました`,
+      body: null,
+      team_id: request.team_id,
+      link: `/teams/${request.team_id}?tab=members`,
+    })
   }
 
   revalidatePath(`/teams/${request.team_id}`)
@@ -253,16 +241,9 @@ export async function rejectJoinRequest(
   if (!request) return { error: "申請が見つかりません" }
 
   // 管理者権限チェック
-  const { data: adminMembership } = await admin
-    .from("team_members")
-    .select("id")
-    .eq("team_id", request.team_id)
-    .eq("swimmer_id", user.id)
-    .eq("role", "admin")
-    .eq("status", "active")
-    .maybeSingle()
-
-  if (!adminMembership) return { error: "権限がありません" }
+  if (!(await isTeamAdmin(admin, request.team_id, user.id))) {
+    return { error: "権限がありません" }
+  }
 
   // チーム情報
   const { data: team } = await admin
@@ -278,8 +259,7 @@ export async function rejectJoinRequest(
     .eq("id", requestId)
 
   // 申請者に拒否通知を送信
-  await admin.from("notifications").insert({
-    user_id: request.swimmer_id,
+  await notifyUser(request.swimmer_id, {
     type: "join_request_rejected",
     title: `${team?.name ?? "グループ"}への参加申請が見送られました`,
     body: reason ? `理由: ${reason}` : null,
@@ -302,16 +282,9 @@ export async function getTeamJoinRequests(teamId: string) {
   const admin = createAdminClient()
 
   // 管理者権限チェック
-  const { data: adminMembership } = await admin
-    .from("team_members")
-    .select("id")
-    .eq("team_id", teamId)
-    .eq("swimmer_id", user.id)
-    .eq("role", "admin")
-    .eq("status", "active")
-    .maybeSingle()
-
-  if (!adminMembership) return { error: "権限がありません", data: [] }
+  if (!(await isTeamAdmin(admin, teamId, user.id))) {
+    return { error: "権限がありません", data: [] }
+  }
 
   const { data, error } = await admin
     .from("join_requests")

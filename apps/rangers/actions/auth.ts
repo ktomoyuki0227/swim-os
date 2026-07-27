@@ -2,11 +2,19 @@
 
 import { createClient } from "@/lib/supabase/server"
 import { loginSchema, registerSchema } from "@/lib/validations"
+import { isRateLimited, getClientIp } from "@/lib/rate-limit"
 import { redirect } from "next/navigation"
 
 export interface AuthState {
   error: string | null
 }
+
+const LOGIN_RATE_LIMIT = 10
+const LOGIN_RATE_WINDOW_MS = 5 * 60 * 1000
+const REGISTER_RATE_LIMIT = 5
+const REGISTER_RATE_WINDOW_MS = 60 * 60 * 1000
+const RESET_RATE_LIMIT = 5
+const RESET_RATE_WINDOW_MS = 60 * 60 * 1000
 
 export async function login(
   _prevState: AuthState,
@@ -20,6 +28,11 @@ export async function login(
   const result = loginSchema.safeParse(raw)
   if (!result.success) {
     return { error: result.error.issues.map((i) => i.message).join("・") }
+  }
+
+  const ip = await getClientIp()
+  if (isRateLimited(`login:${ip}:${result.data.email}`, LOGIN_RATE_LIMIT, LOGIN_RATE_WINDOW_MS)) {
+    return { error: "試行回数が多すぎます。しばらく経ってからもう一度お試しください" }
   }
 
   const supabase = await createClient()
@@ -55,6 +68,11 @@ export async function register(
   const result = registerSchema.safeParse(raw)
   if (!result.success) {
     return { error: result.error.issues.map((i) => i.message).join("・") }
+  }
+
+  const ip = await getClientIp()
+  if (isRateLimited(`register:${ip}`, REGISTER_RATE_LIMIT, REGISTER_RATE_WINDOW_MS)) {
+    return { error: "試行回数が多すぎます。しばらく経ってからもう一度お試しください" }
   }
 
   const supabase = await createClient()
@@ -110,9 +128,18 @@ export async function requestPasswordReset(
     return { error: "メールアドレスを入力してください", success: false }
   }
 
+  const ip = await getClientIp()
+  if (isRateLimited(`reset:${ip}:${email}`, RESET_RATE_LIMIT, RESET_RATE_WINDOW_MS)) {
+    // メール爆撃対策。アカウント列挙を避けるため成功時と同じ応答にする
+    return { error: null, success: true }
+  }
+
   const supabase = await createClient()
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}/reset-password`,
+    // /reset-password を直接指定すると exchangeCodeForSession が一度も呼ばれず
+    // リカバリーセッションが確立されないため、/auth/callback を経由させる
+    redirectTo: `${appUrl}/auth/callback?next=${encodeURIComponent("/reset-password")}`,
   })
 
   if (error) {
@@ -129,8 +156,8 @@ export async function updatePassword(
   const password = formData.get("password") as string
   const confirm = formData.get("confirm") as string
 
-  if (!password || password.length < 6) {
-    return { error: "パスワードは6文字以上で入力してください", success: false }
+  if (!password || password.length < 8) {
+    return { error: "パスワードは8文字以上で入力してください", success: false }
   }
   if (password !== confirm) {
     return { error: "パスワードが一致しません", success: false }

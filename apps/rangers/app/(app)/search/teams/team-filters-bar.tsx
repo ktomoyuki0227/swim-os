@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import { createPortal } from "react-dom"
 import { useRouter } from "next/navigation"
 import { X, Check } from "lucide-react"
+import { useMounted } from "@/hooks/use-mounted"
 
 const SORT_OPTIONS = [
   { key: "newest", label: "新着順" },
@@ -67,19 +68,15 @@ interface TeamFiltersBarProps {
 export function TeamFiltersBar({ sort, recruitingOnly, days, q }: TeamFiltersBarProps) {
   const router = useRouter()
   const [openSheet, setOpenSheet] = useState<"filter" | "sort" | null>(null)
-  const [mounted, setMounted] = useState(false)
+  const mounted = useMounted()
 
-  const [tempRecruiting, setTempRecruiting] = useState(recruitingOnly)
   const [tempDays, setTempDays] = useState<string[]>(days)
 
-  useEffect(() => { setMounted(true) }, [])
-
-  useEffect(() => {
-    if (openSheet === "filter") {
-      setTempRecruiting(recruitingOnly)
-      setTempDays(days)
-    }
-  }, [openSheet, recruitingOnly, days])
+  // シートを開くタイミングで一時編集用stateを現在値にリセットする（effectではなくイベント起点で行う）
+  function openFilterSheet() {
+    setTempDays(days)
+    setOpenSheet("filter")
+  }
 
   useEffect(() => {
     document.body.style.overflow = openSheet ? "hidden" : ""
@@ -136,7 +133,7 @@ export function TeamFiltersBar({ sort, recruitingOnly, days, q }: TeamFiltersBar
         {/* 絞り込み */}
         <button
           type="button"
-          onClick={() => setOpenSheet(openSheet === "filter" ? null : "filter")}
+          onClick={() => (openSheet === "filter" ? setOpenSheet(null) : openFilterSheet())}
           style={{ minHeight: "44px" }}
           className={`flex flex-1 items-center justify-center gap-1 text-sm transition-colors ${
             filterActive ? "font-semibold text-[#0f8a4f]" : "text-[#475569]"

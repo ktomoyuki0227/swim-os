@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { createPortal } from "react-dom"
 import { CreditCard, CheckCircle, X } from "lucide-react"
+import { useMounted } from "@/hooks/use-mounted"
 import { UpdateCardForm } from "./update-card-form"
 
 const CARD_BRAND_LABELS: Record<string, string> = {
@@ -30,11 +31,7 @@ interface CardModalProps {
 
 export function CardModal({ cardDetails, hasCard }: CardModalProps) {
   const [isOpen, setIsOpen] = useState(false)
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
+  const mounted = useMounted()
 
   useEffect(() => {
     if (isOpen) {

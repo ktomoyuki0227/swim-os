@@ -1,8 +1,6 @@
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
-import { Navigation } from "@/components/navigation"
-import { NavigationProgress } from "@/components/navigation-progress"
-import { ToastProvider } from "@/components/toast"
+import { AppShell } from "@/components/app-shell"
 import { PageTransition } from "@/components/page-transition"
 import { getUnreadNotificationCount } from "@/actions/notifications"
 import { getOrCreateStripeCustomer } from "@/lib/stripe-helpers"
@@ -50,12 +48,8 @@ export default async function AppLayout({
   }
 
   return (
-    <ToastProvider>
-      <NavigationProgress />
-      <Navigation userName={profile.name} avatarUrl={profile.avatar_url} unreadCount={unreadResult.count} />
-      <main className="mx-auto w-full max-w-5xl flex-1 overflow-x-hidden px-4 pb-24 md:pb-6">
-        <PageTransition>{children}</PageTransition>
-      </main>
-    </ToastProvider>
+    <AppShell userName={profile.name} avatarUrl={profile.avatar_url} unreadCount={unreadResult.count} showNavigationProgress>
+      <PageTransition>{children}</PageTransition>
+    </AppShell>
   )
 }

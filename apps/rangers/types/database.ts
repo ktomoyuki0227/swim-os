@@ -272,6 +272,7 @@ export interface Team {
   avatar_url: string | null
   cover_image_url: string | null
   is_recruiting: boolean
+  show_member_count: boolean
   activity_area: string | null
   invite_code: string
   has_session_fee: boolean
@@ -296,6 +297,7 @@ export interface Team {
   fee_members_exempt_session: boolean
   status: TeamStatus
   created_at: string
+  instructor_title: string | null
 }
 
 export interface TeamMember {

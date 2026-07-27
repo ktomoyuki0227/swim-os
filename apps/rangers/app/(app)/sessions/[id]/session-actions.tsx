@@ -117,7 +117,7 @@ export function SessionActions({
 
   const handleExport = async () => {
     setIsExporting(true)
-    const result = await exportSessionRegistrations(sessionId, "csv")
+    const result = await exportSessionRegistrations(sessionId)
     if (result.error) {
       showToast(result.error, "error")
     } else if (result.data) {

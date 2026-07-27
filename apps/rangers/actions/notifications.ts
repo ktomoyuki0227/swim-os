@@ -1,10 +1,11 @@
 "use server"
 
-import { createClient, createAdminClient } from "@/lib/supabase/server"
+import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
+import type { Notification } from "@/types/database"
 
-export async function getMyNotifications(): Promise<{ data: import("@/types/database").Notification[] }> {
+export async function getMyNotifications(): Promise<{ data: Notification[] }> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
@@ -17,7 +18,7 @@ export async function getMyNotifications(): Promise<{ data: import("@/types/data
     .limit(50)
 
   if (error) return { data: [] }
-  return { data: (data || []) as import("@/types/database").Notification[] }
+  return { data: (data || []) as Notification[] }
 }
 
 export async function markAsRead(notificationId: string) {
@@ -83,33 +84,4 @@ export async function getUnreadNotificationCount() {
 
   if (error) return { count: 0 }
   return { count: count || 0 }
-}
-
-// 内部専用: Server Action として export しない（任意ユーザーへの通知注入を防ぐ）
-// 他ユーザーへの INSERT は RLS をバイパスする service_role クライアントを使用
-async function createNotificationInternal(
-  userId: string,
-  data: {
-    type: string
-    title: string
-    body?: string
-    link?: string
-    team_id?: string
-    metadata?: Record<string, unknown>
-  }
-) {
-  const admin = createAdminClient()
-
-  const { error } = await admin.from("notifications").insert({
-    user_id: userId,
-    type: data.type,
-    title: data.title,
-    body: data.body ?? null,
-    link: data.link ?? null,
-    team_id: data.team_id ?? null,
-    metadata: data.metadata ?? {},
-  })
-
-  if (error) return { error: "通知の作成に失敗しました" }
-  return { success: true }
 }

@@ -46,7 +46,7 @@ for (const u of USERS) {
   if (existing) {
     // パスワードをリセット
     const { error } = await admin.auth.admin.updateUserById(existing.id, {
-      password: "test1234",
+      password: "Delta-coach8820!",
     })
     if (error) console.error(`${u.email} update error:`, error.message)
     else console.log(`${u.email} パスワードリセット OK (id: ${existing.id})`)
@@ -54,7 +54,7 @@ for (const u of USERS) {
     // 新規作成
     const { data, error } = await admin.auth.admin.createUser({
       email: u.email,
-      password: "test1234",
+      password: "Delta-coach8820!",
       email_confirm: true,
       user_metadata: { name: u.name },
     })

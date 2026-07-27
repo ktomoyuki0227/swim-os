@@ -4,6 +4,8 @@ import { createClient, createAdminClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import type { FeeType } from "@/types/database"
+import { isTeamAdmin } from "@/lib/auth/require-team-admin"
+import { notifyUser } from "@/lib/notifications"
 
 export async function getTeamFees(
   teamId: string,
@@ -16,15 +18,7 @@ export async function getTeamFees(
 
   const admin = createAdminClient()
 
-  const { data: adminMembership } = await admin
-    .from("team_members")
-    .select("id")
-    .eq("team_id", teamId)
-    .eq("swimmer_id", user.id)
-    .eq("role", "admin")
-    .eq("status", "active")
-    .single()
-  if (!adminMembership) return { data: [] }
+  if (!(await isTeamAdmin(admin, teamId, user.id))) return { data: [] }
 
   // 年会費・月謝の対象メンバーを取得（回数券会員は除外）
   const feeTypeMembership = type === "annual" ? ["annual"] : type === "monthly" ? ["monthly"] : ["annual", "monthly"]
@@ -87,15 +81,7 @@ export async function updateFeeStatus(
     .single()
   if (!fee) return { error: "会費レコードが見つかりません" }
 
-  const { data: adminMembership } = await admin
-    .from("team_members")
-    .select("id")
-    .eq("team_id", fee.team_id)
-    .eq("swimmer_id", user.id)
-    .eq("role", "admin")
-    .eq("status", "active")
-    .single()
-  if (!adminMembership) return { error: "権限がありません" }
+  if (!(await isTeamAdmin(admin, fee.team_id, user.id))) return { error: "権限がありません" }
 
   const updateData: Record<string, unknown> = { status }
   if (status === "paid") {
@@ -117,8 +103,7 @@ export async function updateFeeStatus(
     const label = fee.type === "annual"
       ? `年会費 ${fee.period}年`
       : `月謝 ${fee.period.replace("-", "年")}月`
-    await admin.from("notifications").insert({
-      user_id: fee.swimmer_id,
+    await notifyUser(fee.swimmer_id, {
       type: "payment_charged",
       title: `${label}のお支払いが確認されました`,
       body: `¥${fee.amount.toLocaleString()}のお支払いを受領しました`,
@@ -146,15 +131,7 @@ export async function bulkCreateFees(
 
   // admin権限チェック（team_members は RLS バイパスが必要）
   const admin = createAdminClient()
-  const { data: adminMembership } = await admin
-    .from("team_members")
-    .select("id")
-    .eq("team_id", teamId)
-    .eq("swimmer_id", user.id)
-    .eq("role", "admin")
-    .eq("status", "active")
-    .single()
-  if (!adminMembership) return { error: "権限がありません" }
+  if (!(await isTeamAdmin(admin, teamId, user.id))) return { error: "権限がありません" }
 
   // 対応する会員種別のみ対象（年会費 → annual, 月謝 → monthly）
   const bulkMembership = type === "annual" ? ["annual"] : type === "monthly" ? ["monthly"] : ["annual", "monthly"]
@@ -259,21 +236,7 @@ export async function purchasePointCard(teamId: string) {
     return { error: "ポイントカード会員ではありません" }
   }
 
-  // TODO: Stripe 決済（サンドボックス）
-  // const paymentIntent = await stripe.paymentIntents.create({
-  //   amount: team.point_card_price,
-  //   currency: 'jpy',
-  //   customer: user.stripe_customer_id,
-  // })
-
-  // スタンプ加算（アトミック: レースコンディション防止）
-  const { error } = await supabase.rpc("increment_stamp_by", {
-    p_team_member_id: member.id,
-    p_count: team.point_card_count,
-  })
-
-  if (error) return { error: "ポイントカードの購入に失敗しました" }
-
-  revalidatePath("/teams")
-  return { success: true }
+  // Stripe決済が未実装のため、実際の課金なしにスタンプを付与してしまわないよう
+  // ここで明示的に処理を止める。UIから呼び出す前に決済処理を実装すること。
+  return { error: "回数券のオンライン購入は現在準備中です。グループ管理者にお問い合わせください" }
 }
