@@ -5,6 +5,7 @@ import { createPortal } from "react-dom"
 import { useRouter } from "next/navigation"
 import { X, Check } from "lucide-react"
 import { useMounted } from "@/hooks/use-mounted"
+import { useScrollLock } from "@/hooks/use-scroll-lock"
 
 const SORT_OPTIONS = [
   { key: "newest", label: "新着順" },
@@ -78,10 +79,7 @@ export function TeamFiltersBar({ sort, recruitingOnly, days, q }: TeamFiltersBar
     setOpenSheet("filter")
   }
 
-  useEffect(() => {
-    document.body.style.overflow = openSheet ? "hidden" : ""
-    return () => { document.body.style.overflow = "" }
-  }, [openSheet])
+  useScrollLock(!!openSheet)
 
   function buildBase() {
     const p = new URLSearchParams()

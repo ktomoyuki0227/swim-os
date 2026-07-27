@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback, useEffect } from "react"
+import { useState, useCallback } from "react"
 import { createPortal } from "react-dom"
 import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
@@ -8,6 +8,8 @@ import { Card, CardContent } from "@/components/ui/card"
 import { SessionCalendar } from "@/components/session-calendar"
 import type { CalendarSession } from "@/components/session-calendar"
 import { useMounted } from "@/hooks/use-mounted"
+import { useScrollLock } from "@/hooks/use-scroll-lock"
+import { useEscapeToClose } from "@/hooks/use-escape-to-close"
 
 type Tab = "all" | "registered" | "past"
 
@@ -105,18 +107,8 @@ export function ScheduleSection({ sessions, teams }: Props) {
     "セッションはありません"
 
   // ESCキーでシート閉じる + 背景スクロールロック
-  useEffect(() => {
-    if (!openSheet) return
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpenSheet(null)
-    }
-    document.addEventListener("keydown", handleEsc)
-    document.body.style.overflow = "hidden"
-    return () => {
-      document.removeEventListener("keydown", handleEsc)
-      document.body.style.overflow = ""
-    }
-  }, [openSheet])
+  useEscapeToClose(!!openSheet, () => setOpenSheet(null))
+  useScrollLock(!!openSheet)
 
   const isDefaultFilter = tab === "all" && selectedTeamIds.size === teams.length
 

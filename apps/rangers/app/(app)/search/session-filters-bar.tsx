@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import { X, Check } from "lucide-react"
 import { MAX_PRICE, DEFAULT_MAX_PRICE, PRICE_STEP as STEP } from "./session-price-config"
 import { useMounted } from "@/hooks/use-mounted"
+import { useScrollLock } from "@/hooks/use-scroll-lock"
 
 const DATE_RANGE_OPTIONS = [
   { key: "all", label: "すべて" },
@@ -228,10 +229,7 @@ export function SessionFiltersBar({
     setOpenSheet("price")
   }
 
-  useEffect(() => {
-    document.body.style.overflow = openSheet ? "hidden" : ""
-    return () => { document.body.style.overflow = "" }
-  }, [openSheet])
+  useScrollLock(!!openSheet)
 
   function buildBase() {
     const p = new URLSearchParams()

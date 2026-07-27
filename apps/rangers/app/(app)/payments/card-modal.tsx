@@ -1,9 +1,10 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { createPortal } from "react-dom"
 import { CreditCard, CheckCircle, X } from "lucide-react"
 import { useMounted } from "@/hooks/use-mounted"
+import { useScrollLock } from "@/hooks/use-scroll-lock"
 import { UpdateCardForm } from "./update-card-form"
 
 const CARD_BRAND_LABELS: Record<string, string> = {
@@ -33,16 +34,7 @@ export function CardModal({ cardDetails, hasCard }: CardModalProps) {
   const [isOpen, setIsOpen] = useState(false)
   const mounted = useMounted()
 
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = "hidden"
-    } else {
-      document.body.style.overflow = ""
-    }
-    return () => {
-      document.body.style.overflow = ""
-    }
-  }, [isOpen])
+  useScrollLock(isOpen)
 
   return (
     <>

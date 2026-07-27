@@ -1,12 +1,14 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { createPortal } from "react-dom"
 import Link from "next/link"
 import { AlertTriangle } from "lucide-react"
 import { MemberList } from "./member-list"
 import { JoinRequestsTab } from "./join-requests-tab"
 import { useMounted } from "@/hooks/use-mounted"
+import { useScrollLock } from "@/hooks/use-scroll-lock"
+import { useEscapeToClose } from "@/hooks/use-escape-to-close"
 import type { TeamMemberWithProfile } from "@/types/database"
 
 type SheetType = "members" | "requests" | null
@@ -54,18 +56,8 @@ export function AdminTeamActions({
   const unpaidCount = feeStats ? feeStats.subscriptionUnpaid + feeStats.stampUnpaid : 0
 
   // シート: ESC + スクロールロック
-  useEffect(() => {
-    if (!openSheet) return
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpenSheet(null)
-    }
-    document.addEventListener("keydown", handleEsc)
-    document.body.style.overflow = "hidden"
-    return () => {
-      document.removeEventListener("keydown", handleEsc)
-      document.body.style.overflow = ""
-    }
-  }, [openSheet])
+  useEscapeToClose(!!openSheet, () => setOpenSheet(null))
+  useScrollLock(!!openSheet)
 
   const sheetTitles: Record<string, string> = {
     members: `メンバー/会費 (${members.length})`,

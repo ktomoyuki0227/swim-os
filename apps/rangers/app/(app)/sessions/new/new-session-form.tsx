@@ -8,6 +8,7 @@ import { getTeamTemplates, getTemplate } from "@/actions/templates"
 import { getTeamMembers, getMyTeams } from "@/actions/teams"
 import { createClient } from "@/lib/supabase/client"
 import { useMounted } from "@/hooks/use-mounted"
+import { useScrollLock } from "@/hooks/use-scroll-lock"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/components/toast"
 import { SYSTEM_TAGS } from "@/types/database"
@@ -74,14 +75,7 @@ export function NewSessionForm({
     })
   }, [])
 
-  useEffect(() => {
-    if (openTagCategory !== null) {
-      document.body.style.overflow = "hidden"
-    } else {
-      document.body.style.overflow = ""
-    }
-    return () => { document.body.style.overflow = "" }
-  }, [openTagCategory])
+  useScrollLock(openTagCategory !== null)
 
   // teamId が URL になければ管理者グループを自動取得（teamIdがある場合はuseStateの初期値で既に反映済み）
   useEffect(() => {

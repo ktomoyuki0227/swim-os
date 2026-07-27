@@ -1,9 +1,10 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { createPortal } from "react-dom"
 import { useRouter } from "next/navigation"
 import { useMounted } from "@/hooks/use-mounted"
+import { useScrollLock } from "@/hooks/use-scroll-lock"
 
 const SESSION_TYPE_OPTIONS = [
   { key: "all", label: "すべて" },
@@ -59,16 +60,7 @@ export function SearchFiltersBar({
   const mounted = useMounted()
 
   // ボトムシート表示中はボディのスクロールを止める
-  useEffect(() => {
-    if (openGroup !== null) {
-      document.body.style.overflow = "hidden"
-    } else {
-      document.body.style.overflow = ""
-    }
-    return () => {
-      document.body.style.overflow = ""
-    }
-  }, [openGroup])
+  useScrollLock(openGroup !== null)
 
   const filterGroups: FilterGroupConfig[] =
     tab === "sessions"

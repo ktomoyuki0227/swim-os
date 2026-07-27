@@ -5,6 +5,8 @@ import { createPortal } from "react-dom"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useMounted } from "@/hooks/use-mounted"
+import { useScrollLock } from "@/hooks/use-scroll-lock"
+import { useEscapeToClose } from "@/hooks/use-escape-to-close"
 
 interface ApplyValues {
   pointCardPrice?: number
@@ -28,18 +30,8 @@ export function PricingSimulatorButton({ memberPrice, onApply }: PricingSimulato
     inputMemberPrice: memberPrice > 0 ? String(memberPrice) : "",
   })
 
-  useEffect(() => {
-    if (!open) return
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false)
-    }
-    document.addEventListener("keydown", handleEsc)
-    document.body.style.overflow = "hidden"
-    return () => {
-      document.removeEventListener("keydown", handleEsc)
-      document.body.style.overflow = ""
-    }
-  }, [open])
+  useEscapeToClose(open, () => setOpen(false))
+  useScrollLock(open)
 
   return (
     <>

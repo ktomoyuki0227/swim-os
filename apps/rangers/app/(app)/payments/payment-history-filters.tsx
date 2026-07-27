@@ -5,6 +5,7 @@ import { createPortal } from "react-dom"
 import { useRouter } from "next/navigation"
 import { X, Check } from "lucide-react"
 import { useMounted } from "@/hooks/use-mounted"
+import { useScrollLock } from "@/hooks/use-scroll-lock"
 
 const TYPE_OPTIONS = [
   { key: "", label: "すべて" },
@@ -153,10 +154,7 @@ export function PaymentHistoryFilters({
     setOpenSheet("filter")
   }
 
-  useEffect(() => {
-    document.body.style.overflow = openSheet ? "hidden" : ""
-    return () => { document.body.style.overflow = "" }
-  }, [openSheet])
+  useScrollLock(!!openSheet)
 
   function navigate(type: string, direction: string, status: string, sort: string) {
     const p = new URLSearchParams()

@@ -1,6 +1,8 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useCallback } from "react"
+import { useScrollLock } from "@/hooks/use-scroll-lock"
+import { useEscapeToClose } from "@/hooks/use-escape-to-close"
 
 interface ContactInfoButtonProps {
   teamId: string
@@ -14,18 +16,8 @@ export function ContactInfoButton({ teamId, contactEmail, contactPhone, isLogged
 
   const handleClose = useCallback(() => setOpen(false), [])
 
-  useEffect(() => {
-    if (!open) return
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") handleClose()
-    }
-    document.addEventListener("keydown", handleKeyDown)
-    document.body.style.overflow = "hidden"
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown)
-      document.body.style.overflow = ""
-    }
-  }, [open, handleClose])
+  useEscapeToClose(open, handleClose)
+  useScrollLock(open)
 
   if (!isLoggedIn) {
     return (

@@ -1,10 +1,12 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useCallback } from "react"
 import { createPortal } from "react-dom"
 import { Card, CardContent } from "@/components/ui/card"
 import { MarkReadButton } from "./mark-read-button"
 import { useMounted } from "@/hooks/use-mounted"
+import { useScrollLock } from "@/hooks/use-scroll-lock"
+import { useEscapeToClose } from "@/hooks/use-escape-to-close"
 
 interface Announcement {
   id: string
@@ -32,18 +34,8 @@ export function MemberAnnouncementsSheet({ announcements: initialAnnouncements }
     setReadIds((prev) => new Set(prev).add(id))
   }, [])
 
-  useEffect(() => {
-    if (!open) return
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false)
-    }
-    document.addEventListener("keydown", handleEsc)
-    document.body.style.overflow = "hidden"
-    return () => {
-      document.removeEventListener("keydown", handleEsc)
-      document.body.style.overflow = ""
-    }
-  }, [open])
+  useEscapeToClose(open, () => setOpen(false))
+  useScrollLock(open)
 
   return (
     <>
