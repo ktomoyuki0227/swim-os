@@ -272,6 +272,15 @@ export async function cancelSession(sessionId: string) {
             .update({ payment_status: "refunded" })
             .eq("id", reg.id)
           if (refErr) refundErrors.push(`${reg.id}: refunded status update failed`)
+          if (cancelHasConnect) {
+            // 返金後もtransfer_records.statusが"succeeded"のままだと会計上の
+            // 不整合になるため、返金済みとして反映する
+            await cancelAdmin
+              .from("transfer_records")
+              .update({ status: "reversed" })
+              .eq("stripe_payment_intent_id", reg.stripe_payment_intent_id)
+              .eq("status", "succeeded")
+          }
         } else if (reg.payment_method === "point_card") {
           // ポイント戻し（adminClientでRLSをバイパス）
           const { error: rpcErr } = await cancelAdmin.rpc("increment_stamp", {
@@ -538,6 +547,15 @@ export async function cancelRegistration(sessionId: string) {
             ...(refundHasConnect ? { reverse_transfer: true, refund_application_fee: true } : {}),
           })
           newPaymentStatus = "refunded"
+          if (refundHasConnect) {
+            // 返金後もtransfer_records.statusが"succeeded"のままだと会計上の
+            // 不整合になるため、返金済みとして反映する
+            await adminClient
+              .from("transfer_records")
+              .update({ status: "reversed" })
+              .eq("stripe_payment_intent_id", registration.stripe_payment_intent_id)
+              .eq("status", "succeeded")
+          }
         } catch (err) {
           console.error(`[cancelRegistration] Stripe refund failed for ${registration.id}:`, err)
           return { error: "返金処理に失敗しました。管理者にお問い合わせください" }
