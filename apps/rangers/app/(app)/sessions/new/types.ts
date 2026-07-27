@@ -6,6 +6,14 @@ export type CompetitionField = {
   options?: string[]
 }
 
+/**
+ * フォーム編集中のみ使うcompetitionFieldの表現。
+ * `key` はラベル編集のたびに再生成される（DBに保存するスラッグ）ため
+ * React の key には使えない。`id` は編集内容に依存しない安定した識別子で、
+ * リスト項目のReact keyとして使う。サーバーへの送信前に取り除く。
+ */
+export type EditableCompetitionField = CompetitionField & { id: string }
+
 export type FormData = {
   title: string
   type: string

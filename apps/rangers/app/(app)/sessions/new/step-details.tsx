@@ -1,13 +1,13 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import type { CompetitionField, FormData } from "./types"
+import type { EditableCompetitionField, FormData } from "./types"
 
 interface StepDetailsProps {
   form: FormData
   set: (key: keyof FormData, value: string | boolean) => void
-  competitionFields: CompetitionField[]
-  setCompetitionFields: (fields: CompetitionField[]) => void
+  competitionFields: EditableCompetitionField[]
+  setCompetitionFields: (fields: EditableCompetitionField[]) => void
 }
 
 export function StepDetails({ form, set, competitionFields, setCompetitionFields }: StepDetailsProps) {
@@ -84,7 +84,7 @@ export function StepDetails({ form, set, competitionFields, setCompetitionFields
             <p className="text-sm font-semibold text-[#1a2332]">エントリー入力項目</p>
             <p className="text-xs text-[#475569]">参加者が登録時に入力するフィールドを設定します</p>
             {competitionFields.map((field, idx) => (
-              <div key={idx} className="flex items-center gap-2 rounded-lg border border-[#dce3ea] bg-white p-3">
+              <div key={field.id} className="flex items-center gap-2 rounded-lg border border-[#dce3ea] bg-white p-3">
                 <input
                   type="text"
                   value={field.label}
@@ -122,7 +122,7 @@ export function StepDetails({ form, set, competitionFields, setCompetitionFields
             ))}
             <button
               type="button"
-              onClick={() => setCompetitionFields([...competitionFields, { key: `field_${Date.now()}`, label: "", type: "text", required: false }])}
+              onClick={() => setCompetitionFields([...competitionFields, { id: crypto.randomUUID(), key: `field_${Date.now()}`, label: "", type: "text", required: false }])}
               className="w-full rounded-lg border border-dashed border-[#dce3ea] py-2 text-sm text-[#005F8C] hover:bg-[#f2f7fa]"
             >
               + 項目を追加

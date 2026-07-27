@@ -20,6 +20,7 @@ import { StepConfirm } from "./step-confirm"
 import { STEPS, DEFAULT_FORM, recalcEndAt, matchMemberIdsByTags } from "./form-helpers"
 import type {
   CompetitionField,
+  EditableCompetitionField,
   FormData,
   PrefillInput,
   TeamMemberOption,
@@ -51,10 +52,10 @@ export function NewSessionForm({
   const [adminTeams, setAdminTeams] = useState<AdminTeamOption[]>([])
   const [activeTeamId, setActiveTeamId] = useState(initialTeamId || teamId)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
-  const [competitionFields, setCompetitionFields] = useState<CompetitionField[]>([
-    { key: "event_name", label: "エントリー種目", type: "text", required: true },
-    { key: "entry_time", label: "エントリータイム", type: "text", required: true },
-    { key: "age_group", label: "年齢区分", type: "text", required: false },
+  const [competitionFields, setCompetitionFields] = useState<EditableCompetitionField[]>([
+    { id: "default-event_name", key: "event_name", label: "エントリー種目", type: "text", required: true },
+    { id: "default-entry_time", key: "entry_time", label: "エントリータイム", type: "text", required: true },
+    { id: "default-age_group", key: "age_group", label: "年齢区分", type: "text", required: false },
   ])
   const [templates, setTemplates] = useState<TemplateOption[]>(initialTemplates)
   const [openTagCategory, setOpenTagCategory] = useState<string | null>(null)
@@ -138,7 +139,10 @@ export function NewSessionForm({
       is_external: data.is_external ?? prev.is_external,
     }))
     if (data.target_tags) setSelectedTags(data.target_tags)
-    if (data.competition_fields) setCompetitionFields(data.competition_fields)
+    if (data.competition_fields) {
+      // コピー元にはReact key用の安定id が無いため、取り込み時に付与する
+      setCompetitionFields(data.competition_fields.map((f) => ({ ...f, id: crypto.randomUUID() })))
+    }
   }
 
   useEffect(() => {
@@ -233,7 +237,10 @@ export function NewSessionForm({
         is_external: form.is_external,
         target_tags: selectedTags,
         target_members: selectedMemberIds ?? undefined,
-        competition_fields: form.type === "competition" ? competitionFields : undefined,
+        // idはReact key用のクライアント内部データのため送信前に取り除く
+        competition_fields: form.type === "competition"
+          ? competitionFields.map(({ id: _id, ...f }): CompetitionField => f)
+          : undefined,
       })
       if (result.error) {
         showToast(result.error, "error")

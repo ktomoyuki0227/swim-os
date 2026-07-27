@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { SYSTEM_TAGS } from "@/types/database"
-import type { CompetitionField, FormData } from "./types"
+import type { EditableCompetitionField, FormData } from "./types"
 
 const TYPE_LABELS: Record<string, string> = {
   practice: "練習",
@@ -12,7 +12,7 @@ const TYPE_LABELS: Record<string, string> = {
 
 interface StepConfirmProps {
   form: FormData
-  competitionFields: CompetitionField[]
+  competitionFields: EditableCompetitionField[]
   selectedTags: string[]
   selectedMemberIds: string[]
   teamMembersCount: number
@@ -126,8 +126,8 @@ export function StepConfirm({ form, competitionFields, selectedTags, selectedMem
           <div className="space-y-2">
             <p className="text-xs font-semibold text-[#64748b] uppercase tracking-wide">エントリー項目</p>
             <div className="rounded-xl bg-[#f2f7fa] px-4 py-3 text-sm space-y-1.5">
-              {competitionFields.map((f, i) => (
-                <div key={i} className="flex items-center gap-2">
+              {competitionFields.map((f) => (
+                <div key={f.id} className="flex items-center gap-2">
                   <span className="text-[#1a2332]">{f.label || "（未入力）"}</span>
                   {f.required && (
                     <span className="rounded-full bg-[#fdecea] px-1.5 py-0.5 text-xs font-medium text-[#c0392b]">必須</span>

@@ -20,6 +20,10 @@ type CompetitionField = {
   options?: string[]
 }
 
+// `key` はDBに保存するスラッグでReact keyには使えないため、
+// 表示用に編集内容と無関係な安定したidを別途付与する
+type EditableCompetitionField = CompetitionField & { id: string }
+
 const DURATION_OPTIONS = [
   { label: "30分", value: "30" },
   { label: "45分", value: "45" },
@@ -117,8 +121,8 @@ export function EditSessionForm({ session, teamName }: EditSessionFormProps) {
   const [selectedTags, setSelectedTags] = useState<string[]>(
     (session.target_tags as string[]) || []
   )
-  const [competitionFields, setCompetitionFields] = useState<CompetitionField[]>(
-    (session.competition_fields as CompetitionField[]) || []
+  const [competitionFields, setCompetitionFields] = useState<EditableCompetitionField[]>(
+    ((session.competition_fields as CompetitionField[]) || []).map((f) => ({ ...f, id: crypto.randomUUID() }))
   )
 
   const set = (key: keyof FormData, value: string | boolean) =>
@@ -181,7 +185,10 @@ export function EditSessionForm({ session, teamName }: EditSessionFormProps) {
         allow_point_card: form.allow_point_card,
         is_external: form.is_external,
         target_tags: selectedTags,
-        competition_fields: form.type === "competition" ? competitionFields : undefined,
+        // idはReact key用のクライアント内部データのため送信前に取り除く
+        competition_fields: form.type === "competition"
+          ? competitionFields.map(({ id: _id, ...f }): CompetitionField => f)
+          : undefined,
       })
       if (result.error) {
         showToast(result.error, "error")
@@ -512,7 +519,7 @@ export function EditSessionForm({ session, teamName }: EditSessionFormProps) {
             <p className="text-sm text-[#64748b]">参加者が入力するフィールドの設定です</p>
             <div className="space-y-2">
               {competitionFields.map((field, i) => (
-                <div key={i} className="flex items-center gap-2 rounded-lg border border-[#dce3ea] px-3 py-2">
+                <div key={field.id} className="flex items-center gap-2 rounded-lg border border-[#dce3ea] px-3 py-2">
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium text-[#1a2332]">{field.label}</p>
                     <p className="text-sm text-[#64748b]">{field.type}{field.required ? " · 必須" : ""}</p>
