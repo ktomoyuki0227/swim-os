@@ -4,7 +4,7 @@ import { createClient, createAdminClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import type { FeeType } from "@/types/database"
-import { isTeamAdmin } from "@/lib/auth/require-team-admin"
+import { isTeamAdmin, isAdminOfAnyTeamWithMember } from "@/lib/auth/require-team-admin"
 import { notifyUser } from "@/lib/notifications"
 
 export async function getTeamFees(
@@ -174,26 +174,7 @@ export async function getMemberFees(swimmerId?: string) {
   // 他ユーザーのデータを取得する場合はadmin権限チェック（team_members は RLS バイパスが必要）
   if (targetId !== user.id) {
     const admin = createAdminClient()
-    const { data: adminTeams } = await admin
-      .from("team_members")
-      .select("team_id")
-      .eq("swimmer_id", user.id)
-      .eq("role", "admin")
-      .eq("status", "active")
-
-    if (!adminTeams || adminTeams.length === 0) return { error: "権限がありません" }
-
-    const adminTeamIds = adminTeams.map((t) => t.team_id)
-
-    const { data: targetMembership } = await admin
-      .from("team_members")
-      .select("id")
-      .eq("swimmer_id", targetId)
-      .in("team_id", adminTeamIds)
-      .eq("status", "active")
-      .single()
-
-    if (!targetMembership) return { error: "権限がありません" }
+    if (!(await isAdminOfAnyTeamWithMember(admin, targetId, user.id))) return { error: "権限がありません" }
   }
 
   const { data, error } = await supabase

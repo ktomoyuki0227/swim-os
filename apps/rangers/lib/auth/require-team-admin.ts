@@ -41,3 +41,35 @@ export async function isTeamMember(
     .single()
   return !!data
 }
+
+/**
+ * 呼び出し元(callerId)が、対象スイマー(targetSwimmerId)が所属するいずれかの
+ * チームの有効な管理者であるかを判定する。teamId を受け取らず対象ユーザーのみで
+ * 認可判定したい場合（例: getMemberFees）に使う。
+ */
+export async function isAdminOfAnyTeamWithMember(
+  admin: AdminClient,
+  targetSwimmerId: string,
+  callerId: string
+): Promise<boolean> {
+  const { data: adminTeams } = await admin
+    .from("team_members")
+    .select("team_id")
+    .eq("swimmer_id", callerId)
+    .eq("role", "admin")
+    .eq("status", "active")
+
+  if (!adminTeams || adminTeams.length === 0) return false
+
+  const adminTeamIds = adminTeams.map((t) => t.team_id)
+
+  const { data: targetMembership } = await admin
+    .from("team_members")
+    .select("id")
+    .eq("swimmer_id", targetSwimmerId)
+    .in("team_id", adminTeamIds)
+    .eq("status", "active")
+    .single()
+
+  return !!targetMembership
+}
