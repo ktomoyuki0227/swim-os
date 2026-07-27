@@ -22,3 +22,22 @@ export async function isTeamAdmin(
     .single()
   return !!data
 }
+
+/**
+ * 指定チームの有効なメンバー(role不問、status="active")かどうかを判定する。
+ * admin専用操作ではなく「メンバーなら誰でも閲覧可」なチェックに使う。
+ */
+export async function isTeamMember(
+  admin: AdminClient,
+  teamId: string,
+  userId: string
+): Promise<boolean> {
+  const { data } = await admin
+    .from("team_members")
+    .select("id")
+    .eq("team_id", teamId)
+    .eq("swimmer_id", userId)
+    .eq("status", "active")
+    .single()
+  return !!data
+}

@@ -7,7 +7,7 @@ import { redirect } from "next/navigation"
 import { sessionSchema, sessionUpdateSchema } from "@/lib/validations"
 import type { PaymentMethod, CompetitionField } from "@/types/database"
 import { getPlatformFeePercent, calculateFees } from "@/lib/stripe-connect"
-import { isTeamAdmin } from "@/lib/auth/require-team-admin"
+import { isTeamAdmin, isTeamMember } from "@/lib/auth/require-team-admin"
 import { mapWithConcurrency } from "@/lib/utils"
 import { notifyUser, notifyUsers } from "@/lib/notifications"
 
@@ -600,7 +600,12 @@ export async function cancelSession(sessionId: string) {
 }
 
 export async function getTeamSessions(teamId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { data: [] }
+
   const admin = createAdminClient()
+  if (!(await isTeamMember(admin, teamId, user.id))) return { data: [] }
 
   const { data, error } = await admin
     .from("practice_sessions")
@@ -673,6 +678,16 @@ export async function getSession(sessionId: string) {
     .single()
 
   if (error || !data) return { error: "セッションが見つかりません" }
+
+  // 外部公開セッション（ゲスト向け）はログイン不要で閲覧可能
+  if (data.is_external && data.status === "published") return { data }
+
+  // それ以外は同じチームのアクティブなメンバーのみ閲覧可能
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "セッションが見つかりません" }
+  if (!(await isTeamMember(admin, data.team_id, user.id))) return { error: "セッションが見つかりません" }
+
   return { data }
 }
 
