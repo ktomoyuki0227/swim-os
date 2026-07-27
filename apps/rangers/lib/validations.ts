@@ -204,7 +204,7 @@ export const sessionUpdateSchema = z.object({
 )
 
 export const messageSchema = z.object({
-  receiver_id: z.string().min(1, "宛先が不正です"),
+  receiver_id: z.uuid("宛先が不正です"),
   content: z.string().min(1, "メッセージを入力してください").max(2000, "メッセージは2000文字以内で入力してください"),
 })
 
