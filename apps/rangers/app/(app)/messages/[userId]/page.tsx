@@ -14,7 +14,7 @@ interface MessageThreadPageProps {
 export async function generateMetadata({ params }: MessageThreadPageProps): Promise<Metadata> {
   const { userId } = await params
   const supabase = await createClient()
-  const { data } = await supabase.from("profiles").select("name").eq("id", userId).single()
+  const { data } = await supabase.from("public_profiles").select("name").eq("id", userId).single()
   return { title: data ? `${data.name}とのメッセージ` : "メッセージ" }
 }
 
@@ -24,8 +24,9 @@ export default async function MessageThreadPage({ params }: MessageThreadPagePro
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
 
+  // 相手のプロフィールは public_profiles ビュー経由で取得する（profiles 本体は本人のみ閲覧可のため）
   const { data: partner } = await supabase
-    .from("profiles")
+    .from("public_profiles")
     .select("id, name, avatar_url")
     .eq("id", userId)
     .single()

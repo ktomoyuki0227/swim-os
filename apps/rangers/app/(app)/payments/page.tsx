@@ -223,13 +223,14 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
       : { data: [] as { id: string; name: string }[] }
   const teamById = new Map((teamsData ?? []).map((t) => [t.id, t.name]))
 
-  // ⑥ 支払者（収入の相手）のプロフィールを一括取得
+  // ⑥ 支払者（収入の相手）のプロフィールを一括取得（他ユーザーの行は public_profiles ビュー経由。
+  // profiles 本体の SELECT ポリシーは本人のみに制限されているため）
   const payerIdSet = new Set<string>()
   for (const reg of incomeRegs) payerIdSet.add(reg.swimmer_id)
   for (const fee of incomeFees) payerIdSet.add(fee.swimmer_id)
   const { data: payersData } =
     payerIdSet.size > 0
-      ? await supabase.from("profiles").select("id, name").in("id", Array.from(payerIdSet))
+      ? await supabase.from("public_profiles").select("id, name").in("id", Array.from(payerIdSet))
       : { data: [] as { id: string; name: string }[] }
   const payerNameById = new Map((payersData ?? []).map((p) => [p.id, p.name]))
 

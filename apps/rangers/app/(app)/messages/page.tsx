@@ -49,9 +49,10 @@ export default async function MessagesPage() {
     )
   }
 
-  // パートナーのプロフィール取得
+  // パートナーのプロフィール取得（他ユーザーの行は public_profiles ビュー経由で取得する。
+  // profiles 本体の SELECT ポリシーは本人のみに制限されているため）
   const { data: partners } = await supabase
-    .from("profiles")
+    .from("public_profiles")
     .select("id, name, avatar_url")
     .in("id", [...partnerIds])
 
