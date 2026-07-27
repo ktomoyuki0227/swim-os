@@ -760,19 +760,6 @@ export async function registerForSession(
     return { error: "参加登録の締め切りを過ぎています" }
   }
 
-  // 定員チェック（user clientはRLSで自分の登録しか見えないのでadminClientで全件取得）
-  if (session.max_participants) {
-    const { count } = await adminClient
-      .from("session_registrations")
-      .select("id", { count: "exact" })
-      .eq("session_id", sessionId)
-      .is("cancelled_at", null)
-
-    if (count !== null && count >= session.max_participants) {
-      return { error: "定員に達しています" }
-    }
-  }
-
   // ポイントカード残数チェック（免除の場合は effectivePaymentMethod = "cash" なのでスキップされる）
   if (effectivePaymentMethod === "point_card") {
     if (!membership || membership.membership_type !== "point_card") {
@@ -786,46 +773,23 @@ export async function registerForSession(
     }
   }
 
-  // キャンセル済みの既存レコードを確認（再登録ケース）
-  const { data: cancelledReg } = await adminClient
-    .from("session_registrations")
-    .select("id")
-    .eq("session_id", sessionId)
-    .eq("swimmer_id", user.id)
-    .not("cancelled_at", "is", null)
-    .maybeSingle()
+  // 定員チェック + 参加登録（新規 or キャンセル済みレコードの再利用）を
+  // register_for_session RPC 内で原子的に行う。practice_sessions 行を
+  // ロックすることで、残り枠1に対して複数人が同時登録しても定員を
+  // 超過しないようにする（従来はCOUNT確認とINSERTの間にウィンドウがあった）。
+  const { error: registerErr } = await adminClient.rpc("register_for_session", {
+    p_session_id: sessionId,
+    p_swimmer_id: user.id,
+    p_is_member: isMember,
+    p_payment_method: effectivePaymentMethod,
+    p_payment_status: isExempt ? "free" : "pending",
+    p_competition_entry: competitionEntry || null,
+  })
 
-  if (cancelledReg) {
-    // 既存レコードを再利用（cancelled_at をリセット）
-    // 支払い方法が変わる場合もあるので stripe_payment_intent_id もクリア
-    const { error } = await adminClient
-      .from("session_registrations")
-      .update({
-        cancelled_at: null,
-        payment_method: effectivePaymentMethod,
-        payment_status: isExempt ? "free" : "pending",
-        stripe_payment_intent_id: null,
-        is_member: isMember,
-        competition_entry: competitionEntry || null,
-      })
-      .eq("id", cancelledReg.id)
-
-    if (error) return { error: "参加登録に失敗しました" }
-  } else {
-    // 新規登録（adminClientでRLSをバイパス）
-    const { error } = await adminClient.from("session_registrations").insert({
-      session_id: sessionId,
-      swimmer_id: user.id,
-      is_member: isMember,
-      payment_method: effectivePaymentMethod,
-      payment_status: isExempt ? "free" : "pending",
-      competition_entry: competitionEntry || null,
-    })
-
-    if (error) {
-      if (error.code === "23505") return { error: "既に参加登録済みです" }
-      return { error: "参加登録に失敗しました" }
-    }
+  if (registerErr) {
+    if (registerErr.message?.includes("capacity_exceeded")) return { error: "定員に達しています" }
+    if (registerErr.code === "23505") return { error: "既に参加登録済みです" }
+    return { error: "参加登録に失敗しました" }
   }
 
   // 最小開催人数達成チェック → 管理者へ通知
