@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache"
 import { createClient } from "@/lib/supabase/server"
-import { messageSchema, scheduleRequestSchema } from "@/lib/validations"
+import { messageSchema } from "@/lib/validations"
 
 export async function sendMessage(formData: FormData) {
   const supabase = await createClient()
@@ -55,39 +55,6 @@ export async function sendMessage(formData: FormData) {
   }
 
   revalidatePath(`/messages/${receiverId}`)
-
-  return { success: true }
-}
-
-export async function sendScheduleRequest(formData: FormData) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) {
-    return { error: "ログインが必要です" }
-  }
-
-  const parsed = scheduleRequestSchema.safeParse({
-    instructor_id: formData.get("instructor_id"),
-    lesson_id: (formData.get("lesson_id") as string | null) || null,
-    message: (formData.get("message") as string)?.trim(),
-    preferred_dates: formData.getAll("preferred_dates") as string[],
-  })
-  if (!parsed.success) {
-    return { error: parsed.error.issues.map((i) => i.message).join("・") }
-  }
-
-  const { error } = await supabase.from("schedule_requests").insert({
-    swimmer_id: user.id,
-    instructor_id: parsed.data.instructor_id,
-    lesson_id: parsed.data.lesson_id,
-    message: parsed.data.message,
-    preferred_dates: parsed.data.preferred_dates,
-  })
-
-  if (error) {
-    return { error: "リクエストの送信に失敗しました" }
-  }
 
   return { success: true }
 }

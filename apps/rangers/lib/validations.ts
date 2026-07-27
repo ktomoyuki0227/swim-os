@@ -208,13 +208,6 @@ export const messageSchema = z.object({
   content: z.string().min(1, "メッセージを入力してください").max(2000, "メッセージは2000文字以内で入力してください"),
 })
 
-export const scheduleRequestSchema = z.object({
-  instructor_id: z.string().min(1, "宛先が不正です"),
-  lesson_id: z.string().nullable().optional(),
-  message: z.string().min(1, "メッセージを入力してください").max(2000, "メッセージは2000文字以内で入力してください"),
-  preferred_dates: z.array(z.string()).max(20, "候補日は20件以内にしてください"),
-})
-
 export const announcementSchema = z.object({
   title: z.string().min(1, "タイトルを入力してください").max(200, "200文字以内"),
   body: z.string().max(5000, "5000文字以内").optional(),
