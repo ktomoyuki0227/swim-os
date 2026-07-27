@@ -91,7 +91,7 @@ export async function updateFeeStatus(
     updateData.payment_method = paymentMethod
   }
 
-  const { error } = await supabase
+  const { error } = await admin
     .from("membership_fees")
     .update(updateData)
     .eq("id", feeId)

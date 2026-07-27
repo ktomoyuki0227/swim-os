@@ -19,7 +19,7 @@ export async function createAnnouncement(teamId: string, data: unknown) {
   const adminClient = createAdminClient()
   if (!(await isTeamAdmin(adminClient, teamId, user.id))) return { error: "権限がありません" }
 
-  const { data: announcement, error } = await supabase
+  const { data: announcement, error } = await adminClient
     .from("announcements")
     .insert({
       team_id: teamId,
