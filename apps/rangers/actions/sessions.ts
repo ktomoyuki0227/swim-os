@@ -514,6 +514,14 @@ export async function cancelSession(sessionId: string) {
       .eq("session_id", sessionId)
       .eq("payment_status", "paid")
 
+    // Connect送金済みかどうかを判定する（返金時にコーチへの送金分も引き戻す必要があるため）
+    const { data: cancelTeam } = await cancelAdmin
+      .from("teams")
+      .select("stripe_account_id, stripe_onboarding_completed")
+      .eq("id", session.team_id)
+      .single()
+    const cancelHasConnect = !!(cancelTeam?.stripe_account_id && cancelTeam?.stripe_onboarding_completed)
+
     if (registrations) {
       const refundErrors: string[] = []
       for (const reg of registrations) {
@@ -523,7 +531,13 @@ export async function cancelSession(sessionId: string) {
             continue
           }
           try {
-            await stripe.refunds.create({ payment_intent: reg.stripe_payment_intent_id })
+            // Connect(Destination Charge)経由の決済は reverse_transfer を指定しないと
+            // コーチ側へ送金済みの資金が自動的には引き戻されず、返金差額をプラット
+            // フォームが負担することになるため明示的に指定する
+            await stripe.refunds.create({
+              payment_intent: reg.stripe_payment_intent_id,
+              ...(cancelHasConnect ? { reverse_transfer: true, refund_application_fee: true } : {}),
+            })
           } catch (err) {
             const stripeErr = err as { code?: string }
             if (stripeErr.code === "charge_already_refunded") {
@@ -920,8 +934,20 @@ export async function cancelRegistration(sessionId: string) {
         new Date(session.scheduled_at).getTime() - Date.now() >=
           session.cancellation_days * 24 * 60 * 60 * 1000
       if (isRefundEligible && process.env.STRIPE_SECRET_KEY) {
+        // Connect送金済みかどうかを判定する（返金時にコーチへの送金分も引き戻す必要があるため）
+        const { data: refundTeam } = await adminClient
+          .from("teams")
+          .select("stripe_account_id, stripe_onboarding_completed")
+          .eq("id", session.team_id)
+          .single()
+        const refundHasConnect = !!(refundTeam?.stripe_account_id && refundTeam?.stripe_onboarding_completed)
         try {
-          await stripe.refunds.create({ payment_intent: registration.stripe_payment_intent_id })
+          // Connect(Destination Charge)経由の決済は reverse_transfer を指定しないと
+          // コーチ側へ送金済みの資金が自動的には引き戻されないため明示的に指定する
+          await stripe.refunds.create({
+            payment_intent: registration.stripe_payment_intent_id,
+            ...(refundHasConnect ? { reverse_transfer: true, refund_application_fee: true } : {}),
+          })
           newPaymentStatus = "refunded"
         } catch (err) {
           console.error(`[cancelRegistration] Stripe refund failed for ${registration.id}:`, err)
