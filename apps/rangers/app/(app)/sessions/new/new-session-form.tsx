@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useTransition, useEffect, useRef } from "react"
-import { createPortal } from "react-dom"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { createSession, getSession } from "@/actions/sessions"
@@ -9,202 +8,30 @@ import { getTeamTemplates, getTemplate } from "@/actions/templates"
 import { getTeamMembers, getMyTeams } from "@/actions/teams"
 import { createClient } from "@/lib/supabase/client"
 import { useMounted } from "@/hooks/use-mounted"
-import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/components/toast"
 import { SYSTEM_TAGS } from "@/types/database"
-
-const STEPS = [
-  { label: "基本情報" },
-  { label: "参加費" },
-  { label: "詳細設定" },
-  { label: "配信対象" },
-  { label: "確認" },
-]
-
-type CompetitionField = {
-  key: string
-  label: string
-  type: "text" | "select" | "number"
-  required: boolean
-  options?: string[]
-}
-
-const DURATION_OPTIONS = [
-  { label: "30分", value: "30" },
-  { label: "45分", value: "45" },
-  { label: "60分", value: "60" },
-  { label: "90分", value: "90" },
-  { label: "120分", value: "120" },
-  { label: "150分", value: "150" },
-  { label: "180分", value: "180" },
-  { label: "カスタム", value: "custom" },
-]
-
-function calcEndAt(scheduledAt: string, durationMinutes: number): string {
-  if (!scheduledAt) return ""
-  const d = new Date(scheduledAt)
-  d.setMinutes(d.getMinutes() + durationMinutes)
-  const pad = (n: number) => String(n).padStart(2, "0")
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
-}
-
-/** タグ選択に応じて対象メンバーIDをAND条件で絞り込む */
-function matchMemberIdsByTags(members: Record<string, unknown>[], selectedTags: string[]): string[] {
-  if (selectedTags.length === 0) {
-    return members.map((m) => (m.swimmer as Record<string, unknown>).id as string)
-  }
-  const matched = members.filter((m) => {
-    const swimmer = m.swimmer as Record<string, unknown>
-    return selectedTags.every((tag) => {
-      if (tag === "level_beginner") return swimmer.level === "初級"
-      if (tag === "level_intermediate") return swimmer.level === "中級"
-      if (tag === "level_advanced") return swimmer.level === "上級"
-      if (tag.startsWith("stroke_")) {
-        const labelMap: Record<string, string> = {
-          stroke_freestyle: "クロール",
-          stroke_backstroke: "背泳ぎ",
-          stroke_breaststroke: "平泳ぎ",
-          stroke_butterfly: "バタフライ",
-          stroke_medley: "個人メドレー",
-        }
-        const label = labelMap[tag]
-        return label && Array.isArray(swimmer.specialties) && (swimmer.specialties as string[]).includes(label)
-      }
-      if (tag.startsWith("purpose_")) {
-        const labelMap: Record<string, string> = {
-          purpose_health: "健康維持",
-          purpose_competitive: "競技・タイム向上",
-        }
-        const label = labelMap[tag]
-        return label !== undefined && Array.isArray(swimmer.swimming_goals) && (swimmer.swimming_goals as string[]).includes(label)
-      }
-      if (tag.startsWith("swimmer_type_")) {
-        const labelMap: Record<string, string> = {
-          swimmer_type_player: "選手",
-          swimmer_type_masters: "マスターズ",
-        }
-        const label = labelMap[tag]
-        return label !== undefined && swimmer.swimmer_type === label
-      }
-      if (tag.startsWith("discipline_")) {
-        const labelMap: Record<string, string> = {
-          discipline_swimming: "競泳",
-          discipline_synchro: "AS（シンクロ）",
-          discipline_openwater: "オープンウォーター",
-          discipline_diving: "飛び込み",
-          discipline_waterpolo: "水球",
-        }
-        const label = labelMap[tag]
-        return label !== undefined &&
-          Array.isArray(swimmer.swim_disciplines) &&
-          (swimmer.swim_disciplines as string[]).includes(label)
-      }
-      return true
-    })
-  })
-  return matched.map((m) => (m.swimmer as Record<string, unknown>).id as string)
-}
-
-/** 開始日時・所要時間からend_atを自動計算する（camp種別・custom所要時間は対象外） */
-function recalcEndAt(next: FormData): FormData {
-  if (next.type === "camp") return next
-  if (next.duration === "custom") return next
-  if (!next.duration) return { ...next, end_at: "" }
-  const minutes = parseInt(next.duration, 10)
-  if (isNaN(minutes)) return next
-  return { ...next, end_at: calcEndAt(next.scheduled_at, minutes) }
-}
-
-type FormData = {
-  title: string
-  type: string
-  scheduled_at: string
-  end_at: string
-  duration: string
-  location: string
-  meeting_point: string
-  gender_filter: "all" | "male" | "female"
-  description: string
-  member_price: string
-  guest_price: string
-  allow_point_card: boolean
-  registration_deadline: string
-  min_participants: string
-  max_participants: string
-  cancellation_days: string
-  is_external: boolean
-}
-
-const DEFAULT_FORM: FormData = {
-  title: "",
-  type: "practice",
-  scheduled_at: "",
-  end_at: "",
-  duration: "",
-  location: "",
-  meeting_point: "",
-  gender_filter: "all",
-  description: "",
-  member_price: "1000",
-  guest_price: "1500",
-  allow_point_card: true,
-  registration_deadline: "",
-  min_participants: "",
-  max_participants: "",
-  cancellation_days: "",
-  is_external: false,
-}
-
-function StepIndicator({ current }: { current: number }) {
-  return (
-    <div className="flex items-center justify-between">
-      {STEPS.map((step, i) => {
-        const done = i < current
-        const active = i === current
-        const isLast = i === STEPS.length - 1
-        return (
-          <div key={i} className={`flex items-center ${isLast ? "" : "flex-1"}`}>
-            <div className="flex w-10 shrink-0 flex-col items-center gap-1">
-              <div
-                className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold transition-colors ${
-                  done
-                    ? "bg-[#005F8C] text-white"
-                    : active
-                    ? "border-2 border-[#005F8C] bg-white text-[#005F8C]"
-                    : "border-2 border-[#dce3ea] bg-white text-[#64748b]"
-                }`}
-              >
-                {done ? (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
-                ) : (
-                  i + 1
-                )}
-              </div>
-              <span className={`text-[10px] font-medium ${active ? "text-[#005F8C]" : "text-[#64748b]"}`}>
-                {step.label}
-              </span>
-            </div>
-            {!isLast && (
-              <div className={`mb-4 h-0.5 flex-1 transition-colors ${done ? "bg-[#005F8C]" : "bg-[#dce3ea]"}`} />
-            )}
-          </div>
-        )
-      })}
-    </div>
-  )
-}
+import { StepIndicator } from "./step-indicator"
+import { StepBasicInfo } from "./step-basic-info"
+import { StepPricing } from "./step-pricing"
+import { StepDetails } from "./step-details"
+import { StepAudience } from "./step-audience"
+import { StepConfirm } from "./step-confirm"
+import { STEPS, DEFAULT_FORM, recalcEndAt, matchMemberIdsByTags } from "./form-helpers"
+import type {
+  CompetitionField,
+  FormData,
+  PrefillInput,
+  TeamMemberOption,
+  AdminTeamOption,
+  TemplateOption,
+} from "./types"
 
 export function NewSessionForm({
   initialTemplates,
   initialTeamId,
 }: {
-  initialTemplates: Record<string, unknown>[]
+  initialTemplates: TemplateOption[]
   initialTeamId: string
 }) {
   const router = useRouter()
@@ -218,10 +45,10 @@ export function NewSessionForm({
   const [isPending, startTransition] = useTransition()
   const [form, setForm] = useState<FormData>(DEFAULT_FORM)
   const [selectedTags, setSelectedTags] = useState<string[]>([])
-  const [teamMembers, setTeamMembers] = useState<Record<string, unknown>[]>([])
+  const [teamMembers, setTeamMembers] = useState<TeamMemberOption[]>([])
   const [membersLoaded, setMembersLoaded] = useState(false)
   const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([])
-  const [adminTeams, setAdminTeams] = useState<Record<string, unknown>[]>([])
+  const [adminTeams, setAdminTeams] = useState<AdminTeamOption[]>([])
   const [activeTeamId, setActiveTeamId] = useState(initialTeamId || teamId)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [competitionFields, setCompetitionFields] = useState<CompetitionField[]>([
@@ -229,7 +56,7 @@ export function NewSessionForm({
     { key: "entry_time", label: "エントリータイム", type: "text", required: true },
     { key: "age_group", label: "年齢区分", type: "text", required: false },
   ])
-  const [templates, setTemplates] = useState<Record<string, unknown>[]>(initialTemplates)
+  const [templates, setTemplates] = useState<TemplateOption[]>(initialTemplates)
   const [openTagCategory, setOpenTagCategory] = useState<string | null>(null)
   const portalMounted = useMounted()
   // サーバーで取得済みのグループIDを記憶しておき、同じグループでの再フェッチをスキップする
@@ -259,9 +86,9 @@ export function NewSessionForm({
   useEffect(() => {
     if (teamId) return
     getMyTeams().then(({ data }) => {
-      const adminOnly = (data || []).filter((t) => (t as Record<string, unknown>).my_role === "admin")
+      const adminOnly = ((data || []) as AdminTeamOption[]).filter((t) => t.my_role === "admin")
       setAdminTeams(adminOnly)
-      if (adminOnly.length === 1) setActiveTeamId((adminOnly[0] as Record<string, unknown>).id as string)
+      if (adminOnly.length === 1) setActiveTeamId(adminOnly[0].id)
     })
   }, [teamId])
 
@@ -269,7 +96,7 @@ export function NewSessionForm({
   useEffect(() => {
     if (!activeTeamId) return
     if (activeTeamId === serverFetchedTeamId.current && hasInitialTemplatesRef.current) return
-    getTeamTemplates(activeTeamId).then(({ data }) => setTemplates(data || []))
+    getTeamTemplates(activeTeamId).then(({ data }) => setTemplates((data || []) as TemplateOption[]))
   }, [activeTeamId])
 
   // step3 になったらメンバーを取得（currentUserId 確定後に実行）。ローディング表示はレンダー時に導出する
@@ -278,11 +105,9 @@ export function NewSessionForm({
     if (!membersLoading || fetchingMembersRef.current || !activeTeamId) return
     fetchingMembersRef.current = true
     getTeamMembers(activeTeamId).then(({ data }) => {
-      const members = (data || []).filter(
-        (m) => (m.swimmer as Record<string, unknown>).id !== currentUserId
-      )
+      const members = ((data || []) as TeamMemberOption[]).filter((m) => m.swimmer.id !== currentUserId)
       setTeamMembers(members)
-      setSelectedMemberIds(members.map((m) => (m.swimmer as Record<string, unknown>).id as string))
+      setSelectedMemberIds(members.map((m) => m.swimmer.id))
       setMembersLoaded(true)
       fetchingMembersRef.current = false
     })
@@ -293,16 +118,6 @@ export function NewSessionForm({
   if (membersLoaded && selectedTags !== prevSelectedTags) {
     setPrevSelectedTags(selectedTags)
     setSelectedMemberIds(matchMemberIdsByTags(teamMembers, selectedTags))
-  }
-
-  type PrefillInput = Partial<Omit<FormData, "member_price" | "guest_price" | "min_participants" | "max_participants" | "cancellation_days">> & {
-    member_price?: string | number
-    guest_price?: string | number
-    min_participants?: string | number
-    max_participants?: string | number
-    cancellation_days?: string | number
-    target_tags?: string[]
-    competition_fields?: CompetitionField[]
   }
 
   const applyPrefill = (data: PrefillInput) => {
@@ -469,7 +284,7 @@ export function NewSessionForm({
           >
             <option value="">テンプレートを選択...</option>
             {templates.map((t) => (
-              <option key={t.id as string} value={t.id as string}>{t.name as string}</option>
+              <option key={t.id} value={t.id}>{t.name}</option>
             ))}
           </select>
         </div>
@@ -489,744 +304,50 @@ export function NewSessionForm({
           >
             <option value="">グループを選択...</option>
             {adminTeams.map((t) => (
-              <option key={(t as Record<string, unknown>).id as string} value={(t as Record<string, unknown>).id as string}>
-                {(t as Record<string, unknown>).name as string}
-              </option>
+              <option key={t.id} value={t.id}>{t.name}</option>
             ))}
           </select>
         </div>
       )}
 
-      {/* Step 0: 基本情報 */}
       {step === 0 && (
-        <Card className="border-[#dce3ea]">
-          <CardContent className="space-y-4 pt-5">
-            <div className="space-y-1.5">
-              <Label htmlFor="title">タイトル <span className="text-[#c0392b]">*</span></Label>
-              <Input
-                id="title"
-                value={form.title}
-                onChange={(e) => set("title", e.target.value)}
-                placeholder="例: 水曜朝練 6月"
-                maxLength={100}
-                className="border-[#dce3ea]"
-              />
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label htmlFor="type">種類</Label>
-                <select
-                  id="type"
-                  value={form.type}
-                  onChange={(e) => set("type", e.target.value)}
-                  className="h-10 w-full rounded-lg border border-[#dce3ea] bg-white px-3 text-sm text-[#1a2332] focus:outline-none focus:ring-2 focus:ring-[#005F8C]/30"
-                >
-                  <option value="practice">練習</option>
-                  <option value="camp">合宿</option>
-                  <option value="competition">試合</option>
-                  <option value="event">イベント</option>
-                  <option value="meeting">ミーティング</option>
-                </select>
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="gender_filter">対象性別</Label>
-                <select
-                  id="gender_filter"
-                  value={form.gender_filter}
-                  onChange={(e) => set("gender_filter", e.target.value as "all" | "male" | "female")}
-                  className="h-10 w-full rounded-lg border border-[#dce3ea] bg-white px-3 text-sm text-[#1a2332] focus:outline-none focus:ring-2 focus:ring-[#005F8C]/30"
-                >
-                  <option value="all">全員</option>
-                  <option value="male">男性のみ</option>
-                  <option value="female">女性のみ</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="scheduled_at">
-                {form.type === "camp" ? "開始日時" : "日時"} <span className="text-[#c0392b]">*</span>
-              </Label>
-              <Input
-                id="scheduled_at"
-                type="datetime-local"
-                value={form.scheduled_at}
-                onChange={(e) => setScheduledAt(e.target.value)}
-                className="border-[#dce3ea]"
-              />
-            </div>
-
-            {form.type === "camp" ? (
-              <div className="space-y-1.5">
-                <Label htmlFor="end_at">終了日時</Label>
-                <Input
-                  id="end_at"
-                  type="datetime-local"
-                  value={form.end_at}
-                  onChange={(e) => set("end_at", e.target.value)}
-                  className="border-[#dce3ea]"
-                />
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <Label htmlFor="duration">所要時間</Label>
-                <select
-                  id="duration"
-                  value={form.duration}
-                  onChange={(e) => setDuration(e.target.value)}
-                  className="h-10 w-40 rounded-lg border border-[#dce3ea] bg-white px-3 text-sm text-[#1a2332] focus:outline-none focus:ring-2 focus:ring-[#005F8C]/30"
-                >
-                  <option value="">選択しない</option>
-                  {DURATION_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value}>{o.label}</option>
-                  ))}
-                </select>
-
-                {form.duration && form.duration !== "custom" && form.end_at && form.scheduled_at && (
-                  <div className="flex items-center gap-3 rounded-xl border border-[#005F8C]/15 bg-[#005F8C]/5 px-4 py-3">
-                    <div className="text-center">
-                      <p className="mb-0.5 text-[10px] text-[#64748b]">開始</p>
-                      <p className="text-base font-semibold tabular-nums text-[#1a2332]">
-                        {new Date(form.scheduled_at).toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" })}
-                      </p>
-                    </div>
-                    <div className="flex flex-1 items-center gap-2">
-                      <div className="h-px flex-1 bg-[#005F8C]/25" />
-                      <span className="rounded-full border border-[#005F8C]/20 bg-white px-2.5 py-0.5 text-xs font-medium text-[#005F8C]">
-                        {form.duration}分
-                      </span>
-                      <div className="h-px flex-1 bg-[#005F8C]/25" />
-                    </div>
-                    <div className="text-center">
-                      <p className="mb-0.5 text-[10px] text-[#64748b]">終了</p>
-                      <p className="text-base font-semibold tabular-nums text-[#1a2332]">
-                        {new Date(form.end_at).toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" })}
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {form.duration === "custom" && (
-                  <div className="space-y-1.5">
-                    <Label htmlFor="end_at_custom">終了日時</Label>
-                    <Input
-                      id="end_at_custom"
-                      type="datetime-local"
-                      value={form.end_at}
-                      onChange={(e) => set("end_at", e.target.value)}
-                      className="border-[#dce3ea]"
-                    />
-                  </div>
-                )}
-              </div>
-            )}
-
-            <div className="space-y-1.5">
-              <Label htmlFor="location">場所 <span className="text-[#c0392b]">*</span></Label>
-              <Input
-                id="location"
-                value={form.location}
-                onChange={(e) => set("location", e.target.value)}
-                placeholder="例: ○○市民プール"
-                maxLength={200}
-                className="border-[#dce3ea]"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="meeting_point">待ち合わせ場所</Label>
-              <Input
-                id="meeting_point"
-                value={form.meeting_point}
-                onChange={(e) => set("meeting_point", e.target.value)}
-                placeholder="例: 正面玄関前"
-                maxLength={200}
-                className="border-[#dce3ea]"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="description">
-                説明・練習メニュー
-                <span className="ml-1.5 text-xs font-normal text-[#64748b]">任意</span>
-              </Label>
-              <Textarea
-                id="description"
-                value={form.description}
-                onChange={(e) => set("description", e.target.value)}
-                placeholder={"セッションの概要や練習内容を入力\n\n例）\nウォームアップ 400m\nドリル 4×50m\nメインセット 8×100m..."}
-                rows={5}
-                className="border-[#dce3ea]"
-              />
-            </div>
-          </CardContent>
-        </Card>
+        <StepBasicInfo form={form} set={set} setScheduledAt={setScheduledAt} setDuration={setDuration} />
       )}
 
-      {/* Step 1: 参加費 */}
-      {step === 1 && (
-        <Card className="border-[#dce3ea]">
-          <CardContent className="space-y-4 p-5">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label htmlFor="member_price">メンバー参加費</Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#475569]">¥</span>
-                  <Input
-                    id="member_price"
-                    type="number"
-                    min="0"
-                    step="100"
-                    value={form.member_price}
-                    onChange={(e) => set("member_price", e.target.value)}
-                    className="border-[#dce3ea] pl-7"
-                  />
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="guest_price">ゲスト参加費</Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#475569]">¥</span>
-                  <Input
-                    id="guest_price"
-                    type="number"
-                    min="0"
-                    step="100"
-                    value={form.guest_price}
-                    onChange={(e) => set("guest_price", e.target.value)}
-                    className={`border-[#dce3ea] pl-7 transition-opacity ${!form.is_external ? "opacity-40" : ""}`}
-                  />
-                </div>
-              </div>
-            </div>
+      {step === 1 && <StepPricing form={form} set={set} />}
 
-            <button
-              type="button"
-              onClick={() => set("allow_point_card", !form.allow_point_card)}
-              className={`flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-sm transition-colors ${
-                form.allow_point_card
-                  ? "border-[#005F8C]/30 bg-[#e8f2f8] text-[#005F8C]"
-                  : "border-[#dce3ea] bg-[#f2f7fa] text-[#475569]"
-              }`}
-            >
-              <div className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 transition-colors ${
-                form.allow_point_card ? "border-[#005F8C] bg-[#005F8C]" : "border-[#dce3ea]"
-              }`}>
-                {form.allow_point_card && (
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3">
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
-                )}
-              </div>
-              回数券での参加を許可する
-            </button>
-
-            <button
-              type="button"
-              onClick={() => set("is_external", !form.is_external)}
-              className={`flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-sm transition-colors ${
-                form.is_external
-                  ? "border-[#005F8C]/30 bg-[#e8f2f8] text-[#005F8C]"
-                  : "border-[#dce3ea] bg-[#f2f7fa] text-[#475569]"
-              }`}
-            >
-              <div className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 transition-colors ${
-                form.is_external ? "border-[#005F8C] bg-[#005F8C]" : "border-[#dce3ea]"
-              }`}>
-                {form.is_external && (
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3">
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
-                )}
-              </div>
-              外部公開する（メンバー以外も参加可能）
-            </button>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Step 2: 詳細設定 */}
       {step === 2 && (
-        <Card className="border-[#dce3ea]">
-          <CardContent className="space-y-4 pt-5">
-            <div className="space-y-1.5">
-              <Label htmlFor="registration_deadline">申込み締め切り</Label>
-              <Input
-                id="registration_deadline"
-                type="date"
-                value={form.registration_deadline}
-                onChange={(e) => set("registration_deadline", e.target.value)}
-                className="border-[#dce3ea]"
-              />
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label htmlFor="min_participants">最低参加人数</Label>
-                <Input
-                  id="min_participants"
-                  type="number"
-                  min="0"
-                  placeholder="未設定"
-                  value={form.min_participants}
-                  onChange={(e) => set("min_participants", e.target.value)}
-                  className="border-[#dce3ea]"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="max_participants">定員（最大参加人数）</Label>
-                <Input
-                  id="max_participants"
-                  type="number"
-                  min="1"
-                  placeholder="未設定"
-                  value={form.max_participants}
-                  onChange={(e) => set("max_participants", e.target.value)}
-                  className="border-[#dce3ea]"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="cancellation_days">キャンセル期限</Label>
-              <div className="flex items-center gap-2">
-                <Input
-                  id="cancellation_days"
-                  type="number"
-                  min="0"
-                  max="30"
-                  placeholder="未設定"
-                  value={form.cancellation_days}
-                  onChange={(e) => set("cancellation_days", e.target.value)}
-                  className="w-28 border-[#dce3ea]"
-                />
-                <span className="text-sm text-[#475569]">日前まで</span>
-                {form.cancellation_days && form.scheduled_at && (() => {
-                  const deadline = new Date(form.scheduled_at)
-                  deadline.setDate(deadline.getDate() - parseInt(form.cancellation_days))
-                  return (
-                    <span className="ml-auto text-sm font-medium text-[#005F8C]">
-                      {deadline.toLocaleDateString("ja-JP", { month: "long", day: "numeric" })}まで
-                    </span>
-                  )
-                })()}
-              </div>
-            </div>
-
-            {/* 試合エントリー設定 */}
-            {form.type === "competition" && (
-              <div className="space-y-3 rounded-xl border border-[#dce3ea] p-4">
-                <p className="text-sm font-semibold text-[#1a2332]">エントリー入力項目</p>
-                <p className="text-xs text-[#475569]">参加者が登録時に入力するフィールドを設定します</p>
-                {competitionFields.map((field, idx) => (
-                  <div key={idx} className="flex items-center gap-2 rounded-lg border border-[#dce3ea] bg-white p-3">
-                    <input
-                      type="text"
-                      value={field.label}
-                      onChange={(e) => {
-                        const updated = [...competitionFields]
-                        updated[idx] = { ...field, label: e.target.value, key: e.target.value.replace(/\s/g, "_").toLowerCase() }
-                        setCompetitionFields(updated)
-                      }}
-                      className="min-w-0 flex-1 border-0 bg-transparent text-sm font-medium text-[#1a2332] outline-none"
-                      placeholder="項目名"
-                    />
-                    <label className="flex items-center gap-1 text-xs text-[#475569]">
-                      <input
-                        type="checkbox"
-                        checked={field.required}
-                        onChange={(e) => {
-                          const updated = [...competitionFields]
-                          updated[idx] = { ...field, required: e.target.checked }
-                          setCompetitionFields(updated)
-                        }}
-                        className="h-3.5 w-3.5"
-                      />
-                      必須
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => setCompetitionFields(competitionFields.filter((_, i) => i !== idx))}
-                      className="text-[#c0392b] hover:text-[#c0392b]"
-                    >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-                      </svg>
-                    </button>
-                  </div>
-                ))}
-                <button
-                  type="button"
-                  onClick={() => setCompetitionFields([...competitionFields, { key: `field_${Date.now()}`, label: "", type: "text", required: false }])}
-                  className="w-full rounded-lg border border-dashed border-[#dce3ea] py-2 text-sm text-[#005F8C] hover:bg-[#f2f7fa]"
-                >
-                  + 項目を追加
-                </button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <StepDetails
+          form={form}
+          set={set}
+          competitionFields={competitionFields}
+          setCompetitionFields={setCompetitionFields}
+        />
       )}
 
-      {/* Step 3: 配信対象 */}
-      {step === 3 && (() => {
-        const sortedMembers = [...teamMembers].sort((a, b) => {
-          const aId = (a.swimmer as Record<string, unknown>).id as string
-          const bId = (b.swimmer as Record<string, unknown>).id as string
-          const aChecked = selectedMemberIds.includes(aId)
-          const bChecked = selectedMemberIds.includes(bId)
-          if (aChecked && !bChecked) return -1
-          if (!aChecked && bChecked) return 1
-          return ((a.swimmer as Record<string, unknown>).name as string).localeCompare(
-            (b.swimmer as Record<string, unknown>).name as string, "ja"
-          )
-        })
-        const untaggedCount = teamMembers.filter((m) => {
-          const sw = m.swimmer as Record<string, unknown>
-          return (
-            !sw?.level &&
-            ((sw?.specialties as string[]) || []).length === 0 &&
-            ((sw?.swimming_goals as string[]) || []).length === 0 &&
-            !sw?.swimmer_type &&
-            ((sw?.swim_disciplines as string[]) || []).length === 0
-          )
-        }).length
-        const allChecked = teamMembers.length > 0 && teamMembers.every(
-          (m) => selectedMemberIds.includes((m.swimmer as Record<string, unknown>).id as string)
-        )
+      {step === 3 && (
+        <StepAudience
+          teamMembers={teamMembers}
+          selectedMemberIds={selectedMemberIds}
+          setSelectedMemberIds={setSelectedMemberIds}
+          selectedTags={selectedTags}
+          setSelectedTags={setSelectedTags}
+          openTagCategory={openTagCategory}
+          setOpenTagCategory={setOpenTagCategory}
+          portalMounted={portalMounted}
+          membersLoading={membersLoading}
+          tagsByCategory={tagsByCategory}
+        />
+      )}
 
-        return (
-          <div className="space-y-3">
-            {/* フィルターピル行 */}
-            <div className="flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              {Object.entries(tagsByCategory).map(([category, tags]) => {
-                const selectedCount = tags.filter((t) => selectedTags.includes(t.id)).length
-                const isActive = selectedCount > 0
-                const isOpen = openTagCategory === category
-                return (
-                  <button
-                    key={category}
-                    type="button"
-                    onClick={() => setOpenTagCategory(isOpen ? null : category)}
-                    className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
-                      isActive
-                        ? "border-[#005F8C] bg-[#005F8C] text-white"
-                        : "border-[#dce3ea] bg-white text-[#1a2332] hover:border-[#005F8C] hover:text-[#005F8C]"
-                    }`}
-                  >
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
-                      <line x1="4" y1="6" x2="20" y2="6" /><line x1="8" y1="12" x2="16" y2="12" /><line x1="11" y1="18" x2="13" y2="18" />
-                    </svg>
-                    <span>{category}</span>
-                    {isActive && (
-                      <span className="flex h-4 w-4 items-center justify-center rounded-full bg-white/30 text-[10px] font-bold">
-                        {selectedCount}
-                      </span>
-                    )}
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true"
-                      className={`transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}>
-                      <polyline points="6 9 12 15 18 9" />
-                    </svg>
-                  </button>
-                )
-              })}
-              {selectedTags.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setSelectedTags([])}
-                  className="shrink-0 rounded-full border border-[#dce3ea] bg-white px-3 py-1.5 text-sm text-[#c0392b] hover:border-[#c0392b]"
-                >
-                  リセット
-                </button>
-              )}
-            </div>
-
-            {/* カテゴリボトムシート */}
-            {portalMounted && openTagCategory !== null && (() => {
-              const sheetTags = tagsByCategory[openTagCategory] ?? []
-              return createPortal(
-                <>
-                  <div className="fixed inset-0 z-40 bg-black/40" onClick={() => setOpenTagCategory(null)} />
-                  <div className="fixed bottom-0 left-0 right-0 z-50 rounded-t-[20px] bg-white shadow-2xl">
-                    <div className="flex justify-center pb-1 pt-3">
-                      <div className="h-1 w-10 rounded-full bg-[#dce3ea]" />
-                    </div>
-                    <div className="flex items-center justify-between px-5 py-3">
-                      <h3 className="text-base font-semibold text-[#1a2332]">{openTagCategory}</h3>
-                      <button
-                        type="button"
-                        onClick={() => setOpenTagCategory(null)}
-                        className="flex h-8 w-8 items-center justify-center rounded-full bg-[#f2f7fa] text-[#475569] hover:bg-[#e0edf5]"
-                      >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
-                          <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-                        </svg>
-                      </button>
-                    </div>
-                    <div className="px-3 pb-10">
-                      {sheetTags.map((tag) => {
-                        const isSelected = selectedTags.includes(tag.id)
-                        return (
-                          <button
-                            key={tag.id}
-                            type="button"
-                            onClick={() =>
-                              setSelectedTags((prev) =>
-                                isSelected ? prev.filter((t) => t !== tag.id) : [...prev, tag.id]
-                              )
-                            }
-                            style={isSelected ? { backgroundColor: "rgba(0,95,140,0.08)" } : undefined}
-                            className={`flex w-full items-center justify-between rounded-xl px-4 py-3.5 text-sm transition-colors ${
-                              isSelected ? "font-semibold text-[#005F8C]" : "text-[#1a2332] hover:bg-[#f2f7fa]"
-                            }`}
-                          >
-                            <span>{tag.label}</span>
-                            {isSelected && (
-                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#005F8C" strokeWidth="2.5" aria-hidden="true">
-                                <polyline points="20 6 9 17 4 12" />
-                              </svg>
-                            )}
-                          </button>
-                        )
-                      })}
-                    </div>
-                  </div>
-                </>,
-                document.body
-              )
-            })()}
-
-            {/* メンバーリスト */}
-            <Card className="border-[#dce3ea]">
-              <CardContent className="pt-4">
-                <div className="mb-3 flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-semibold text-[#475569]">
-                      メンバー一覧（{selectedMemberIds.length}/{teamMembers.length}人 選択中）
-                    </p>
-                    {untaggedCount > 0 && (
-                      <p className="mt-0.5 text-xs text-[#64748b]">※ タグ未設定 {untaggedCount}人あり</p>
-                    )}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (allChecked) {
-                        setSelectedMemberIds([])
-                      } else {
-                        setSelectedMemberIds(teamMembers.map((m) => (m.swimmer as Record<string, unknown>).id as string))
-                      }
-                    }}
-                    className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
-                      allChecked
-                        ? "bg-[#005F8C] text-white"
-                        : "border border-[#dce3ea] bg-white text-[#475569] hover:border-[#005F8C]"
-                    }`}
-                  >
-                    {allChecked ? "全解除" : "全選択"}
-                  </button>
-                </div>
-
-                {membersLoading ? (
-                  <p className="py-8 text-center text-sm text-[#64748b]">読み込み中...</p>
-                ) : teamMembers.length === 0 ? (
-                  <p className="py-8 text-center text-sm text-[#64748b]">メンバーがいません</p>
-                ) : (
-                  <div className="max-h-80 overflow-y-auto space-y-1">
-                    {sortedMembers.map((m) => {
-                      const swimmer = m.swimmer as Record<string, unknown>
-                      const id = swimmer.id as string
-                      const isChecked = selectedMemberIds.includes(id)
-                      const memberTagLabels = [
-                        swimmer.level as string | undefined,
-                        ...((swimmer.specialties as string[]) || []).slice(0, 2),
-                      ].filter(Boolean)
-                      return (
-                        <button
-                          key={id}
-                          type="button"
-                          onClick={() =>
-                            setSelectedMemberIds((prev) =>
-                              isChecked ? prev.filter((x) => x !== id) : [...prev, id]
-                            )
-                          }
-                          className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors ${
-                            isChecked ? "bg-[#e8f2f8]" : "opacity-50 hover:opacity-80 hover:bg-[#f2f7fa]"
-                          }`}
-                        >
-                          <div className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 transition-colors ${
-                            isChecked ? "border-[#005F8C] bg-[#005F8C]" : "border-[#dce3ea]"
-                          }`}>
-                            {isChecked && (
-                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3">
-                                <polyline points="20 6 9 17 4 12" />
-                              </svg>
-                            )}
-                          </div>
-                          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#005F8C]/10 text-xs font-bold text-[#005F8C]">
-                            {(swimmer.name as string)?.[0] || "?"}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-medium text-[#1a2332]">{swimmer.name as string}</p>
-                            {memberTagLabels.length > 0 && (
-                              <p className="truncate text-xs text-[#64748b]">{memberTagLabels.join(" · ")}</p>
-                            )}
-                          </div>
-                        </button>
-                      )
-                    })}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        )
-      })()}
-
-      {/* Step 4: 確認 */}
       {step === 4 && (
-        <Card className="border-[#dce3ea]">
-          <CardContent className="space-y-5 pt-5">
-            <p className="text-sm text-[#475569]">以下の内容でセッションを作成します。確認してください。</p>
-
-            <div className="space-y-2">
-              <p className="text-xs font-semibold text-[#64748b] uppercase tracking-wide">基本情報</p>
-              <div className="rounded-xl bg-[#f2f7fa] px-4 py-3 text-sm space-y-2">
-                <div className="flex gap-2">
-                  <span className="w-24 shrink-0 text-[#64748b]">タイトル</span>
-                  <span className="font-medium text-[#1a2332]">{form.title}</span>
-                </div>
-                <div className="flex gap-2">
-                  <span className="w-24 shrink-0 text-[#64748b]">種類</span>
-                  <span className="text-[#1a2332]">{({"practice": "練習", "camp": "合宿", "competition": "試合", "event": "イベント", "meeting": "ミーティング"} as Record<string, string>)[form.type] || form.type}</span>
-                </div>
-                <div className="flex gap-2">
-                  <span className="w-24 shrink-0 text-[#64748b]">{form.type === "camp" ? "開始日時" : "日時"}</span>
-                  <span className="text-[#1a2332]">{form.scheduled_at ? new Date(form.scheduled_at).toLocaleString("ja-JP") : "—"}</span>
-                </div>
-                {form.end_at && (
-                  <div className="flex gap-2">
-                    <span className="w-24 shrink-0 text-[#64748b]">終了日時</span>
-                    <span className="text-[#1a2332]">{new Date(form.end_at).toLocaleString("ja-JP")}</span>
-                  </div>
-                )}
-                <div className="flex gap-2">
-                  <span className="w-24 shrink-0 text-[#64748b]">場所</span>
-                  <span className="text-[#1a2332]">{form.location}</span>
-                </div>
-                {form.meeting_point && (
-                  <div className="flex gap-2">
-                    <span className="w-24 shrink-0 text-[#64748b]">待ち合わせ</span>
-                    <span className="text-[#1a2332]">{form.meeting_point}</span>
-                  </div>
-                )}
-                {form.gender_filter !== "all" && (
-                  <div className="flex gap-2">
-                    <span className="w-24 shrink-0 text-[#64748b]">対象性別</span>
-                    <span className="text-[#1a2332]">{form.gender_filter === "male" ? "男性のみ" : "女性のみ"}</span>
-                  </div>
-                )}
-                {form.description && (
-                  <div className="flex gap-2">
-                    <span className="w-24 shrink-0 text-[#64748b]">説明・メニュー</span>
-                    <span className="whitespace-pre-wrap text-[#1a2332]">{form.description}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <p className="text-xs font-semibold text-[#64748b] uppercase tracking-wide">参加費</p>
-              <div className="rounded-xl bg-[#f2f7fa] px-4 py-3 text-sm space-y-2">
-                <div className="flex gap-2">
-                  <span className="w-24 shrink-0 text-[#64748b]">メンバー</span>
-                  <span className="text-[#1a2332]">¥{parseInt(form.member_price || "0").toLocaleString()}</span>
-                </div>
-                <div className="flex gap-2">
-                  <span className="w-24 shrink-0 text-[#64748b]">ゲスト</span>
-                  <span className="text-[#1a2332]">¥{parseInt(form.guest_price || "0").toLocaleString()}</span>
-                </div>
-                <div className="flex gap-2">
-                  <span className="w-24 shrink-0 text-[#64748b]">回数券</span>
-                  <span className="text-[#1a2332]">{form.allow_point_card ? "利用可" : "利用不可"}</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <p className="text-xs font-semibold text-[#64748b] uppercase tracking-wide">詳細設定</p>
-              <div className="rounded-xl bg-[#f2f7fa] px-4 py-3 text-sm space-y-2">
-                {form.registration_deadline && (
-                  <div className="flex gap-2">
-                    <span className="w-24 shrink-0 text-[#64748b]">申込締切</span>
-                    <span className="text-[#1a2332]">{new Date(form.registration_deadline).toLocaleDateString("ja-JP")}</span>
-                  </div>
-                )}
-                {form.min_participants && (
-                  <div className="flex gap-2">
-                    <span className="w-24 shrink-0 text-[#64748b]">最低人数</span>
-                    <span className="text-[#1a2332]">{form.min_participants}人</span>
-                  </div>
-                )}
-                {form.max_participants && (
-                  <div className="flex gap-2">
-                    <span className="w-24 shrink-0 text-[#64748b]">定員</span>
-                    <span className="text-[#1a2332]">{form.max_participants}人</span>
-                  </div>
-                )}
-                {form.cancellation_days && (
-                  <div className="flex gap-2">
-                    <span className="w-24 shrink-0 text-[#64748b]">キャンセル期限</span>
-                    <span className="text-[#1a2332]">{form.cancellation_days}日前まで</span>
-                  </div>
-                )}
-                <div className="flex gap-2">
-                  <span className="w-24 shrink-0 text-[#64748b]">外部公開</span>
-                  <span className="text-[#1a2332]">{form.is_external ? "あり" : "なし"}</span>
-                </div>
-              </div>
-            </div>
-
-            {form.type === "competition" && competitionFields.length > 0 && (
-              <div className="space-y-2">
-                <p className="text-xs font-semibold text-[#64748b] uppercase tracking-wide">エントリー項目</p>
-                <div className="rounded-xl bg-[#f2f7fa] px-4 py-3 text-sm space-y-1.5">
-                  {competitionFields.map((f, i) => (
-                    <div key={i} className="flex items-center gap-2">
-                      <span className="text-[#1a2332]">{f.label || "（未入力）"}</span>
-                      {f.required && (
-                        <span className="rounded-full bg-[#fdecea] px-1.5 py-0.5 text-xs font-medium text-[#c0392b]">必須</span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="space-y-2">
-              <p className="text-xs font-semibold text-[#64748b] uppercase tracking-wide">配信対象</p>
-              <div className="rounded-xl bg-[#f2f7fa] px-4 py-3 text-sm space-y-2">
-                {selectedTags.length > 0 && (
-                  <div className="flex gap-2">
-                    <span className="w-24 shrink-0 text-[#64748b]">タグ絞込</span>
-                    <span className="text-[#1a2332]">
-                      {selectedTags.map((t) => SYSTEM_TAGS.find((s) => s.id === t)?.label || t).join("、")}
-                    </span>
-                  </div>
-                )}
-                <div className="flex gap-2">
-                  <span className="w-24 shrink-0 text-[#64748b]">選択人数</span>
-                  <span className="text-[#1a2332]">
-                    {selectedMemberIds.length === teamMembers.length
-                      ? `全メンバー（${teamMembers.length}人）`
-                      : `${selectedMemberIds.length}人を選択`}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <StepConfirm
+          form={form}
+          competitionFields={competitionFields}
+          selectedTags={selectedTags}
+          selectedMemberIds={selectedMemberIds}
+          teamMembersCount={teamMembers.length}
+        />
       )}
 
       {/* ナビゲーションボタン */}

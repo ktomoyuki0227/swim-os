@@ -2,6 +2,7 @@ import { Suspense } from "react"
 import { getTeamTemplates } from "@/actions/templates"
 import { getMyTeams } from "@/actions/teams"
 import { NewSessionForm } from "./new-session-form"
+import type { AdminTeamOption, TemplateOption } from "./types"
 
 interface Props {
   searchParams: Promise<{ team?: string; copy?: string }>
@@ -10,21 +11,21 @@ interface Props {
 export default async function NewSessionPage({ searchParams }: Props) {
   const { team: teamId } = await searchParams
 
-  let initialTemplates: Record<string, unknown>[] = []
+  let initialTemplates: TemplateOption[] = []
   let initialTeamId = teamId || ""
 
   if (teamId) {
     const { data } = await getTeamTemplates(teamId)
-    initialTemplates = data || []
+    initialTemplates = (data || []) as TemplateOption[]
   } else {
     const { data: teams } = await getMyTeams()
-    const adminOnly = ((teams || []) as Record<string, unknown>[]).filter(
+    const adminOnly = ((teams || []) as AdminTeamOption[]).filter(
       (t) => t.my_role === "admin"
     )
     if (adminOnly.length === 1) {
-      initialTeamId = adminOnly[0].id as string
+      initialTeamId = adminOnly[0].id
       const { data } = await getTeamTemplates(initialTeamId)
-      initialTemplates = data || []
+      initialTemplates = (data || []) as TemplateOption[]
     }
   }
 
