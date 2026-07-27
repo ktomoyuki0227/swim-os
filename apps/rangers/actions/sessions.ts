@@ -231,6 +231,19 @@ export async function confirmSession(sessionId: string) {
 
   const confirmAdmin = createAdminClient()
 
+  // セッションステータスを条件付きUPDATEで原子的に open -> confirmed へ遷移させる。
+  // ボタンの二重クリックや通信リトライで confirmSession が同時に2回呼ばれても、
+  // 片方だけがこのUPDATEに成功し、もう片方は0件更新で即座に中断するため、
+  // 決済処理の重複実行（＝参加者への二重課金）を防げる。
+  const { data: claimed, error: claimErr } = await confirmAdmin
+    .from("practice_sessions")
+    .update({ session_status: "confirmed" })
+    .eq("id", sessionId)
+    .eq("session_status", "open")
+    .select("id")
+    .maybeSingle()
+  if (claimErr || !claimed) return { error: "このセッションは既に開催確定処理が実行されています" }
+
   // 参加登録者を取得（pending のみ）
   // - 再実行しても二重課金しない
   // - payment_status = "free"（年会費・月謝免除）は課金不要のため除外
@@ -441,12 +454,8 @@ export async function confirmSession(sessionId: string) {
     // cash はそのまま（当日回収）
   })
 
-  // セッションステータスを confirmed に更新（決済失敗があっても確定し、リトライ可能にする）
-  const { error: confirmErr } = await confirmAdmin
-    .from("practice_sessions")
-    .update({ session_status: "confirmed" })
-    .eq("id", sessionId)
-  if (confirmErr) return { error: "セッション確定の更新に失敗しました" }
+  // セッションステータスは決済処理の前に既に "confirmed" へ原子的に更新済み
+  // （決済失敗があっても確定済みのまま残し、リトライ可能にする）
 
   // 参加登録済みメンバーへ開催確定通知
   const confirmedNotifAdmin = createAdminClient()
