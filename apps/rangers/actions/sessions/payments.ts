@@ -188,6 +188,7 @@ export async function confirmSession(sessionId: string) {
       month: "long",
       day: "numeric",
       weekday: "short",
+      timeZone: "Asia/Tokyo",
     })
     await notifyUsers(confirmedRegistrants.map((r) => r.swimmer_id), {
       type: "session_confirmed",
@@ -324,6 +325,7 @@ export async function cancelSession(sessionId: string) {
       month: "long",
       day: "numeric",
       weekday: "short",
+      timeZone: "Asia/Tokyo",
     })
     await notifyUsers(registrants.map((r) => r.swimmer_id), {
       type: "session_cancelled",
@@ -470,6 +472,7 @@ export async function registerForSession(
       month: "long",
       day: "numeric",
       weekday: "short",
+      timeZone: "Asia/Tokyo",
     })
     await notifyUsers(teamAdmins.map((a) => a.swimmer_id), {
       type: "session_registered",
@@ -486,6 +489,7 @@ export async function registerForSession(
       month: "long",
       day: "numeric",
       weekday: "short",
+      timeZone: "Asia/Tokyo",
     })
     await notifyUser(user.id, {
       type: "session_registered",
@@ -604,6 +608,7 @@ export async function cancelRegistration(sessionId: string) {
       month: "long",
       day: "numeric",
       weekday: "short",
+      timeZone: "Asia/Tokyo",
     })
     await notifyUsers(cancelAdmins.map((a) => a.swimmer_id), {
       type: "session_cancelled_by_member",

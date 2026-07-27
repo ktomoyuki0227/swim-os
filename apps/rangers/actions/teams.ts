@@ -86,9 +86,7 @@ export async function createTeam(data: unknown) {
   // 作成者を admin として追加（失敗時はグループごと削除してロールバック）
   // 管理者の会員種別: チームの料金体系に合わせて設定
   const adminMembershipType: MembershipType =
-    team.has_annual_fee && !team.has_monthly_fee ? "annual" :
-    team.has_monthly_fee ? "monthly" :
-    "monthly"
+    team.has_annual_fee && !team.has_monthly_fee ? "annual" : "monthly"
   const { error: memberError } = await supabase.from("team_members").insert({
     team_id: team.id,
     swimmer_id: user.id,
