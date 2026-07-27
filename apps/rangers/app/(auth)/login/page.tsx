@@ -15,8 +15,10 @@ const initialState: AuthState = { error: null }
 
 // テスト・デモ環境でのみ表示するクイックログイン一覧。
 // 実在するテストアカウント一覧をワンクリックで入力できてしまうため、
-// 明示的に NEXT_PUBLIC_ENABLE_DEMO_LOGIN=true を設定したデプロイでのみ有効にする。
-const isDemoLoginEnabled = process.env.NEXT_PUBLIC_ENABLE_DEMO_LOGIN === "true"
+// 本番ビルド(NODE_ENV=production)では常に非表示にする。
+// Vercel・next dev いずれもNODE_ENVは環境変数で手動管理する必要がなく自動設定されるため、
+// 設定漏れで本番に表示され続ける事故を防げる。
+const isDemoLoginEnabled = process.env.NODE_ENV !== "production"
 
 const DEMO_ACCOUNTS = [
   {
