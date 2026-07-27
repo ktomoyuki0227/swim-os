@@ -11,8 +11,13 @@ interface MessageThreadPageProps {
   params: Promise<{ userId: string }>
 }
 
+// userId はこの後 .or() フィルタに文字列として埋め込むため、
+// PostgRESTのフィルタ構文への注入を避けるためUUID形式を厳密に検証する
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
 export async function generateMetadata({ params }: MessageThreadPageProps): Promise<Metadata> {
   const { userId } = await params
+  if (!UUID_RE.test(userId)) return { title: "メッセージ" }
   const supabase = await createClient()
   const { data } = await supabase.from("public_profiles").select("name").eq("id", userId).single()
   return { title: data ? `${data.name}とのメッセージ` : "メッセージ" }
@@ -20,6 +25,8 @@ export async function generateMetadata({ params }: MessageThreadPageProps): Prom
 
 export default async function MessageThreadPage({ params }: MessageThreadPageProps) {
   const { userId } = await params
+  if (!UUID_RE.test(userId)) notFound()
+
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
