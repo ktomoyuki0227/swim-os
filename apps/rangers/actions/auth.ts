@@ -175,10 +175,14 @@ export async function updatePassword(
 
 export async function loginWithGoogle(): Promise<void> {
   const supabase = await createClient()
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
-      redirectTo: `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/callback`,
+      // Supabase(GoTrue)の /auth/v1/callback を直接指定すると、このアプリの
+      // /auth/callback（exchangeCodeForSession経由でCookieセッションを確立する処理）
+      // を経由しないため、アプリ側のセッションが正しく確立されない
+      redirectTo: `${appUrl}/auth/callback`,
     },
   })
 
