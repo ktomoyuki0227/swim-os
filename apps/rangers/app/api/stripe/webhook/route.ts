@@ -144,11 +144,22 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
 
   const admin = createAdminClient()
 
+  // Stripeは同一請求の支払い失敗を複数回(リトライスケジュールに応じて)通知してくるため、
+  // 既にpast_dueへ遷移済みなら再通知しない(subscription_statusを冪等性の判定に使う)
+  const { data: currentMember } = await admin
+    .from("team_members")
+    .select("subscription_status")
+    .eq("stripe_subscription_id", subId)
+    .maybeSingle()
+  const alreadyNotified = currentMember?.subscription_status === "past_due"
+
   // subscription_status を past_due に更新
   await admin
     .from("team_members")
     .update({ subscription_status: "past_due" })
     .eq("stripe_subscription_id", subId)
+
+  if (alreadyNotified) return
 
   // 管理者に通知
   const { data: admins } = await admin
