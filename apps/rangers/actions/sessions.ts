@@ -6,10 +6,11 @@ import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { sessionSchema, sessionUpdateSchema } from "@/lib/validations"
 import type { PaymentMethod, CompetitionField } from "@/types/database"
-import { getPlatformFeePercent, calculateFees } from "@/lib/stripe-connect"
+import { getPlatformFeePercent } from "@/lib/stripe-connect"
 import { isTeamAdmin, isTeamMember } from "@/lib/auth/require-team-admin"
 import { mapWithConcurrency } from "@/lib/utils"
 import { notifyUser, notifyUsers } from "@/lib/notifications"
+import { chargeSessionRegistrationStripe } from "@/lib/stripe-payment-helpers"
 
 // confirmSession でのStripe決済の同時実行数。参加者数が多いセッションでも
 // サーバーレス関数のタイムアウトに収まるよう、完全な直列処理を避ける。
@@ -298,105 +299,20 @@ export async function confirmSession(sessionId: string) {
         return
       }
       const amount = reg.is_member ? session.member_price : session.guest_price
-      // Connect 手数料（チームが Connect 設定済みの場合のみ計算）
-      const connectFees = hasConnect && connectTeam?.stripe_account_id
-        ? calculateFees(amount, feePercent)
-        : null
-      // Step 1: PI作成（confirm前）— 課金はまだ発生しない
-      const pi = await stripe.paymentIntents.create({
+      const result = await chargeSessionRegistrationStripe({
+        admin: confirmAdmin,
+        registrationId: reg.id,
+        swimmerId: reg.swimmer_id,
+        sessionId,
+        sessionTitle: session.title,
+        teamId: session.team_id,
         amount,
-        currency: "jpy",
-        customer: swimmer.stripe_customer_id,
-        payment_method: swimmer.stripe_payment_method_id,
-        off_session: true,
-        metadata: { session_id: sessionId, registration_id: reg.id, swimmer_id: reg.swimmer_id },
-        ...(connectFees && connectTeam?.stripe_account_id ? {
-          application_fee_amount: connectFees.platformFee,
-          transfer_data: { destination: connectTeam.stripe_account_id },
-        } : {}),
-      }).catch(() => null)
-      if (!pi) {
-        await confirmAdmin
-          .from("session_registrations")
-          .update({ payment_status: "failed" })
-          .eq("id", reg.id)
-        await notifyUser(reg.swimmer_id, {
-          type: "payment_failed",
-          title: `「${session.title}」の参加費決済に失敗しました`,
-          body: "決済処理中にエラーが発生しました。カード情報をご確認ください",
-          team_id: session.team_id,
-          link: "/payments",
-        })
-        paymentErrors.push(`${reg.id}: stripe payment intent creation failed`)
-        return
-      }
-
-      // Step 2: PI idをDBに保存（confirmより先）— webhookが後から拾える状態にする
-      const { error: piSaveErr } = await confirmAdmin
-        .from("session_registrations")
-        .update({ stripe_payment_intent_id: pi.id })
-        .eq("id", reg.id)
-      if (piSaveErr) {
-        // DB保存失敗 → 未請求PIを取り消してスキップ（ユーザーへの課金なし）
-        await stripe.paymentIntents.cancel(pi.id).catch(() => null)
-        paymentErrors.push(`${reg.id}: failed to save payment intent id`)
-        return
-      }
-
-      // Connect 送金記録は confirm より先に pending で作成しておく。
-      // webhook の payment_intent.succeeded がこの後の confirm() より先に届いても
-      // 更新対象の行が既に存在するため、条件付きUPDATEがサイレントに0件ヒットしない。
-      if (connectFees && connectTeam?.stripe_account_id) {
-        const { error: trErr } = await confirmAdmin.from("transfer_records").insert({
-          team_id: session.team_id,
-          session_id: sessionId,
-          registration_id: reg.id,
-          stripe_payment_intent_id: pi.id,
-          amount,
-          platform_fee: connectFees.platformFee,
-          net_amount: connectFees.netAmount,
-          status: "pending",
-        })
-        if (trErr) {
-          console.error(`[confirmSession] transfer_records insert failed for PI ${pi.id}:`, trErr)
-        }
-      }
-
-      // Step 3: 確定（ここで実際に課金）— 失敗してもwebhookがDBを更新できる
-      try {
-        await stripe.paymentIntents.confirm(pi.id, { off_session: true })
-        await confirmAdmin
-          .from("session_registrations")
-          .update({ payment_status: "paid" })
-          .eq("id", reg.id)
-        // 参加費決済通知（本人へ）
-        await notifyUser(reg.swimmer_id, {
-          type: "payment_charged",
-          title: `「${session.title}」の参加費が決済されました`,
-          body: `¥${amount.toLocaleString()}が引き落とされました`,
-          team_id: session.team_id,
-          link: "/payments",
-        })
-      } catch (err) {
-        console.error(`[confirmSession] Stripe confirm failed for ${reg.id}:`, err)
-        await confirmAdmin
-          .from("session_registrations")
-          .update({ payment_status: "failed" })
-          .eq("id", reg.id)
-        await confirmAdmin
-          .from("transfer_records")
-          .update({ status: "failed" })
-          .eq("stripe_payment_intent_id", pi.id)
-          .eq("status", "pending")
-        await notifyUser(reg.swimmer_id, {
-          type: "payment_failed",
-          title: `「${session.title}」の参加費決済に失敗しました`,
-          body: "お支払いカードへの請求に失敗しました。カード情報をご確認ください",
-          team_id: session.team_id,
-          link: "/payments",
-        })
-        paymentErrors.push(`${reg.id}: stripe confirm failed`)
-      }
+        stripeCustomerId: swimmer.stripe_customer_id,
+        stripePaymentMethodId: swimmer.stripe_payment_method_id,
+        connectAccountId: hasConnect ? (connectTeam?.stripe_account_id ?? null) : null,
+        feePercent,
+      })
+      if (!result.ok) paymentErrors.push(`${reg.id}: ${result.error}`)
     } else if (reg.payment_method === "point_card") {
       // ポイントカード消費（adminClientでRLSをバイパス）
       const { error: rpcErr } = await confirmAdmin.rpc("decrement_stamp", {
@@ -1071,7 +987,7 @@ export async function retryPayment(registrationId: string) {
       await retryAdmin.from("session_registrations").update({ payment_status: "failed" }).eq("id", registrationId)
       return { error: "カード情報が登録されていません" }
     }
-    const retrySession = registration.session as { member_price: number; guest_price: number; team_id: string; session_status: string }
+    const retrySession = registration.session as { title: string; member_price: number; guest_price: number; team_id: string; session_status: string }
     const amount = registration.is_member ? retrySession.member_price : retrySession.guest_price
 
     // Connect 設定を確認（再決済時も同様に送金）
@@ -1082,92 +998,23 @@ export async function retryPayment(registrationId: string) {
       .single()
     const retryHasConnect = !!(retryTeam?.stripe_account_id && retryTeam?.stripe_onboarding_completed)
     const retryFeePercent = retryHasConnect ? await getPlatformFeePercent() : 0
-    const retryConnectFees = retryHasConnect && retryTeam?.stripe_account_id
-      ? calculateFees(amount, retryFeePercent)
-      : null
 
-    // Step 1: PI作成（confirm前）
-    const pi = await stripe.paymentIntents.create({
+    const result = await chargeSessionRegistrationStripe({
+      admin: retryAdmin,
+      registrationId,
+      swimmerId: registration.swimmer_id,
+      sessionId: registration.session_id,
+      sessionTitle: retrySession.title,
+      teamId: retrySession.team_id,
       amount,
-      currency: "jpy",
-      customer: swimmer.stripe_customer_id,
-      payment_method: swimmer.stripe_payment_method_id,
-      off_session: true,
-      metadata: {
-        session_id: registration.session_id,
-        registration_id: registrationId,
-        swimmer_id: registration.swimmer_id,
-      },
-      ...(retryConnectFees && retryTeam?.stripe_account_id ? {
-        application_fee_amount: retryConnectFees.platformFee,
-        transfer_data: { destination: retryTeam.stripe_account_id },
-      } : {}),
-    }).catch(() => null)
-    if (!pi) {
-      // "pending" のまま放置すると再試行できなくなるため "failed" に戻す
-      await retryAdmin.from("session_registrations").update({ payment_status: "failed" }).eq("id", registrationId)
-      return { error: "再決済の準備に失敗しました" }
-    }
-
-    // Step 2: PI idをDBに保存（confirmより先）— webhookが後から拾える状態にする
-    // payment_status は claim 時点で既に "pending" になっている
-    const { error: piSaveErr } = await retryAdmin
-      .from("session_registrations")
-      .update({ stripe_payment_intent_id: pi.id })
-      .eq("id", registrationId)
-    if (piSaveErr) {
-      await stripe.paymentIntents.cancel(pi.id).catch(() => null)
-      // "pending" のまま放置すると再試行できなくなるため "failed" に戻す
-      await retryAdmin.from("session_registrations").update({ payment_status: "failed" }).eq("id", registrationId)
-      return { error: "再決済の準備中にエラーが発生しました" }
-    }
-
-    // Connect 送金記録は confirm より先に pending で作成しておく。
-    // webhook の payment_intent.succeeded が confirm() より先に届いても
-    // 更新対象の行が既に存在するため、条件付きUPDATEがサイレントに0件ヒットしない。
-    if (retryConnectFees && retryTeam?.stripe_account_id) {
-      const { error: trErr } = await retryAdmin.from("transfer_records").insert({
-        team_id: retrySession.team_id,
-        session_id: registration.session_id,
-        registration_id: registrationId,
-        stripe_payment_intent_id: pi.id,
-        amount,
-        platform_fee: retryConnectFees.platformFee,
-        net_amount: retryConnectFees.netAmount,
-        status: "pending",
-      })
-      if (trErr) {
-        console.error(`[retryPayment] transfer_records insert failed for PI ${pi.id}:`, trErr)
-      }
-    }
-
-    // Step 3: 確定（ここで実際に課金）
-    try {
-      await stripe.paymentIntents.confirm(pi.id, { off_session: true })
-      await retryAdmin
-        .from("session_registrations")
-        .update({ payment_status: "paid" })
-        .eq("id", registrationId)
-      // 再決済成功通知（本人へ）
-      const retrySessionTyped = registration.session as { title: string; team_id: string }
-      await notifyUser(registration.swimmer_id, {
-        type: "payment_charged",
-        title: `「${retrySessionTyped.title}」の参加費が決済されました`,
-        body: `¥${amount.toLocaleString()}が引き落とされました`,
-        team_id: retrySessionTyped.team_id,
-        link: "/payments",
-      })
-    } catch (err) {
-      console.error(`[retryPayment] Stripe confirm failed for ${registrationId}:`, err)
-      await retryAdmin
-        .from("session_registrations")
-        .update({ payment_status: "failed" })
-        .eq("id", registrationId)
-      await retryAdmin
-        .from("transfer_records")
-        .update({ status: "failed" })
-        .eq("stripe_payment_intent_id", pi.id)
-        .eq("status", "pending")
+      stripeCustomerId: swimmer.stripe_customer_id,
+      stripePaymentMethodId: swimmer.stripe_payment_method_id,
+      connectAccountId: retryHasConnect ? (retryTeam?.stripe_account_id ?? null) : null,
+      feePercent: retryFeePercent,
+    })
+    if (!result.ok) {
+      if (result.error === "stripe payment intent creation failed") return { error: "再決済の準備に失敗しました" }
+      if (result.error === "failed to save payment intent id") return { error: "再決済の準備中にエラーが発生しました" }
       return { error: "再決済に失敗しました" }
     }
   }
