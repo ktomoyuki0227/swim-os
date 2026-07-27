@@ -1,0 +1,10 @@
+# vercel deploy (ローカルCLI経由)でアップロードするファイルを制限する。
+# Vercel側で依存関係は再インストールされるため、ローカルの node_modules や
+# ビルド出力・キャッシュは一切アップロードしない。
+node_modules
+.next
+.git
+.vercel
+supabase/.temp
+*.tsbuildinfo
+remotion/out
