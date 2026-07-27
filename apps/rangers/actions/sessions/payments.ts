@@ -20,8 +20,10 @@ export async function confirmSession(sessionId: string) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
 
+  const confirmAdmin = createAdminClient()
+
   // セッション情報を取得
-  const { data: session } = await createAdminClient()
+  const { data: session } = await confirmAdmin
     .from("practice_sessions")
     .select("*, team:teams(*)")
     .eq("id", sessionId)
@@ -31,9 +33,7 @@ export async function confirmSession(sessionId: string) {
   if (session.session_status !== "open") return { error: "受付中のセッションのみ開催確定できます" }
 
   // admin権限チェック
-  if (!(await isTeamAdmin(createAdminClient(), session.team_id, user.id))) return { error: "権限がありません" }
-
-  const confirmAdmin = createAdminClient()
+  if (!(await isTeamAdmin(confirmAdmin, session.team_id, user.id))) return { error: "権限がありません" }
 
   // セッションステータスを条件付きUPDATEで原子的に open -> confirmed へ遷移させる。
   // ボタンの二重クリックや通信リトライで confirmSession が同時に2回呼ばれても、
@@ -177,8 +177,7 @@ export async function confirmSession(sessionId: string) {
   // （決済失敗があっても確定済みのまま残し、リトライ可能にする）
 
   // 参加登録済みメンバーへ開催確定通知
-  const confirmedNotifAdmin = createAdminClient()
-  const { data: confirmedRegistrants } = await confirmedNotifAdmin
+  const { data: confirmedRegistrants } = await confirmAdmin
     .from("session_registrations")
     .select("swimmer_id")
     .eq("session_id", sessionId)
@@ -212,7 +211,8 @@ export async function cancelSession(sessionId: string) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
 
-  const { data: session } = await createAdminClient()
+  const cancelAdmin = createAdminClient()
+  const { data: session } = await cancelAdmin
     .from("practice_sessions")
     .select("*")
     .eq("id", sessionId)
@@ -222,11 +222,10 @@ export async function cancelSession(sessionId: string) {
   if (session.session_status === "cancelled") return { error: "既に中止済みのセッションです" }
 
   // admin権限チェック
-  if (!(await isTeamAdmin(createAdminClient(), session.team_id, user.id))) return { error: "権限がありません" }
+  if (!(await isTeamAdmin(cancelAdmin, session.team_id, user.id))) return { error: "権限がありません" }
 
   // 確定後の中止の場合、返金・ポイント戻し
   if (session.session_status === "confirmed") {
-    const cancelAdmin = createAdminClient()
     const { data: registrations } = await cancelAdmin
       .from("session_registrations")
       .select("*")
@@ -297,7 +296,7 @@ export async function cancelSession(sessionId: string) {
   }
 
   // セッションステータスを cancelled に（adminClientでRLSをバイパス）
-  const { error: cancelErr } = await createAdminClient()
+  const { error: cancelErr } = await cancelAdmin
     .from("practice_sessions")
     .update({ session_status: "cancelled" })
     .eq("id", sessionId)
@@ -305,8 +304,7 @@ export async function cancelSession(sessionId: string) {
   if (cancelErr) return { error: "セッションの中止に失敗しました" }
 
   // 参加登録済みメンバーへ個別中止通知
-  const notifAdmin = createAdminClient()
-  const { data: registrants } = await notifAdmin
+  const { data: registrants } = await cancelAdmin
     .from("session_registrations")
     .select("swimmer_id")
     .eq("session_id", sessionId)
@@ -652,8 +650,8 @@ export async function retryPayment(registrationId: string) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
 
-  const retryFetch = createAdminClient()
-  const { data: registration } = await retryFetch
+  const retryAdmin = createAdminClient()
+  const { data: registration } = await retryAdmin
     .from("session_registrations")
     .select("*, session:practice_sessions(*)")
     .eq("id", registrationId)
@@ -668,13 +666,12 @@ export async function retryPayment(registrationId: string) {
   if (session.session_status !== "confirmed") {
     return { error: "確定済みセッションの登録のみ再決済できます" }
   }
-  if (!(await isTeamAdmin(createAdminClient(), session.team_id, user.id))) return { error: "権限がありません" }
+  if (!(await isTeamAdmin(retryAdmin, session.team_id, user.id))) return { error: "権限がありません" }
 
   if (registration.payment_method === "stripe") {
     if (!process.env.STRIPE_SECRET_KEY) {
       return { error: "Stripe未設定環境では再決済できません" }
     }
-    const retryAdmin = createAdminClient()
 
     // payment_status を条件付きUPDATEで原子的に failed -> pending へ遷移させる。
     // confirmSessionと同様、retryPaymentが同時に2回呼ばれても片方だけが成功し、

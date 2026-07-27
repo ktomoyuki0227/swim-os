@@ -170,16 +170,15 @@ export async function deleteSession(sessionId: string) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
 
-  const { data: session } = await createAdminClient()
+  const adminClient = createAdminClient()
+  const { data: session } = await adminClient
     .from("practice_sessions")
     .select("team_id")
     .eq("id", sessionId)
     .single()
   if (!session) return { error: "セッションが見つかりません" }
 
-  if (!(await isTeamAdmin(createAdminClient(), session.team_id, user.id))) return { error: "権限がありません" }
-
-  const adminClient = createAdminClient()
+  if (!(await isTeamAdmin(adminClient, session.team_id, user.id))) return { error: "権限がありません" }
 
   // 参加者がいるか確認
   const { data: registrations } = await adminClient
