@@ -43,6 +43,31 @@ export async function isTeamMember(
 }
 
 /**
+ * 指定チームの有効な管理者(role="admin", status="active")のswimmer_id一覧を取得する。
+ * 通知送信先の組み立てでactions/配下に多数コピペされていたクエリをここに集約する。
+ * excludeUserId を渡すと、その本人（多くの場合は操作した管理者自身）を除外する。
+ */
+export async function getActiveTeamAdminIds(
+  admin: AdminClient,
+  teamId: string,
+  excludeUserId?: string
+): Promise<string[]> {
+  let query = admin
+    .from("team_members")
+    .select("swimmer_id")
+    .eq("team_id", teamId)
+    .eq("role", "admin")
+    .eq("status", "active")
+
+  if (excludeUserId) {
+    query = query.neq("swimmer_id", excludeUserId)
+  }
+
+  const { data } = await query
+  return (data ?? []).map((m) => m.swimmer_id)
+}
+
+/**
  * 呼び出し元(callerId)が、対象スイマー(targetSwimmerId)が所属するいずれかの
  * チームの有効な管理者であるかを判定する。teamId を受け取らず対象ユーザーのみで
  * 認可判定したい場合（例: getMemberFees）に使う。

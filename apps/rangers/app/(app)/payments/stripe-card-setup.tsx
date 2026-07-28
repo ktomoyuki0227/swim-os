@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { loadStripe, type Stripe } from "@stripe/stripe-js"
 import {
   Elements,
@@ -155,9 +155,14 @@ export function CardSetupStep({ onSuccess }: { onSuccess: () => void }) {
   const [clientSecret, setClientSecret] = useState<string | null>(null)
   const [loading, setLoading] = useState(!!stripePromise)
   const [fetchError, setFetchError] = useState(!stripePromise)
+  // React Strict Mode(開発時)はeffectを2回発火させるため、ガードなしだと
+  // SetupIntentを2回作成し、Elementsに渡すclientSecretが後から変わって
+  // Stripe.jsの「clientSecretは変更できない」警告が出る。1回だけ実行されるようにする
+  const hasFetchedRef = useRef(false)
 
   useEffect(() => {
-    if (!stripePromise) return
+    if (!stripePromise || hasFetchedRef.current) return
+    hasFetchedRef.current = true
 
     fetch("/api/stripe/setup-intent", { method: "POST" })
       .then((res) => {

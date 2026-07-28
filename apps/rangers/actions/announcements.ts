@@ -66,15 +66,17 @@ export async function getTeamAnnouncements(teamId: string) {
     .select("*, author:profiles(id, name, avatar_url)")
     .eq("team_id", teamId)
     .order("created_at", { ascending: false })
+    .limit(200) // お知らせ増加に伴う無制限クエリを防ぐ安全上限
 
   if (error) return { data: [] }
 
   // 既読状態を付与
-  if (user && data) {
+  if (user && data && data.length > 0) {
     const { data: reads } = await supabase
       .from("announcement_reads")
       .select("announcement_id")
       .eq("user_id", user.id)
+      .in("announcement_id", data.map((a) => a.id))
 
     const readIds = new Set(reads?.map((r) => r.announcement_id) || [])
 
@@ -162,6 +164,7 @@ export async function getUnreadAnnouncementCount() {
     .from("announcement_reads")
     .select("announcement_id")
     .eq("user_id", user.id)
+    .in("announcement_id", announcements.map((a) => a.id))
 
   const readIds = new Set(reads?.map((r) => r.announcement_id) || [])
   const unreadCount = announcements.filter((a) => !readIds.has(a.id)).length

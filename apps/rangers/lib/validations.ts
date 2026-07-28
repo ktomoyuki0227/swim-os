@@ -1,6 +1,17 @@
 import { z } from "zod/v4"
 import { SWIM_SPECIALTIES, PREFECTURES, SWIMMING_GOALS, PARTICIPATION_STYLES, SWIM_LEVELS, TARGET_AGES, SWIMMER_TYPES, SWIM_DISCIPLINES, PRACTICE_FREQUENCIES, PRACTICE_DAYS } from "@/types/database"
 
+// new Date(v).toISOString() が RangeError を投げないことを保証するための日時文字列検証。
+// サーバーアクション側でこの検証をすり抜けると、不正な文字列が原因で
+// 未捕捉例外によりリクエスト全体が落ちてしまう。
+const isValidDateString = (v: string) => !Number.isNaN(new Date(v).getTime())
+
+// z.string().url() は構文チェックのみで javascript: 等の危険なスキームを拒否しないため、
+// 将来これらのURLを <a href> 等でレンダリングする機能が追加された場合の
+// 保存型XSSを防ぐ目的でhttp/httpsのみを許可する
+const httpUrl = () =>
+  z.string().url().refine((v) => /^https?:\/\//i.test(v), "http/httpsのURLを入力してください")
+
 export const loginSchema = z.object({
   email: z.email("有効なメールアドレスを入力してください"),
   password: z.string().min(6, "パスワードは6文字以上で入力してください"),
@@ -54,8 +65,8 @@ export type ProfileInput = z.infer<typeof profileSchema>
 export const teamSchema = z.object({
   name: z.string().min(1, "グループ名を入力してください").max(100, "グループ名は100文字以内"),
   description: z.string().max(2000, "説明は2000文字以内").optional(),
-  cover_image_url: z.string().url().optional(),
-  avatar_url: z.string().url().optional(),
+  cover_image_url: httpUrl().optional(),
+  avatar_url: httpUrl().optional(),
   is_recruiting: z.boolean().default(true),
   show_member_count: z.boolean().default(true),
   activity_area: z.string().max(100).optional(),
@@ -89,14 +100,14 @@ export const sessionSchema = z.object({
   description: z.string().max(2000, "2000文字以内").optional(),
   content: z.string().max(5000, "5000文字以内").optional(),
   type: z.enum(["practice", "camp", "competition", "event", "meeting"]).default("practice"),
-  scheduled_at: z.string().min(1, "日時を選択してください"),
-  end_at: z.string().optional(),
+  scheduled_at: z.string().min(1, "日時を選択してください").refine(isValidDateString, "日時の形式が不正です"),
+  end_at: z.string().refine(isValidDateString, "日時の形式が不正です").optional(),
   location: z.string().min(1, "場所を入力してください").max(200, "200文字以内"),
   meeting_point: z.string().max(200, "200文字以内").optional(),
   gender_filter: z.enum(["all", "male", "female"]).default("all"),
   member_price: z.number().int().min(0).default(0),
   guest_price: z.number().int().min(0).default(0),
-  registration_deadline: z.string().optional(),
+  registration_deadline: z.string().refine(isValidDateString, "日時の形式が不正です").optional(),
   min_participants: z.number().int().min(0).optional(),
   max_participants: z.number().int().min(1).optional(),
   course_rules: z.array(z.object({
@@ -130,7 +141,7 @@ export const sessionSchema = z.object({
 export const teamUpdateSchema = z.object({
   name: z.string().min(1, "グループ名を入力してください").max(100, "100文字以内").optional(),
   description: z.string().max(2000, "2000文字以内").optional(),
-  cover_image_url: z.string().url().optional(),
+  cover_image_url: httpUrl().optional(),
   is_recruiting: z.boolean().optional(),
   show_member_count: z.boolean().optional(),
   activity_area: z.string().max(100).optional(),
@@ -142,7 +153,7 @@ export const teamUpdateSchema = z.object({
     z.string().refine((v) => (PRACTICE_DAYS as readonly string[]).includes(v), "無効な練習曜日です")
   ).optional(),
   main_pool: z.string().max(200).nullable().optional(),
-  avatar_url: z.string().url().optional(),
+  avatar_url: httpUrl().optional(),
   has_session_fee: z.boolean().optional(),
   has_annual_fee: z.boolean().optional(),
   has_monthly_fee: z.boolean().optional(),
@@ -166,14 +177,14 @@ export const sessionUpdateSchema = z.object({
   description: z.string().max(2000).optional(),
   content: z.string().max(5000).optional(),
   type: z.enum(["practice", "camp", "competition", "event", "meeting"]).optional(),
-  scheduled_at: z.string().optional(),
-  end_at: z.string().optional(),
+  scheduled_at: z.string().refine(isValidDateString, "日時の形式が不正です").optional(),
+  end_at: z.string().refine(isValidDateString, "日時の形式が不正です").optional(),
   location: z.string().min(1).max(200).optional(),
   meeting_point: z.string().max(200).optional(),
   gender_filter: z.enum(["all", "male", "female"]).optional(),
   member_price: z.number().int().min(0).optional(),
   guest_price: z.number().int().min(0).optional(),
-  registration_deadline: z.string().optional(),
+  registration_deadline: z.string().refine(isValidDateString, "日時の形式が不正です").optional(),
   min_participants: z.number().int().min(0).optional(),
   max_participants: z.number().int().min(1).optional(),
   course_rules: z.array(z.object({
@@ -211,8 +222,8 @@ export const messageSchema = z.object({
 export const announcementSchema = z.object({
   title: z.string().min(1, "タイトルを入力してください").max(200, "200文字以内"),
   body: z.string().max(5000, "5000文字以内").optional(),
-  image_url: z.string().url().optional(),
-  link_url: z.string().url().optional(),
+  image_url: httpUrl().optional(),
+  link_url: httpUrl().optional(),
   target_tags: z.array(z.string()).default([]),
 })
 

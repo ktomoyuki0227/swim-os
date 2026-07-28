@@ -56,6 +56,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
                   alt={(profile.name as string) ?? ""}
                   fill
                   className="object-cover"
+                  sizes="80px"
                 />
               ) : (
                 <div className="flex h-full w-full items-center justify-center text-2xl font-bold text-[#005F8C]">

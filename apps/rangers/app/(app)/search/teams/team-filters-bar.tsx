@@ -196,7 +196,7 @@ export function TeamFiltersBar({ sort, recruitingOnly, days, q }: TeamFiltersBar
             <button
               type="button"
               onClick={() => setOpenSheet(null)}
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f2f7fa] text-[#475569] transition-colors hover:bg-[#e0edf5]"
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f2f7fa] text-[#475569] transition-colors hover:bg-[rgba(0,95,140,0.08)]"
             >
               <X className="h-4 w-4" aria-hidden="true" />
             </button>

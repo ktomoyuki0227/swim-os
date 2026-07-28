@@ -62,7 +62,7 @@ export default async function TeamJoinPage({ params }: PageProps) {
       <div className="mb-8 flex justify-center">
         <Link href="/" className="flex items-center gap-2">
           <Image src="/rangers-logo-背景透過.png" alt="Rangers" width={36} height={36} className="object-contain" />
-          <Image src="/rangers-name-背景透過.png" alt="Rangers" width={100} height={28} className="object-contain" />
+          <Image src="/rangers-name-背景透過.png" alt="Rangers" width={84} height={28} className="object-contain" />
         </Link>
       </div>
 

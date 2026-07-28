@@ -18,10 +18,10 @@ const DATE_RANGE_OPTIONS = [
 const SESSION_TYPE_OPTIONS = [
   { key: "all", label: "すべて", color: null },
   { key: "practice", label: "練習", color: "#005F8C" },
-  { key: "camp", label: "合宿", color: "#D35400" },
+  { key: "camp", label: "合宿", color: "#b8860b" },
   { key: "competition", label: "大会", color: "#C0392B" },
   { key: "event", label: "イベント", color: "#0f8a4f" },
-  { key: "meeting", label: "ミーティング", color: "#7B5EA7" },
+  { key: "meeting", label: "ミーティング", color: "#475569" },
 ]
 
 const SORT_OPTIONS = [
@@ -179,7 +179,7 @@ function PriceRangeSlider({
       </div>
 
       {/* 目盛りラベル */}
-      <div className="mt-3 flex justify-between text-[10px] font-medium text-[#aab8c2]">
+      <div className="mt-3 flex justify-between text-[10px] font-medium text-[#64748b]">
         <span>¥0</span>
         <span>¥5,000</span>
         <span>¥10,000</span>
@@ -333,7 +333,7 @@ export function SessionFiltersBar({
             <button
               type="button"
               onClick={() => setOpenSheet(null)}
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f2f7fa] text-[#475569] transition-colors hover:bg-[#e0edf5]"
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f2f7fa] text-[#475569] transition-colors hover:bg-[rgba(0,95,140,0.08)]"
             >
               <X className="h-4 w-4" aria-hidden="true" />
             </button>

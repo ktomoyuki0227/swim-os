@@ -13,25 +13,27 @@ export const dynamic = "force-dynamic"
 async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent) {
   const admin = createAdminClient()
 
-  // .eq("payment_status", "pending") で冪等性を保証（二重処理防止）
+  // .neq("payment_status", "paid") で冪等性を保証（二重処理防止）しつつ、
+  // confirm()がタイムアウト等の例外で"failed"のまま残ったケースからの復旧も
+  // このwebhookだけで自動的に拾えるようにする（"pending"限定だと復旧できない）。
   const { error } = await admin
     .from("session_registrations")
     .update({ payment_status: "paid" })
     .eq("stripe_payment_intent_id", paymentIntent.id)
-    .eq("payment_status", "pending")
+    .neq("payment_status", "paid")
 
   if (error) {
     console.error(`[webhook] payment_intent.succeeded (${paymentIntent.id}): DB update failed`, error)
     throw error
   }
 
-  // Connect 送金記録を confirmed に更新
+  // Connect 送金記録を confirmed に更新（同様に"failed"からの復旧も拾う）
   if (paymentIntent.transfer_data) {
     await admin
       .from("transfer_records")
       .update({ status: "succeeded" })
       .eq("stripe_payment_intent_id", paymentIntent.id)
-      .eq("status", "pending")
+      .neq("status", "succeeded")
   }
 }
 

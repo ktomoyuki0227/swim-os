@@ -14,18 +14,23 @@ export default async function MessagesPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
 
-  // 自分が関わった全メッセージから会話相手一覧を取得
+  // 自分が関わったメッセージから会話相手一覧を取得。
+  // 全件取得だと利用が進むほど遅くなるため、直近分に上限をかける
+  // (会話相手一覧の表示が目的で、古い会話は相手からの再送信で復帰する)
+  const RECENT_MESSAGES_LIMIT = 1000
   const { data: sentMessages } = await supabase
     .from("messages")
     .select("receiver_id, created_at, content")
     .eq("sender_id", user.id)
     .order("created_at", { ascending: false })
+    .limit(RECENT_MESSAGES_LIMIT)
 
   const { data: receivedMessages } = await supabase
     .from("messages")
     .select("sender_id, created_at, content, read_at")
     .eq("receiver_id", user.id)
     .order("created_at", { ascending: false })
+    .limit(RECENT_MESSAGES_LIMIT)
 
   // 会話相手のIDを重複なく収集
   const partnerIds = new Set<string>()

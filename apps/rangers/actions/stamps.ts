@@ -75,29 +75,20 @@ export async function addStampPurchase(
     .single()
   if (!tm) return { error: "対象メンバーが見つかりません" }
 
-  // 購入記録を追加
-  const { error: purchaseError } = await admin
-    .from("stamp_purchases")
-    .insert({
-      team_id: teamId,
-      swimmer_id: swimmerId,
-      card_count: cardCount,
-      stamp_count: stampCount,
-      amount,
-      note: note || null,
-    })
-
-  if (purchaseError) return { error: "購入記録の追加に失敗しました" }
-
-  // stamp_remaining をアトミックに加算（read-modify-writeによるlost update防止）
-  const addedStamps = cardCount * stampCount
-  const { error: incrementError } = await admin.rpc("increment_stamp_by", {
+  // 購入記録の追加とstamp_remainingの加算を単一トランザクションで原子的に行う
+  // (片方だけ成功して購入記録とスタンプ残数が不整合になることを防ぐ)
+  const { error: purchaseError } = await admin.rpc("add_stamp_purchase", {
+    p_team_id: teamId,
+    p_swimmer_id: swimmerId,
     p_team_member_id: tm.id,
-    p_count: addedStamps,
+    p_card_count: cardCount,
+    p_stamp_count: stampCount,
+    p_amount: amount,
+    p_note: note || undefined,
   })
-  if (incrementError) {
-    console.error("[addStampPurchase] increment_stamp_by failed:", incrementError)
-    return { error: "スタンプ残数の更新に失敗しました" }
+  if (purchaseError) {
+    console.error("[addStampPurchase] add_stamp_purchase failed:", purchaseError)
+    return { error: "購入記録の追加に失敗しました" }
   }
 
   revalidatePath("/fees")

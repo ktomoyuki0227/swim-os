@@ -3,17 +3,15 @@
 import { useState, useTransition, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { updateTeam, uploadTeamImage } from "@/actions/teams"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { BackLink } from "@/components/back-link"
-import { PricingSimulatorButton } from "@/components/pricing-simulator"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
+import { BackLink } from "@/components/back-link"
 import { useToast } from "@/components/toast"
-import { PRACTICE_FREQUENCIES, PRACTICE_DAYS } from "@/types/database"
 import { TeamImageFields } from "./team-image-fields"
 import { StripeConnectSection } from "./stripe-connect-section"
+import { BasicInfoFields } from "./basic-info-fields"
+import { FeeFields } from "./fee-fields"
+import { StatusCard } from "./status-card"
+import type { FeeFieldsForm } from "./types"
 
 interface Team {
   id: string
@@ -69,10 +67,20 @@ export function EditTeamForm({ team, stripeEnabled, connectStatus }: EditTeamFor
   const [showMemberCount, setShowMemberCount] = useState(team.show_member_count)
   const [isActive, setIsActive] = useState((team.status ?? "active") === "active")
   const [practiceDays, setPracticeDays] = useState<string[]>(team.practice_days ?? [])
-  const [hasSessionFee, setHasSessionFee] = useState(team.has_session_fee)
-  const [hasAnnualFee, setHasAnnualFee] = useState(team.has_annual_fee)
-  const [hasMonthlyFee, setHasMonthlyFee] = useState(team.has_monthly_fee)
-  const [hasPointCard, setHasPointCard] = useState(team.has_point_card)
+
+  const [feeForm, setFeeForm] = useState<FeeFieldsForm>({
+    hasSessionFee: team.has_session_fee,
+    hasAnnualFee: team.has_annual_fee,
+    hasMonthlyFee: team.has_monthly_fee,
+    hasPointCard: team.has_point_card,
+    annualFeeAmount: team.annual_fee_amount != null ? String(team.annual_fee_amount) : "",
+    monthlyFeeAmount: team.monthly_fee_amount != null ? String(team.monthly_fee_amount) : "",
+    defaultMemberPrice: String(team.default_member_price ?? 0),
+    defaultGuestPrice: String(team.default_guest_price ?? 0),
+    cancellationDays: String(team.cancellation_days ?? 3),
+    pointCardCount: String(team.point_card_count ?? 10),
+    pointCardPrice: team.point_card_price != null ? String(team.point_card_price) : "",
+  })
 
   // Image state
   const [coverPreview, setCoverPreview] = useState<string | null>(team.cover_image_url)
@@ -103,25 +111,6 @@ export function EditTeamForm({ team, stripeEnabled, connectStatus }: EditTeamFor
         if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev)
         return preview
       })
-    }
-  }
-
-  // シミュレーター適用ハンドラー
-  const handleSimulatorApply = (values: { pointCardPrice?: number; monthlyFee?: number; annualFee?: number }) => {
-    if (values.pointCardPrice !== undefined) {
-      setHasPointCard(true)
-      const el = document.getElementById("point_card_price") as HTMLInputElement | null
-      if (el) { el.value = String(values.pointCardPrice) }
-    }
-    if (values.monthlyFee !== undefined) {
-      setHasMonthlyFee(true)
-      const el = document.getElementById("monthly_fee_amount") as HTMLInputElement | null
-      if (el) { el.value = String(values.monthlyFee) }
-    }
-    if (values.annualFee !== undefined) {
-      setHasAnnualFee(true)
-      const el = document.getElementById("annual_fee_amount") as HTMLInputElement | null
-      if (el) { el.value = String(values.annualFee) }
     }
   }
 
@@ -181,9 +170,9 @@ export function EditTeamForm({ team, stripeEnabled, connectStatus }: EditTeamFor
         setImageUploading(false)
       }
 
-      const annualFeeVal = parseInt(data.get("annual_fee_amount") as string)
-      const monthlyFeeVal = parseInt(data.get("monthly_fee_amount") as string)
-      const pointCardPriceVal = parseInt(data.get("point_card_price") as string)
+      const annualFeeVal = parseInt(feeForm.annualFeeAmount)
+      const monthlyFeeVal = parseInt(feeForm.monthlyFeeAmount)
+      const pointCardPriceVal = parseInt(feeForm.pointCardPrice)
 
       const payload: Record<string, unknown> = {
         name: data.get("name") as string,
@@ -195,17 +184,17 @@ export function EditTeamForm({ team, stripeEnabled, connectStatus }: EditTeamFor
         is_recruiting: isRecruiting,
         show_member_count: showMemberCount,
         status: isActive ? "active" : "inactive",
-        has_session_fee: hasSessionFee,
-        has_annual_fee: hasAnnualFee,
-        has_monthly_fee: hasMonthlyFee,
-        has_point_card: hasPointCard,
-        default_member_price: hasSessionFee ? (parseInt(data.get("default_member_price") as string) || 0) : 0,
-        default_guest_price: hasSessionFee ? (parseInt(data.get("default_guest_price") as string) || 0) : 0,
-        annual_fee_amount: hasAnnualFee ? (Number.isNaN(annualFeeVal) ? undefined : annualFeeVal) : undefined,
-        monthly_fee_amount: hasMonthlyFee ? (Number.isNaN(monthlyFeeVal) ? undefined : monthlyFeeVal) : undefined,
-        cancellation_days: parseInt(data.get("cancellation_days") as string) || 3,
-        point_card_count: hasPointCard ? (parseInt(data.get("point_card_count") as string) || team.point_card_count || 10) : undefined,
-        point_card_price: hasPointCard ? (Number.isNaN(pointCardPriceVal) ? undefined : pointCardPriceVal) : undefined,
+        has_session_fee: feeForm.hasSessionFee,
+        has_annual_fee: feeForm.hasAnnualFee,
+        has_monthly_fee: feeForm.hasMonthlyFee,
+        has_point_card: feeForm.hasPointCard,
+        default_member_price: feeForm.hasSessionFee ? (parseInt(feeForm.defaultMemberPrice) || 0) : 0,
+        default_guest_price: feeForm.hasSessionFee ? (parseInt(feeForm.defaultGuestPrice) || 0) : 0,
+        annual_fee_amount: feeForm.hasAnnualFee ? (Number.isNaN(annualFeeVal) ? undefined : annualFeeVal) : undefined,
+        monthly_fee_amount: feeForm.hasMonthlyFee ? (Number.isNaN(monthlyFeeVal) ? undefined : monthlyFeeVal) : undefined,
+        cancellation_days: parseInt(feeForm.cancellationDays) || 3,
+        point_card_count: feeForm.hasPointCard ? (parseInt(feeForm.pointCardCount) || team.point_card_count || 10) : undefined,
+        point_card_price: feeForm.hasPointCard ? (Number.isNaN(pointCardPriceVal) ? undefined : pointCardPriceVal) : undefined,
         contact_email: (data.get("contact_email") as string) || null,
         contact_phone: (data.get("contact_phone") as string) || null,
         fee_members_exempt_session: team.fee_members_exempt_session,
@@ -242,193 +231,16 @@ export function EditTeamForm({ team, stripeEnabled, connectStatus }: EditTeamFor
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* 基本情報 */}
-        <Card className="border-[#dce3ea]">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base font-semibold text-[#1a2332]">基本情報</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="name">グループ名 <span className="text-[#c0392b]">*</span></Label>
-              <Input
-                id="name"
-                name="name"
-                defaultValue={team.name}
-                placeholder="例: マウントリバー水泳クラブ"
-                maxLength={100}
-                required
-                className="border-[#dce3ea]"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="description">グループの説明</Label>
-              <Textarea
-                id="description"
-                name="description"
-                defaultValue={team.description ?? ""}
-                placeholder="グループの活動内容や特徴を入力してください"
-                rows={3}
-                maxLength={2000}
-                className="resize-none border-[#dce3ea]"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="activity_area">
-                活動エリア
-                <span className="ml-1 text-xs font-normal text-[#64748b]">（任意）</span>
-              </Label>
-              <Input
-                id="activity_area"
-                name="activity_area"
-                defaultValue={team.activity_area ?? ""}
-                placeholder="例: 東京都渋谷区"
-                maxLength={100}
-                className="border-[#dce3ea]"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="main_pool">
-                主な使用プール
-                <span className="ml-1 text-xs font-normal text-[#64748b]">（任意）</span>
-              </Label>
-              <Input
-                id="main_pool"
-                name="main_pool"
-                defaultValue={team.main_pool ?? ""}
-                placeholder="例: 渋谷区スポーツセンタープール"
-                maxLength={200}
-                className="border-[#dce3ea]"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="contact_email">
-                問い合わせ用メールアドレス
-                <span className="ml-1 text-xs font-normal text-[#64748b]">（任意）</span>
-              </Label>
-              <Input
-                id="contact_email"
-                name="contact_email"
-                type="email"
-                placeholder="例：contact@example.com"
-                defaultValue={team.contact_email ?? ""}
-                maxLength={254}
-                className="border-[#dce3ea]"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="contact_phone">
-                問い合わせ用電話番号
-                <span className="ml-1 text-xs font-normal text-[#64748b]">（任意）</span>
-              </Label>
-              <Input
-                id="contact_phone"
-                name="contact_phone"
-                type="tel"
-                placeholder="09012345678"
-                defaultValue={team.contact_phone ?? ""}
-                maxLength={20}
-                className="border-[#dce3ea]"
-              />
-              <p className="text-xs text-[#64748b]">ハイフンなし11桁で入力してください</p>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="practice_frequency">
-                練習ペース
-                <span className="ml-1 text-xs font-normal text-[#64748b]">（任意）</span>
-              </Label>
-              <select
-                id="practice_frequency"
-                name="practice_frequency"
-                defaultValue={team.practice_frequency ?? ""}
-                className="h-10 w-full rounded-md border border-[#dce3ea] bg-white px-3 text-sm text-[#1a2332] focus:outline-none focus:ring-2 focus:ring-[#005F8C]/30"
-              >
-                <option value="">選択してください</option>
-                {PRACTICE_FREQUENCIES.map((f) => (
-                  <option key={f} value={f}>{f}</option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-2">
-              <Label>
-                練習曜日
-                <span className="ml-1 text-xs font-normal text-[#64748b]">（任意・複数選択可）</span>
-              </Label>
-              <div className="flex flex-wrap gap-2">
-                {PRACTICE_DAYS.map((day) => {
-                  const checked = practiceDays.includes(day)
-                  return (
-                    <button
-                      key={day}
-                      type="button"
-                      onClick={() =>
-                        setPracticeDays((prev) =>
-                          checked ? prev.filter((d) => d !== day) : [...prev, day]
-                        )
-                      }
-                      className={`flex h-9 w-9 items-center justify-center rounded-full border text-sm font-medium transition-colors ${
-                        checked
-                          ? "border-[#005F8C] bg-[#005F8C] text-white"
-                          : "border-[#dce3ea] bg-white text-[#475569] hover:border-[#005F8C]/50"
-                      }`}
-                    >
-                      {day}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label>メンバー募集</Label>
-              <div className="rounded-[10px] border border-[#dce3ea] p-3">
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setIsRecruiting((v) => !v)}
-                    className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
-                      isRecruiting ? "bg-[#005F8C]" : "bg-[#dce3ea]"
-                    }`}
-                  >
-                    <span
-                      className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
-                        isRecruiting ? "translate-x-5" : "translate-x-0"
-                      }`}
-                    />
-                  </button>
-                  <span className="text-sm font-medium text-[#1a2332]">
-                    {isRecruiting ? "メンバー募集中" : "募集停止中"}
-                  </span>
-                </div>
-                <p className="mt-1.5 text-xs text-[#64748b]">公開ページに表示されます</p>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label>メンバー数の表示</Label>
-              <div className="rounded-[10px] border border-[#dce3ea] p-3">
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setShowMemberCount((v) => !v)}
-                    className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
-                      showMemberCount ? "bg-[#005F8C]" : "bg-[#dce3ea]"
-                    }`}
-                  >
-                    <span
-                      className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
-                        showMemberCount ? "translate-x-5" : "translate-x-0"
-                      }`}
-                    />
-                  </button>
-                  <span className="text-sm font-medium text-[#1a2332]">
-                    {showMemberCount ? "表示する" : "表示しない"}
-                  </span>
-                </div>
-                <p className="mt-1.5 text-xs text-[#64748b]">公開ページに「〇人のメンバー」を表示します</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <BasicInfoFields
+          team={team}
+          practiceDays={practiceDays}
+          onPracticeDaysChange={setPracticeDays}
+          isRecruiting={isRecruiting}
+          onIsRecruitingChange={setIsRecruiting}
+          showMemberCount={showMemberCount}
+          onShowMemberCountChange={setShowMemberCount}
+        />
 
-        {/* 画像設定 */}
         <TeamImageFields
           coverPreview={coverPreview}
           iconPreview={iconPreview}
@@ -451,169 +263,13 @@ export function EditTeamForm({ team, stripeEnabled, connectStatus }: EditTeamFor
           }}
         />
 
-        {/* ── メンバーシップ ── */}
-        <div>
-          <div className="mb-1 flex items-center gap-2">
-            <span className="text-base">👥</span>
-            <h3 className="text-sm font-semibold text-[#1a2332]">メンバーシップ</h3>
-            <PricingSimulatorButton memberPrice={team.default_member_price ?? 1000} onApply={handleSimulatorApply} />
-          </div>
-          <p className="mb-2 text-xs text-[#475569]">継続的な会費を設定する場合に有効にしてください</p>
-          <div className="space-y-2">
-            <div className={`overflow-hidden rounded-[14px] border transition-colors ${hasAnnualFee ? "border-[#005F8C]/30" : "border-[#dce3ea]"}`}>
-              <div className="flex items-center gap-3 px-4 py-3">
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-[#1a2332]">年会費</p>
-                  <p className="text-xs text-[#475569]">年1回の会費を徴収</p>
-                </div>
-                <button type="button" onClick={() => setHasAnnualFee(!hasAnnualFee)}
-                  className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${hasAnnualFee ? "bg-[#005F8C]" : "bg-[#dce3ea]"}`}>
-                  <span className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${hasAnnualFee ? "translate-x-5" : "translate-x-0"}`} />
-                </button>
-              </div>
-              {hasAnnualFee && (
-                <div className="border-t border-[#dce3ea]/50 bg-[#f2f7fa]/50 px-4 py-3">
-                  <div className="space-y-1">
-                    <Label htmlFor="annual_fee_amount" className="text-xs">金額</Label>
-                    <div className="relative w-40">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#475569]">¥</span>
-                      <Input id="annual_fee_amount" name="annual_fee_amount" type="number" min="0" step="100" defaultValue={team.annual_fee_amount ?? ""} placeholder="0" className="border-[#dce3ea] pl-7" />
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
+        <FeeFields
+          form={feeForm}
+          onChange={setFeeForm}
+          simulatorMemberPrice={team.default_member_price ?? 1000}
+        />
 
-            <div className={`overflow-hidden rounded-[14px] border transition-colors ${hasMonthlyFee ? "border-[#005F8C]/30" : "border-[#dce3ea]"}`}>
-              <div className="flex items-center gap-3 px-4 py-3">
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-[#1a2332]">月謝</p>
-                  <p className="text-xs text-[#475569]">毎月の月謝を徴収</p>
-                </div>
-                <button type="button" onClick={() => setHasMonthlyFee(!hasMonthlyFee)}
-                  className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${hasMonthlyFee ? "bg-[#005F8C]" : "bg-[#dce3ea]"}`}>
-                  <span className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${hasMonthlyFee ? "translate-x-5" : "translate-x-0"}`} />
-                </button>
-              </div>
-              {hasMonthlyFee && (
-                <div className="border-t border-[#dce3ea]/50 bg-[#f2f7fa]/50 px-4 py-3">
-                  <div className="space-y-1">
-                    <Label htmlFor="monthly_fee_amount" className="text-xs">金額</Label>
-                    <div className="relative w-40">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#475569]">¥</span>
-                      <Input id="monthly_fee_amount" name="monthly_fee_amount" type="number" min="0" step="100" defaultValue={team.monthly_fee_amount ?? ""} placeholder="0" className="border-[#dce3ea] pl-7" />
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div className="h-px bg-[#e8edf2]" />
-
-        {/* ── セッション参加費 ── */}
-        <div>
-          <div className="mb-2 flex items-center gap-2">
-            <span className="text-base">💰</span>
-            <h3 className="text-sm font-semibold text-[#1a2332]">セッション参加費</h3>
-            <PricingSimulatorButton memberPrice={team.default_member_price ?? 1000} onApply={handleSimulatorApply} />
-          </div>
-          <div className="space-y-2">
-            <div className={`overflow-hidden rounded-[14px] border transition-colors ${hasSessionFee ? "border-[#005F8C]/30" : "border-[#dce3ea]"}`}>
-              <div className="flex items-center gap-3 px-4 py-3">
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-[#1a2332]">参加費を設定する</p>
-                  <p className="text-xs text-[#475569]">練習・イベントごとに料金を徴収</p>
-                </div>
-                <button type="button" onClick={() => setHasSessionFee(!hasSessionFee)}
-                  className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${hasSessionFee ? "bg-[#005F8C]" : "bg-[#dce3ea]"}`}>
-                  <span className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${hasSessionFee ? "translate-x-5" : "translate-x-0"}`} />
-                </button>
-              </div>
-              {hasSessionFee && (
-                <div className="border-t border-[#dce3ea]/50 bg-[#f2f7fa]/50 px-4 py-3 space-y-3">
-                  <div className="grid gap-3 grid-cols-2">
-                    <div className="space-y-1">
-                      <Label htmlFor="default_member_price" className="text-xs">メンバー料金</Label>
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#475569]">¥</span>
-                        <Input id="default_member_price" name="default_member_price" type="number" min="0" step="100" defaultValue={team.default_member_price ?? 0} className="border-[#dce3ea] pl-7" />
-                      </div>
-                    </div>
-                    <div className="space-y-1">
-                      <Label htmlFor="default_guest_price" className="text-xs">ゲスト料金</Label>
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#475569]">¥</span>
-                        <Input id="default_guest_price" name="default_guest_price" type="number" min="0" step="100" defaultValue={team.default_guest_price ?? 0} className="border-[#dce3ea] pl-7" />
-                      </div>
-                    </div>
-                  </div>
-                  <div className="space-y-1">
-                    <Label htmlFor="cancellation_days" className="text-xs">キャンセル期限</Label>
-                    <div className="flex items-center gap-2">
-                      <Input id="cancellation_days" name="cancellation_days" type="number" min="0" max="30" defaultValue={team.cancellation_days ?? 3} className="w-20 border-[#dce3ea]" />
-                      <span className="text-xs text-[#475569]">日前まで無料キャンセル可</span>
-                    </div>
-                  </div>
-                  <div className="border-t border-[#dce3ea]/30 pt-3 space-y-2">
-                    <label className="flex cursor-pointer items-center gap-2.5">
-                      <input type="checkbox" checked={hasPointCard} onChange={(e) => setHasPointCard(e.target.checked)} className="h-4 w-4 rounded border-[#dce3ea] accent-[#005F8C]" />
-                      <p className="text-xs font-medium text-[#1a2332]">回数券での支払いを受け付ける</p>
-                    </label>
-                    {hasPointCard && (
-                      <div className="ml-6 grid gap-3 grid-cols-2">
-                        <div className="space-y-1">
-                          <Label htmlFor="point_card_count" className="text-xs">1枚の回数</Label>
-                          <Input id="point_card_count" name="point_card_count" type="number" min="1" max="100" defaultValue={team.point_card_count ?? 10} className="border-[#dce3ea]" />
-                        </div>
-                        <div className="space-y-1">
-                          <Label htmlFor="point_card_price" className="text-xs">販売価格（任意）</Label>
-                          <div className="relative">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#475569]">¥</span>
-                            <Input id="point_card_price" name="point_card_price" type="number" min="0" step="100" defaultValue={team.point_card_price ?? ""} placeholder="未設定" className="border-[#dce3ea] pl-7" />
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* グループのステータス */}
-        <Card className="border-[#dce3ea]">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base font-semibold text-[#1a2332]">グループのステータス</CardTitle>
-            <p className="text-xs text-[#475569]">非アクティブにすると公開ページから非表示になります。</p>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-3 rounded-xl border border-[#dce3ea] p-3">
-              <button
-                type="button"
-                onClick={() => setIsActive((v) => !v)}
-                className={`relative h-6 w-10 rounded-full transition-colors ${
-                  isActive ? "bg-[#005F8C]" : "bg-[#dce3ea]"
-                }`}
-                style={{ minHeight: "24px" }}
-              >
-                <span
-                  className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
-                    isActive ? "translate-x-4" : "translate-x-0"
-                  }`}
-                />
-              </button>
-              <span className="text-sm font-medium text-[#1a2332]">
-                {isActive ? "アクティブ" : "非アクティブ"}
-              </span>
-              <span className="ml-auto text-xs text-[#64748b]">
-                {isActive ? "公開中" : "非公開"}
-              </span>
-            </div>
-          </CardContent>
-        </Card>
+        <StatusCard isActive={isActive} onChange={setIsActive} />
 
         <div className="flex gap-3">
           <BackLink href={`/teams/${team.id}`} className="flex-1">

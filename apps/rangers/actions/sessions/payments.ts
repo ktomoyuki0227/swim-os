@@ -7,14 +7,67 @@ import { redirect } from "next/navigation"
 import type { PaymentMethod } from "@/types/database"
 import type { Database, Json } from "@/types/database-generated"
 import { getPlatformFeePercent, hasStripeConnect } from "@/lib/stripe-connect"
-import { isTeamAdmin } from "@/lib/auth/require-team-admin"
+import { isTeamAdmin, getActiveTeamAdminIds } from "@/lib/auth/require-team-admin"
 import { mapWithConcurrency } from "@/lib/utils"
+import { formatSessionDateJa } from "@/lib/format-date"
 import { notifyUser, notifyUsers } from "@/lib/notifications"
 import { chargeSessionRegistrationStripe, refundSessionRegistrationStripe } from "@/lib/stripe-payment-helpers"
 
-// confirmSession でのStripe決済の同時実行数。参加者数が多いセッションでも
-// サーバーレス関数のタイムアウトに収まるよう、完全な直列処理を避ける。
-const CONFIRM_PAYMENT_CONCURRENCY = 5
+// confirmSession/cancelSession でのStripe決済・返金の同時実行数。参加者数が多い
+// セッションでもサーバーレス関数のタイムアウトに収まるよう、完全な直列処理を避ける。
+const STRIPE_OPERATION_CONCURRENCY = 5
+
+type AdminClient = ReturnType<typeof createAdminClient>
+
+/** 開催確定を、キャンセルしていない参加登録者全員(実行者本人を除く)へ通知する */
+async function notifySessionConfirmed(
+  admin: AdminClient,
+  sessionId: string,
+  session: { title: string; scheduled_at: string; team_id: string },
+  excludeUserId: string
+): Promise<void> {
+  const { data: registrants } = await admin
+    .from("session_registrations")
+    .select("swimmer_id")
+    .eq("session_id", sessionId)
+    .is("cancelled_at", null)
+    .neq("swimmer_id", excludeUserId)
+  if (!registrants || registrants.length === 0) return
+
+  const scheduledDate = formatSessionDateJa(session.scheduled_at)
+  await notifyUsers(registrants.map((r) => r.swimmer_id), {
+    type: "session_confirmed",
+    title: `「${session.title}」が開催確定しました`,
+    body: `${scheduledDate}のセッションが開催確定です。忘れずにご参加ください`,
+    team_id: session.team_id,
+    link: `/teams/${session.team_id}/sessions/${sessionId}`,
+  })
+}
+
+/** 中止を、キャンセルしていない参加登録者全員(実行者本人を除く)へ通知する */
+async function notifySessionCancelled(
+  admin: AdminClient,
+  sessionId: string,
+  session: { title: string; scheduled_at: string; team_id: string },
+  excludeUserId: string
+): Promise<void> {
+  const { data: registrants } = await admin
+    .from("session_registrations")
+    .select("swimmer_id")
+    .eq("session_id", sessionId)
+    .is("cancelled_at", null)
+    .neq("swimmer_id", excludeUserId)
+  if (!registrants || registrants.length === 0) return
+
+  const scheduledDate = formatSessionDateJa(session.scheduled_at)
+  await notifyUsers(registrants.map((r) => r.swimmer_id), {
+    type: "session_cancelled",
+    title: `「${session.title}」が中止になりました`,
+    body: `${scheduledDate}に予定していたセッションが中止になりました`,
+    team_id: session.team_id,
+    link: `/teams/${session.team_id}/sessions/${sessionId}`,
+  })
+}
 
 export async function confirmSession(sessionId: string) {
   const supabase = await createClient()
@@ -104,7 +157,10 @@ export async function confirmSession(sessionId: string) {
         paymentErrors.push(`${reg.id}: no stripe customer or payment method`)
         return
       }
-      const amount = reg.is_member ? session.member_price : session.guest_price
+      // charged_amount は登録時点でスナップショットした金額。開催確定前の料金変更が
+      // 既存登録者への課金額に影響しないよう、現在価格ではなくこの値を優先する。
+      // 古い登録(バックフィル分)でnullの場合のみ現在価格にフォールバックする。
+      const amount = reg.charged_amount ?? (reg.is_member ? session.member_price : session.guest_price)
       const result = await chargeSessionRegistrationStripe({
         admin: confirmAdmin,
         registrationId: reg.id,
@@ -176,7 +232,7 @@ export async function confirmSession(sessionId: string) {
     // cash はそのまま（当日回収）
   }
 
-  await mapWithConcurrency(registrations, CONFIRM_PAYMENT_CONCURRENCY, async (reg) => {
+  await mapWithConcurrency(registrations, STRIPE_OPERATION_CONCURRENCY, async (reg) => {
     // Supabase呼び出し以外の予期しない例外（ネットワーク断等）がここで発生すると、
     // try-catchなしでは mapWithConcurrency 内の Promise.all 全体がrejectし、
     // 他の参加者の決済処理まで巻き込んで中断してしまう。1件の例外を握りつぶさず
@@ -193,27 +249,7 @@ export async function confirmSession(sessionId: string) {
   // （決済失敗があっても確定済みのまま残し、リトライ可能にする）
 
   // 参加登録済みメンバーへ開催確定通知
-  const { data: confirmedRegistrants } = await confirmAdmin
-    .from("session_registrations")
-    .select("swimmer_id")
-    .eq("session_id", sessionId)
-    .is("cancelled_at", null)
-    .neq("swimmer_id", user.id)
-  if (confirmedRegistrants && confirmedRegistrants.length > 0) {
-    const scheduledDate = new Date(session.scheduled_at).toLocaleDateString("ja-JP", {
-      month: "long",
-      day: "numeric",
-      weekday: "short",
-      timeZone: "Asia/Tokyo",
-    })
-    await notifyUsers(confirmedRegistrants.map((r) => r.swimmer_id), {
-      type: "session_confirmed",
-      title: `「${session.title}」が開催確定しました`,
-      body: `${scheduledDate}のセッションが開催確定です。忘れずにご参加ください`,
-      team_id: session.team_id,
-      link: `/teams/${session.team_id}/sessions/${sessionId}`,
-    })
-  }
+  await notifySessionConfirmed(confirmAdmin, sessionId, session, user.id)
 
   revalidatePath("/sessions")
   revalidatePath("/notifications")
@@ -251,11 +287,13 @@ export async function cancelSession(sessionId: string) {
 
     if (registrations) {
       const refundErrors: string[] = []
-      for (const reg of registrations) {
+      // confirmSessionと同様、参加者ごとの返金は互いに独立しているため
+      // 完全な直列処理を避け、一定の同時実行数で並行処理する
+      const processRefund = async (reg: (typeof registrations)[number]): Promise<void> => {
         if (reg.payment_method === "stripe" && reg.stripe_payment_intent_id) {
           if (!process.env.STRIPE_SECRET_KEY) {
             refundErrors.push(`${reg.id}: stripe not configured, refund skipped`)
-            continue
+            return
           }
           const refundResult = await refundSessionRegistrationStripe({
             admin: cancelAdmin,
@@ -265,7 +303,7 @@ export async function cancelSession(sessionId: string) {
           })
           if (!refundResult.ok) {
             refundErrors.push(`${reg.id}: ${refundResult.error}`)
-            continue
+            return
           }
           const { error: refErr } = await cancelAdmin
             .from("session_registrations")
@@ -280,7 +318,7 @@ export async function cancelSession(sessionId: string) {
           })
           if (rpcErr) {
             refundErrors.push(`${reg.id}: stamp increment failed`)
-            continue
+            return
           }
           const { error: refErr } = await cancelAdmin
             .from("session_registrations")
@@ -289,6 +327,16 @@ export async function cancelSession(sessionId: string) {
           if (refErr) refundErrors.push(`${reg.id}: point_card refund status update failed`)
         }
       }
+
+      await mapWithConcurrency(registrations, STRIPE_OPERATION_CONCURRENCY, async (reg) => {
+        try {
+          await processRefund(reg)
+        } catch (err) {
+          console.error(`[cancelSession] Unexpected error refunding registration ${reg.id}:`, err)
+          refundErrors.push(`${reg.id}: unexpected error`)
+        }
+      })
+
       if (refundErrors.length > 0) {
         return { error: `返金処理中にエラーが発生しました（${refundErrors.length}件）` }
       }
@@ -303,28 +351,8 @@ export async function cancelSession(sessionId: string) {
 
   if (cancelErr) return { error: "セッションの中止に失敗しました" }
 
-  // 参加登録済みメンバーへ個別中止通知
-  const { data: registrants } = await cancelAdmin
-    .from("session_registrations")
-    .select("swimmer_id")
-    .eq("session_id", sessionId)
-    .is("cancelled_at", null)
-    .neq("swimmer_id", user.id)  // 中止操作者（管理者）自身は除外
-  if (registrants && registrants.length > 0) {
-    const scheduledDate = new Date(session.scheduled_at).toLocaleDateString("ja-JP", {
-      month: "long",
-      day: "numeric",
-      weekday: "short",
-      timeZone: "Asia/Tokyo",
-    })
-    await notifyUsers(registrants.map((r) => r.swimmer_id), {
-      type: "session_cancelled",
-      title: `「${session.title}」が中止になりました`,
-      body: `${scheduledDate}に予定していたセッションが中止になりました`,
-      team_id: session.team_id,
-      link: `/teams/${session.team_id}/sessions/${sessionId}`,
-    })
-  }
+  // 参加登録済みメンバーへ個別中止通知（中止操作者本人は除外）
+  await notifySessionCancelled(cancelAdmin, sessionId, session, user.id)
 
   revalidatePath("/sessions")
   revalidatePath("/notifications")
@@ -413,6 +441,7 @@ export async function registerForSession(
   })
 
   if (registerErr) {
+    if (registerErr.message?.includes("session_not_open")) return { error: "このセッションは受付を終了しています" }
     if (registerErr.message?.includes("capacity_exceeded")) return { error: "定員に達しています" }
     if (registerErr.code === "23505") return { error: "既に参加登録済みです" }
     return { error: "参加登録に失敗しました" }
@@ -426,14 +455,9 @@ export async function registerForSession(
       .eq("session_id", sessionId)
       .is("cancelled_at", null)
     if (currentCount !== null && currentCount === session.min_participants) {
-      const { data: minAdmins } = await adminClient
-        .from("team_members")
-        .select("swimmer_id")
-        .eq("team_id", session.team_id)
-        .eq("role", "admin")
-        .eq("status", "active")
-      if (minAdmins && minAdmins.length > 0) {
-        await notifyUsers(minAdmins.map((a) => a.swimmer_id), {
+      const minAdminIds = await getActiveTeamAdminIds(adminClient, session.team_id)
+      if (minAdminIds.length > 0) {
+        await notifyUsers(minAdminIds, {
           type: "session_min_reached",
           title: `「${session.title}」が最小開催人数に達しました`,
           body: `${session.min_participants}名が揃いました。開催確定できます`,
@@ -450,21 +474,10 @@ export async function registerForSession(
     .select("name")
     .eq("id", user.id)
     .single()
-  const { data: teamAdmins } = await adminClient
-    .from("team_members")
-    .select("swimmer_id")
-    .eq("team_id", session.team_id)
-    .eq("role", "admin")
-    .eq("status", "active")
-    .neq("swimmer_id", user.id)  // 自分自身には送らない
-  if (teamAdmins && teamAdmins.length > 0) {
-    const scheduledDate = new Date(session.scheduled_at).toLocaleDateString("ja-JP", {
-      month: "long",
-      day: "numeric",
-      weekday: "short",
-      timeZone: "Asia/Tokyo",
-    })
-    await notifyUsers(teamAdmins.map((a) => a.swimmer_id), {
+  const teamAdminIds = await getActiveTeamAdminIds(adminClient, session.team_id, user.id)
+  if (teamAdminIds.length > 0) {
+    const scheduledDate = formatSessionDateJa(session.scheduled_at)
+    await notifyUsers(teamAdminIds, {
       type: "session_registered",
       title: `${registrantProfile?.name ?? "メンバー"}さんが参加登録しました`,
       body: `「${session.title}」${scheduledDate}`,
@@ -475,12 +488,7 @@ export async function registerForSession(
 
   // 参加者本人への登録確認通知（管理者は自分のチームなので省略）
   if (!isAdmin) {
-    const scheduledDate = new Date(session.scheduled_at).toLocaleDateString("ja-JP", {
-      month: "long",
-      day: "numeric",
-      weekday: "short",
-      timeZone: "Asia/Tokyo",
-    })
+    const scheduledDate = formatSessionDateJa(session.scheduled_at)
     await notifyUser(user.id, {
       type: "session_registered",
       title: "参加登録が完了しました",
@@ -570,21 +578,10 @@ export async function cancelRegistration(sessionId: string) {
     .select("name")
     .eq("id", user.id)
     .single()
-  const { data: cancelAdmins } = await adminClient
-    .from("team_members")
-    .select("swimmer_id")
-    .eq("team_id", session.team_id)
-    .eq("role", "admin")
-    .eq("status", "active")
-    .neq("swimmer_id", user.id)  // 自分自身には送らない
-  if (cancelAdmins && cancelAdmins.length > 0) {
-    const scheduledDate = new Date(session.scheduled_at).toLocaleDateString("ja-JP", {
-      month: "long",
-      day: "numeric",
-      weekday: "short",
-      timeZone: "Asia/Tokyo",
-    })
-    await notifyUsers(cancelAdmins.map((a) => a.swimmer_id), {
+  const cancelAdminIds = await getActiveTeamAdminIds(adminClient, session.team_id, user.id)
+  if (cancelAdminIds.length > 0) {
+    const scheduledDate = formatSessionDateJa(session.scheduled_at)
+    await notifyUsers(cancelAdminIds, {
       type: "session_cancelled_by_member",
       title: `${cancellerProfile?.name ?? "メンバー"}さんがキャンセルしました`,
       body: `「${session.title}」${scheduledDate}`,
@@ -691,11 +688,18 @@ export async function retryPayment(registrationId: string) {
         .retrieve(registration.stripe_payment_intent_id)
         .catch(() => null)
       if (existingPi?.status === "succeeded") {
-        // Stripe側は既に成功済み → 新規課金はせずDBをこの事実に合わせて同期する
+        // Stripe側は既に成功済み → 新規課金はせずDBをこの事実に合わせて同期する。
+        // transfer_records も同時に同期しないと、confirm()の例外パスで"failed"のまま
+        // 残った送金記録が返金時のreverse_transfer判定漏れ(資金不整合)につながる。
         await retryAdmin
           .from("session_registrations")
           .update({ payment_status: "paid" })
           .eq("id", registrationId)
+        await retryAdmin
+          .from("transfer_records")
+          .update({ status: "succeeded" })
+          .eq("stripe_payment_intent_id", registration.stripe_payment_intent_id)
+          .neq("status", "succeeded")
         revalidatePath("/sessions")
         revalidatePath("/notifications")
         return { success: true }
@@ -719,7 +723,7 @@ export async function retryPayment(registrationId: string) {
       return { error: "カード情報が登録されていません" }
     }
     const retrySession = registration.session as { title: string; member_price: number; guest_price: number; team_id: string; session_status: string }
-    const amount = registration.is_member ? retrySession.member_price : retrySession.guest_price
+    const amount = registration.charged_amount ?? (registration.is_member ? retrySession.member_price : retrySession.guest_price)
 
     // Connect 設定を確認（再決済時も同様に送金）
     const { data: retryTeam } = await retryAdmin
@@ -765,7 +769,7 @@ export async function markCashPaid(registrationId: string) {
 
   const { data: reg, error: regError } = await adminClient
     .from("session_registrations")
-    .select("session_id, swimmer_id, payment_method, payment_status, is_member, session:practice_sessions!inner(team_id, title, member_price, guest_price)")
+    .select("session_id, swimmer_id, payment_method, payment_status, is_member, charged_amount, session:practice_sessions!inner(team_id, title, member_price, guest_price)")
     .eq("id", registrationId)
     .single()
 
@@ -774,7 +778,7 @@ export async function markCashPaid(registrationId: string) {
   if (reg.payment_status === "paid") return { error: "すでに集金済みです" }
   if (reg.payment_status !== "pending") return { error: "未払いの登録のみ変更できます" }
 
-  const session = reg.session as unknown as { team_id: string; title: string; member_price: number; guest_price: number }
+  const session = reg.session
 
   const { data: member } = await adminClient
     .from("team_members")
@@ -793,7 +797,7 @@ export async function markCashPaid(registrationId: string) {
 
   if (error) return { error: "更新に失敗しました" }
 
-  const chargedAmount = reg.is_member ? (session.member_price || 0) : (session.guest_price || 0)
+  const chargedAmount = reg.charged_amount ?? (reg.is_member ? (session.member_price || 0) : (session.guest_price || 0))
   await notifyUser(reg.swimmer_id, {
     type: "payment_charged",
     title: `「${session.title}」の現金参加費を受領しました`,

@@ -111,8 +111,8 @@ export function Navigation({ userName, avatarUrl, unreadCount = 0, inactiveRoute
         <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4">
           {/* Logo */}
           <Link href="/dashboard" className="flex items-center gap-2">
-            <Image src="/rangers-logo-背景透過.png" alt="Rangers logo" width={40} height={40} className="object-contain" />
-            <Image src="/rangers-name-背景透過.png" alt="Rangers" width={110} height={30} className="object-contain" />
+            <Image src="/rangers-logo-背景透過.png" alt="Rangers logo" width={40} height={40} className="object-contain" priority />
+            <Image src="/rangers-name-背景透過.png" alt="Rangers" width={90} height={30} className="object-contain" priority />
           </Link>
 
           {/* Desktop nav links */}

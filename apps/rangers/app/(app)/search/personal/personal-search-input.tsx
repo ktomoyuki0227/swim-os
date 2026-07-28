@@ -19,7 +19,7 @@ export function PersonalSearchInput({ defaultValue = "" }: PersonalSearchInputPr
       inputRef={inputRef}
       defaultValue={defaultValue}
       placeholder="コーチ名で検索..."
-      focusClassName="focus:border-[#7B5EA7] focus:ring-2 focus:ring-[#7B5EA7]/20"
+      focusClassName="focus:border-[#d97706] focus:ring-2 focus:ring-[#d97706]/20"
       onSubmit={handleSubmit}
     />
   )

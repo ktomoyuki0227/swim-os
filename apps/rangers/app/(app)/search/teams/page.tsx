@@ -46,7 +46,7 @@ export default async function TeamsPage({ searchParams }: TeamsPageProps) {
         <div className="flex items-center gap-2 px-3 py-2">
           <Link
             href="/search"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#f2f7fa] text-[#475569] hover:bg-[#e0edf5]"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#f2f7fa] text-[#475569] hover:bg-[rgba(0,95,140,0.08)]"
             aria-label="探すに戻る"
           >
             <ChevronLeft className="h-5 w-5" />
@@ -90,7 +90,7 @@ export default async function TeamsPage({ searchParams }: TeamsPageProps) {
 
               return (
                 <Link key={team.id as string} href={`/teams/${team.id}`} className="block">
-                  <div className="overflow-hidden rounded-2xl border border-[#dce3ea] bg-white shadow-sm transition-all hover:border-[#c8d8e8] hover:shadow-md">
+                  <div className="overflow-hidden rounded-2xl border border-[#dce3ea] bg-white shadow-sm transition-all hover:border-[#005F8C] hover:shadow-md">
                     <div className="flex items-stretch">
                       {/* グリーンカラーバー */}
                       <div className="w-1 shrink-0" style={{ backgroundColor: "#0f8a4f" }} />
@@ -199,14 +199,14 @@ export default async function TeamsPage({ searchParams }: TeamsPageProps) {
                           )}
 
                           {/* 行5: 説明文 */}
-                          <p className={`line-clamp-2 text-xs ${description ? "text-[#475569]" : "text-[#c8d8e8]"}`}>
+                          <p className={`line-clamp-2 text-xs ${description ? "text-[#475569]" : "text-[#64748b]"}`}>
                             {description ?? "説明はありません"}
                           </p>
                         </div>
 
                         {/* 逆くの字（col 3 = 14px） */}
                         <div className="flex self-stretch items-center">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#c8d8e8" strokeWidth="2.5">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2.5">
                             <polyline points="9 18 15 12 9 6" />
                           </svg>
                         </div>

@@ -45,7 +45,7 @@ export async function getTeamFees(
   // 全メンバーに会費レコードをマージ（レコードがなければ未登録として表示）
   const merged = members.map((m) => {
     const fee = (feeRecords || []).find((f) => f.swimmer_id === m.swimmer_id)
-    const profile = m.profiles as unknown as Record<string, unknown> | null
+    const profile = m.profiles
     if (fee) {
       return { ...fee, swimmer: profile }
     }

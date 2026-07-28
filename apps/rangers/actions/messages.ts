@@ -3,6 +3,10 @@
 import { revalidatePath } from "next/cache"
 import { createClient } from "@/lib/supabase/server"
 import { messageSchema } from "@/lib/validations"
+import { isRateLimited } from "@/lib/rate-limit"
+
+const MESSAGE_RATE_LIMIT = 20
+const MESSAGE_RATE_WINDOW_MS = 60 * 1000
 
 export async function sendMessage(formData: FormData) {
   const supabase = await createClient()
@@ -10,6 +14,10 @@ export async function sendMessage(formData: FormData) {
 
   if (!user) {
     return { error: "ログインが必要です" }
+  }
+
+  if (isRateLimited(`send_message:${user.id}`, MESSAGE_RATE_LIMIT, MESSAGE_RATE_WINDOW_MS)) {
+    return { error: "メッセージの送信が多すぎます。しばらく時間をおいてから再度お試しください" }
   }
 
   const parsed = messageSchema.safeParse({

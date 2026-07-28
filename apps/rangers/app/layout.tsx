@@ -13,7 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://rangers.example.com"
-const OG_IMAGE = `${APP_URL}/og-image.png`
+// og-image.png は実体が無く404になっていたため、既存のアプリ画面モックアップ画像を使用する
+const OG_IMAGE = `${APP_URL}/app-mockup.jpg`
 
 export const metadata: Metadata = {
   title: {

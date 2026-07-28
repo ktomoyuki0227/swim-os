@@ -12,15 +12,17 @@ import { InviteCodeInput } from "@/components/dashboard/invite-code-input"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 
+// DESIGN.md: accent(#E8614D)はLPの主要CTA専用でアプリ内画面では使用禁止。
+// 複数チームを色分けするための専用パレットはDESIGN.mdに定義がないため、
+// 既存の承認済みトークンのみで構成する(未定義色を新規に増やさない)。
 const TEAM_COLORS = [
-  "#005F8C",
-  "#0f8a4f",
-  "#E8614D",
-  "#7c4dff",
-  "#f57c00",
-  "#00838f",
-  "#5d4037",
-  "#37474f",
+  "#005F8C", // primary
+  "#0f8a4f", // status-success
+  "#b8860b", // status-warning
+  "#d97706", // status-update
+  "#475569", // body-muted / status-neutral
+  "#004E73", // primary-hover
+  "#64748b", // ink-muted
 ]
 
 const SESSION_TYPE_LABELS: Record<string, string> = {

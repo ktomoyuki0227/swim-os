@@ -44,6 +44,7 @@ export function TeamImageFields({
                 alt="カバー画像"
                 fill
                 className="object-cover"
+                sizes="(max-width: 640px) 100vw, 640px"
               />
             ) : (
               <div className="flex h-full w-full flex-col items-center justify-center gap-1">
@@ -85,6 +86,7 @@ export function TeamImageFields({
                   alt="アイコン"
                   fill
                   className="object-cover"
+                  sizes="80px"
                 />
               ) : (
                 <div className="flex h-full w-full flex-col items-center justify-center">

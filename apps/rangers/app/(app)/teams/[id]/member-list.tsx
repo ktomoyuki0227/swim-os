@@ -6,6 +6,7 @@ import { AlertTriangle, CheckCircle2 } from "lucide-react"
 import { removeMember } from "@/actions/teams"
 import { Card, CardContent } from "@/components/ui/card"
 import { useToast } from "@/components/toast"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { MemberDetailModal } from "./member-detail-modal"
 import type { TeamMemberWithProfile } from "@/types/database"
 
@@ -114,54 +115,6 @@ function MemberMenu({
           )}
         </div>
       )}
-    </div>
-  )
-}
-
-function DeleteConfirmModal({
-  memberName,
-  isRemoving,
-  onConfirm,
-  onCancel,
-}: {
-  memberName: string
-  isRemoving: boolean
-  onConfirm: () => void
-  onCancel: () => void
-}) {
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-end justify-center sm:items-center"
-      style={{ backgroundColor: "rgba(0,0,0,0.45)" }}
-      onClick={(e) => { if (e.target === e.currentTarget) onCancel() }}
-    >
-      <div className="w-full max-w-sm rounded-t-2xl border border-[#dce3ea] bg-white shadow-xl sm:rounded-2xl">
-        <div className="px-5 py-5">
-          <p className="font-semibold text-[#1a2332]">メンバーを削除しますか？</p>
-          <p className="mt-1.5 text-sm text-[#475569]">
-            <span className="font-medium text-[#1a2332]">{memberName}</span> をグループから削除します。この操作は取り消せません。
-          </p>
-        </div>
-        <div className="flex gap-2 border-t border-[#dce3ea] px-5 py-4">
-          <button
-            type="button"
-            onClick={onCancel}
-            disabled={isRemoving}
-            className="flex-1 rounded-full border border-[#dce3ea] py-2.5 text-sm font-medium text-[#475569] transition-colors hover:border-[#005F8C] disabled:opacity-50"
-          >
-            キャンセル
-          </button>
-          <button
-            type="button"
-            onClick={onConfirm}
-            disabled={isRemoving}
-            className="flex-1 rounded-full bg-[#c0392b] py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#a93226] disabled:opacity-50"
-            style={{ minHeight: "44px" }}
-          >
-            {isRemoving ? "削除中..." : "削除する"}
-          </button>
-        </div>
-      </div>
     </div>
   )
 }
@@ -351,9 +304,15 @@ export function MemberList({
     )}
 
     {deleteTarget && (
-      <DeleteConfirmModal
-        memberName={deleteTarget.name}
-        isRemoving={removingId === deleteTarget.id}
+      <ConfirmDialog
+        open={!!deleteTarget}
+        title="メンバーを削除しますか？"
+        description={`${deleteTarget.name} をグループから削除します。この操作は取り消せません。`}
+        confirmLabel="削除する"
+        cancelLabel="キャンセル"
+        variant="danger"
+        isLoading={removingId === deleteTarget.id}
+        loadingLabel="削除中..."
         onConfirm={handleConfirmRemove}
         onCancel={() => setDeleteTarget(null)}
       />

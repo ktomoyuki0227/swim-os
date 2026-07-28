@@ -8,8 +8,9 @@ import { isValidImageFile } from "@/lib/file-validation"
 import { SWIMMER_TYPES, SWIM_DISCIPLINES, SWIM_LEVELS, SYSTEM_TAGS } from "@/types/database"
 import type { MembershipType, SessionType, TeamStatus } from "@/types/database"
 import type { Database } from "@/types/database-generated"
-import { isTeamAdmin } from "@/lib/auth/require-team-admin"
+import { isTeamAdmin, getActiveTeamAdminIds } from "@/lib/auth/require-team-admin"
 import { notifyUser, notifyUsers } from "@/lib/notifications"
+import { syncActiveSubscriptionsToNewPrice } from "@/actions/subscriptions"
 
 // PostgRESTの .not("id", "in", "(...)")  に渡す文字列結合前のUUID形式バリデーション用
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -133,12 +134,68 @@ export async function updateTeam(teamId: string, data: unknown) {
   const admin = createAdminClient()
   if (!(await isTeamAdmin(admin, teamId, user.id))) return { error: "権限がありません" }
 
+  // 会費変更時、既存会員への価格同期が必要かどうかを判定するため、更新前の値を取得
+  const { data: beforeUpdate } = await admin
+    .from("teams")
+    .select("name, monthly_fee_amount, annual_fee_amount, stripe_product_id, stripe_monthly_price_id")
+    .eq("id", teamId)
+    .single()
+
   const { error } = await admin
     .from("teams")
     .update(parsed.data)
     .eq("id", teamId)
 
   if (error) return { error: "グループ情報の更新に失敗しました" }
+
+  // 月謝額が変更された場合、既にアクティブなStripe Subscriptionを全て新価格に切り替える。
+  // 値上げ・値下げのたびにチームを作り直す必要がないようにするための仕組み。
+  if (
+    beforeUpdate &&
+    parsed.data.monthly_fee_amount !== undefined &&
+    parsed.data.monthly_fee_amount !== beforeUpdate.monthly_fee_amount &&
+    parsed.data.monthly_fee_amount > 0
+  ) {
+    await syncActiveSubscriptionsToNewPrice(
+      admin,
+      teamId,
+      beforeUpdate.name,
+      parsed.data.monthly_fee_amount,
+      beforeUpdate.stripe_product_id,
+      beforeUpdate.stripe_monthly_price_id
+    ).catch((err) => {
+      console.error("[updateTeam] syncActiveSubscriptionsToNewPrice failed:", err)
+    })
+  }
+
+  // 年会費額が変更された場合、今年分の未払いレコードのみ新金額に更新する
+  // (既に支払い済みのレコードは過去の実績として変更しない)
+  if (
+    beforeUpdate &&
+    parsed.data.annual_fee_amount !== undefined &&
+    parsed.data.annual_fee_amount !== beforeUpdate.annual_fee_amount &&
+    parsed.data.annual_fee_amount > 0
+  ) {
+    const currentYear = new Date().getFullYear().toString()
+    const { data: updatedFees } = await admin
+      .from("membership_fees")
+      .update({ amount: parsed.data.annual_fee_amount })
+      .eq("team_id", teamId)
+      .eq("type", "annual")
+      .eq("period", currentYear)
+      .eq("status", "unpaid")
+      .select("swimmer_id")
+
+    if (updatedFees && updatedFees.length > 0) {
+      await notifyUsers(updatedFees.map((f) => f.swimmer_id), {
+        type: "fee_amount_changed",
+        title: "年会費額が変更されました",
+        body: `${currentYear}年度の年会費が¥${parsed.data.annual_fee_amount.toLocaleString()}に変更されました`,
+        team_id: teamId,
+        link: "/payments",
+      })
+    }
+  }
 
   revalidatePath(`/teams/${teamId}`)
   return { success: true }
@@ -293,14 +350,9 @@ export async function joinTeamByCode(
     .select("name")
     .eq("id", user.id)
     .single()
-  const { data: teamAdmins } = await admin
-    .from("team_members")
-    .select("swimmer_id")
-    .eq("team_id", team.id)
-    .eq("role", "admin")
-    .eq("status", "active")
-  if (teamAdmins && teamAdmins.length > 0) {
-    await notifyUsers(teamAdmins.map((a) => a.swimmer_id), {
+  const teamAdminIds = await getActiveTeamAdminIds(admin, team.id)
+  if (teamAdminIds.length > 0) {
+    await notifyUsers(teamAdminIds, {
       type: "member_joined",
       title: `${joinerProfile?.name ?? "新しいメンバー"}さんが「${team.name}」に参加しました`,
       body: null,
@@ -328,6 +380,7 @@ export async function getTeamMembers(teamId: string) {
     .eq("team_id", teamId)
     .eq("status", "active")
     .order("joined_at", { ascending: true })
+    .limit(500) // データ増加に伴う無制限クエリを防ぐ安全上限（通常のチーム規模を大きく超える値）
 
   if (error) return { data: [], error: "メンバーの取得に失敗しました" }
   return { data: data || [] }

@@ -79,6 +79,7 @@ export function PublicTeamView({ data, hasBottomNav = false, joinRequestStatus =
             alt={team.name}
             fill
             className="object-cover"
+            sizes="100vw"
             priority
           />
         ) : (
@@ -129,7 +130,7 @@ export function PublicTeamView({ data, hasBottomNav = false, joinRequestStatus =
             {/* グループアバター */}
             <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-full border-2 border-[#dce3ea] bg-[#e8f2f8]">
               {team.avatar_url ? (
-                <Image src={team.avatar_url} alt={team.name} fill className="object-cover" />
+                <Image src={team.avatar_url} alt={team.name} fill className="object-cover" sizes="80px" />
               ) : (
                 <div className="flex h-full w-full items-center justify-center text-3xl">🏊</div>
               )}
@@ -221,7 +222,7 @@ export function PublicTeamView({ data, hasBottomNav = false, joinRequestStatus =
                 >
                   <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full bg-[#dce3ea]">
                     {coachAvatarUrl ? (
-                      <Image src={coachAvatarUrl} alt={coachName} fill className="object-cover" />
+                      <Image src={coachAvatarUrl} alt={coachName} fill className="object-cover" sizes="40px" />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center text-sm font-semibold text-[#005F8C]">
                         {coachName[0]}
@@ -242,7 +243,7 @@ export function PublicTeamView({ data, hasBottomNav = false, joinRequestStatus =
                 <div className="flex items-center gap-3 px-2">
                   <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full bg-[#dce3ea]">
                     {coachAvatarUrl ? (
-                      <Image src={coachAvatarUrl} alt={coachName} fill className="object-cover" />
+                      <Image src={coachAvatarUrl} alt={coachName} fill className="object-cover" sizes="40px" />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center text-sm font-semibold text-[#005F8C]">
                         {coachName[0]}

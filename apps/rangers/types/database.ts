@@ -463,6 +463,7 @@ export type NotificationType =
   | "payment_failed"
   | "stamp_low"
   | "fee_reminder"
+  | "fee_amount_changed"
   // お知らせ関連
   | "team_announcement"
   // その他

@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { sessionSchema, sessionUpdateSchema } from "@/lib/validations"
 import { isTeamAdmin, isTeamMember } from "@/lib/auth/require-team-admin"
+import { formatSessionDateJa } from "@/lib/format-date"
 import { notifyUsers } from "@/lib/notifications"
 
 export async function createSession(teamId: string, data: unknown) {
@@ -62,12 +63,7 @@ export async function createSession(teamId: string, data: unknown) {
     .eq("status", "active")
     .neq("role", "admin")
   if (members && members.length > 0) {
-    const scheduledDate = new Date(session.scheduled_at).toLocaleDateString("ja-JP", {
-      month: "long",
-      day: "numeric",
-      weekday: "short",
-      timeZone: "Asia/Tokyo",
-    })
+    const scheduledDate = formatSessionDateJa(session.scheduled_at)
     try {
       const { error: notifError } = await notifyUsers(
         members.map((m) => m.swimmer_id),
@@ -101,7 +97,7 @@ export async function updateSession(sessionId: string, data: unknown) {
   const updateAdmin = createAdminClient()
   const { data: session } = await updateAdmin
     .from("practice_sessions")
-    .select("team_id, session_status, title, scheduled_at, location")
+    .select("team_id, session_status, title, scheduled_at, location, member_price, guest_price")
     .eq("id", sessionId)
     .single()
   if (!session) return { error: "セッションが見つかりません" }
@@ -141,7 +137,17 @@ export async function updateSession(sessionId: string, data: unknown) {
       new Date(parsed.data.scheduled_at + '+09:00').toISOString() !== new Date(session.scheduled_at).toISOString()) ||
     (parsed.data.location && parsed.data.location !== session.location)
 
-  if (hasImportantChange) {
+  // 参加費の変更は、開催確定(confirmSession)時点の料金に直結するため別枠で検知する。
+  // 登録済み(pending)の参加者は「登録時に見た金額」と異なる金額を課金される可能性があるため、
+  // 日時・場所等の変更とは別に必ず通知する。
+  // confirmed済みセッションは上でprice変更自体がupdateDataから除外され実際には更新されないため、
+  // その場合はparsed.data上の差分だけで誤って「変更された」通知を送らないようにする
+  const hasPriceChange =
+    session.session_status !== "confirmed" &&
+    ((parsed.data.member_price !== undefined && parsed.data.member_price !== session.member_price) ||
+      (parsed.data.guest_price !== undefined && parsed.data.guest_price !== session.guest_price))
+
+  if (hasImportantChange || hasPriceChange) {
     const { data: registrants } = await updateAdmin
       .from("session_registrations")
       .select("swimmer_id")
@@ -149,10 +155,13 @@ export async function updateSession(sessionId: string, data: unknown) {
       .is("cancelled_at", null)
     if (registrants && registrants.length > 0) {
       const sessionTitle = parsed.data.title ?? session.title
+      const body = hasPriceChange
+        ? "参加費が変更されました。開催確定時にはこの新しい金額で決済されます。ご確認ください"
+        : "日時・場所などの情報が更新されています。ご確認ください"
       await notifyUsers(registrants.map((r) => r.swimmer_id), {
         type: "session_updated",
         title: `「${sessionTitle}」の内容が変更されました`,
-        body: "日時・場所などの情報が更新されています。ご確認ください",
+        body,
         team_id: session.team_id,
         link: `/teams/${session.team_id}/sessions/${sessionId}`,
       })
@@ -237,6 +246,7 @@ export async function getPublicSessions(filters?: {
     .eq("status", "published")
     .eq("session_status", "open")
     .order("scheduled_at", { ascending: true })
+    .limit(300) // 掲載件数増加に伴う無制限クエリを防ぐ安全上限
 
   if (filters?.from) {
     query = query.gte("scheduled_at", filters.from)

@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import Link from "next/link"
+import { createClient } from "@/lib/supabase/server"
 
 export const metadata: Metadata = {
   title: "よくある質問",
@@ -77,7 +78,15 @@ const faqs = [
   },
 ]
 
-export default function FaqPage() {
+export default async function FaqPage() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  // 未ログインの見込み客は/messagesにアクセスできない(ログイン必須ページ)ため、
+  // ログイン状態に応じて問い合わせ導線を出し分ける
+  const contactHref = user ? "/messages" : "/register"
+  const contactLabel = user ? "サポートへお問い合わせ" : "会員登録して問い合わせる"
+
   return (
     <div>
       {/* ヒーロー */}
@@ -89,8 +98,8 @@ export default function FaqPage() {
           <h1 className="mb-4 text-4xl font-bold tracking-tight sm:text-5xl">よくある質問</h1>
           <p className="text-[#475569]">
             解決しない場合は{" "}
-            <Link href="/messages" className="text-[#005F8C] hover:underline">
-              サポートへお問い合わせ
+            <Link href={contactHref} className="text-[#005F8C] hover:underline">
+              {contactLabel}
             </Link>{" "}
             ください
           </p>
@@ -132,13 +141,15 @@ export default function FaqPage() {
         <div className="mt-16 rounded-2xl bg-sky-50 p-8 text-center">
           <p className="mb-1 font-semibold">解決しませんでしたか？</p>
           <p className="mb-5 text-sm text-[#475569]">
-            サポートグループがお答えします。
+            {user
+              ? "アプリ内のメッセージから、所属グループの管理者にお問い合わせください。"
+              : "会員登録後、アプリ内のメッセージから所属グループの管理者にお問い合わせいただけます。"}
           </p>
           <Link
-            href="/messages"
+            href={contactHref}
             className="inline-flex items-center gap-2 rounded-full bg-[#005F8C] px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#004E73]"
           >
-            サポートに問い合わせる
+            {contactLabel}
           </Link>
         </div>
       </div>

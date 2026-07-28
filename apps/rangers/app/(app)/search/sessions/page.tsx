@@ -18,10 +18,10 @@ const SESSION_TYPE_LABELS: Record<string, string> = {
 // 種別ごとのカラー設定
 const SESSION_TYPE_STYLES: Record<string, { bar: string; bg: string; text: string }> = {
   practice:    { bar: "#005F8C", bg: "rgba(0,95,140,0.09)",    text: "#005F8C" },
-  camp:        { bar: "#D35400", bg: "rgba(211,84,0,0.09)",    text: "#D35400" },
+  camp:        { bar: "#b8860b", bg: "rgba(184,134,11,0.09)",    text: "#b8860b" },
   competition: { bar: "#C0392B", bg: "rgba(192,57,43,0.09)",   text: "#C0392B" },
   event:       { bar: "#0f8a4f", bg: "rgba(15,138,79,0.09)",   text: "#0f8a4f" },
-  meeting:     { bar: "#7B5EA7", bg: "rgba(123,94,167,0.09)",  text: "#7B5EA7" },
+  meeting:     { bar: "#475569", bg: "rgba(71,85,105,0.09)",  text: "#475569" },
 }
 const DEFAULT_STYLE = { bar: "#64748b", bg: "rgba(100,116,139,0.09)", text: "#475569" }
 
@@ -98,7 +98,7 @@ export default async function SessionsPage({ searchParams }: SessionsPageProps) 
         <div className="flex items-center gap-2 px-3 py-2">
           <Link
             href="/search"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#f2f7fa] text-[#475569] hover:bg-[#e0edf5]"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#f2f7fa] text-[#475569] hover:bg-[rgba(0,95,140,0.08)]"
             aria-label="探すに戻る"
           >
             <ChevronLeft className="h-5 w-5" />
@@ -146,7 +146,7 @@ export default async function SessionsPage({ searchParams }: SessionsPageProps) 
 
             return (
               <Link key={session.id as string} href={href} className="block">
-                <div className="overflow-hidden rounded-2xl border border-[#dce3ea] bg-white shadow-sm transition-all hover:border-[#c8d8e8] hover:shadow-md">
+                <div className="overflow-hidden rounded-2xl border border-[#dce3ea] bg-white shadow-sm transition-all hover:border-[#005F8C] hover:shadow-md">
                   <div className="flex items-stretch">
                     {/* 種別カラーバー */}
                     <div className="w-1 shrink-0" style={{ backgroundColor: style.bar }} />
@@ -201,7 +201,7 @@ export default async function SessionsPage({ searchParams }: SessionsPageProps) 
                             <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
                             <circle cx="12" cy="10" r="3" />
                           </svg>
-                          <span className={`truncate ${location ? "" : "text-[#c8d8e8]"}`}>
+                          <span className={`truncate ${location ? "" : "text-[#64748b]"}`}>
                             {location ?? "-"}
                           </span>
                         </div>
@@ -224,13 +224,13 @@ export default async function SessionsPage({ searchParams }: SessionsPageProps) 
                                 </span>
                               )
                             ) : (
-                              <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#c8d8e8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="absolute inset-0 m-auto">
+                              <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="absolute inset-0 m-auto">
                                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                                 <circle cx="12" cy="7" r="4" />
                               </svg>
                             )}
                           </div>
-                          <span className={`truncate ${team ? "text-[#64748b]" : "text-[#c8d8e8]"}`}>
+                          <span className={`truncate ${team ? "text-[#64748b]" : "text-[#64748b]"}`}>
                             {team ? (team.name as string) : "-"}
                           </span>
                         </div>
@@ -245,7 +245,7 @@ export default async function SessionsPage({ searchParams }: SessionsPageProps) 
                       </div>
 
                       {/* 逆くの字（col 4 = 14px） */}
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#c8d8e8" strokeWidth="2.5">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2.5">
                         <polyline points="9 18 15 12 9 6" />
                       </svg>
                     </div>

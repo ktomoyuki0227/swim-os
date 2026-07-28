@@ -67,10 +67,10 @@ function LoginForm() {
       <Card className="w-full border-[#dce3ea] bg-white shadow-lg">
         <CardHeader className="text-center pb-2">
           <div className="mx-auto mb-3 flex h-20 w-20 items-center justify-center">
-            <Image src="/rangers-logo-背景透過.png" alt="Rangers logo" width={80} height={80} className="object-contain" />
+            <Image src="/rangers-logo-背景透過.png" alt="Rangers logo" width={80} height={80} className="object-contain" priority />
           </div>
           <div className="flex justify-center">
-            <Image src="/rangers-name-背景透過.png" alt="Rangers" width={160} height={44} className="object-contain" />
+            <Image src="/rangers-name-背景透過.png" alt="Rangers" width={132} height={44} className="object-contain" priority />
           </div>
           <p className="mt-1 text-sm text-[#475569]">マスターズ水泳グループ管理</p>
         </CardHeader>

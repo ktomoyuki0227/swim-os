@@ -918,6 +918,7 @@ export type Database = {
       session_registrations: {
         Row: {
           cancelled_at: string | null
+          charged_amount: number | null
           competition_entry: Json | null
           id: string
           is_member: boolean
@@ -930,6 +931,7 @@ export type Database = {
         }
         Insert: {
           cancelled_at?: string | null
+          charged_amount?: number | null
           competition_entry?: Json | null
           id?: string
           is_member?: boolean
@@ -942,6 +944,7 @@ export type Database = {
         }
         Update: {
           cancelled_at?: string | null
+          charged_amount?: number | null
           competition_entry?: Json | null
           id?: string
           is_member?: boolean
@@ -1450,6 +1453,18 @@ export type Database = {
       }
     }
     Functions: {
+      add_stamp_purchase: {
+        Args: {
+          p_amount: number
+          p_card_count: number
+          p_note?: string
+          p_stamp_count: number
+          p_swimmer_id: string
+          p_team_id: string
+          p_team_member_id: string
+        }
+        Returns: string
+      }
       decrement_stamp: {
         Args: { p_session_id: string; p_swimmer_id: string }
         Returns: undefined

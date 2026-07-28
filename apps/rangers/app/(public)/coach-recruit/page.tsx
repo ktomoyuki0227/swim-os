@@ -55,6 +55,7 @@ export default function CoachRecruitPage() {
           alt="コーチ募集"
           fill
           className="object-cover opacity-40"
+          sizes="100vw"
           priority
         />
         <div className="relative z-10 mx-auto max-w-4xl px-6 py-24 text-white">

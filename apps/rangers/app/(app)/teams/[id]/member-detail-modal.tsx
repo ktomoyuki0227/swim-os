@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef } from "react"
 import { getMemberEmail, updateMemberInfo, updateMemberProfileTags } from "@/actions/teams"
 import { useToast } from "@/components/toast"
+import { useEscapeToClose } from "@/hooks/use-escape-to-close"
+import { useScrollLock } from "@/hooks/use-scroll-lock"
 import { SYSTEM_TAGS } from "@/types/database"
 import type { TeamMemberWithProfile, MembershipType } from "@/types/database"
 
@@ -166,13 +168,9 @@ export function MemberDetailModal({
     }
   }, [activeTab, swimmer?.id, teamId])
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose()
-    }
-    document.addEventListener("keydown", handleKeyDown)
-    return () => document.removeEventListener("keydown", handleKeyDown)
-  }, [onClose])
+  // このコンポーネントは親(member-list.tsx)がmemberを選択している間のみマウントされるため常時open扱い
+  useEscapeToClose(true, onClose)
+  useScrollLock(true)
 
   const handleMembershipTypeChange = (type: MembershipType) => {
     setMembershipType(type)

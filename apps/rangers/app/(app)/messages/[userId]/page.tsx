@@ -42,8 +42,11 @@ export default async function MessageThreadPage({ params }: MessageThreadPagePro
 
   const partnerName = partner.name ?? "不明"
 
-  // 既読処理とメッセージ取得は互いに独立しているため並列実行する
-  const [, { data: messages }] = await Promise.all([
+  // 既読処理とメッセージ取得は互いに独立しているため並列実行する。
+  // 全履歴取得だと会話が長くなるほど遅くなるため、直近分に上限をかける
+  // (新しい順で取得してから画面表示用に古い順へ並べ直す)
+  const RECENT_THREAD_MESSAGES_LIMIT = 200
+  const [, { data: recentMessages }] = await Promise.all([
     markMessagesRead(userId),
     supabase
       .from("messages")
@@ -51,8 +54,10 @@ export default async function MessageThreadPage({ params }: MessageThreadPagePro
       .or(
         `and(sender_id.eq.${user.id},receiver_id.eq.${userId}),and(sender_id.eq.${userId},receiver_id.eq.${user.id})`
       )
-      .order("created_at", { ascending: true }),
+      .order("created_at", { ascending: false })
+      .limit(RECENT_THREAD_MESSAGES_LIMIT),
   ])
+  const messages = recentMessages ? [...recentMessages].reverse() : recentMessages
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col" style={{ height: "calc(100vh - 80px)" }}>

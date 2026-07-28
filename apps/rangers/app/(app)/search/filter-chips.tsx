@@ -39,7 +39,7 @@ export function FilterChips({ options, paramKey, currentValue, currentParams }: 
             className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
               isSelected
                 ? "bg-[#005F8C] text-white"
-                : "bg-[#f2f7fa] text-[#475569] hover:bg-[#e0edf5] hover:text-[#005F8C]"
+                : "bg-[#f2f7fa] text-[#475569] hover:bg-[rgba(0,95,140,0.08)] hover:text-[#005F8C]"
             }`}
           >
             {option.label}

@@ -1,3 +1,4 @@
+import Stripe from "stripe"
 import { stripe } from "@/lib/stripe"
 import { calculateFees } from "@/lib/stripe-connect"
 import { notifyUser } from "@/lib/notifications"
@@ -170,8 +171,7 @@ export async function refundSessionRegistrationStripe(
       ...(hasConnect ? { reverse_transfer: true, refund_application_fee: true } : {}),
     })
   } catch (err) {
-    const stripeErr = err as { code?: string }
-    if (stripeErr.code === "charge_already_refunded") {
+    if (err instanceof Stripe.errors.StripeError && err.code === "charge_already_refunded") {
       // 前回の返金はStripeで成功していたがDB更新が失敗していたケース → DB更新に進む
       console.warn(`${logPrefix} Refund already processed for ${registrationId}, syncing DB status`)
     } else {

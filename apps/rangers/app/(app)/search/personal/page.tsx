@@ -33,7 +33,7 @@ export default async function PersonalPage({ searchParams }: PersonalPageProps) 
         <div className="flex items-center gap-2 px-3 py-2">
           <Link
             href="/search"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#f2f7fa] text-[#475569] hover:bg-[#e0edf5]"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#f2f7fa] text-[#475569] hover:bg-[rgba(0,95,140,0.08)]"
             aria-label="探すに戻る"
           >
             <ChevronLeft className="h-5 w-5" />
@@ -68,10 +68,10 @@ export default async function PersonalPage({ searchParams }: PersonalPageProps) 
 
               return (
                 <Link key={coach.id as string} href={`/teams/${coach.id}`} className="block">
-                  <div className="overflow-hidden rounded-2xl border border-[#dce3ea] bg-white shadow-sm transition-all hover:border-[#c8d8e8] hover:shadow-md">
+                  <div className="overflow-hidden rounded-2xl border border-[#dce3ea] bg-white shadow-sm transition-all hover:border-[#005F8C] hover:shadow-md">
                     <div className="flex items-stretch">
                       {/* パープルカラーバー */}
-                      <div className="w-1 shrink-0" style={{ backgroundColor: "#7B5EA7" }} />
+                      <div className="w-1 shrink-0" style={{ backgroundColor: "#d97706" }} />
 
                       {/* カードコンテンツ */}
                       <div className="flex-1 grid grid-cols-[48px_1fr_14px] items-start gap-x-3 px-3.5 py-3">
@@ -88,7 +88,7 @@ export default async function PersonalPage({ searchParams }: PersonalPageProps) 
                           ) : (
                             <div
                               className="flex h-full w-full items-center justify-center text-lg font-bold text-white"
-                              style={{ background: "linear-gradient(135deg, #7B5EA7 0%, #5438A0 100%)" }}
+                              style={{ background: "#d97706" }}
                             >
                               {(coach.name as string)?.[0] || "C"}
                             </div>
@@ -105,7 +105,7 @@ export default async function PersonalPage({ searchParams }: PersonalPageProps) 
                             {area && (
                               <span
                                 className="shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-semibold"
-                                style={{ backgroundColor: "rgba(123,94,167,0.09)", color: "#7B5EA7" }}
+                                style={{ backgroundColor: "rgba(217,119,6,0.09)", color: "#d97706" }}
                               >
                                 {area}
                               </span>
@@ -127,7 +127,7 @@ export default async function PersonalPage({ searchParams }: PersonalPageProps) 
                                 ) : (
                                   <div
                                     className="flex h-full w-full items-center justify-center text-[7px] font-bold text-white"
-                                    style={{ background: "linear-gradient(135deg, #7B5EA7 0%, #5438A0 100%)" }}
+                                    style={{ background: "#d97706" }}
                                   >
                                     {coachProfile.name?.[0] || "?"}
                                   </div>
@@ -155,7 +155,7 @@ export default async function PersonalPage({ searchParams }: PersonalPageProps) 
                                     <span
                                       key={d}
                                       className="flex h-4 w-4 items-center justify-center rounded text-[9px] font-bold"
-                                      style={{ backgroundColor: "rgba(123,94,167,0.1)", color: "#7B5EA7" }}
+                                      style={{ backgroundColor: "rgba(217,119,6,0.1)", color: "#d97706" }}
                                     >
                                       {d}
                                     </span>
@@ -177,14 +177,14 @@ export default async function PersonalPage({ searchParams }: PersonalPageProps) 
                           )}
 
                           {/* 行5: 説明文 */}
-                          <p className={`line-clamp-2 text-xs ${description ? "text-[#475569]" : "text-[#c8d8e8]"}`}>
+                          <p className={`line-clamp-2 text-xs ${description ? "text-[#475569]" : "text-[#64748b]"}`}>
                             {description ?? "説明はありません"}
                           </p>
                         </div>
 
                         {/* 逆くの字（col 3 = 14px） */}
                         <div className="flex self-stretch items-center">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#c8d8e8" strokeWidth="2.5">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2.5">
                             <polyline points="9 18 15 12 9 6" />
                           </svg>
                         </div>

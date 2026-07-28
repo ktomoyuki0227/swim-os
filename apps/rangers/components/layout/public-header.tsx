@@ -13,7 +13,7 @@ export function PublicHeader({ user }: PublicHeaderProps) {
         {/* ロゴ */}
         <Link href="/" className="flex items-center gap-2">
           <Image src="/rangers-logo-背景透過.png" alt="Rangers logo" width={40} height={40} className="object-contain" />
-          <Image src="/rangers-name-背景透過.png" alt="Rangers" width={110} height={30} className="object-contain" />
+          <Image src="/rangers-name-背景透過.png" alt="Rangers" width={90} height={30} className="object-contain" />
         </Link>
 
         {/* ボタン */}

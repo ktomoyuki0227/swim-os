@@ -4,10 +4,13 @@ import { createClient, createAdminClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import type { MembershipType } from "@/types/database"
-import { isTeamAdmin } from "@/lib/auth/require-team-admin"
+import { isTeamAdmin, getActiveTeamAdminIds } from "@/lib/auth/require-team-admin"
 import { notifyUser, notifyUsers } from "@/lib/notifications"
+import { isRateLimited } from "@/lib/rate-limit"
 
 const VALID_MEMBERSHIP_TYPES: MembershipType[] = ["annual", "monthly", "point_card"]
+const JOIN_REQUEST_RATE_LIMIT = 5
+const JOIN_REQUEST_RATE_WINDOW_MS = 60 * 60 * 1000
 
 // 参加申請を送信する（公開ページからの申請・承認制）
 export async function requestJoinTeam(
@@ -20,6 +23,10 @@ export async function requestJoinTeam(
 
   if (!VALID_MEMBERSHIP_TYPES.includes(membershipType)) {
     return { error: "会員種別が不正です" }
+  }
+
+  if (isRateLimited(`join_request:${user.id}`, JOIN_REQUEST_RATE_LIMIT, JOIN_REQUEST_RATE_WINDOW_MS)) {
+    return { error: "申請が多すぎます。しばらく時間をおいてから再度お試しください" }
   }
 
   const admin = createAdminClient()
@@ -76,16 +83,11 @@ export async function requestJoinTeam(
   if (requestError) return { error: "申請に失敗しました" }
 
   // チームの管理者全員に通知を送信
-  const { data: admins } = await admin
-    .from("team_members")
-    .select("swimmer_id")
-    .eq("team_id", teamId)
-    .eq("role", "admin")
-    .eq("status", "active")
+  const adminIds = await getActiveTeamAdminIds(admin, teamId)
 
-  if (admins && admins.length > 0) {
+  if (adminIds.length > 0) {
     const applicantName = profile?.name ?? "新しいユーザー"
-    await notifyUsers(admins.map((a) => a.swimmer_id), {
+    await notifyUsers(adminIds, {
       type: "join_request_received",
       title: `${team.name}への参加申請が届きました`,
       body: `${applicantName}さんが参加を申請しました`,
@@ -149,6 +151,18 @@ export async function approveJoinRequest(
 
   if (!team) return { error: "グループが見つかりません" }
 
+  // 申請ステータスを条件付きUPDATEで原子的に pending -> approved へ遷移させる。
+  // ここを先に確定させることで、この後のメンバー追加が何らかの理由で失敗しても
+  // 申請が pending のまま残って再承認時にUNIQUE制約違反を起こす、という不整合を防ぐ。
+  const { data: claimed, error: claimError } = await admin
+    .from("join_requests")
+    .update({ status: "approved" })
+    .eq("id", requestId)
+    .eq("status", "pending")
+    .select("id")
+    .maybeSingle()
+  if (claimError || !claimed) return { error: "この申請は既に処理されています" }
+
   // team_members にメンバー追加
   const { error: memberError } = await admin
     .from("team_members")
@@ -161,7 +175,12 @@ export async function approveJoinRequest(
       status: "active",
     })
 
-  if (memberError) return { error: "メンバー追加に失敗しました" }
+  if (memberError) {
+    // メンバー追加に失敗した場合、承認済みステータスのままにすると実体のないまま
+    // 「承認済み」と表示され続けるため、申請を pending に戻して再試行可能にする
+    await admin.from("join_requests").update({ status: "pending" }).eq("id", requestId)
+    return { error: "メンバー追加に失敗しました" }
+  }
 
   // 年会費メンバーなら年会費レコードを自動生成
   if (request.membership_type === "annual" && team.annual_fee_amount) {
@@ -173,15 +192,6 @@ export async function approveJoinRequest(
       period: currentYear,
       amount: team.annual_fee_amount,
     })
-  }
-
-  // 申請ステータスを承認済みに更新
-  const { error: approveStatusError } = await admin
-    .from("join_requests")
-    .update({ status: "approved" })
-    .eq("id", requestId)
-  if (approveStatusError) {
-    console.error(`[approveJoinRequest] Failed to update status for request ${requestId}:`, approveStatusError)
   }
 
   // 申請者に承認通知を送信
@@ -200,15 +210,9 @@ export async function approveJoinRequest(
     .select("name")
     .eq("id", request.swimmer_id)
     .single()
-  const { data: otherAdmins } = await admin
-    .from("team_members")
-    .select("swimmer_id")
-    .eq("team_id", request.team_id)
-    .eq("role", "admin")
-    .eq("status", "active")
-    .neq("swimmer_id", user.id)
-  if (otherAdmins && otherAdmins.length > 0) {
-    await notifyUsers(otherAdmins.map((a) => a.swimmer_id), {
+  const otherAdminIds = await getActiveTeamAdminIds(admin, request.team_id, user.id)
+  if (otherAdminIds.length > 0) {
+    await notifyUsers(otherAdminIds, {
       type: "member_joined",
       title: `${joinerProfile?.name ?? "新しいメンバー"}さんが「${team.name}」に参加しました`,
       body: null,
@@ -255,14 +259,17 @@ export async function rejectJoinRequest(
     .eq("id", request.team_id)
     .single()
 
-  // 申請ステータスを拒否済みに更新
-  const { error: rejectStatusError } = await admin
+  // 申請ステータスを条件付きUPDATEで原子的に pending -> rejected へ遷移させる。
+  // 失敗時にそのまま通知だけ送ってしまうと、申請がpendingのまま残り二重操作の
+  // 余地が生まれるため、確定できなかった場合はここで中断する。
+  const { data: claimed, error: rejectStatusError } = await admin
     .from("join_requests")
     .update({ status: "rejected", rejection_reason: reason ?? null })
     .eq("id", requestId)
-  if (rejectStatusError) {
-    console.error(`[rejectJoinRequest] Failed to update status for request ${requestId}:`, rejectStatusError)
-  }
+    .eq("status", "pending")
+    .select("id")
+    .maybeSingle()
+  if (rejectStatusError || !claimed) return { error: "この申請は既に処理されています" }
 
   // 申請者に拒否通知を送信
   await notifyUser(request.swimmer_id, {

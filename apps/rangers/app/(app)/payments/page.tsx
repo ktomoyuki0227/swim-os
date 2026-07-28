@@ -62,6 +62,7 @@ type IncomeRegistration = {
   cancelled_at: string | null
   swimmer_id: string
   session_id: string
+  charged_amount: number | null
 }
 
 type IncomeFee = {
@@ -148,7 +149,7 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
   const { data: sessionRegs } = await supabase
     .from("session_registrations")
     .select(
-      `id, payment_status, payment_method, registered_at, is_member, cancelled_at,
+      `id, payment_status, payment_method, registered_at, is_member, cancelled_at, charged_amount,
        session:practice_sessions(
          id, title, scheduled_at, member_price, guest_price, team_id
        )`
@@ -192,7 +193,7 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
       const { data: regs } = await supabase
         .from("session_registrations")
         .select(
-          "id, payment_status, payment_method, registered_at, is_member, cancelled_at, swimmer_id, session_id"
+          "id, payment_status, payment_method, registered_at, is_member, cancelled_at, swimmer_id, session_id, charged_amount"
         )
         .in("session_id", incomeSessionIds)
         .neq("swimmer_id", user.id)
@@ -258,7 +259,7 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
       label: session.title ?? "セッション",
       teamId,
       teamName,
-      amount: reg.is_member ? (session.member_price ?? 0) : (session.guest_price ?? 0),
+      amount: reg.charged_amount ?? (reg.is_member ? (session.member_price ?? 0) : (session.guest_price ?? 0)),
       status: reg.payment_status,
       date: new Date(session.scheduled_at ?? reg.registered_at),
     })
@@ -307,7 +308,7 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
       teamId: session.team_id,
       teamName,
       payerName: payerNameById.get(reg.swimmer_id) ?? "不明",
-      amount: reg.is_member ? (session.member_price ?? 0) : (session.guest_price ?? 0),
+      amount: reg.charged_amount ?? (reg.is_member ? (session.member_price ?? 0) : (session.guest_price ?? 0)),
       status: reg.payment_status,
       date: new Date(session.scheduled_at ?? reg.registered_at),
     })

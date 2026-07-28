@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { loadStripe, type Stripe } from "@stripe/stripe-js"
 import {
   Elements,
@@ -232,8 +232,14 @@ export function StripeStep({ onSuccess }: { onSuccess: (paymentMethodId: string)
     runFetchIntent()
   }
 
+  // React Strict Mode(開発時)はeffectを2回発火させるため、ガードなしだと
+  // SetupIntentを2回作成し、Elementsに渡すclientSecretが後から変わって
+  // Stripe.jsの「clientSecretは変更できない」警告が出る。初回のみ実行されるようにする
+  // (手動リトライ時のrunFetchIntent呼び出しはこのガードの対象外)
+  const hasFetchedRef = useRef(false)
   useEffect(() => {
-    if (!stripePromise) return
+    if (!stripePromise || hasFetchedRef.current) return
+    hasFetchedRef.current = true
     runFetchIntent()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
