@@ -282,8 +282,21 @@ export async function getSession(sessionId: string) {
 
   if (error || !data) return { error: "セッションが見つかりません" }
 
-  // 外部公開セッション（ゲスト向け）はログイン不要で閲覧可能
-  if (data.is_external && data.status === "published") return { data }
+  // 外部公開セッション（ゲスト向け）はログイン不要で閲覧可能。
+  // ただし匿名の閲覧者には team の全カラム（invite_code, stripe_account_id等の機微情報）を
+  // 返してはならないため、公開して問題ない項目のみに絞る。
+  if (data.is_external && data.status === "published") {
+    const rawTeam = data.team as Record<string, unknown> | null
+    const publicTeam = rawTeam
+      ? {
+          id: rawTeam.id,
+          name: rawTeam.name,
+          description: rawTeam.description,
+          avatar_url: rawTeam.avatar_url,
+        }
+      : null
+    return { data: { ...data, team: publicTeam } }
+  }
 
   // それ以外は同じチームのアクティブなメンバーのみ閲覧可能
   const supabase = await createClient()

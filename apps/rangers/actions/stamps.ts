@@ -38,7 +38,7 @@ export async function getStampMembers(teamId: string) {
     data: members.map((m) => ({
       team_member_id: m.id,
       swimmer_id: m.swimmer_id,
-      stamp_remaining: m.stamp_remaining,
+      stamp_remaining: m.stamp_remaining ?? 0,
       joined_at: m.joined_at,
       profile: Array.isArray(m.profiles) ? (m.profiles[0] ?? null) : (m.profiles as unknown as { id: string; name: string; avatar_url: string } | null),
       purchases: (purchases || []).filter((p) => p.swimmer_id === m.swimmer_id),

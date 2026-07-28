@@ -482,7 +482,7 @@ export default async function HomePage() {
             水泳の新しいつながりを、<br />
             始めよう。
           </h2>
-          <p className="mb-10 text-sm leading-relaxed text-blue-100">
+          <p className="mb-10 text-sm leading-relaxed text-[#f7f9fb]">
             グループを探したい人も、グループを運営したい人も、<br className="hidden sm:block" />
             コーチとして活躍したい人も。全員のための Rangers。
           </p>
@@ -490,7 +490,7 @@ export default async function HomePage() {
             <Link href="/login">
               <Button
                 size="lg"
-                className="w-full rounded-full bg-white px-10 text-[#005F8C] font-bold hover:bg-blue-50 sm:w-auto"
+                className="w-full rounded-full bg-white px-10 text-[#005F8C] font-bold hover:bg-[#f2f7fa] sm:w-auto"
                 style={{ minHeight: "52px" }}
               >
                 無料会員登録
@@ -507,7 +507,7 @@ export default async function HomePage() {
               </Button>
             </Link>
           </div>
-          <p className="mt-6 text-xs text-blue-200">
+          <p className="mt-6 text-xs text-[#f7f9fb]/70">
             登録無料 · クレジットカード不要 · いつでも退会可能
           </p>
         </div>

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { confirmSession, cancelSession, deleteSession, retryPayment, exportSessionRegistrations } from "@/actions/sessions"
 import { saveAsTemplate } from "@/actions/templates"
 import { Button } from "@/components/ui/button"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { useToast } from "@/components/toast"
 
 interface SessionActionsProps {
@@ -15,6 +16,8 @@ interface SessionActionsProps {
   failedRegistrationIds?: string[]
   isCompetition?: boolean
 }
+
+type PendingAction = "confirm" | "cancel" | "delete" | "retry" | null
 
 export function SessionActions({
   sessionId,
@@ -34,9 +37,9 @@ export function SessionActions({
   const [isSavingTemplate, setIsSavingTemplate] = useState(false)
   const [showTemplateInput, setShowTemplateInput] = useState(false)
   const [templateName, setTemplateName] = useState("")
+  const [pendingAction, setPendingAction] = useState<PendingAction>(null)
 
-  const handleConfirm = async () => {
-    if (!confirm("このセッションを開催確定しますか？\n参加者への決済が一括処理されます。")) return
+  const runConfirm = async () => {
     setIsConfirming(true)
     const result = await confirmSession(sessionId)
     if (result.error) {
@@ -51,11 +54,7 @@ export function SessionActions({
     setIsConfirming(false)
   }
 
-  const handleCancel = async () => {
-    const cancelMsg = currentStatus === "confirmed"
-      ? "このセッションを中止しますか？\n決済済みの参加者には自動返金されます。"
-      : "このセッションを中止しますか？"
-    if (!confirm(cancelMsg)) return
+  const runCancel = async () => {
     setIsCancelling(true)
     const result = await cancelSession(sessionId)
     if (result.error) {
@@ -67,8 +66,7 @@ export function SessionActions({
     setIsCancelling(false)
   }
 
-  const handleDelete = async () => {
-    if (!confirm("このセッションを削除しますか？\nこの操作は取り消せません。")) return
+  const runDelete = async () => {
     setIsDeleting(true)
     const result = await deleteSession(sessionId)
     if (result.error) {
@@ -80,9 +78,8 @@ export function SessionActions({
     }
   }
 
-  const handleRetryAll = async () => {
+  const runRetryAll = async () => {
     if (!failedRegistrationIds?.length) return
-    if (!confirm(`${failedRegistrationIds.length}件の決済失敗を再試行しますか？`)) return
     setIsRetrying(true)
     let successCount = 0
     for (const regId of failedRegistrationIds) {
@@ -99,6 +96,15 @@ export function SessionActions({
     )
     setIsRetrying(false)
     router.refresh()
+  }
+
+  const handleConfirmedAction = async () => {
+    const action = pendingAction
+    setPendingAction(null)
+    if (action === "confirm") await runConfirm()
+    else if (action === "cancel") await runCancel()
+    else if (action === "delete") await runDelete()
+    else if (action === "retry") await runRetryAll()
   }
 
   const handleSaveTemplate = async () => {
@@ -133,12 +139,46 @@ export function SessionActions({
     setIsExporting(false)
   }
 
+  const dialogConfig: Record<
+    Exclude<PendingAction, null>,
+    { title: string; description?: string; confirmLabel: string; variant: "danger" | "primary"; isLoading: boolean }
+  > = {
+    confirm: {
+      title: "このセッションを開催確定しますか？",
+      description: "参加者への決済が一括処理されます。",
+      confirmLabel: "開催確定する",
+      variant: "primary",
+      isLoading: isConfirming,
+    },
+    cancel: {
+      title: "このセッションを中止しますか？",
+      description: currentStatus === "confirmed" ? "決済済みの参加者には自動返金されます。" : undefined,
+      confirmLabel: "中止する",
+      variant: "danger",
+      isLoading: isCancelling,
+    },
+    delete: {
+      title: "このセッションを削除しますか？",
+      description: "この操作は取り消せません。",
+      confirmLabel: "削除する",
+      variant: "danger",
+      isLoading: isDeleting,
+    },
+    retry: {
+      title: `決済失敗 ${failedRegistrationIds?.length ?? 0}件を再試行しますか？`,
+      confirmLabel: "再試行する",
+      variant: "primary",
+      isLoading: isRetrying,
+    },
+  }
+  const activeDialog = pendingAction ? dialogConfig[pendingAction] : null
+
   return (
     <div className="space-y-3">
       <div className="flex gap-3">
         {currentStatus === "open" && (
           <Button
-            onClick={handleConfirm}
+            onClick={() => setPendingAction("confirm")}
             disabled={isConfirming || isCancelling || isDeleting}
             className="flex-1 rounded-full bg-[#0f8a4f] hover:opacity-90"
             style={{ minHeight: "48px" }}
@@ -147,7 +187,7 @@ export function SessionActions({
           </Button>
         )}
         <Button
-          onClick={handleCancel}
+          onClick={() => setPendingAction("cancel")}
           disabled={isConfirming || isCancelling || isDeleting}
           variant="outline"
           className="flex-1 rounded-full border-[#c0392b] text-[#c0392b] hover:bg-[#c0392b]/5"
@@ -160,7 +200,7 @@ export function SessionActions({
       {/* Retry failed payments */}
       {hasFailedPayments && failedRegistrationIds && failedRegistrationIds.length > 0 && (
         <Button
-          onClick={handleRetryAll}
+          onClick={() => setPendingAction("retry")}
           disabled={isRetrying}
           variant="outline"
           className="w-full rounded-full border-[#c0392b] text-[#c0392b] hover:bg-[#fdecea]"
@@ -224,12 +264,25 @@ export function SessionActions({
       {/* Delete */}
       <button
         type="button"
-        onClick={handleDelete}
+        onClick={() => setPendingAction("delete")}
         disabled={isDeleting || isConfirming || isCancelling}
         className="w-full rounded-full border border-dashed border-[#c0392b]/40 py-3 text-sm text-[#c0392b]/60 hover:border-[#c0392b] hover:text-[#c0392b] disabled:opacity-40"
       >
         {isDeleting ? "削除中..." : "セッションを削除"}
       </button>
+
+      {activeDialog && (
+        <ConfirmDialog
+          open={!!pendingAction}
+          title={activeDialog.title}
+          description={activeDialog.description}
+          confirmLabel={activeDialog.confirmLabel}
+          variant={activeDialog.variant}
+          isLoading={activeDialog.isLoading}
+          onConfirm={handleConfirmedAction}
+          onCancel={() => setPendingAction(null)}
+        />
+      )}
     </div>
   )
 }

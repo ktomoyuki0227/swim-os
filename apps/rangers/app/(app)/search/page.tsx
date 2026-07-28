@@ -7,10 +7,7 @@ export default function SearchPage() {
 
       {/* セッション - 全幅 */}
       <Link href="/search/sessions" className="block">
-        <div
-          className="relative h-36 overflow-hidden rounded-2xl transition-opacity active:opacity-90"
-          style={{ background: "linear-gradient(135deg, #005F8C 0%, #003F62 100%)" }}
-        >
+        <div className="relative h-36 overflow-hidden rounded-2xl bg-[#005F8C] shadow-[0_4px_16px_rgba(0,0,0,0.10)] transition-opacity active:opacity-90">
           {/* SVG イラスト: 泳ぐ人 + 波 */}
           <svg
             className="absolute right-0 top-0 h-full w-auto"
@@ -52,10 +49,7 @@ export default function SearchPage() {
 
       {/* チーム */}
       <Link href="/search/teams" className="block">
-        <div
-          className="relative h-36 overflow-hidden rounded-2xl transition-opacity active:opacity-90"
-          style={{ background: "linear-gradient(135deg, #0f8a4f 0%, #076938 100%)" }}
-        >
+        <div className="relative h-36 overflow-hidden rounded-2xl bg-[#0f8a4f] shadow-[0_4px_16px_rgba(0,0,0,0.10)] transition-opacity active:opacity-90">
           <svg
             className="absolute right-0 top-0 h-full w-auto"
             viewBox="0 0 200 112"
@@ -93,10 +87,7 @@ export default function SearchPage() {
 
       {/* パーソナル */}
       <Link href="/search/personal" className="block">
-        <div
-          className="relative h-36 overflow-hidden rounded-2xl transition-opacity active:opacity-90"
-          style={{ background: "linear-gradient(135deg, #7B5EA7 0%, #5438A0 100%)" }}
-        >
+        <div className="relative h-36 overflow-hidden rounded-2xl bg-[#162234] shadow-[0_4px_16px_rgba(0,0,0,0.10)] transition-opacity active:opacity-90">
           <svg
             className="absolute right-0 top-0 h-full w-auto"
             viewBox="0 0 200 112"

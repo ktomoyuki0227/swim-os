@@ -78,7 +78,7 @@ function LoginForm() {
           <form action={formAction} className="space-y-3">
             {invite && <input type="hidden" name="invite" value={invite} />}
             {state.error && (
-              <p className="rounded-[10px] border border-[#c0392b]/20 bg-[#fdecea] px-3 py-2 text-xs text-[#c0392b]">
+              <p role="alert" className="rounded-[10px] border border-[#c0392b]/20 bg-[#fdecea] px-3 py-2 text-xs text-[#c0392b]">
                 {state.error}
               </p>
             )}
@@ -91,7 +91,7 @@ function LoginForm() {
                 placeholder="you@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="h-10 border-[#dce3ea] text-sm"
+                className="border-[#dce3ea]"
                 required
               />
             </div>
@@ -108,7 +108,7 @@ function LoginForm() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="h-10 border-[#dce3ea] text-sm"
+                className="border-[#dce3ea]"
                 required
               />
             </div>

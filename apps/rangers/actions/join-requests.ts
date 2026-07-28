@@ -176,10 +176,13 @@ export async function approveJoinRequest(
   }
 
   // 申請ステータスを承認済みに更新
-  await admin
+  const { error: approveStatusError } = await admin
     .from("join_requests")
     .update({ status: "approved" })
     .eq("id", requestId)
+  if (approveStatusError) {
+    console.error(`[approveJoinRequest] Failed to update status for request ${requestId}:`, approveStatusError)
+  }
 
   // 申請者に承認通知を送信
   await notifyUser(request.swimmer_id, {
@@ -253,10 +256,13 @@ export async function rejectJoinRequest(
     .single()
 
   // 申請ステータスを拒否済みに更新
-  await admin
+  const { error: rejectStatusError } = await admin
     .from("join_requests")
     .update({ status: "rejected", rejection_reason: reason ?? null })
     .eq("id", requestId)
+  if (rejectStatusError) {
+    console.error(`[rejectJoinRequest] Failed to update status for request ${requestId}:`, rejectStatusError)
+  }
 
   // 申請者に拒否通知を送信
   await notifyUser(request.swimmer_id, {

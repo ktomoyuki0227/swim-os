@@ -4,10 +4,15 @@ import { createClient, createAdminClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { teamSchema, teamUpdateSchema } from "@/lib/validations"
+import { isValidImageFile } from "@/lib/file-validation"
 import { SWIMMER_TYPES, SWIM_DISCIPLINES, SWIM_LEVELS, SYSTEM_TAGS } from "@/types/database"
-import type { MembershipType } from "@/types/database"
+import type { MembershipType, SessionType, TeamStatus } from "@/types/database"
+import type { Database } from "@/types/database-generated"
 import { isTeamAdmin } from "@/lib/auth/require-team-admin"
 import { notifyUser, notifyUsers } from "@/lib/notifications"
+
+// PostgRESTの .not("id", "in", "(...)")  に渡す文字列結合前のUUID形式バリデーション用
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 export async function uploadTeamImage(
   formData: FormData
@@ -22,6 +27,10 @@ export async function uploadTeamImage(
   const allowedTypes = ["image/jpeg", "image/png", "image/webp"]
   if (!allowedTypes.includes(file.type)) return { error: "JPEG・PNG・WebP形式のみアップロードできます" }
   if (file.size > 5 * 1024 * 1024) return { error: "ファイルサイズは5MB以下にしてください" }
+  // file.type はクライアント申告値（偽装可能）のため、実バイト列のマジックナンバーで検証する
+  if (!(await isValidImageFile(file, file.type))) {
+    return { error: "ファイルの内容が画像形式として不正です" }
+  }
 
   const type = (formData.get("type") as string) || "cover" // "cover" | "icon"
   const ext = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg"
@@ -197,7 +206,17 @@ export async function getTeam(teamId: string) {
     .single()
 
   if (error || !team) return { error: "グループが見つかりません" }
-  return { data: team }
+  return {
+    data: {
+      ...team,
+      practice_days: team.practice_days ?? [],
+      default_member_price: team.default_member_price ?? 0,
+      default_guest_price: team.default_guest_price ?? 0,
+      cancellation_days: team.cancellation_days ?? 3,
+      point_card_count: team.point_card_count ?? 10,
+      status: team.status as TeamStatus,
+    },
+  }
 }
 
 export async function joinTeamByCode(
@@ -460,7 +479,12 @@ export async function getPublicTeams(options?: {
   }
 
   if (excludeIds.length > 0) {
-    query = query.not("id", "in", `(${excludeIds.join(",")})`)
+    // .not("id", "in", ...) はPostgREST生シンタックスの文字列を要求し配列を直接渡せないため、
+    // 各IDがUUID形式であることを検証してから文字列結合する（不正な値の混入を防ぐ）
+    const validExcludeIds = excludeIds.filter((id) => UUID_REGEX.test(id))
+    if (validExcludeIds.length > 0) {
+      query = query.not("id", "in", `(${validExcludeIds.join(",")})`)
+    }
   }
 
   const { data, error } = await query
@@ -632,7 +656,7 @@ export async function updateMemberInfo(
     }
   }
 
-  const updateData: Record<string, unknown> = {
+  const updateData: Database["public"]["Tables"]["team_members"]["Update"] = {
     membership_type: data.membershipType,
     role: data.role,
   }
@@ -777,10 +801,10 @@ export async function getPublicTeam(teamId: string) {
 
   return {
     data: {
-      team,
+      team: { ...team, practice_days: team.practice_days ?? [] },
       coach,
       memberCount: memberCount ?? 0,
-      sessions: sessions ?? [],
+      sessions: (sessions ?? []).map((s) => ({ ...s, type: s.type as SessionType })),
     },
   }
 }

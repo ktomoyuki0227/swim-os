@@ -4,6 +4,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { cancelRegistration } from "@/actions/sessions"
 import { Button } from "@/components/ui/button"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { useToast } from "@/components/toast"
 
 interface CancelButtonProps {
@@ -13,10 +14,11 @@ interface CancelButtonProps {
 export function CancelButton({ sessionId }: CancelButtonProps) {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
   const { showToast } = useToast()
 
   const handleCancel = async () => {
-    if (!confirm("参加をキャンセルしますか？")) return
+    setShowConfirm(false)
     setIsLoading(true)
     const result = await cancelRegistration(sessionId)
     if (result.error) {
@@ -30,7 +32,7 @@ export function CancelButton({ sessionId }: CancelButtonProps) {
   return (
     <div className="space-y-2">
       <Button
-        onClick={handleCancel}
+        onClick={() => setShowConfirm(true)}
         disabled={isLoading}
         variant="outline"
         className="w-full rounded-full border-[#c0392b] text-[#c0392b] hover:bg-[#c0392b]/5"
@@ -38,6 +40,17 @@ export function CancelButton({ sessionId }: CancelButtonProps) {
       >
         {isLoading ? "キャンセル中..." : "参加をキャンセル"}
       </Button>
+
+      <ConfirmDialog
+        open={showConfirm}
+        title="参加をキャンセルしますか？"
+        confirmLabel="キャンセルする"
+        cancelLabel="戻る"
+        isLoading={isLoading}
+        loadingLabel="キャンセル中..."
+        onConfirm={handleCancel}
+        onCancel={() => setShowConfirm(false)}
+      />
     </div>
   )
 }

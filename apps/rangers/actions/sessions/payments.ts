@@ -5,11 +5,12 @@ import { stripe } from "@/lib/stripe"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import type { PaymentMethod } from "@/types/database"
-import { getPlatformFeePercent } from "@/lib/stripe-connect"
+import type { Database, Json } from "@/types/database-generated"
+import { getPlatformFeePercent, hasStripeConnect } from "@/lib/stripe-connect"
 import { isTeamAdmin } from "@/lib/auth/require-team-admin"
 import { mapWithConcurrency } from "@/lib/utils"
 import { notifyUser, notifyUsers } from "@/lib/notifications"
-import { chargeSessionRegistrationStripe } from "@/lib/stripe-payment-helpers"
+import { chargeSessionRegistrationStripe, refundSessionRegistrationStripe } from "@/lib/stripe-payment-helpers"
 
 // confirmSession でのStripe決済の同時実行数。参加者数が多いセッションでも
 // サーバーレス関数のタイムアウトに収まるよう、完全な直列処理を避ける。
@@ -66,7 +67,7 @@ export async function confirmSession(sessionId: string) {
     stripe_account_id: string | null
     stripe_onboarding_completed: boolean
   } | null
-  const hasConnect = !!(connectTeam?.stripe_account_id && connectTeam?.stripe_onboarding_completed)
+  const hasConnect = hasStripeConnect(connectTeam)
   const feePercent = hasConnect && process.env.STRIPE_SECRET_KEY
     ? await getPlatformFeePercent()
     : 0
@@ -75,7 +76,9 @@ export async function confirmSession(sessionId: string) {
   const paymentErrors: string[] = []
   // 参加者ごとの決済は互いに独立しているため、一定の同時実行数で並行処理する
   // （完全な直列処理だと参加者数に比例して所要時間が伸び、タイムアウトに近づくため）
-  await mapWithConcurrency(registrations, CONFIRM_PAYMENT_CONCURRENCY, async (reg) => {
+  const processRegistrationPayment = async (
+    reg: (typeof registrations)[number]
+  ): Promise<void> => {
     if (reg.payment_method === "stripe") {
       if (!process.env.STRIPE_SECRET_KEY) {
         paymentErrors.push(`${reg.id}: stripe not configured`)
@@ -159,7 +162,7 @@ export async function confirmSession(sessionId: string) {
           .eq("team_id", session.team_id)
           .eq("swimmer_id", reg.swimmer_id)
           .single()
-        if (updatedMember && updatedMember.stamp_remaining <= 2) {
+        if (updatedMember && updatedMember.stamp_remaining !== null && updatedMember.stamp_remaining <= 2) {
           await notifyUser(reg.swimmer_id, {
             type: "stamp_low",
             title: "回数券の残枚数が少なくなっています",
@@ -171,6 +174,19 @@ export async function confirmSession(sessionId: string) {
       }
     }
     // cash はそのまま（当日回収）
+  }
+
+  await mapWithConcurrency(registrations, CONFIRM_PAYMENT_CONCURRENCY, async (reg) => {
+    // Supabase呼び出し以外の予期しない例外（ネットワーク断等）がここで発生すると、
+    // try-catchなしでは mapWithConcurrency 内の Promise.all 全体がrejectし、
+    // 他の参加者の決済処理まで巻き込んで中断してしまう。1件の例外を握りつぶさず
+    // paymentErrors に積んで処理を継続できるよう、コールバック全体を保護する。
+    try {
+      await processRegistrationPayment(reg)
+    } catch (err) {
+      console.error(`[confirmSession] Unexpected error processing registration ${reg.id}:`, err)
+      paymentErrors.push(`${reg.id}: unexpected error`)
+    }
   })
 
   // セッションステータスは決済処理の前に既に "confirmed" へ原子的に更新済み
@@ -233,14 +249,6 @@ export async function cancelSession(sessionId: string) {
       .eq("session_id", sessionId)
       .eq("payment_status", "paid")
 
-    // Connect送金済みかどうかを判定する（返金時にコーチへの送金分も引き戻す必要があるため）
-    const { data: cancelTeam } = await cancelAdmin
-      .from("teams")
-      .select("stripe_account_id, stripe_onboarding_completed")
-      .eq("id", session.team_id)
-      .single()
-    const cancelHasConnect = !!(cancelTeam?.stripe_account_id && cancelTeam?.stripe_onboarding_completed)
-
     if (registrations) {
       const refundErrors: string[] = []
       for (const reg of registrations) {
@@ -249,39 +257,21 @@ export async function cancelSession(sessionId: string) {
             refundErrors.push(`${reg.id}: stripe not configured, refund skipped`)
             continue
           }
-          try {
-            // Connect(Destination Charge)経由の決済は reverse_transfer を指定しないと
-            // コーチ側へ送金済みの資金が自動的には引き戻されず、返金差額をプラット
-            // フォームが負担することになるため明示的に指定する
-            await stripe.refunds.create({
-              payment_intent: reg.stripe_payment_intent_id,
-              ...(cancelHasConnect ? { reverse_transfer: true, refund_application_fee: true } : {}),
-            })
-          } catch (err) {
-            const stripeErr = err as { code?: string }
-            if (stripeErr.code === "charge_already_refunded") {
-              // 前回の返金はStripeで成功していたがDB更新が失敗していたケース → DB更新に進む
-              console.warn(`[cancelSession] Refund already processed for ${reg.id}, syncing DB status`)
-            } else {
-              console.error(`[cancelSession] Stripe refund failed for ${reg.id}:`, err)
-              refundErrors.push(`${reg.id}: stripe refund failed`)
-              continue
-            }
+          const refundResult = await refundSessionRegistrationStripe({
+            admin: cancelAdmin,
+            registrationId: reg.id,
+            stripePaymentIntentId: reg.stripe_payment_intent_id,
+            logPrefix: "[cancelSession]",
+          })
+          if (!refundResult.ok) {
+            refundErrors.push(`${reg.id}: ${refundResult.error}`)
+            continue
           }
           const { error: refErr } = await cancelAdmin
             .from("session_registrations")
             .update({ payment_status: "refunded" })
             .eq("id", reg.id)
           if (refErr) refundErrors.push(`${reg.id}: refunded status update failed`)
-          if (cancelHasConnect) {
-            // 返金後もtransfer_records.statusが"succeeded"のままだと会計上の
-            // 不整合になるため、返金済みとして反映する
-            await cancelAdmin
-              .from("transfer_records")
-              .update({ status: "reversed" })
-              .eq("stripe_payment_intent_id", reg.stripe_payment_intent_id)
-              .eq("status", "succeeded")
-          }
         } else if (reg.payment_method === "point_card") {
           // ポイント戻し（adminClientでRLSをバイパス）
           const { error: rpcErr } = await cancelAdmin.rpc("increment_stamp", {
@@ -404,7 +394,7 @@ export async function registerForSession(
     if (!session.allow_point_card) {
       return { error: "このセッションではポイントカードを利用できません" }
     }
-    if (membership.stamp_remaining <= 0) {
+    if ((membership.stamp_remaining ?? 0) <= 0) {
       return { error: "ポイントカードの残回数が0です。追加購入してください。" }
     }
   }
@@ -419,7 +409,7 @@ export async function registerForSession(
     p_is_member: isMember,
     p_payment_method: effectivePaymentMethod,
     p_payment_status: isExempt ? "free" : "pending",
-    p_competition_entry: competitionEntry || null,
+    p_competition_entry: (competitionEntry ?? null) as Json,
   })
 
   if (registerErr) {
@@ -536,34 +526,18 @@ export async function cancelRegistration(sessionId: string) {
         new Date(session.scheduled_at).getTime() - Date.now() >=
           session.cancellation_days * 24 * 60 * 60 * 1000
       if (isRefundEligible && process.env.STRIPE_SECRET_KEY) {
-        // Connect送金済みかどうかを判定する（返金時にコーチへの送金分も引き戻す必要があるため）
-        const { data: refundTeam } = await adminClient
-          .from("teams")
-          .select("stripe_account_id, stripe_onboarding_completed")
-          .eq("id", session.team_id)
-          .single()
-        const refundHasConnect = !!(refundTeam?.stripe_account_id && refundTeam?.stripe_onboarding_completed)
-        try {
-          // Connect(Destination Charge)経由の決済は reverse_transfer を指定しないと
-          // コーチ側へ送金済みの資金が自動的には引き戻されないため明示的に指定する
-          await stripe.refunds.create({
-            payment_intent: registration.stripe_payment_intent_id,
-            ...(refundHasConnect ? { reverse_transfer: true, refund_application_fee: true } : {}),
-          })
-          newPaymentStatus = "refunded"
-          if (refundHasConnect) {
-            // 返金後もtransfer_records.statusが"succeeded"のままだと会計上の
-            // 不整合になるため、返金済みとして反映する
-            await adminClient
-              .from("transfer_records")
-              .update({ status: "reversed" })
-              .eq("stripe_payment_intent_id", registration.stripe_payment_intent_id)
-              .eq("status", "succeeded")
-          }
-        } catch (err) {
-          console.error(`[cancelRegistration] Stripe refund failed for ${registration.id}:`, err)
+        // Connect送金の判定・refunds.create・transfer_records更新はcancelSessionと同じ
+        // 処理のため共通ヘルパーに集約している（判定条件・更新内容は変更していない）。
+        const refundResult = await refundSessionRegistrationStripe({
+          admin: adminClient,
+          registrationId: registration.id,
+          stripePaymentIntentId: registration.stripe_payment_intent_id,
+          logPrefix: "[cancelRegistration]",
+        })
+        if (!refundResult.ok) {
           return { error: "返金処理に失敗しました。管理者にお問い合わせください" }
         }
+        newPaymentStatus = "refunded"
       }
       // isRefundEligible = false の場合は payment_status = "paid" のまま（支払い済み・返金なし）
     } else if (registration.payment_method === "point_card") {
@@ -581,7 +555,7 @@ export async function cancelRegistration(sessionId: string) {
 
   // キャンセル記録と payment_status 更新を 1 回の書き込みで原子的に行う
   // これにより「Stripe返金済み + cancelled_at 未設定」のゾンビ状態を防ぐ
-  const cancelUpdate: Record<string, unknown> = { cancelled_at: new Date().toISOString() }
+  const cancelUpdate: Database["public"]["Tables"]["session_registrations"]["Update"] = { cancelled_at: new Date().toISOString() }
   if (newPaymentStatus) cancelUpdate.payment_status = newPaymentStatus
 
   const { error: cancelWriteErr } = await adminClient
@@ -708,6 +682,32 @@ export async function retryPayment(registrationId: string) {
       .maybeSingle()
     if (claimErr || !claimed) return { error: "既に再決済処理が実行されています" }
 
+    // 新規PaymentIntentを作成する前に、既存PIが実際にはStripe側で成功していないかを確認する。
+    // confirm() がネットワークタイムアウト等で例外を投げた場合、Stripe側では決済が成立して
+    // いるのにローカルでは "failed" のまま残ることがある。この状態確認をせずに新規PIを
+    // 作成すると、既に成功している決済に加えてもう一度カードへ請求してしまう(二重課金)。
+    if (registration.stripe_payment_intent_id) {
+      const existingPi = await stripe.paymentIntents
+        .retrieve(registration.stripe_payment_intent_id)
+        .catch(() => null)
+      if (existingPi?.status === "succeeded") {
+        // Stripe側は既に成功済み → 新規課金はせずDBをこの事実に合わせて同期する
+        await retryAdmin
+          .from("session_registrations")
+          .update({ payment_status: "paid" })
+          .eq("id", registrationId)
+        revalidatePath("/sessions")
+        revalidatePath("/notifications")
+        return { success: true }
+      }
+      if (existingPi && ["processing", "requires_confirmation", "requires_capture"].includes(existingPi.status)) {
+        // 処理中で結果が確定していない → 新規PIを作ると二重課金の恐れがあるため中断し、
+        // pending のまま握りつぶさず failed に戻して再試行可能な状態を維持する
+        await retryAdmin.from("session_registrations").update({ payment_status: "failed" }).eq("id", registrationId)
+        return { error: "前回の決済がまだ処理中です。しばらく待ってから再度お試しください" }
+      }
+    }
+
     const { data: swimmer } = await retryAdmin
       .from("profiles")
       .select("stripe_customer_id, stripe_payment_method_id")
@@ -727,7 +727,7 @@ export async function retryPayment(registrationId: string) {
       .select("stripe_account_id, stripe_onboarding_completed")
       .eq("id", retrySession.team_id)
       .single()
-    const retryHasConnect = !!(retryTeam?.stripe_account_id && retryTeam?.stripe_onboarding_completed)
+    const retryHasConnect = hasStripeConnect(retryTeam)
     const retryFeePercent = retryHasConnect ? await getPlatformFeePercent() : 0
 
     const result = await chargeSessionRegistrationStripe({

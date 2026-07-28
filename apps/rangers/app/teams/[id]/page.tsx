@@ -1,9 +1,11 @@
 export const dynamic = "force-dynamic"
 
 import Link from "next/link"
+import Image from "next/image"
 import { notFound, redirect } from "next/navigation"
 import { createClient, createAdminClient } from "@/lib/supabase/server"
 import { getTeam, getTeamMembers, getTeamFeeStats, getPublicTeam } from "@/actions/teams"
+import type { TeamMemberWithProfile } from "@/types/database"
 import { getTeamSessions } from "@/actions/sessions"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -186,7 +188,7 @@ export default async function TeamPage({ params }: TeamPageProps) {
                       style={{ zIndex: 3 - i }}
                     >
                       {avatarUrl ? (
-                        <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+                        <Image src={avatarUrl} alt="" width={28} height={28} className="h-full w-full object-cover" />
                       ) : (
                         name[0] || "?"
                       )}
@@ -200,7 +202,7 @@ export default async function TeamPage({ params }: TeamPageProps) {
             {/* ── アクションボタン + ウィザード ── */}
             <AdminTeamActions
               teamId={id}
-              members={members}
+              members={members as unknown as TeamMemberWithProfile[]}
               currentUserId={user.id}
               joinRequests={joinRequests}
               hasAnnualFee={team.has_annual_fee ?? false}
@@ -227,7 +229,7 @@ export default async function TeamPage({ params }: TeamPageProps) {
                           style={{ zIndex: 3 - i }}
                         >
                           {avatarUrl ? (
-                            <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+                            <Image src={avatarUrl} alt="" width={36} height={36} className="h-full w-full object-cover" />
                           ) : (
                             name[0] || "?"
                           )}

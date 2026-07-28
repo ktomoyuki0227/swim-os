@@ -225,6 +225,21 @@ async function handleAccountUpdated(account: Stripe.Account) {
     .eq("stripe_account_id", account.id)
 }
 
+/**
+ * コーチがStripeダッシュボード側からConnect連携を解除した際に送出されるイベント。
+ * このイベントには data.object 側に有用な情報がなく、解除された Connected Account の
+ * IDは Connect webhook共通で event.account に入る（Stripe Connect webhookの仕様）。
+ * 連携が切れているのにteams側がstripe_account_idを保持し続けると、
+ * 以降の決済・送金がすべて失敗するため、連携情報をクリアする。
+ */
+async function handleAccountApplicationDeauthorized(accountId: string) {
+  const admin = createAdminClient()
+  await admin
+    .from("teams")
+    .update({ stripe_account_id: null, stripe_onboarding_completed: false })
+    .eq("stripe_account_id", accountId)
+}
+
 // ── エントリーポイント ────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
@@ -285,6 +300,14 @@ export async function POST(req: NextRequest) {
       // Stripe Connect
       case "account.updated":
         await handleAccountUpdated(event.data.object as Stripe.Account)
+        break
+
+      case "account.application.deauthorized":
+        if (!event.account) {
+          console.error(`[webhook] account.application.deauthorized (${event.id}): missing event.account`)
+          break
+        }
+        await handleAccountApplicationDeauthorized(event.account)
         break
 
       // 未処理のイベントは 200 を返してリトライを防ぐ

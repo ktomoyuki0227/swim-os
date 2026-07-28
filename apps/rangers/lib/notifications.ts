@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/server"
+import type { Json } from "@/types/database-generated"
 
 export interface NotifyData {
   type: string
@@ -6,7 +7,7 @@ export interface NotifyData {
   body?: string | null
   link?: string | null
   team_id?: string | null
-  metadata?: Record<string, unknown>
+  metadata?: Json
 }
 
 /**

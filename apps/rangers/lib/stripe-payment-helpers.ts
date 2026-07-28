@@ -124,3 +124,71 @@ export async function chargeSessionRegistrationStripe(
     return { ok: false, error: "stripe confirm failed" }
   }
 }
+
+interface RefundSessionRegistrationParams {
+  admin: AdminClient
+  registrationId: string
+  stripePaymentIntentId: string
+  /** ログメッセージ用の呼び出し元識別子（例: "[cancelSession]"） */
+  logPrefix: string
+}
+
+type RefundResult = { ok: true } | { ok: false; error: string }
+
+/**
+ * セッション参加登録のStripe返金処理（transfer_records基準でのreverse_transfer判定
+ * → refunds.create → transfer_records更新）を行う。
+ * cancelSession・cancelRegistrationで重複していた返金フローをここに集約する。
+ * session_registrations.payment_status の更新は呼び出し元の責務とする
+ * （cancelSessionは即時更新、cancelRegistrationはcancelled_atと同一書き込みで
+ * 原子的に更新するため、更新タイミングが異なる）。
+ */
+export async function refundSessionRegistrationStripe(
+  params: RefundSessionRegistrationParams
+): Promise<RefundResult> {
+  const { admin, registrationId, stripePaymentIntentId, logPrefix } = params
+
+  // この決済自体がConnect送金(destination charge)を伴ったかどうかを、
+  // "現在の"チームのConnect設定ではなく、決済時に記録された transfer_records の
+  // 実履歴で判定する。チームのConnect状態は後から変わりうるため、現在状態で
+  // 判定すると「送金していないのに引き戻し指定」「送金済みなのに引き戻し漏れ」
+  // が発生し、プラットフォームの資金不整合につながる。
+  const { data: transferRecord } = await admin
+    .from("transfer_records")
+    .select("id, status")
+    .eq("stripe_payment_intent_id", stripePaymentIntentId)
+    .eq("status", "succeeded")
+    .maybeSingle()
+  const hasConnect = !!transferRecord
+
+  try {
+    // Connect(Destination Charge)経由の決済は reverse_transfer を指定しないと
+    // コーチ側へ送金済みの資金が自動的には引き戻されず、返金差額をプラット
+    // フォームが負担することになるため明示的に指定する
+    await stripe.refunds.create({
+      payment_intent: stripePaymentIntentId,
+      ...(hasConnect ? { reverse_transfer: true, refund_application_fee: true } : {}),
+    })
+  } catch (err) {
+    const stripeErr = err as { code?: string }
+    if (stripeErr.code === "charge_already_refunded") {
+      // 前回の返金はStripeで成功していたがDB更新が失敗していたケース → DB更新に進む
+      console.warn(`${logPrefix} Refund already processed for ${registrationId}, syncing DB status`)
+    } else {
+      console.error(`${logPrefix} Stripe refund failed for ${registrationId}:`, err)
+      return { ok: false, error: "stripe refund failed" }
+    }
+  }
+
+  if (hasConnect) {
+    // 返金後もtransfer_records.statusが"succeeded"のままだと会計上の
+    // 不整合になるため、返金済みとして反映する
+    await admin
+      .from("transfer_records")
+      .update({ status: "reversed" })
+      .eq("stripe_payment_intent_id", stripePaymentIntentId)
+      .eq("status", "succeeded")
+  }
+
+  return { ok: true }
+}

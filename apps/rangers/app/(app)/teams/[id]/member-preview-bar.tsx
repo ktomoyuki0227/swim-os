@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Image from "next/image"
 import { createPortal } from "react-dom"
 import { useMounted } from "@/hooks/use-mounted"
 import { useScrollLock } from "@/hooks/use-scroll-lock"
@@ -44,7 +45,7 @@ export function MemberPreviewBar({ members }: MemberPreviewBarProps) {
                 style={{ zIndex: 3 - i }}
               >
                 {avatarUrl ? (
-                  <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+                  <Image src={avatarUrl} alt="" width={28} height={28} className="h-full w-full object-cover" />
                 ) : (
                   name[0] || "?"
                 )}
@@ -88,7 +89,7 @@ export function MemberPreviewBar({ members }: MemberPreviewBarProps) {
                   <div key={m.id} className="flex items-center gap-3 px-4 py-3 border-b border-[#f2f7fa] last:border-b-0">
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#005F8C]/10 text-sm font-semibold text-[#005F8C]">
                       {avatarUrl ? (
-                        <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+                        <Image src={avatarUrl} alt="" width={40} height={40} className="h-full w-full object-cover" />
                       ) : (
                         name[0] || "?"
                       )}

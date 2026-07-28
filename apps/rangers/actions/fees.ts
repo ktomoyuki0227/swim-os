@@ -4,6 +4,7 @@ import { createClient, createAdminClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import type { FeeType } from "@/types/database"
+import type { Database } from "@/types/database-generated"
 import { isTeamAdmin, isAdminOfAnyTeamWithMember } from "@/lib/auth/require-team-admin"
 import { notifyUser } from "@/lib/notifications"
 
@@ -83,7 +84,7 @@ export async function updateFeeStatus(
 
   if (!(await isTeamAdmin(admin, fee.team_id, user.id))) return { error: "権限がありません" }
 
-  const updateData: Record<string, unknown> = { status }
+  const updateData: Database["public"]["Tables"]["membership_fees"]["Update"] = { status }
   if (status === "paid") {
     updateData.paid_at = new Date().toISOString()
   }

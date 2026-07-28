@@ -56,6 +56,12 @@ export default async function MessagesPage() {
     .select("id, name, avatar_url")
     .in("id", [...partnerIds])
 
+  // public_profiles はビューのため id/name が理論上 null になり得る型だが、
+  // partnerIds（既存メッセージの送受信者）でフィルタしているため実際には常に非nullである
+  const normalizedPartners = (partners ?? [])
+    .filter((p): p is typeof p & { id: string } => p.id !== null)
+    .map((p) => ({ ...p, name: p.name ?? "不明" }))
+
   // 未読数（自分宛て）
   const unreadCounts: Record<string, number> = {}
   receivedMessages?.forEach((m) => {
@@ -79,7 +85,7 @@ export default async function MessagesPage() {
     <div className="mx-auto max-w-2xl">
       <h1 className="mb-6 text-lg font-semibold text-[#1a2332]">メッセージ</h1>
       <div className="divide-y divide-[#e8edf2] rounded-[14px] border border-[#dce3ea] bg-white">
-        {(partners ?? []).map((partner) => (
+        {normalizedPartners.map((partner) => (
           <Link key={partner.id} href={`/messages/${partner.id}`}>
             <div className="flex items-center gap-4 px-4 py-4 transition-colors hover:bg-[#f2f7fa]">
               {partner.avatar_url ? (

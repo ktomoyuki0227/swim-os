@@ -49,24 +49,25 @@
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.546 0.245 262.881);
-  --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  /* DESIGN.md のブランドトークンにマッピング(rangers) */
+  --background: #ffffff; /* colors.canvas */
+  --foreground: #1a2332; /* colors.ink */
+  --card: #ffffff; /* colors.surface-card */
+  --card-foreground: #1a2332; /* colors.ink */
+  --popover: #ffffff; /* colors.canvas */
+  --popover-foreground: #1a2332; /* colors.ink */
+  --primary: #005f8c; /* colors.primary */
+  --primary-foreground: #ffffff; /* colors.on-primary */
+  --secondary: #f2f7fa; /* colors.canvas-cool */
+  --secondary-foreground: #1a2332; /* colors.ink */
+  --muted: #f2f7fa; /* colors.canvas-cool */
+  --muted-foreground: #64748b; /* colors.ink-muted (placeholder/補助テキスト) */
+  --accent: #f2f7fa; /* colors.canvas-cool (hover面。ブランドaccentのコーラルはCTA専用のため流用しない) */
+  --accent-foreground: #1a2332; /* colors.ink */
+  --destructive: #c0392b; /* colors.status-error */
+  --border: #dce3ea; /* colors.border */
+  --input: #dce3ea; /* colors.border */
+  --ring: #005f8c; /* colors.border-focus */
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -144,7 +145,7 @@
 }
 
 @keyframes slide-up {
-  from { transform: translateY(100vh); }
+  from { transform: translateY(100dvh); }
   to   { transform: none; }
 }
 

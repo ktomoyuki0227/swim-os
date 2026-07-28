@@ -41,6 +41,7 @@ export const HeroBg: React.FC = () => {
       {/* Base image with dynamic camera tracking movement */}
       <img
         src={staticFile("hero-bg.jpg")}
+        alt=""
         style={{
           width: "100%",
           height: "100%",

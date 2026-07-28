@@ -146,10 +146,10 @@ export function NewSessionForm({
         applyPrefill({
           title: data.title, type: data.type, location: data.location ?? undefined,
           description: data.description ?? undefined, member_price: data.member_price,
-          guest_price: data.guest_price, allow_point_card: data.allow_point_card,
+          guest_price: data.guest_price, allow_point_card: data.allow_point_card ?? undefined,
           min_participants: data.min_participants ?? undefined, max_participants: data.max_participants ?? undefined,
           cancellation_days: data.cancellation_days ?? undefined,
-          is_external: data.is_external, target_tags: (data.target_tags as string[]) ?? [],
+          is_external: data.is_external ?? undefined, target_tags: (data.target_tags as string[]) ?? [],
           competition_fields: data.competition_fields as CompetitionField[],
         })
       })
@@ -166,7 +166,6 @@ export function NewSessionForm({
         })
       })
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [copySessionId, templateId])
 
   const set = (key: keyof FormData, value: string | boolean) =>

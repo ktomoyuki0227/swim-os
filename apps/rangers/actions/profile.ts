@@ -2,6 +2,7 @@
 
 import { createClient, createAdminClient } from "@/lib/supabase/server"
 import { profilePartialSchema } from "@/lib/validations"
+import { isValidImageFile } from "@/lib/file-validation"
 import { revalidatePath } from "next/cache"
 
 export interface ProfileActionState {
@@ -33,6 +34,10 @@ export async function uploadAvatar(
   }
   if (file.size > 2 * 1024 * 1024) {
     return { error: "ファイルサイズは2MB以下にしてください", success: false }
+  }
+  // file.type はクライアント申告値（偽装可能）のため、実バイト列のマジックナンバーで検証する
+  if (!(await isValidImageFile(file, file.type))) {
+    return { error: "ファイルの内容が画像形式として不正です", success: false }
   }
 
   const extMap: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" }

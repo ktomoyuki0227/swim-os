@@ -32,7 +32,7 @@ export async function exportSessionRegistrations(sessionId: string) {
 
   if (!registrations) return { error: "参加者情報の取得に失敗しました" }
 
-  const fields: CompetitionField[] = (session.competition_fields as CompetitionField[]) || []
+  const fields: CompetitionField[] = (session.competition_fields as unknown as CompetitionField[]) || []
 
   // CSV生成
   const headers = ["名前", "メンバー/ゲスト", "支払方法", "支払状態"]

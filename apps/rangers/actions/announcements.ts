@@ -103,8 +103,8 @@ export async function getAnnouncementReads(announcementId: string) {
 
   if (!announcement) return { data: [] }
 
-  const admin2 = createAdminClient()
-  if (!(await isTeamAdmin(admin2, announcement.team_id, user.id))) return { error: "権限がありません" }
+  const readAdmin = createAdminClient()
+  if (!(await isTeamAdmin(readAdmin, announcement.team_id, user.id))) return { error: "権限がありません" }
 
   const { data, error } = await supabase
     .from("announcement_reads")
@@ -140,8 +140,8 @@ export async function getUnreadAnnouncementCount() {
   if (!user) return { count: 0 }
 
   // 自分が所属するチームのお知らせ（team_members は RLS バイパスが必要）
-  const admin3 = createAdminClient()
-  const { data: memberships } = await admin3
+  const countAdmin = createAdminClient()
+  const { data: memberships } = await countAdmin
     .from("team_members")
     .select("team_id")
     .eq("swimmer_id", user.id)

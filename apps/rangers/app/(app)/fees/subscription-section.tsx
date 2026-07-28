@@ -1,11 +1,12 @@
 "use client"
 
-import { useTransition } from "react"
+import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { startMonthlySubscription, cancelMonthlySubscription } from "@/actions/subscriptions"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { useToast } from "@/components/toast"
 
 interface MonthlyMember {
@@ -61,6 +62,7 @@ function MemberSubscriptionCard({
   showToast: (msg: string, type: "success" | "error") => void
 }) {
   const [isPending, startTransition] = useTransition()
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false)
   const name = member.swimmer?.name || "不明"
   const status = member.subscription_status
 
@@ -77,7 +79,7 @@ function MemberSubscriptionCard({
   }
 
   const handleCancel = () => {
-    if (!confirm(`${name} の月謝 Subscription をキャンセルしますか？（期間終了後に停止します）`)) return
+    setShowCancelConfirm(false)
     startTransition(async () => {
       const res = await cancelMonthlySubscription(teamId, member.swimmer_id)
       if (res.error) {
@@ -133,7 +135,7 @@ function MemberSubscriptionCard({
           <Button
             size="sm"
             variant="outline"
-            onClick={handleCancel}
+            onClick={() => setShowCancelConfirm(true)}
             disabled={isPending}
             className="rounded-full border-[#c0392b] text-[#c0392b] hover:bg-[#c0392b]/10 shrink-0"
             style={{ minHeight: "36px" }}
@@ -142,6 +144,18 @@ function MemberSubscriptionCard({
           </Button>
         )}
       </CardContent>
+
+      <ConfirmDialog
+        open={showCancelConfirm}
+        title={`${name} の月謝 Subscription をキャンセルしますか？`}
+        description="期間終了後に停止します。"
+        confirmLabel="キャンセルする"
+        cancelLabel="戻る"
+        isLoading={isPending}
+        loadingLabel="処理中..."
+        onConfirm={handleCancel}
+        onCancel={() => setShowCancelConfirm(false)}
+      />
     </Card>
   )
 }

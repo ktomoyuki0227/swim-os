@@ -1,0 +1,270 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import { loadStripe, type Stripe } from "@stripe/stripe-js"
+import {
+  Elements,
+  CardNumberElement,
+  CardExpiryElement,
+  CardCvcElement,
+  useStripe,
+  useElements,
+} from "@stripe/react-stripe-js"
+import { Button } from "@/components/ui/button"
+
+// Stripe.js は外部スクリプト(js.stripe.com)を読み込むため、
+// このモジュールが実際にロードされた後、初回利用時にのみ loadStripe() を呼び出す
+// (モジュールトップレベルでの即時実行を避ける)
+let stripePromiseCache: Promise<Stripe | null> | null = null
+function getStripePromise(): Promise<Stripe | null> | null {
+  if (stripePromiseCache) return stripePromiseCache
+  if (!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) return null
+  stripePromiseCache = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
+  return stripePromiseCache
+}
+
+const IS_TEST_MODE = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY?.startsWith("pk_test_") ?? false
+
+const TEST_CARDS = [
+  { number: "4242 4242 4242 4242", result: "成功", variant: "success" as const, pmId: "pm_card_visa" },
+  { number: "4000 0000 0000 9995", result: "残高不足エラー", variant: "warning" as const, pmId: "pm_card_chargeDeclinedInsufficientFunds" },
+  { number: "4000 0000 0000 0002", result: "拒否", variant: "error" as const, pmId: "pm_card_chargeDeclined" },
+]
+
+const stripeInputStyle = {
+  base: {
+    fontSize: "15px",
+    color: "#1a2332",
+    fontFamily: "system-ui, sans-serif",
+    "::placeholder": { color: "#64748b" },
+  },
+  invalid: { color: "#c0392b" },
+}
+
+// ── Stripe カードセットアップフォーム ────────────────────────────────────────
+function CardSetupForm({
+  clientSecret,
+  onSuccess,
+}: {
+  clientSecret: string
+  onSuccess: (paymentMethodId: string) => void
+}) {
+  const stripe = useStripe()
+  const elements = useElements()
+  const [formError, setFormError] = useState<string | null>(null)
+  const [submitting, setSubmitting] = useState(false)
+  const [cardComplete, setCardComplete] = useState({ number: false, expiry: false, cvc: false })
+  const [showTestCards, setShowTestCards] = useState(false)
+
+  const quickUseTestCard = async (pmId: string) => {
+    if (!stripe) return
+    setSubmitting(true)
+    setFormError(null)
+    const { setupIntent, error } = await stripe.confirmCardSetup(clientSecret, {
+      payment_method: pmId,
+    })
+    if (error) {
+      setFormError(error.message ?? "テストカードの確認に失敗しました")
+      setSubmitting(false)
+      return
+    }
+    if (setupIntent?.payment_method) {
+      const resolvedId =
+        typeof setupIntent.payment_method === "string"
+          ? setupIntent.payment_method
+          : setupIntent.payment_method.id
+      onSuccess(resolvedId)
+    } else {
+      setFormError("お支払い方法の取得に失敗しました。もう一度お試しください。")
+    }
+    setSubmitting(false)
+  }
+
+  const allComplete = cardComplete.number && cardComplete.expiry && cardComplete.cvc
+
+  const handleSubmit = async () => {
+    if (!stripe || !elements) return
+    setSubmitting(true)
+    setFormError(null)
+
+    const cardNumberElement = elements.getElement(CardNumberElement)
+    if (!cardNumberElement) {
+      setFormError("カード情報を入力してください")
+      setSubmitting(false)
+      return
+    }
+
+    const { setupIntent, error } = await stripe.confirmCardSetup(clientSecret, {
+      payment_method: { card: cardNumberElement },
+    })
+
+    if (error) {
+      setFormError(error.message ?? "カード情報の確認に失敗しました")
+      setSubmitting(false)
+      return
+    }
+
+    if (setupIntent?.payment_method) {
+      const pmId =
+        typeof setupIntent.payment_method === "string"
+          ? setupIntent.payment_method
+          : setupIntent.payment_method.id
+      onSuccess(pmId)
+    } else {
+      setFormError("お支払い方法の取得に失敗しました。もう一度お試しください。")
+    }
+    setSubmitting(false)
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="space-y-3">
+        <div className="space-y-1">
+          <label className="text-xs font-medium text-[#475569]">カード番号</label>
+          <div className="rounded-lg border border-[#dce3ea] bg-white px-3 py-3">
+            <CardNumberElement
+              options={{ style: stripeInputStyle }}
+              onChange={(e) => setCardComplete((prev) => ({ ...prev, number: e.complete }))}
+            />
+          </div>
+        </div>
+        <div className="flex gap-3">
+          <div className="flex-1 space-y-1">
+            <label className="text-xs font-medium text-[#475569]">有効期限</label>
+            <div className="rounded-lg border border-[#dce3ea] bg-white px-3 py-3">
+              <CardExpiryElement
+                options={{ style: stripeInputStyle }}
+                onChange={(e) => setCardComplete((prev) => ({ ...prev, expiry: e.complete }))}
+              />
+            </div>
+          </div>
+          <div className="flex-1 space-y-1">
+            <label className="text-xs font-medium text-[#475569]">セキュリティコード</label>
+            <div className="rounded-lg border border-[#dce3ea] bg-white px-3 py-3">
+              <CardCvcElement
+                options={{ style: stripeInputStyle }}
+                onChange={(e) => setCardComplete((prev) => ({ ...prev, cvc: e.complete }))}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+      {formError && (
+        <p className="rounded-lg border border-[#c0392b]/20 bg-[#fdecea] px-3 py-2 text-xs text-[#c0392b]">
+          {formError}
+        </p>
+      )}
+
+      {IS_TEST_MODE && (
+        <div className="border-t border-[#dce3ea] pt-3">
+          <button
+            type="button"
+            onClick={() => setShowTestCards((v) => !v)}
+            className="w-full text-center text-xs text-[#64748b] transition-colors hover:text-[#475569]"
+          >
+            {showTestCards ? "▲ 閉じる" : "▼ テストカード（開発用）"}
+          </button>
+          {showTestCards && (
+            <div className="mt-3 space-y-2 rounded-lg bg-[#f2f7fa] p-3">
+              <p className="text-xs font-medium text-[#1a2332]">テストカード（クリックで即時登録）</p>
+              <div className="flex flex-col gap-1.5">
+                {TEST_CARDS.map((card) => (
+                  <button
+                    key={card.number}
+                    type="button"
+                    onClick={() => quickUseTestCard(card.pmId)}
+                    disabled={submitting}
+                    className="rounded-lg border border-[#dce3ea] bg-white px-3 py-2 text-left transition-colors hover:border-[#005F8C] hover:bg-white disabled:opacity-50"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-mono text-xs font-semibold text-[#1a2332]">{card.number}</span>
+                      <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-xs font-medium ${
+                        card.variant === "success" ? "bg-[#eaf7f0] text-[#0f8a4f]"
+                        : card.variant === "warning" ? "bg-orange-100 text-orange-700"
+                        : "bg-[#fdecea] text-[#c0392b]"
+                      }`}>
+                        {card.result}
+                      </span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      <Button
+        onClick={handleSubmit}
+        disabled={!stripe || submitting || !allComplete}
+        className="w-full rounded-full bg-[#005F8C] text-white hover:bg-[#004E73] disabled:opacity-40"
+        style={{ minHeight: "44px" }}
+      >
+        {submitting ? "確認中..." : "お支払い方法を登録して完了"}
+      </Button>
+    </div>
+  )
+}
+
+export function StripeStep({ onSuccess }: { onSuccess: (paymentMethodId: string) => void }) {
+  const stripePromise = getStripePromise()
+  const [clientSecret, setClientSecret] = useState<string | null>(null)
+  const [loading, setLoading] = useState(!!stripePromise)
+  const [fetchError, setFetchError] = useState(!stripePromise)
+
+  const runFetchIntent = () => {
+    fetch("/api/stripe/setup-intent", { method: "POST" })
+      .then((res) => {
+        if (!res.ok) throw new Error("server error")
+        return res.json()
+      })
+      .then((data: { clientSecret?: string }) => {
+        if (data.clientSecret) setClientSecret(data.clientSecret)
+        else setFetchError(true)
+      })
+      .catch(() => setFetchError(true))
+      .finally(() => setLoading(false))
+  }
+
+  const retryFetchIntent = () => {
+    setLoading(true)
+    setFetchError(false)
+    runFetchIntent()
+  }
+
+  useEffect(() => {
+    if (!stripePromise) return
+    runFetchIntent()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-10">
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#005F8C] border-t-transparent" />
+      </div>
+    )
+  }
+
+  if (fetchError || !stripePromise || !clientSecret) {
+    return (
+      <div className="space-y-4">
+        <p className="rounded-lg border border-[#c0392b]/20 bg-[#fdecea] px-4 py-3 text-sm text-[#c0392b]">
+          お支払い情報の読み込みに失敗しました。再度お試しください。
+        </p>
+        <Button onClick={retryFetchIntent} className="w-full rounded-full bg-[#005F8C] text-white hover:bg-[#004E73]" style={{ minHeight: "44px" }}>
+          再試行
+        </Button>
+      </div>
+    )
+  }
+
+  return (
+    <Elements
+      stripe={stripePromise}
+      options={{ clientSecret, locale: "ja", appearance: { theme: "stripe", variables: { colorPrimary: "#005F8C", fontFamily: "system-ui, sans-serif" } } }}
+    >
+      <CardSetupForm clientSecret={clientSecret} onSuccess={onSuccess} />
+    </Elements>
+  )
+}

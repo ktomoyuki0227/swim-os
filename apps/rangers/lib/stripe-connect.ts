@@ -96,3 +96,13 @@ export function calculateFees(
   const platformFee = Math.floor((amount * feePercent) / 100)
   return { platformFee, netAmount: amount - platformFee }
 }
+
+/**
+ * チームが Stripe Connect での送金を受け取れる状態かどうかを判定する。
+ * Connected Account が作成済みかつオンボーディングが完了している場合のみ true。
+ */
+export function hasStripeConnect(
+  team: { stripe_account_id: string | null; stripe_onboarding_completed: boolean | null } | null | undefined
+): boolean {
+  return !!(team?.stripe_account_id && team?.stripe_onboarding_completed)
+}
