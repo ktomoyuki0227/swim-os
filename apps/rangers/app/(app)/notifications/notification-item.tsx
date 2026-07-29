@@ -4,6 +4,7 @@ import Link from "next/link"
 import type React from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { markAsRead } from "@/actions/notifications"
+import { useToast } from "@/components/toast"
 import type { Notification } from "@/types/database"
 
 const typeIcons: Record<string, React.ReactNode> = {
@@ -125,9 +126,14 @@ interface Props {
 }
 
 export function NotificationItem({ notification }: Props) {
+  const { showToast } = useToast()
+
   const handleClick = () => {
     if (!notification.is_read) {
-      markAsRead(notification.id).catch(() => {})
+      // ナビゲーションはブロックしない（既読化は裏で行い、失敗時のみ通知する）
+      markAsRead(notification.id).then((result) => {
+        if (result?.error) showToast(result.error, "error")
+      })
     }
   }
 

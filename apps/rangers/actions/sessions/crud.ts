@@ -224,6 +224,7 @@ export async function getTeamSessions(teamId: string) {
     .select("*")
     .eq("team_id", teamId)
     .order("scheduled_at", { ascending: true })
+    .limit(500) // 長期運用チームでの無制限クエリを防ぐ安全上限
 
   if (error) return { data: [] }
   return { data: data || [] }
@@ -239,9 +240,14 @@ export async function getPublicSessions(filters?: {
 }) {
   const supabase = await createClient()
 
+  // 外部公開セッションはログイン済みなら誰でも閲覧できるため、
+  // target_members / course_rules / competition_fields / coach_id / content 等の
+  // 内部限定カラムを含めず、一覧表示に必要なカラムのみ返す。
   let query = supabase
     .from("practice_sessions")
-    .select("*, team:teams(id, name, avatar_url)")
+    .select(
+      "id, team_id, title, type, scheduled_at, location, guest_price, target_tags, session_status, status, is_external, team:teams(id, name, avatar_url)"
+    )
     .eq("is_external", true)
     .eq("status", "published")
     .eq("session_status", "open")

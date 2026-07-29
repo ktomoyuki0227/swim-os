@@ -12,6 +12,7 @@ import { mapWithConcurrency } from "@/lib/utils"
 import { formatSessionDateJa } from "@/lib/format-date"
 import { notifyUser, notifyUsers } from "@/lib/notifications"
 import { chargeSessionRegistrationStripe, refundSessionRegistrationStripe } from "@/lib/stripe-payment-helpers"
+import { competitionEntrySchema } from "@/lib/validations"
 
 // confirmSession/cancelSession でのStripe決済・返金の同時実行数。参加者数が多い
 // セッションでもサーバーレス関数のタイムアウトに収まるよう、完全な直列処理を避ける。
@@ -364,6 +365,12 @@ export async function registerForSession(
   paymentMethod: PaymentMethod,
   competitionEntry?: Record<string, unknown>
 ) {
+  if (competitionEntry !== undefined) {
+    const parsed = competitionEntrySchema.safeParse(competitionEntry)
+    if (!parsed.success) return { error: "入力値が不正です" }
+    competitionEntry = parsed.data
+  }
+
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")

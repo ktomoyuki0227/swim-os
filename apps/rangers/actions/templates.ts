@@ -3,10 +3,14 @@
 import { createClient, createAdminClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
-import { templateUpdateSchema } from "@/lib/validations"
+import { templateSchema, templateUpdateSchema } from "@/lib/validations"
 import { isTeamAdmin } from "@/lib/auth/require-team-admin"
 
 export async function saveAsTemplate(sessionId: string, name: string) {
+  const parsed = templateSchema.safeParse({ name })
+  if (!parsed.success) return { error: "テンプレート名を確認してください" }
+  name = parsed.data.name
+
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")

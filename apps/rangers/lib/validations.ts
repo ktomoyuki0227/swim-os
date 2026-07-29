@@ -214,6 +214,13 @@ export const sessionUpdateSchema = z.object({
   { message: "最小催行人数は最大参加人数以下にしてください", path: ["min_participants"] }
 )
 
+// セッション参加登録時の競技エントリー情報（キー=フィールドID、値=入力文字列）。
+// キー数・値の長さに上限を設け、任意サイズのJSONがそのままjsonbカラムへ
+// 書き込まれるのを防ぐ（Server Actionは型だけでは境界を守れないため）。
+export const competitionEntrySchema = z
+  .record(z.string().max(100), z.string().max(500))
+  .refine((entry) => Object.keys(entry).length <= 30, "入力項目が多すぎます")
+
 export const messageSchema = z.object({
   receiver_id: z.uuid("宛先が不正です"),
   content: z.string().min(1, "メッセージを入力してください").max(2000, "メッセージは2000文字以内で入力してください"),

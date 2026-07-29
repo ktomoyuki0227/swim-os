@@ -1,5 +1,68 @@
 # 作業ステータス
-最終更新: 2026-07-18
+最終更新: 2026-07-29
+
+---
+
+## 進行中: Rangers 5回目全体レビュー（2026-07-29）
+
+ともくんの依頼で、フロントエンド・バックエンド・DB・Stripe決済・セキュリティの全体レビューを実施中。
+過去4回のレビュー（commit 30ebe10 まで）で CRITICAL/HIGH/MEDIUM/LOW を多数修正済み。今回は5回目。
+
+**トークン制限対策**: 長時間セッションになる想定のため、区切りごとにこのファイルを更新している。
+セッションが制限で止まった場合は、このセクションを読んで続きから再開すること。
+
+### すでに完了
+
+- Supabase advisors（security + performance）を確認
+- `public_profiles` ビューに `deleted_at is null` フィルタを追加（退会済みユーザーのプロフィールが公開され続けるバグを修正）
+  - migration: `supabase/migrations/00056_fix_public_profiles_and_revoke_grants.sql`
+  - 本番DBに適用済み（`mcp__supabase__apply_migration` で実行・確認済み）
+- 不要な RPC 実行権限を revoke（多層防御）
+  - `get_my_team_ids` / `get_my_admin_team_ids` / `get_my_profile_role`: anon からの EXECUTE を revoke（authenticated には残す。RLSポリシー内部で使われているため必要）
+  - `handle_new_user` / `update_instructor_rating`（トリガー専用関数）: anon・authenticated 両方から revoke（トリガー発火自体には影響しない）
+  - 同じmigrationファイルに含む・適用済み
+
+- `practice_sessions` の RLS ポリシー `sessions_select_member` に `to authenticated` が無く、匿名（anon key）が外部公開セッションの全カラム（target_members・course_rules・competition_fields・coach_id等の内部情報）を直接REST APIで読み取れる状態だった（teamsのinvite_code漏洩と同じ脆弱性パターン）。修正済み。
+  - migration: `supabase/migrations/00057_fix_sessions_rls_anon_leak.sql`（本番DB適用済み）
+  - `actions/sessions/crud.ts` の `getPublicSessions()` も `select("*")` → 安全なカラムのみのwhitelistに変更（ログイン済みユーザー全体への over-fetch 対策）
+  - `/search/sessions` `/dashboard` は元々未ログインではアクセス不可（middleware で `/login` リダイレクト）だったため、アプリ側の挙動への影響はなし
+
+### 実行中（バックグラウンドエージェント、レポートのみ・編集なし）
+
+4つのレビューエージェントを並列実行中:
+1. security-reviewer: Server Actions・API Routes・認証・Stripe決済のOWASPセキュリティ監査
+2. database-reviewer: 全61件のRLSポリシー・SECURITY DEFINER関数・Storageバケットポリシーの網羅監査
+3. typescript-reviewer: actions/・app/の型安全性・レースコンディション・エラーハンドリング監査
+4. code-reviewer: フロントエンドの二重送信防止・useEffect依存配列・アクセシビリティ監査
+
+### 完了 ✅（2026-07-29）
+
+4エージェント（security/database/typescript/code-reviewer）全て完了。CRITICAL 0件、新規HIGH 1件（下記・修正済み）、MEDIUM 9件（全修正済み）、LOW 数件（うち1件は既知のTODO・別対応）。
+
+**HIGH（修正済み）**
+- `practice_sessions` の RLS ポリシーに `to authenticated` が無く、匿名ユーザーがREST API経由で外部公開セッションの内部限定カラム(target_members/course_rules/coach_id等)を直接取得可能だった（teamsのinvite_code漏洩と同型のバグ）。
+  - migration `00057_fix_sessions_rls_anon_leak.sql` + `actions/sessions/crud.ts` の `getPublicSessions()` をカラムwhitelist化
+
+**DB migration 適用済み（本番反映済み、jeosqnkeyiwapeeujrml）**
+- `00056`: `public_profiles` に `deleted_at is null` 追加、不要RPCのanon/authenticated実行権限をrevoke
+- `00057`: `practice_sessions` の匿名読み取り漏洩を修正
+- `00058`: search_path強化(get_my_team_ids/get_my_admin_team_ids)、レガシーテーブル(lessons/bookings/reviews/schedule_requests)のanon/authenticated権限をrevoke、join_requestsにteam_idインデックス追加、profiles UPDATEポリシーに`to authenticated`明示
+
+**コード修正（型チェック・lintともにクリーン確認済み）**
+- `actions/teams.ts`: `uploadTeamImage`のtype引数をホワイトリスト化(パス生成への任意文字列混入を防止)+レート制限追加、`updateMembershipType`に値検証追加
+- `actions/profile.ts`: `uploadAvatar`にレート制限追加
+- `actions/sessions/crud.ts`: `getTeamSessions`に`.limit(500)`追加
+- `actions/sessions/payments.ts`: `registerForSession`の`competitionEntry`をZodスキーマ検証(`lib/validations.ts`に`competitionEntrySchema`新設)
+- `actions/templates.ts`: `saveAsTemplate`の`name`を既存の`templateSchema`で検証するよう配線
+- 通知既読処理3箇所(`mark-all-read-button.tsx`/`mark-read-button.tsx`/`notification-item.tsx`)でエラーを握りつぶさずtoast表示するよう修正
+
+**未着手・別対応**
+- 特定商取引法ページのプレースホルダーTODO（ヒュドール側からの事業者情報待ち、既知）
+- Supabase Auth「漏洩パスワード保護」が無効（Dashboard設定、コード変更不要 — ともくんに有効化を推奨）
+
+**次にやること**
+- `git status`で変更ファイルを確認 → ともくんの確認後にcommit（このセッションではcommitしていない）
+- Supabase Dashboardで「Leaked Password Protection」を有効化する（Auth設定）
 
 ---
 

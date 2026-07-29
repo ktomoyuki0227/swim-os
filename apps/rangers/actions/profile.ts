@@ -3,6 +3,7 @@
 import { createClient, createAdminClient } from "@/lib/supabase/server"
 import { profilePartialSchema } from "@/lib/validations"
 import { isValidImageFile } from "@/lib/file-validation"
+import { isRateLimited } from "@/lib/rate-limit"
 import { revalidatePath } from "next/cache"
 
 export interface ProfileActionState {
@@ -17,6 +18,9 @@ export interface AvatarActionState {
   avatarUrl?: string
 }
 
+const AVATAR_UPLOAD_RATE_LIMIT = 10
+const AVATAR_UPLOAD_RATE_WINDOW_MS = 60 * 1000
+
 export async function uploadAvatar(
   formData: FormData
 ): Promise<AvatarActionState> {
@@ -24,6 +28,10 @@ export async function uploadAvatar(
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: "ログインが必要です", success: false }
+
+  if (isRateLimited(`upload_avatar:${user.id}`, AVATAR_UPLOAD_RATE_LIMIT, AVATAR_UPLOAD_RATE_WINDOW_MS)) {
+    return { error: "アップロードが多すぎます。しばらく時間をおいてから再度お試しください", success: false }
+  }
 
   const file = formData.get("avatar") as File | null
   if (!file || file.size === 0) return { error: "ファイルを選択してください", success: false }

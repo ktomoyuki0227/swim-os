@@ -11,9 +11,13 @@ import type { Database } from "@/types/database-generated"
 import { isTeamAdmin, getActiveTeamAdminIds } from "@/lib/auth/require-team-admin"
 import { notifyUser, notifyUsers } from "@/lib/notifications"
 import { syncActiveSubscriptionsToNewPrice } from "@/actions/subscriptions"
+import { isRateLimited } from "@/lib/rate-limit"
 
 // PostgRESTの .not("id", "in", "(...)")  に渡す文字列結合前のUUID形式バリデーション用
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+const TEAM_IMAGE_UPLOAD_RATE_LIMIT = 10
+const TEAM_IMAGE_UPLOAD_RATE_WINDOW_MS = 60 * 1000
 
 export async function uploadTeamImage(
   formData: FormData
@@ -21,6 +25,10 @@ export async function uploadTeamImage(
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: "ログインが必要です" }
+
+  if (isRateLimited(`upload_team_image:${user.id}`, TEAM_IMAGE_UPLOAD_RATE_LIMIT, TEAM_IMAGE_UPLOAD_RATE_WINDOW_MS)) {
+    return { error: "アップロードが多すぎます。しばらく時間をおいてから再度お試しください" }
+  }
 
   const file = formData.get("file") as File | null
   if (!file || file.size === 0) return { error: "ファイルを選択してください" }
@@ -33,7 +41,8 @@ export async function uploadTeamImage(
     return { error: "ファイルの内容が画像形式として不正です" }
   }
 
-  const type = (formData.get("type") as string) || "cover" // "cover" | "icon"
+  // type はストレージオブジェクトキーに直接使うため、任意文字列を受け付けず固定の2値に限定する
+  const type = formData.get("type") === "icon" ? "icon" : "cover"
   const ext = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg"
   const filePath = `${user.id}/${type}-${Date.now()}.${ext}`
 
@@ -444,6 +453,9 @@ export async function updateMembershipType(
   teamMemberId: string,
   type: MembershipType
 ) {
+  const validMembershipTypes: MembershipType[] = ["annual", "monthly", "point_card"]
+  if (!validMembershipTypes.includes(type)) return { error: "入力値が不正です" }
+
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")

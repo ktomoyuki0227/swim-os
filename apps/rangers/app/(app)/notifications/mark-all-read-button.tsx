@@ -4,15 +4,21 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { markAllAsRead } from "@/actions/notifications"
 import { Button } from "@/components/ui/button"
+import { useToast } from "@/components/toast"
 
 export function MarkAllReadButton() {
   const router = useRouter()
+  const { showToast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
 
   const handleClick = async () => {
     setIsLoading(true)
-    await markAllAsRead()
-    router.refresh()
+    const result = await markAllAsRead()
+    if (result.error) {
+      showToast(result.error, "error")
+    } else {
+      router.refresh()
+    }
     setIsLoading(false)
   }
 
