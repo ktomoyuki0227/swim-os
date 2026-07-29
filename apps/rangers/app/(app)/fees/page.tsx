@@ -123,6 +123,7 @@ export default async function FeesPage({ searchParams }: FeesPageProps) {
                   回数券会員 ({(stampMembers || []).length}名)
                 </h2>
                 <StampSection
+                  teamId={selectedTeamId}
                   pointCardCount={teamInfo?.point_card_count ?? 10}
                   members={stampMembers || []}
                 />

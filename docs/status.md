@@ -66,6 +66,72 @@
 
 ---
 
+## 進行中: Rangers 6回目全体レビュー（週次トークン制限で一度中断・再開、2026-07-29）
+
+5回目レビューの成果はcommit `5d36794`で本番反映済み。今回はフロントエンド・バックエンド・DB・Stripe・依存関係を含む網羅レビュー（6回目）。時間をかけて丁寧に実施中。
+
+### 完了した修正（本番DB適用済み・マイグレーション00059〜00061）
+
+1. **依存関係**: `sharp`(Next.js画像最適化が実際に使うランタイム依存)にlibvips由来のHIGH脆弱性 → pnpm overrideで`0.35.3`に固定・解消。`remotion`系・`shadcn`はランタイム未使用のCLIツールと確認しdevDependenciesに移動。postcss由来の残り4件はNext.js内部依存でこちら側では対応不可(Next側のパッチ待ち)。
+2. **DB: 決済テーブルの未使用書き込みRLSを遮断**(migration `00059`): `session_registrations`/`membership_fees`/`stamp_purchases`のINSERT/UPDATE/DELETEポリシーがadmin役割に開放されていたが、コード全文grepで検証した結果アプリのどの経路もこれらを使わず全てadminClient(service_role)またはRPC経由と確認。認証済みJWTが漏洩した場合の決済状態改ざん経路を遮断。
+3. **DB: Storageバケット制約**: `teams`バケットにfile_size_limit/allowed_mime_typesが未設定(無制限)だったため、コード側検証(5MB, image/jpeg|png|webp)と一致させて設定。
+4. **DB: CASCADE削除の是正**(migration `00060`): `stamp_purchases.team_id`のON DELETE CASCADEをNO ACTIONに変更(membership_fees/transfer_recordsと統一)。現状チーム物理削除経路は存在しないため実害はないが将来の地雷を解消。
+5. **コード: `deleteSession()`のガード漏れ修正**(`actions/sessions/crud.ts`): キャンセル済みだが決済履歴が残る登録(現金決済後キャンセル等)がpractice_sessionsのCASCADEで削除履歴ごと消え去る経路を発見・修正。決済履歴が残る登録がある場合は削除をブロックするよう変更。
+6. **DB: 5回目レビューでのrevoke漏れを是正**(migration `00061`): `get_my_team_ids`等5関数について、anon/authenticatedロールから個別にREVOKEしたつもりが、Postgresのデフォルト`PUBLIC`疑似ロールへのEXECUTE権限が残っており実質的に無効化できていなかった(`REVOKE ... FROM anon`は`PUBLIC`権限に影響しないため)。`FROM PUBLIC`で再revokeし、必要なロールのみ再grant。Supabase advisorで解消を確認済み。
+
+### 完了 ✅（2026-07-29）
+
+5エージェント(security/database/typescript/code-reviewer相当×2巡+architect+Stripe深掘り)+自分によるDBライブ監査、全て完了。CRITICAL 0件。実装した修正は以下。
+
+**Stripe決済（HIGH 3件・MEDIUM 1件・LOW 1件を修正）**
+- Connect口座が後から無効化された場合に決済がConnectなしへ静かにフォールバックする問題 → `charges_enabled`がtrue→falseに変化した際に管理者へ能動的に通知するよう修正(`app/api/stripe/webhook/route.ts`)
+- `charge.dispute.created`(チャージバック)を一切ハンドリングしていなかった → 検知・`payment_status="disputed"`への更新・管理者通知を追加(DB: `session_registrations_payment_status_check`に`disputed`を追加, migration `00062`)
+- `charge.refunded`(Stripeダッシュボード等アプリ外での返金)がDBに同期されなかった → 同期ハンドラ追加
+- `startMonthlySubscription`にidempotencyKeyが無く、タイムアウト後の再試行で二重サブスクリプション(二重の月額課金)が作られうる経路があった → `idempotencyKey`追加
+- セッション参加費免除判定が`membership_type`のみを見ており、Stripeサブスクが`past_due`/`unpaid`等に陥った月謝会員も免除され続けていた → `subscription_status`チェックを追加
+- Invoice期間のYYYY-MM変換がサーバーのローカルタイムゾーン(UTC)基準だった(JST深夜0時台の請求が前月扱いになりうる) → JST基準の変換に修正
+
+**DB(migration 00059〜00062、本番適用済み)**
+- 決済テーブル(`session_registrations`/`membership_fees`/`stamp_purchases`)の未使用書き込みRLSを遮断(全経路がadminClient/RPC経由と検証済み)
+- `teams`ストレージバケットのfile_size_limit/allowed_mime_typesを設定
+- `stamp_purchases.team_id`のON DELETE CASCADEをNO ACTIONに変更(将来のチーム削除機能実装時の決済履歴消失を予防)
+- `deleteSession()`のガード漏れ修正: 現金決済後キャンセルされた登録の決済履歴がCASCADEで消える経路を発見・修正(`actions/sessions/crud.ts`)
+- **5回目レビューでのrevoke漏れを是正**: `get_my_team_ids`等5関数、anon個別revokeのみでは`PUBLIC`疑似ロール経由のEXECUTE権限が残っていた。`FROM PUBLIC`で再revoke。
+
+**依存関係**
+- `sharp`(Next.js画像最適化の実行時依存)のHIGH脆弱性(libvips由来)をpnpm overrideで解消(`0.35.3`)
+- `remotion`系・`shadcn`はランタイム未使用と確認しdevDependenciesに移動
+
+**フロントエンド(HIGH 3件・MEDIUM多数を修正)**
+- アクセシビリティ: フォームのlabel/id関連付け漏れ、フォーカスリング喪失(複数箇所)、アイコンのみボタンのaria-label欠如 → 修正
+- `app/(app)/error.tsx`新設(エラー時にAppShell/ナビが消える問題を解消)
+- 不要な`"use client"`削除、`<img>` → `next/image`置き換え(3箇所)、デッドコード削除(`session-tabs.tsx`)
+
+**アーキテクチャ(architect指摘のうち実装可能なものを対応)**
+- `lib/supabase/server.ts`にadminClient使用ルール(RLS自己参照対策)をコメントで文書化 + README.mdにも記載
+- `instrumentation.ts`新設: 本番環境でStripe/Supabase必須環境変数が欠けている場合に起動時点で失敗するよう変更(従来はリクエスト処理中に分かりにくく失敗)
+- キャンセル待ちリスト通知のN+1(`cancelRegistration`)をrole別2グループの一括INSERTに変更
+- `markCashPaid`の管理者チェックを共通ヘルパー`isTeamAdmin`に統一
+
+**未実装(記録のみ・要検討)**
+- 構造化エラー監視(Sentry等)の導入 — 外部サービス連携のためユーザー確認が必要と判断し実装せず。Webhookハンドラの例外が本番で誰にも気づかれないリスクは残る
+- WCAG contrast修正(status-warningトークンの色) — DESIGN.mdのカラートークン変更を伴うためユーザー確認が必要と判断
+- 見出し構造(h1)欠如ページ9件・loading.tsx欠如6ルート — 未着手(バックログ)
+- 通知コピーのカタログ化、Zodバリデーション適用ルールの明文化 — 未着手(バックログ、実害小)
+
+**検証**: 全修正後に `tsc --noEmit` / `eslint` / `next build` を実行しエラーゼロを確認済み。
+
+### README.md更新
+デフォルトのcreate-next-app雛形のままだったREADME.mdを、プロジェクト概要・技術スタック・環境変数一覧・
+データアクセス規約(adminClient使用ルール)・マイグレーション手順を含む内容に全面刷新。
+
+### 次にやること
+- ともくんの確認後にcommit・push
+- Supabase Dashboardで「Leaked Password Protection」を有効化(未対応のまま)
+- Sentry等の構造化エラー監視導入の要否をともくんと相談
+
+---
+
 ## 現在のフェーズ
 
 | アプリ | フェーズ | 状態 |

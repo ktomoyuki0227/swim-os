@@ -189,15 +189,21 @@ export async function deleteSession(sessionId: string) {
 
   if (!(await isTeamAdmin(adminClient, session.team_id, user.id))) return { error: "権限がありません" }
 
-  // 参加者がいるか確認
+  // 参加者がいるか確認。session_registrations は practice_sessions への
+  // ON DELETE CASCADE のため、ここでブロックしないと決済履歴(charged_amount /
+  // stripe_payment_intent_id等)がキャンセル済み登録ごと消え去ってしまう。
+  // 現在参加中の登録に加え、キャンセル済みでも決済履歴が残る登録があれば削除を止める。
   const { data: registrations } = await adminClient
     .from("session_registrations")
-    .select("id")
+    .select("id, cancelled_at, payment_status, charged_amount")
     .eq("session_id", sessionId)
-    .is("cancelled_at", null)
 
-  if (registrations && registrations.length > 0) {
-    return { error: `${registrations.length}名が参加登録済みです。先にセッションを中止してください。` }
+  const blockingRegistrations = (registrations || []).filter(
+    (r) => !r.cancelled_at || r.charged_amount != null || r.payment_status === "paid" || r.payment_status === "refunded"
+  )
+
+  if (blockingRegistrations.length > 0) {
+    return { error: `${blockingRegistrations.length}名が参加登録済み、または決済履歴が残っています。先にセッションを中止してください。` }
   }
 
   const { error } = await adminClient

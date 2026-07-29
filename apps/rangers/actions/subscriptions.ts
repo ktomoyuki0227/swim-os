@@ -168,22 +168,27 @@ export async function startMonthlySubscription(teamId: string, swimmerId: string
   }
 
   // Stripe Subscription 作成
+  // idempotencyKey に team_member_id を使い、タイムアウト等でレスポンスが失われた際の
+  // 再試行(admin再クリック)で二重にSubscriptionが作られる(=二重の月額課金)のを防ぐ。
   let subscription: Awaited<ReturnType<typeof stripe.subscriptions.create>>
   try {
-    subscription = await stripe.subscriptions.create({
-      customer: customerId,
-      items: [{ price: priceId }],
-      payment_behavior: "default_incomplete",
-      payment_settings: {
-        payment_method_types: ["card"],
-        save_default_payment_method: "on_subscription",
+    subscription = await stripe.subscriptions.create(
+      {
+        customer: customerId,
+        items: [{ price: priceId }],
+        payment_behavior: "default_incomplete",
+        payment_settings: {
+          payment_method_types: ["card"],
+          save_default_payment_method: "on_subscription",
+        },
+        metadata: {
+          team_id: teamId,
+          swimmer_id: swimmerId,
+          team_member_id: member.id,
+        },
       },
-      metadata: {
-        team_id: teamId,
-        swimmer_id: swimmerId,
-        team_member_id: member.id,
-      },
-    })
+      { idempotencyKey: `subscription-create-${member.id}` }
+    )
   } catch (err) {
     console.error("[subscriptions] Stripe subscription create failed:", err)
     return { error: "Subscription の作成に失敗しました。カードが登録されているか確認してください。" }

@@ -388,8 +388,11 @@ export function EditSessionForm({ session, teamName }: EditSessionFormProps) {
           <div className="flex items-center gap-3">
             <button
               type="button"
+              role="switch"
+              aria-checked={form.allow_point_card}
+              aria-label="回数券払いを許可"
               onClick={() => set("allow_point_card", !form.allow_point_card)}
-              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors focus:outline-none ${form.allow_point_card ? "bg-[#005F8C]" : "bg-[#dce3ea]"}`}
+              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#005F8C] focus-visible:ring-offset-1 ${form.allow_point_card ? "bg-[#005F8C]" : "bg-[#dce3ea]"}`}
             >
               <span
                 className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition-transform ${form.allow_point_card ? "translate-x-5" : "translate-x-0.5"} mt-0.5`}
@@ -403,8 +406,11 @@ export function EditSessionForm({ session, teamName }: EditSessionFormProps) {
           <div className="flex items-center gap-3">
             <button
               type="button"
+              role="switch"
+              aria-checked={form.is_external}
+              aria-label="外部への公開（料金を一般公開）"
               onClick={() => set("is_external", !form.is_external)}
-              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors focus:outline-none ${form.is_external ? "bg-[#005F8C]" : "bg-[#dce3ea]"}`}
+              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#005F8C] focus-visible:ring-offset-1 ${form.is_external ? "bg-[#005F8C]" : "bg-[#dce3ea]"}`}
             >
               <span
                 className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition-transform ${form.is_external ? "translate-x-5" : "translate-x-0.5"} mt-0.5`}

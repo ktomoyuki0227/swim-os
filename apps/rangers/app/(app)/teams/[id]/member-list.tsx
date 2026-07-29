@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
+import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { AlertTriangle, CheckCircle2 } from "lucide-react"
 import { removeMember } from "@/actions/teams"
@@ -233,8 +234,7 @@ export function MemberList({
               {/* アバター */}
               <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#005F8C]/10 text-xs font-semibold text-[#005F8C]">
                 {swimmer?.avatar_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={swimmer.avatar_url} alt={swimmer.name || ""} className="h-full w-full object-cover" />
+                  <Image src={swimmer.avatar_url} alt={swimmer.name || ""} width={36} height={36} className="h-full w-full object-cover" />
                 ) : (
                   swimmer?.name?.[0] || "?"
                 )}

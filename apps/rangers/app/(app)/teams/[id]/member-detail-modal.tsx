@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
+import Image from "next/image"
 import { getMemberEmail, updateMemberInfo, updateMemberProfileTags } from "@/actions/teams"
 import { useToast } from "@/components/toast"
 import { useEscapeToClose } from "@/hooks/use-escape-to-close"
@@ -255,8 +256,7 @@ export function MemberDetailModal({
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#005F8C]/10 text-sm font-semibold text-[#005F8C]">
               {swimmer?.avatar_url ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={swimmer.avatar_url} alt={swimmer.name || ""} className="h-full w-full object-cover" />
+                <Image src={swimmer.avatar_url} alt={swimmer.name || ""} width={40} height={40} className="h-full w-full object-cover" />
               ) : (
                 swimmer?.name?.[0] || "?"
               )}

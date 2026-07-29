@@ -1,4 +1,4 @@
-"use client"
+import { StampPurchaseDialog } from "./stamp-purchase-dialog"
 
 interface StampMember {
   team_member_id: string
@@ -16,11 +16,12 @@ interface StampMember {
 }
 
 interface Props {
+  teamId: string
   pointCardCount: number
   members: StampMember[]
 }
 
-export function StampSection({ pointCardCount, members }: Props) {
+export function StampSection({ teamId, pointCardCount, members }: Props) {
   if (members.length === 0) {
     return (
       <div className="rounded-xl border border-[#dce3ea] bg-white py-10 text-center text-sm text-[#475569]">
@@ -33,7 +34,11 @@ export function StampSection({ pointCardCount, members }: Props) {
     <div className="space-y-3">
       {members.map((m) => {
         const name = (m.profile?.name as string) || "不明"
-        const used = pointCardCount - m.stamp_remaining
+        // stamp_remaining は複数枚分の残高を累積で保持できるため、進捗表示（1枚分のドット・バー）
+        // では現在進行中の1枚分としてpointCardCountを上限にクランプする。
+        // 上限を超える残高（例: 使い切る前に追加購入した分）は "残り X 回" のテキストで別途正しく表示される。
+        const cappedRemaining = Math.min(Math.max(m.stamp_remaining, 0), pointCardCount)
+        const used = pointCardCount - cappedRemaining
         const pct = used <= 0 ? 0 : Math.round(((used - 1) / (pointCardCount - 1)) * 100)
 
         return (
@@ -81,6 +86,39 @@ export function StampSection({ pointCardCount, members }: Props) {
                   )
                 })}
               </div>
+            </div>
+
+            {/* 購入履歴 */}
+            <div className="space-y-1.5 border-t border-[#e8edf2] pt-3">
+              <p className="text-xs font-medium text-[#64748b]">購入履歴</p>
+              {m.purchases.length === 0 ? (
+                <p className="text-xs text-[#94a3b8]">購入記録がありません</p>
+              ) : (
+                <ul className="space-y-1">
+                  {m.purchases.map((p) => (
+                    <li key={p.id} className="flex items-center justify-between gap-2 text-xs text-[#475569]">
+                      <span className="min-w-0 truncate">
+                        {new Date(p.purchased_at).toLocaleDateString("ja-JP")} ·{" "}
+                        {p.card_count}枚 × {p.stamp_count}回
+                        {p.note ? `（${p.note}）` : ""}
+                      </span>
+                      <span className="shrink-0 font-medium text-[#1a2332]">
+                        ¥{p.amount.toLocaleString()}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            {/* 購入記録を追加 */}
+            <div className="flex justify-end">
+              <StampPurchaseDialog
+                teamId={teamId}
+                swimmerId={m.swimmer_id}
+                swimmerName={name}
+                defaultStampCount={pointCardCount}
+              />
             </div>
           </div>
         )

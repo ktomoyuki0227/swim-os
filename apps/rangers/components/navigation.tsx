@@ -161,8 +161,7 @@ export function Navigation({ userName, avatarUrl, unreadCount = 0, inactiveRoute
                 aria-label={`${userName}のメニュー`}
               >
                 {avatarUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={avatarUrl} alt={userName} className="h-full w-full object-cover" />
+                  <Image src={avatarUrl} alt={userName} width={36} height={36} className="h-full w-full object-cover" />
                 ) : (
                   initials
                 )}

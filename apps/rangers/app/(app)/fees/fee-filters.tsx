@@ -28,8 +28,9 @@ export function FeeFilters({ teams, selectedTeamId, selectedType, selectedPeriod
     <div className="flex flex-wrap gap-4 p-4">
       {/* Team selector */}
       <div className="flex flex-col gap-1">
-        <label className="text-xs text-[#475569]">グループ</label>
+        <label htmlFor="fee-team" className="text-xs text-[#475569]">グループ</label>
         <select
+          id="fee-team"
           name="team"
           defaultValue={selectedTeamId}
           onChange={(e) => {
@@ -39,7 +40,7 @@ export function FeeFilters({ teams, selectedTeamId, selectedType, selectedPeriod
             url.searchParams.delete("period")
             router.push(`${url.pathname}${url.search}`)
           }}
-          className="h-9 rounded-lg border border-[#dce3ea] px-3 text-sm text-[#1a2332] focus:outline-none"
+          className="h-9 rounded-lg border border-[#dce3ea] px-3 text-sm text-[#1a2332] outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
         >
           {teams.map((team) => (
             <option key={team.id} value={team.id}>
@@ -78,10 +79,11 @@ export function FeeFilters({ teams, selectedTeamId, selectedType, selectedPeriod
       {/* Period（回数券タブでは非表示）*/}
       {tabs.length > 0 && selectedType !== "stamp_card" && (
         <div className="flex flex-col gap-1">
-          <label className="text-xs text-[#475569]">
+          <label htmlFor="fee-period" className="text-xs text-[#475569]">
             {selectedType === "annual" ? "年度" : "月"}
           </label>
           <input
+            id="fee-period"
             type={selectedType === "annual" ? "number" : "month"}
             defaultValue={selectedPeriod}
             onBlur={(e) => {
@@ -89,7 +91,7 @@ export function FeeFilters({ teams, selectedTeamId, selectedType, selectedPeriod
                 router.push(`/fees?team=${selectedTeamId}&type=${selectedType}&period=${e.target.value}`)
               }
             }}
-            className="h-9 rounded-lg border border-[#dce3ea] px-3 text-sm text-[#1a2332] focus:outline-none"
+            className="h-9 rounded-lg border border-[#dce3ea] px-3 text-sm text-[#1a2332] outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
           />
         </div>
       )}

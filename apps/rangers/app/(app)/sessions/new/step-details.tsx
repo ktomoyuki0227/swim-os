@@ -93,8 +93,9 @@ export function StepDetails({ form, set, competitionFields, setCompetitionFields
                     updated[idx] = { ...field, label: e.target.value, key: e.target.value.replace(/\s/g, "_").toLowerCase() }
                     setCompetitionFields(updated)
                   }}
-                  className="min-w-0 flex-1 border-0 bg-transparent text-sm font-medium text-[#1a2332] outline-none"
+                  className="min-w-0 flex-1 border-0 bg-transparent text-sm font-medium text-[#1a2332] outline-none focus-visible:ring-2 focus-visible:ring-[#005F8C] focus-visible:ring-offset-1"
                   placeholder="項目名"
+                  aria-label="項目名"
                 />
                 <label className="flex items-center gap-1 text-xs text-[#475569]">
                   <input
@@ -112,7 +113,8 @@ export function StepDetails({ form, set, competitionFields, setCompetitionFields
                 <button
                   type="button"
                   onClick={() => setCompetitionFields(competitionFields.filter((_, i) => i !== idx))}
-                  className="text-[#c0392b] hover:text-[#c0392b]"
+                  className="text-[#c0392b] hover:text-[#c0392b] outline-none focus-visible:ring-2 focus-visible:ring-[#c0392b] focus-visible:ring-offset-1 rounded"
+                  aria-label="削除"
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />

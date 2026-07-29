@@ -62,6 +62,95 @@ async function handlePaymentIntentFailed(paymentIntent: Stripe.PaymentIntent) {
   }
 }
 
+/**
+ * チャージバック（支払い異議申し立て）が発生した際のハンドラ。
+ * 従来はこのイベントを一切処理しておらず、DB上は"paid"のまま・管理者への通知もなく、
+ * Stripeダッシュボードを個別に確認しない限り一切気づけなかった。
+ * 解決(勝訴/敗訴)の自動反映まではスコープに含めず、まずは可視化と通知を行う。
+ */
+async function handleChargeDisputeCreated(dispute: Stripe.Dispute) {
+  const paymentIntentId =
+    typeof dispute.payment_intent === "string" ? dispute.payment_intent : dispute.payment_intent?.id
+  if (!paymentIntentId) return
+
+  const admin = createAdminClient()
+
+  const { data: registration } = await admin
+    .from("session_registrations")
+    .select("id, payment_status, session:practice_sessions(team_id, title)")
+    .eq("stripe_payment_intent_id", paymentIntentId)
+    .maybeSingle()
+
+  if (!registration) return
+
+  const { data: updated, error } = await admin
+    .from("session_registrations")
+    .update({ payment_status: "disputed" })
+    .eq("id", registration.id)
+    .neq("payment_status", "disputed")
+    .select("id")
+
+  if (error) {
+    console.error(`[webhook] charge.dispute.created (${dispute.id}): DB update failed`, error)
+    throw error
+  }
+  // 既に disputed 済み（冪等性）なら重複通知しない
+  if (!updated || updated.length === 0) return
+
+  const session = registration.session as { team_id: string; title: string } | null
+  if (!session) return
+
+  const { data: admins } = await admin
+    .from("team_members")
+    .select("swimmer_id")
+    .eq("team_id", session.team_id)
+    .eq("role", "admin")
+    .eq("status", "active")
+
+  if (admins && admins.length > 0) {
+    await notifyUsers(admins.map((a) => a.swimmer_id), {
+      type: "payment_failed",
+      title: "参加費決済に異議申し立て（チャージバック）が発生しました",
+      body: `「${session.title}」の参加費についてチャージバックが発生しました。Stripeダッシュボードで詳細を確認してください。`,
+      team_id: session.team_id,
+      link: "/payments",
+    })
+  }
+}
+
+/**
+ * Stripeダッシュボード等、アプリの返金フローを経由せずに発行された返金をDBに同期する。
+ * アプリ内キャンセル(cancelSession/cancelRegistration)は呼び出し元で直接
+ * payment_status を更新済みのため、その場合はこのハンドラは冪等に無処理となる。
+ */
+async function handleChargeRefunded(charge: Stripe.Charge) {
+  // 部分返金では"refunded"に倒さない（全額返金のみ対象）
+  if (!charge.refunded) return
+
+  const paymentIntentId =
+    typeof charge.payment_intent === "string" ? charge.payment_intent : charge.payment_intent?.id
+  if (!paymentIntentId) return
+
+  const admin = createAdminClient()
+
+  const { error } = await admin
+    .from("session_registrations")
+    .update({ payment_status: "refunded" })
+    .eq("stripe_payment_intent_id", paymentIntentId)
+    .eq("payment_status", "paid")
+
+  if (error) {
+    console.error(`[webhook] charge.refunded (${charge.id}): DB update failed`, error)
+    throw error
+  }
+
+  await admin
+    .from("transfer_records")
+    .update({ status: "reversed" })
+    .eq("stripe_payment_intent_id", paymentIntentId)
+    .eq("status", "succeeded")
+}
+
 // ── 月謝 Subscription ハンドラ ─────────────────────────────────────────────────
 
 /** Invoice から subscription ID を取得する（Stripe v22 の parent 構造に対応） */
@@ -69,6 +158,18 @@ function getSubscriptionId(invoice: Stripe.Invoice): string | null {
   const sub = invoice.parent?.subscription_details?.subscription
   if (!sub) return null
   return typeof sub === "string" ? sub : sub.id
+}
+
+/** Unix seconds を JST 基準の "YYYY-MM" に変換する */
+function formatPeriodJst(unixSeconds: number): string {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Tokyo",
+    year: "numeric",
+    month: "2-digit",
+  }).formatToParts(new Date(unixSeconds * 1000))
+  const year = parts.find((p) => p.type === "year")?.value
+  const month = parts.find((p) => p.type === "month")?.value
+  return `${year}-${month}`
 }
 
 /** 月謝 Invoice 決済完了 → membership_fees に記録 */
@@ -86,9 +187,9 @@ async function handleInvoicePaid(invoice: Stripe.Invoice) {
   const { team_id, swimmer_id } = subscription.metadata
   if (!team_id || !swimmer_id) return
 
-  // 請求期間を YYYY-MM 形式に変換
-  const periodDate = new Date(invoice.period_start * 1000)
-  const period = `${periodDate.getFullYear()}-${String(periodDate.getMonth() + 1).padStart(2, "0")}`
+  // 請求期間を YYYY-MM 形式に変換（サーバーのローカルタイムゾーン(UTC)ではなくJSTで判定。
+  // そうしないと日本時間の深夜0時台に発行された請求が前日UTC基準で前月扱いになりうる）
+  const period = formatPeriodJst(invoice.period_start)
 
   const admin = createAdminClient()
 
@@ -216,15 +317,47 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
 
 // ── Stripe Connect ハンドラ ────────────────────────────────────────────────────
 
-/** Connected Account のステータス変更 → teams.stripe_onboarding_completed を同期 */
+/**
+ * Connected Account のステータス変更 → teams.stripe_onboarding_completed を同期。
+ * 一度 true になった後に Stripe 側の審査・リスク保留等で false に戻った場合、
+ * confirmSession/retryPayment は現在のDB状態を都度読んで Connect送金なしの
+ * 決済(全額プラットフォーム残高行き)に静かにフォールバックしてしまうため、
+ * 管理者がUIバナーに気づく前に決済が積み重なるのを防ぐべく能動的に通知する。
+ */
 async function handleAccountUpdated(account: Stripe.Account) {
   if (!account.metadata?.team_id) return
   const admin = createAdminClient()
   const completed = account.charges_enabled && account.details_submitted
+
+  const { data: team } = await admin
+    .from("teams")
+    .select("id, name, stripe_onboarding_completed")
+    .eq("stripe_account_id", account.id)
+    .maybeSingle()
+
   await admin
     .from("teams")
     .update({ stripe_onboarding_completed: completed })
     .eq("stripe_account_id", account.id)
+
+  if (team && team.stripe_onboarding_completed && !completed) {
+    const { data: admins } = await admin
+      .from("team_members")
+      .select("swimmer_id")
+      .eq("team_id", team.id)
+      .eq("role", "admin")
+      .eq("status", "active")
+
+    if (admins && admins.length > 0) {
+      await notifyUsers(admins.map((a) => a.swimmer_id), {
+        type: "payment_failed",
+        title: "決済アカウントの連携が無効になりました",
+        body: `「${team.name}」のStripe決済アカウントが利用できない状態になりました。設定を確認してください（この状態のままだと参加費の分配送金が行われません）。`,
+        team_id: team.id,
+        link: `/teams/${team.id}?tab=settings`,
+      })
+    }
+  }
 }
 
 /**
@@ -280,6 +413,14 @@ export async function POST(req: NextRequest) {
 
       case "payment_intent.payment_failed":
         await handlePaymentIntentFailed(event.data.object as Stripe.PaymentIntent)
+        break
+
+      case "charge.dispute.created":
+        await handleChargeDisputeCreated(event.data.object as Stripe.Dispute)
+        break
+
+      case "charge.refunded":
+        await handleChargeRefunded(event.data.object as Stripe.Charge)
         break
 
       // 月謝 Subscription

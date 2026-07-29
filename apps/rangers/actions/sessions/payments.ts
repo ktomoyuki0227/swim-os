@@ -390,7 +390,7 @@ export async function registerForSession(
   // メンバーシップ確認（adminClientでRLSをバイパス）
   const { data: membership } = await adminClient
     .from("team_members")
-    .select("id, role, membership_type, stamp_remaining")
+    .select("id, role, membership_type, stamp_remaining, subscription_status")
     .eq("team_id", session.team_id)
     .eq("swimmer_id", user.id)
     .eq("status", "active")
@@ -401,12 +401,22 @@ export async function registerForSession(
   // 管理者は自チームのセッションに無料で参加（ロールベースで判定）
   const isAdmin = membership?.role === "admin"
 
+  // 月謝会員はStripe Subscriptionが未払い状態(past_due/unpaid/canceled/incomplete_expired)の間は
+  // membership_typeが"monthly"のままでも免除対象から外す(支払い遅延中の無料参加を防ぐ)。
+  // subscription_status が null(現金払い等、Subscription未作成)の場合は従来通り免除対象。
+  const LAPSED_SUBSCRIPTION_STATUSES = ["past_due", "unpaid", "canceled", "incomplete_expired"]
+  const hasLapsedSubscription =
+    membership?.membership_type === "monthly" &&
+    !!membership.subscription_status &&
+    LAPSED_SUBSCRIPTION_STATUSES.includes(membership.subscription_status)
+
   // 年会費・月謝会員の参加費免除判定（サーバー側で完結 — クライアントは操作不可）
   const isExempt =
     isAdmin ||
     (!!(session.team as { fee_members_exempt_session?: boolean } | null)?.fee_members_exempt_session &&
     isMember &&
-    (membership?.membership_type === "annual" || membership?.membership_type === "monthly"))
+    (membership?.membership_type === "annual" || membership?.membership_type === "monthly") &&
+    !hasLapsedSubscription)
 
   // 免除の場合は支払方法を cash に固定（クライアントが誤った値を送っても上書きする）
   const effectivePaymentMethod = isExempt ? "cash" : paymentMethod
@@ -625,18 +635,28 @@ export async function cancelRegistration(sessionId: string) {
         const registeredIds = new Set(existingRegs?.map((r) => r.swimmer_id) || [])
         const notifyTargets = targetMembers.filter((m) => !registeredIds.has(m.swimmer_id))
 
-        for (const target of notifyTargets) {
-          const notifLink = target.role === "admin"
-            ? `/sessions/${sessionId}`
-            : `/teams/${session.team_id}/sessions/${sessionId}`
-          await notifyUser(target.swimmer_id, {
+        // role(=リンク先)ごとに2グループへまとめ、一括INSERTを2回だけ発行する。
+        // 以前はメンバー数分 await notifyUser() を直列実行しており、大人数チームで
+        // サーバーレス関数のタイムアウトに達するリスクがあった。
+        const adminIds = notifyTargets.filter((m) => m.role === "admin").map((m) => m.swimmer_id)
+        const memberIds = notifyTargets.filter((m) => m.role !== "admin").map((m) => m.swimmer_id)
+
+        await Promise.all([
+          notifyUsers(adminIds, {
             type: "waitlist_available",
             title: `空きが出ました: ${session.title}`,
             body: `「${session.title}」に空きが出ました。参加登録が可能です。`,
             team_id: session.team_id,
-            link: notifLink,
-          })
-        }
+            link: `/sessions/${sessionId}`,
+          }),
+          notifyUsers(memberIds, {
+            type: "waitlist_available",
+            title: `空きが出ました: ${session.title}`,
+            body: `「${session.title}」に空きが出ました。参加登録が可能です。`,
+            team_id: session.team_id,
+            link: `/teams/${session.team_id}/sessions/${sessionId}`,
+          }),
+        ])
       }
     }
   }
@@ -787,15 +807,7 @@ export async function markCashPaid(registrationId: string) {
 
   const session = reg.session
 
-  const { data: member } = await adminClient
-    .from("team_members")
-    .select("role")
-    .eq("team_id", session.team_id)
-    .eq("swimmer_id", user.id)
-    .eq("status", "active")
-    .single()
-
-  if (!member || member.role !== "admin") return { error: "管理者のみ操作できます" }
+  if (!(await isTeamAdmin(adminClient, session.team_id, user.id))) return { error: "管理者のみ操作できます" }
 
   const { error } = await adminClient
     .from("session_registrations")

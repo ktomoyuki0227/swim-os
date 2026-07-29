@@ -263,9 +263,10 @@ export function NewSessionForm({
       {/* テンプレート */}
       {templates.length > 0 && step === 0 && (
         <div className="rounded-xl border border-[#005F8C]/30 bg-[#f2f7fa] p-4">
-          <p className="mb-2 text-sm font-medium text-[#005F8C]">テンプレートから作成</p>
+          <label htmlFor="session-template" className="mb-2 block text-sm font-medium text-[#005F8C]">テンプレートから作成</label>
           <select
-            className="h-10 w-full rounded-lg border border-[#005F8C]/30 bg-white px-3 text-sm text-[#1a2332] focus:outline-none"
+            id="session-template"
+            className="h-10 w-full rounded-lg border border-[#005F8C]/30 bg-white px-3 text-sm text-[#1a2332] outline-none focus-visible:ring-2 focus-visible:ring-[#005F8C] focus-visible:ring-offset-1"
             defaultValue=""
             onChange={(e) => {
               if (!e.target.value) return
@@ -296,9 +297,10 @@ export function NewSessionForm({
       {/* グループ未選択時のピッカー（URL に team なし・複数グループあり） */}
       {!teamId && adminTeams.length > 1 && step === 0 && (
         <div className="rounded-xl border border-[#005F8C]/30 bg-[#f2f7fa] p-4">
-          <p className="mb-2 text-sm font-medium text-[#005F8C]">対象グループを選択</p>
+          <label htmlFor="session-target-team" className="mb-2 block text-sm font-medium text-[#005F8C]">対象グループを選択</label>
           <select
-            className="h-10 w-full rounded-lg border border-[#005F8C]/30 bg-white px-3 text-sm text-[#1a2332] focus:outline-none"
+            id="session-target-team"
+            className="h-10 w-full rounded-lg border border-[#005F8C]/30 bg-white px-3 text-sm text-[#1a2332] outline-none focus-visible:ring-2 focus-visible:ring-[#005F8C] focus-visible:ring-offset-1"
             value={activeTeamId}
             onChange={(e) => setActiveTeamId(e.target.value)}
           >
