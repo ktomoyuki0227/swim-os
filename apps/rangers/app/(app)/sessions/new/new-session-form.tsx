@@ -232,7 +232,8 @@ export function NewSessionForm({
         target_members: selectedMemberIds ?? undefined,
         // idはReact key用のクライアント内部データのため送信前に取り除く
         competition_fields: form.type === "competition"
-          ? competitionFields.map(({ id: _id, ...f }): CompetitionField => f)
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars -- idを分割代入で除外するための意図的な未使用束縛
+          ? competitionFields.map(({ id, ...f }): CompetitionField => f)
           : undefined,
       })
       if (result.error) {

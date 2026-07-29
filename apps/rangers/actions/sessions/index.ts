@@ -1,3 +1,5 @@
 export * from "./crud"
-export * from "./payments"
+export * from "./lifecycle"
+export * from "./registration"
+export * from "./payment-recovery"
 export * from "./reporting"

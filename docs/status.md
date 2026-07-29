@@ -1,5 +1,50 @@
 # 作業ステータス
-最終更新: 2026-07-29（Rangers 6回目レビュー commit・push 完了 + 回数券購入履歴UI追加）
+最終更新: 2026-07-29（Rangers リファクタリング実施、コミット未・確認待ち）
+
+---
+
+## 完了 ✅: Rangers 全体リファクタリング（2026-07-29）
+
+「コードレビュー・セキュリティ・リファクタリング・モバイル動作」の状態確認をともくんから依頼され、
+リファクタリングだけ未着手だったため実施。
+
+**ESLint全体スイープ**
+- プロジェクト全体で `pnpm eslint .` を実行、3件の警告を修正
+  - `edit-session-form.tsx` / `new-session-form.tsx`: 分割代入でidを除外する意図的な未使用変数に`eslint-disable-next-line`を追加（グローバルなeslint設定変更はconfig-protectionフックでブロックされたため、該当行にスコープを絞った）
+  - `remotion/src/HeroBg.tsx`の`<img>`警告は動画生成専用コードで対象外のため据え置き
+
+**大きすぎるファイルの分割**（CLAUDE.mdの800行上限ガイドライン超過分）
+- `actions/teams.ts`(875行) → `actions/teams/`ディレクトリに分割
+  - `crud.ts`(425行)・`members.ts`(372行)・`fee-stats.ts`(90行) + `index.ts`バレル
+  - 呼び出し元15ファイルは`@/actions/teams`のままインポート可能（バレル経由のため無変更）
+- `actions/sessions/payments.ts`(831行) → 3ファイルに分割
+  - `lifecycle.ts`(357行: confirmSession/cancelSession)・`registration.ts`(318行: registerForSession/cancelRegistration)・`payment-recovery.ts`(174行: retryPayment/markCashPaid)
+  - 既存の`actions/sessions/index.ts`バレルを更新するだけで呼び出し元6ファイルは無変更
+- `types/database-generated.ts`(1629行)はSupabase CLI自動生成ファイルのため分割対象外(意図的除外)
+
+**デッドコード削除**
+- `components/ui/select.tsx` / `components/ui/separator.tsx`: プロジェクト全体で参照ゼロを確認（grep検証済み）した未使用shadcn/uiコンポーネントを削除
+- `console.log`の残存なしを確認済み
+
+**検証**: 分割・削除のたびに `tsc --noEmit` / `eslint` / `next build` を実行し、エラーゼロ・全28ルートのビルド成功を確認済み。
+
+**次にやること**
+- ともくんの確認後にcommit・push（このセッションではcommitしていない）
+
+---
+
+## バックログ（コードレビューで見つかった未着手タスク・随時更新）
+
+過去のレビュー（3〜6回目）で見つかったが、外部サービス連携・デザイン変更判断・優先度の都合で未着手のまま残っている項目。
+
+- [ ] **Supabase Dashboardで「Leaked Password Protection」を有効化**（Auth設定、コード変更不要、ともくんの手動操作が必要）
+- [ ] **Sentry等の構造化エラー監視の導入要否**をともくんと相談（Webhookハンドラ等の例外が本番で誰にも気づかれないリスクが残っている）
+- [ ] **WCAG contrast修正**（status-warningトークンの色）— DESIGN.mdのカラートークン変更を伴うためデザイン判断が必要
+- [ ] **見出し構造(h1)欠如ページ**9件の是正（アクセシビリティ、実害は小さいがバックログ）
+- [ ] **loading.tsx欠如**6ルートへの追加（初回遷移時のローディング体験改善）
+- [ ] **通知コピーのカタログ化**（通知文言が各Server Actionに散在している状態の整理）
+- [ ] **Zodバリデーション適用ルールの明文化**（どのServer Actionに検証が必須かの基準がドキュメント化されていない）
+- [ ] **特定商取引法ページのプレースホルダーTODO**（ヒュドール側からの事業者情報待ち）
 
 ---
 
