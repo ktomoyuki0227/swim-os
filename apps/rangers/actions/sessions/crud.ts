@@ -8,6 +8,15 @@ import { isTeamAdmin, isTeamMember } from "@/lib/auth/require-team-admin"
 import { formatSessionDateJa } from "@/lib/format-date"
 import { notifyUsers } from "@/lib/notifications"
 
+// datetime-local由来("YYYY-MM-DDTHH:mm")はそのまま、type="date"由来の日付のみの文字列
+// ("YYYY-MM-DD")には時刻がないため、末尾に"+09:00"だけを連結すると
+// "2026-08-05+09:00"のような不正な日時文字列になりtoISOString()がRangeErrorを投げる。
+// (registration_deadlineは<input type="date">のため常に日付のみで渡ってくる)
+function toJstIso(value: string): string {
+  const withTime = value.includes("T") ? value : `${value}T00:00:00`
+  return new Date(`${withTime}+09:00`).toISOString()
+}
+
 export async function createSession(teamId: string, data: unknown) {
   const parsed = sessionSchema.safeParse(data)
   if (!parsed.success) return { error: "入力値が不正です" }
@@ -30,15 +39,15 @@ export async function createSession(teamId: string, data: unknown) {
       description: parsed.data.description || null,
       content: parsed.data.content || null,
       type: parsed.data.type,
-      scheduled_at: new Date(parsed.data.scheduled_at + '+09:00').toISOString(),
-      end_at: parsed.data.end_at ? new Date(parsed.data.end_at + '+09:00').toISOString() : null,
+      scheduled_at: toJstIso(parsed.data.scheduled_at),
+      end_at: parsed.data.end_at ? toJstIso(parsed.data.end_at) : null,
       location: parsed.data.location,
       meeting_point: parsed.data.meeting_point || null,
       gender_filter: parsed.data.gender_filter || "all",
       member_price: parsed.data.member_price,
       guest_price: parsed.data.guest_price,
       registration_deadline: parsed.data.registration_deadline
-        ? new Date(parsed.data.registration_deadline + '+09:00').toISOString()
+        ? toJstIso(parsed.data.registration_deadline)
         : null,
       min_participants: parsed.data.min_participants ?? null,
       max_participants: parsed.data.max_participants ?? null,
@@ -113,13 +122,13 @@ export async function updateSession(sessionId: string, data: unknown) {
   }
   // datetime-local値はタイムゾーン情報がないためJSTとして解釈してUTCに変換
   if (updateData.scheduled_at) {
-    updateData.scheduled_at = new Date(updateData.scheduled_at + '+09:00').toISOString()
+    updateData.scheduled_at = toJstIso(updateData.scheduled_at)
   }
   if (updateData.end_at) {
-    updateData.end_at = new Date(updateData.end_at + '+09:00').toISOString()
+    updateData.end_at = toJstIso(updateData.end_at)
   }
   if (updateData.registration_deadline) {
-    updateData.registration_deadline = new Date(updateData.registration_deadline + '+09:00').toISOString()
+    updateData.registration_deadline = toJstIso(updateData.registration_deadline)
   }
 
   // adminClientでRLSをバイパスして更新（user clientだとサイレントブロックの可能性あり）
@@ -134,7 +143,7 @@ export async function updateSession(sessionId: string, data: unknown) {
   const hasImportantChange =
     (parsed.data.title && parsed.data.title !== session.title) ||
     (parsed.data.scheduled_at &&
-      new Date(parsed.data.scheduled_at + '+09:00').toISOString() !== new Date(session.scheduled_at).toISOString()) ||
+      toJstIso(parsed.data.scheduled_at) !== new Date(session.scheduled_at).toISOString()) ||
     (parsed.data.location && parsed.data.location !== session.location)
 
   // 参加費の変更は、開催確定(confirmSession)時点の料金に直結するため別枠で検知する。
