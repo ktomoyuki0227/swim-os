@@ -1,8 +1,18 @@
 import Link from "next/link"
+import { safeRedirectPath } from "@/lib/utils"
+import { ResendConfirmationForm } from "./resend-confirmation-form"
 
 const steps = ["アカウント作成", "メール確認", "利用開始"]
 
-export default function RegisterSentPage() {
+interface RegisterSentPageProps {
+  searchParams: Promise<{ email?: string; next?: string }>
+}
+
+export default async function RegisterSentPage({ searchParams }: RegisterSentPageProps) {
+  const params = await searchParams
+  const email = params.email ?? ""
+  const next = safeRedirectPath(params.next, "/onboarding")
+
   return (
     <div className="w-full max-w-md">
       {/* ステップ */}
@@ -41,7 +51,13 @@ export default function RegisterSentPage() {
         <div className="mb-4 text-5xl">📬</div>
         <h1 className="mb-3 text-xl font-bold text-[#005F8C]">確認メールを送信しました</h1>
         <p className="mb-2 text-sm text-[#475569]">
-          ご登録のメールアドレスに確認メールをお送りしました。
+          {email ? (
+            <>
+              <span className="font-medium text-[#1a2332]">{email}</span> 宛に確認メールをお送りしました。
+            </>
+          ) : (
+            "ご登録のメールアドレスに確認メールをお送りしました。"
+          )}
         </p>
         <p className="mb-8 text-sm text-[#475569]">
           メール内のリンクをクリックしてアカウントを有効化してください。
@@ -55,6 +71,8 @@ export default function RegisterSentPage() {
             からのメールが届くよう設定をご確認ください。
           </p>
         </div>
+
+        {email && <ResendConfirmationForm email={email} next={next} />}
 
         <div className="mt-8 border-t pt-6 text-sm text-[#475569]">
           すでに確認済みの方は

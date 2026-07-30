@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server"
 import { loginSchema, registerSchema } from "@/lib/validations"
 import { isRateLimited, getClientIp } from "@/lib/rate-limit"
 import { redirect } from "next/navigation"
+import { safeRedirectPath } from "@/lib/utils"
 
 export interface AuthState {
   error: string | null
@@ -15,6 +16,11 @@ const REGISTER_RATE_LIMIT = 5
 const REGISTER_RATE_WINDOW_MS = 60 * 60 * 1000
 const RESET_RATE_LIMIT = 5
 const RESET_RATE_WINDOW_MS = 60 * 60 * 1000
+const RESEND_RATE_LIMIT = 3
+const RESEND_RATE_WINDOW_MS = 10 * 60 * 1000
+// メールアドレスを変えて連打されても外部APIコールが無制限にならないよう、IP単位でも上限を設ける
+const RESEND_IP_RATE_LIMIT = 20
+const RESEND_IP_RATE_WINDOW_MS = 10 * 60 * 1000
 
 export async function login(
   _prevState: AuthState,
@@ -106,7 +112,8 @@ export async function register(
   // ここでセッションを張ってしまうと「確認前アカウント」がログイン状態のまま残り、
   // 別アカウントでのログインを阻害するため、未確認の間は /register/sent へ誘導する
   if (!data.session) {
-    redirect("/register/sent")
+    const sentParams = new URLSearchParams({ email: result.data.email, next: onboardingPath })
+    redirect(`/register/sent?${sentParams.toString()}`)
   }
 
   // 名前をプロフィールに保存（role は常に 'member' のまま）
@@ -122,6 +129,53 @@ export async function register(
   }
 
   redirect(onboardingPath)
+}
+
+export interface ResendState {
+  error: string | null
+  success: boolean
+  // クライアント側のクールダウン表示を「毎回」再起動させるための識別子。
+  // success は一度 true になると以降ずっと true のままなので、
+  // useEffect の依存値としては使えない（true→true では発火しない）
+  requestId: number
+}
+
+export async function resendConfirmationEmail(
+  _prevState: ResendState,
+  formData: FormData
+): Promise<ResendState> {
+  const requestId = Date.now()
+  const email = (formData.get("email") as string)?.trim()
+  if (!email) {
+    return { error: "メールアドレスが不正です", success: false, requestId }
+  }
+
+  const ip = await getClientIp()
+  // メールアドレスを変えて連打されるとメール単位の制限だけでは無制限にAPIを叩けてしまうため、
+  // IP単位の上限も別枠でチェックする
+  if (
+    isRateLimited(`resend-ip:${ip}`, RESEND_IP_RATE_LIMIT, RESEND_IP_RATE_WINDOW_MS) ||
+    isRateLimited(`resend:${ip}:${email}`, RESEND_RATE_LIMIT, RESEND_RATE_WINDOW_MS)
+  ) {
+    // メール爆撃・アカウント列挙対策のため、成功時と同じ応答にする
+    return { error: null, success: true, requestId }
+  }
+
+  const supabase = await createClient()
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"
+  const next = safeRedirectPath(formData.get("next") as string, "/onboarding")
+
+  // 既に確認済み・未登録のメールに対するエラーも成功時と同じ応答にする
+  // （確認済みかどうかを外部から判別できるオラクルにしないため）
+  await supabase.auth.resend({
+    type: "signup",
+    email,
+    options: {
+      emailRedirectTo: `${appUrl}/auth/callback?next=${encodeURIComponent(next)}`,
+    },
+  })
+
+  return { error: null, success: true, requestId }
 }
 
 export async function logout() {
