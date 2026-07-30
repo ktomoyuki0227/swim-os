@@ -76,12 +76,23 @@ export async function register(
   }
 
   const supabase = await createClient()
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"
 
-  const { error: signUpError } = await supabase.auth.signUp({
+  // 招待コードがある場合もオンボーディングを先に完了させる
+  // 完了後に next パラメータ経由でチーム参加ページへ遷移
+  const invite = (formData.get("invite") as string)?.trim()
+  const onboardingPath = invite
+    ? `/onboarding?next=${encodeURIComponent(`/teams/join/${invite}`)}`
+    : "/onboarding"
+
+  const { data, error: signUpError } = await supabase.auth.signUp({
     email: result.data.email,
     password: result.data.password,
     options: {
       data: { name: result.data.name },
+      // メール確認が有効な環境向け: 確認リンクから戻ってきたときに
+      // オンボーディング（招待経由の場合は招待先も維持）へ遷移させる
+      emailRedirectTo: `${appUrl}/auth/callback?next=${encodeURIComponent(onboardingPath)}`,
     },
   })
 
@@ -91,7 +102,17 @@ export async function register(
     return { error: "登録に失敗しました。入力内容をご確認の上、もう一度お試しください" }
   }
 
+  // メール確認が有効な場合、signUp 時点ではセッションが確立されない。
+  // ここでセッションを張ってしまうと「確認前アカウント」がログイン状態のまま残り、
+  // 別アカウントでのログインを阻害するため、未確認の間は /register/sent へ誘導する
+  if (!data.session) {
+    redirect("/register/sent")
+  }
+
   // 名前をプロフィールに保存（role は常に 'member' のまま）
+  // ここに来るのはセッションが即座に確立された場合のみ（メール確認が無効な環境など）。
+  // メール確認必須の通常経路では handle_new_user トリガーが signUp 時点の
+  // raw_user_meta_data から名前を保存済みのため、このブロックは実質通らない
   const { data: { user } } = await supabase.auth.getUser()
   if (user) {
     await supabase
@@ -100,14 +121,7 @@ export async function register(
       .eq("id", user.id)
   }
 
-  // 招待コードがある場合もオンボーディングを先に完了させる
-  // 完了後に next パラメータ経由でチーム参加ページへ遷移
-  const invite = (formData.get("invite") as string)?.trim()
-  if (invite) {
-    redirect(`/onboarding?next=${encodeURIComponent(`/teams/join/${invite}`)}`)
-  }
-
-  redirect("/onboarding")
+  redirect(onboardingPath)
 }
 
 export async function logout() {
