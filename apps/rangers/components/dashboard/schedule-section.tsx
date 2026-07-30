@@ -11,7 +11,8 @@ import { useMounted } from "@/hooks/use-mounted"
 import { useScrollLock } from "@/hooks/use-scroll-lock"
 import { useEscapeToClose } from "@/hooks/use-escape-to-close"
 
-type Tab = "all" | "registered" | "past"
+type TimeFilter = "all" | "upcoming" | "past"
+type RegistrationFilter = "all" | "registered"
 
 export interface ScheduleSessionItem {
   id: string
@@ -44,16 +45,22 @@ const SESSION_TYPE_LABELS: Record<string, string> = {
   meeting: "ミーティング",
 }
 
-const TAB_LABELS: Record<Tab, string> = {
+const TIME_LABELS: Record<TimeFilter, string> = {
   all: "すべて",
-  registered: "参加予定",
+  upcoming: "今後",
   past: "過去",
 }
 
-type SheetType = "tab" | "team" | null
+const REGISTRATION_LABELS: Record<RegistrationFilter, string> = {
+  all: "すべて",
+  registered: "参加予定のみ",
+}
+
+type SheetType = "display" | "team" | null
 
 export function ScheduleSection({ sessions, teams }: Props) {
-  const [tab, setTab] = useState<Tab>("all")
+  const [timeFilter, setTimeFilter] = useState<TimeFilter>("all")
+  const [registrationFilter, setRegistrationFilter] = useState<RegistrationFilter>("all")
   const [selectedTeamIds, setSelectedTeamIds] = useState<Set<string>>(
     () => new Set(teams.map((t) => t.id))
   )
@@ -64,10 +71,9 @@ export function ScheduleSection({ sessions, teams }: Props) {
 
   const tabFiltered = sessions.filter((s) => {
     const dt = new Date(s.scheduled_at)
-    if (tab === "all") return true
-    if (tab === "registered") return dt > now && s.is_registered
-    if (tab === "past") return dt <= now && s.is_registered
-    return true
+    const timeOk = timeFilter === "all" ? true : timeFilter === "upcoming" ? dt > now : dt <= now
+    const registrationOk = registrationFilter === "all" ? true : s.is_registered
+    return timeOk && registrationOk
   })
 
   const filtered = tabFiltered.filter((s) => selectedTeamIds.has(s.team_id))
@@ -85,7 +91,7 @@ export function ScheduleSection({ sessions, teams }: Props) {
   }, [])
 
   const sorted = [...filtered].sort((a, b) => {
-    if (tab === "past") {
+    if (timeFilter === "past") {
       return new Date(b.scheduled_at).getTime() - new Date(a.scheduled_at).getTime()
     }
     return new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime()
@@ -102,18 +108,21 @@ export function ScheduleSection({ sessions, teams }: Props) {
   }))
 
   const emptyMessage =
-    tab === "registered" ? "参加予定のセッションはありません" :
-    tab === "past" ? "過去の参加セッションはありません" :
+    timeFilter === "past" && registrationFilter === "registered" ? "過去の参加セッションはありません" :
+    timeFilter === "past" ? "過去のセッションはありません" :
+    registrationFilter === "registered" ? "参加予定のセッションはありません" :
     "セッションはありません"
 
   // ESCキーでシート閉じる + 背景スクロールロック
   useEscapeToClose(!!openSheet, () => setOpenSheet(null))
   useScrollLock(!!openSheet)
 
-  const isDefaultFilter = tab === "all" && selectedTeamIds.size === teams.length
+  const isDefaultDisplayFilter = timeFilter === "all" && registrationFilter === "all"
+  const isDefaultFilter = isDefaultDisplayFilter && selectedTeamIds.size === teams.length
 
   const resetFilters = useCallback(() => {
-    setTab("all")
+    setTimeFilter("all")
+    setRegistrationFilter("all")
     setSelectedTeamIds(new Set(teams.map((t) => t.id)))
   }, [teams])
 
@@ -125,6 +134,15 @@ export function ScheduleSection({ sessions, teams }: Props) {
         ? "未選択"
         : `${selectedTeamIds.size}グループ`
 
+  const displayFilterLabel = isDefaultDisplayFilter
+    ? "すべて"
+    : [
+        timeFilter !== "all" ? TIME_LABELS[timeFilter] : null,
+        registrationFilter !== "all" ? REGISTRATION_LABELS[registrationFilter] : null,
+      ]
+        .filter((v): v is string => v !== null)
+        .join("・")
+
   return (
     <section className="min-w-0 max-w-full">
       <div className="mb-2 flex items-center justify-between">
@@ -134,9 +152,9 @@ export function ScheduleSection({ sessions, teams }: Props) {
       {/* フィルターバー（1行） */}
       <div className="mb-3 flex items-center gap-2">
         <button
-          onClick={() => setOpenSheet(openSheet === "tab" ? null : "tab")}
+          onClick={() => setOpenSheet(openSheet === "display" ? null : "display")}
           className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors hover:border-[#005F8C] ${
-            tab !== "all"
+            !isDefaultDisplayFilter
               ? "border-[#005F8C] bg-[#e8f2f8] text-[#005F8C]"
               : "border-[#dce3ea] bg-white text-[#1a2332]"
           }`}
@@ -148,7 +166,7 @@ export function ScheduleSection({ sessions, teams }: Props) {
             <line x1="8" y1="2" x2="8" y2="6" />
             <line x1="3" y1="10" x2="21" y2="10" />
           </svg>
-          {TAB_LABELS[tab]}
+          {displayFilterLabel}
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-50">
             <polyline points="6 9 12 15 18 9" />
           </svg>
@@ -209,8 +227,8 @@ export function ScheduleSection({ sessions, teams }: Props) {
             </div>
             <p className="text-base font-semibold text-[#1a2332]">{emptyMessage}</p>
             <p className="mt-1 text-sm text-[#475569]">
-              {tab === "registered" ? "セッションに参加登録すると、ここに表示されます" :
-               tab === "past" ? "参加したセッションの履歴が表示されます" :
+              {registrationFilter === "registered" ? "セッションに参加登録すると、ここに表示されます" :
+               timeFilter === "past" ? "過去のセッションが表示されます" :
                "グループのセッションが作成されると表示されます"}
             </p>
           </div>
@@ -252,8 +270,8 @@ export function ScheduleSection({ sessions, teams }: Props) {
                       </p>
                       <p className="truncate text-xs text-[#64748b]">{session.team_name}</p>
                     </div>
-                    {/* バッジ */}
-                    {tab !== "past" && (
+                    {/* バッジ（開催日時ベースで判定） */}
+                    {new Date(session.scheduled_at) > now ? (
                       session.is_registered ? (
                         <Badge className="shrink-0 bg-[#eaf7f0] text-[#0f8a4f] border-transparent text-xs">
                           参加予定
@@ -263,8 +281,7 @@ export function ScheduleSection({ sessions, teams }: Props) {
                           受付中
                         </Badge>
                       )
-                    )}
-                    {tab === "past" && (
+                    ) : (
                       <Badge className="shrink-0 bg-[#edf0f4] text-[#475569] border-transparent text-xs">
                         {SESSION_TYPE_LABELS[session.type] || session.type}
                       </Badge>
@@ -278,7 +295,7 @@ export function ScheduleSection({ sessions, teams }: Props) {
       </div>
 
       {/* ボトムシート（createPortal でbody直下にマウント） */}
-      {mounted && openSheet === "tab" && createPortal(
+      {mounted && openSheet === "display" && createPortal(
         <div
           className="fixed inset-0 z-[300] flex items-end sm:items-center sm:justify-center"
           onClick={() => setOpenSheet(null)}
@@ -294,13 +311,15 @@ export function ScheduleSection({ sessions, teams }: Props) {
           >
             <div className="mx-auto mb-4 h-1 w-8 rounded-full bg-[#dce3ea] sm:hidden" />
             <h3 className="mb-4 text-[18px] font-semibold text-[#1a2332]">表示内容</h3>
-            <div className="flex flex-col gap-1">
-              {(["all", "registered", "past"] as Tab[]).map((key) => {
-                const isActive = tab === key
+
+            <p className="mb-1.5 text-xs font-semibold text-[#64748b]">時期</p>
+            <div className="mb-4 flex flex-col gap-1">
+              {(["all", "upcoming", "past"] as TimeFilter[]).map((key) => {
+                const isActive = timeFilter === key
                 return (
                   <button
                     key={key}
-                    onClick={() => { setTab(key); setOpenSheet(null) }}
+                    onClick={() => setTimeFilter(key)}
                     className={`flex items-center justify-between rounded-[10px] px-4 py-3 text-left text-base transition-colors ${
                       isActive
                         ? "bg-[#e8f2f8] font-semibold text-[#005F8C]"
@@ -308,7 +327,33 @@ export function ScheduleSection({ sessions, teams }: Props) {
                     }`}
                     style={{ minHeight: 48 }}
                   >
-                    {TAB_LABELS[key]}
+                    {TIME_LABELS[key]}
+                    {isActive && (
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#005F8C" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+
+            <p className="mb-1.5 text-xs font-semibold text-[#64748b]">参加状況</p>
+            <div className="flex flex-col gap-1">
+              {(["all", "registered"] as RegistrationFilter[]).map((key) => {
+                const isActive = registrationFilter === key
+                return (
+                  <button
+                    key={key}
+                    onClick={() => setRegistrationFilter(key)}
+                    className={`flex items-center justify-between rounded-[10px] px-4 py-3 text-left text-base transition-colors ${
+                      isActive
+                        ? "bg-[#e8f2f8] font-semibold text-[#005F8C]"
+                        : "text-[#1a2332] hover:bg-[#f2f7fa]"
+                    }`}
+                    style={{ minHeight: 48 }}
+                  >
+                    {REGISTRATION_LABELS[key]}
                     {isActive && (
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#005F8C" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                         <polyline points="20 6 9 17 4 12" />
