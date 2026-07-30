@@ -20,6 +20,7 @@ import { AdminTeamActions } from "@/app/(app)/teams/[id]/admin-team-actions"
 import { TeamDescription } from "@/app/(app)/teams/[id]/team-description"
 import { MemberSessionList } from "@/app/(app)/teams/[id]/member-session-list"
 import { MemberPreviewBar } from "@/app/(app)/teams/[id]/member-preview-bar"
+import { InviteButton } from "@/app/(app)/teams/[id]/invite-button"
 import { StripeSetupBanner } from "@/app/(app)/teams/[id]/stripe-setup-banner"
 import { BackLink } from "@/components/back-link"
 
@@ -176,29 +177,32 @@ export default async function TeamPage({ params }: TeamPageProps) {
               )}
             </div>
 
-            {/* ── メンバープレビュー（1つの角丸バー） ── */}
-            <div className="inline-flex items-center gap-2.5 rounded-full bg-[#f2f7fa] py-1.5 pl-2 pr-4">
-              <div className="flex -space-x-1.5">
-                {previewMembers.map((m: Record<string, unknown>, i: number) => {
-                  const swimmer = m.swimmer as Record<string, unknown> | null
-                  const avatarUrl = swimmer?.avatar_url as string | null
-                  const name = (swimmer?.name as string) || ""
-                  return (
-                    <div
-                      key={m.id as string}
-                      className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-full border-2 border-[#f2f7fa] bg-[#005F8C]/10 text-[10px] font-semibold text-[#005F8C]"
-                      style={{ zIndex: 3 - i }}
-                    >
-                      {avatarUrl ? (
-                        <Image src={avatarUrl} alt="" width={28} height={28} className="h-full w-full object-cover" />
-                      ) : (
-                        name[0] || "?"
-                      )}
-                    </div>
-                  )
-                })}
+            {/* ── メンバープレビュー + 招待 ── */}
+            <div className="flex items-center justify-between gap-2">
+              <div className="inline-flex items-center gap-[9px] rounded-full bg-[#f2f7fa] py-[6px] pl-[7px] pr-[15px]">
+                <div className="flex -space-x-[6px]">
+                  {previewMembers.map((m: Record<string, unknown>, i: number) => {
+                    const swimmer = m.swimmer as Record<string, unknown> | null
+                    const avatarUrl = swimmer?.avatar_url as string | null
+                    const name = (swimmer?.name as string) || ""
+                    return (
+                      <div
+                        key={m.id as string}
+                        className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border-2 border-[#f2f7fa] bg-[#005F8C]/10 text-[11px] font-semibold text-[#005F8C]"
+                        style={{ zIndex: 3 - i }}
+                      >
+                        {avatarUrl ? (
+                          <Image src={avatarUrl} alt="" width={32} height={32} className="h-full w-full object-cover" />
+                        ) : (
+                          name[0] || "?"
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+                <span className="text-sm font-semibold text-[#1a2332]">{members.length}人のメンバー</span>
               </div>
-              <span className="text-sm font-medium text-[#1a2332]">{members.length}人のメンバー</span>
+              <InviteButton inviteCode={team.invite_code} />
             </div>
 
             {/* ── アクションボタン + ウィザード ── */}

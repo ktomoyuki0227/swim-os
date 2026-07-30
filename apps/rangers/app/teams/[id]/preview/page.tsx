@@ -5,7 +5,6 @@ import { createClient, createAdminClient } from "@/lib/supabase/server"
 import { getPublicTeam } from "@/actions/teams"
 import { getMyJoinRequest } from "@/actions/join-requests"
 import { PublicTeamView } from "@/components/teams/public-team-view"
-import { AdminPreviewBanner } from "./admin-preview-banner"
 
 interface PageProps {
   params: Promise<{ id: string }>
@@ -24,7 +23,7 @@ export default async function TeamPreviewPage({ params }: PageProps) {
     // 未ログイン: 公開ビューをそのまま表示
     return (
       <div className="min-h-screen">
-        <PublicTeamView data={result.data} hasBottomNav={false} isLoggedIn={false} />
+        <PublicTeamView data={result.data} hasBottomNav={false} isLoggedIn={false} hasHeader={false} />
       </div>
     )
   }
@@ -47,12 +46,11 @@ export default async function TeamPreviewPage({ params }: PageProps) {
     redirect(`/teams/${id}`)
   }
 
-  // 管理者: 管理者バナー + ゲスト目線のプレビュー（CTA非表示）
+  // 管理者: ゲスト目線のプレビュー（CTA非表示）
   if (isAdmin) {
     return (
       <div className="min-h-screen">
-        <AdminPreviewBanner teamId={id} />
-        <PublicTeamView data={result.data} hasBottomNav={false} isLoggedIn={true} isAdmin={true} />
+        <PublicTeamView data={result.data} hasBottomNav={false} isLoggedIn={true} isAdmin={true} hasHeader={false} />
       </div>
     )
   }
@@ -68,6 +66,7 @@ export default async function TeamPreviewPage({ params }: PageProps) {
         hasBottomNav={false}
         isLoggedIn={true}
         joinRequestStatus={joinRequestStatus}
+        hasHeader={false}
       />
     </div>
   )

@@ -1,6 +1,7 @@
 import Image from "next/image"
 import Link from "next/link"
 import { ContactInfoButton } from "./contact-info-button"
+import { PublicTeamBackButton } from "./public-team-back-button"
 import type { SessionType } from "@/types/database"
 
 interface PublicSession {
@@ -44,6 +45,8 @@ interface PublicTeamViewProps {
   isLoggedIn?: boolean
   /** 管理者がプレビュー表示している場合は true（参加CTAを非表示にする） */
   isAdmin?: boolean
+  /** 上に sticky ヘッダー（h-16）がある場合は true。戻るボタンの位置調整に使う */
+  hasHeader?: boolean
 }
 
 const SESSION_TYPE_LABEL: Record<string, string> = {
@@ -54,7 +57,7 @@ const SESSION_TYPE_LABEL: Record<string, string> = {
   meeting: "ミーティング",
 }
 
-export function PublicTeamView({ data, hasBottomNav = false, joinRequestStatus = null, isLoggedIn = false, isAdmin = false }: PublicTeamViewProps) {
+export function PublicTeamView({ data, hasBottomNav = false, joinRequestStatus = null, isLoggedIn = false, isAdmin = false, hasHeader = true }: PublicTeamViewProps) {
   const { team, coach, memberCount, sessions } = data
 
   const coachId = (coach?.id as string) ?? null
@@ -71,6 +74,8 @@ export function PublicTeamView({ data, hasBottomNav = false, joinRequestStatus =
 
   return (
     <div className="min-h-screen bg-[#f2f7fa]">
+      <PublicTeamBackButton hasHeader={hasHeader} />
+
       {/* ── ヒーロー ── */}
       <div className="relative h-56 w-full overflow-hidden sm:h-72">
         {heroBannerUrl ? (
