@@ -405,11 +405,11 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
             return (
               <div key={monthKey}>
                 {/* 月ヘッダー */}
-                <div className="mb-2 flex items-baseline justify-between px-1">
+                <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5 px-1">
                   <p className="text-sm font-semibold text-[#1a2332]">
                     {formatMonthKey(monthKey)}
                   </p>
-                  <p className="text-xs text-[#475569]">
+                  <p className="whitespace-nowrap text-xs text-[#475569]">
                     合計 {net >= 0 ? "+" : "−"}¥{Math.abs(net).toLocaleString()}
                   </p>
                 </div>
@@ -425,7 +425,7 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
                       />
 
                       {/* 行コンテンツ */}
-                      <div className="flex flex-1 items-center gap-3 px-4 py-3">
+                      <div className="flex min-w-0 flex-1 items-center gap-3 px-4 py-3">
                         {/* 日付（月/日） */}
                         <div className="w-9 shrink-0 text-center">
                           <p className="text-sm font-medium tabular-nums text-[#1a2332]">
@@ -449,7 +449,7 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
                         </div>
 
                         {/* 金額 + 異常ステータスバッジ */}
-                        <div className="shrink-0 text-right">
+                        <div className="shrink-0 whitespace-nowrap text-right">
                           <p
                             className="text-sm font-semibold"
                             style={{ color: item.direction === "income" ? "#005F8C" : "#1a2332" }}

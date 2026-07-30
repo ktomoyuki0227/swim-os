@@ -67,7 +67,7 @@ export function CardModal({ cardDetails, hasCard }: CardModalProps) {
           />
 
           {/* シートパネル */}
-          <div className="fixed bottom-0 left-0 right-0 z-50 rounded-t-[20px] bg-white shadow-2xl">
+          <div className="fixed bottom-0 left-0 right-0 z-50 rounded-t-[20px] bg-white shadow-2xl sm:bottom-6 sm:mx-auto sm:max-w-md sm:rounded-[20px]">
             {/* ドラッグハンドル */}
             <div className="flex justify-center pt-3 pb-1">
               <div className="h-1 w-10 rounded-full bg-[#dce3ea]" />

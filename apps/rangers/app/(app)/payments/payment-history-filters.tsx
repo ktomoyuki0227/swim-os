@@ -68,7 +68,7 @@ function BottomSheet({ children, onClose }: { children: React.ReactNode; onClose
       />
       <div
         ref={sheetRef}
-        className="fixed bottom-0 left-0 right-0 z-50 rounded-t-[28px] bg-white"
+        className="fixed bottom-0 left-0 right-0 z-50 max-h-[85vh] overflow-y-auto rounded-t-[28px] bg-white sm:bottom-6 sm:mx-auto sm:max-w-md sm:rounded-[24px]"
         style={{
           transition: "transform 0.25s cubic-bezier(0.32,0.72,0,1)",
           boxShadow: "0 -12px 48px rgba(0,0,0,0.14), 0 -1px 0 rgba(0,0,0,0.06)",
@@ -189,7 +189,7 @@ export function PaymentHistoryFilters({
 
   return (
     <>
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         {/* 絞り込み */}
         <button
           type="button"
