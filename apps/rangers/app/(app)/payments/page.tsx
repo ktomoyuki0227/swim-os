@@ -454,7 +454,7 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
                             className="text-sm font-semibold"
                             style={{ color: item.direction === "income" ? "#005F8C" : "#1a2332" }}
                           >
-                            {item.direction === "income" ? "+" : "−"}¥{item.amount.toLocaleString()}
+                            ¥{item.amount.toLocaleString()}
                           </p>
                           {ALERT_STATUS_LABELS[item.status] && (
                             <span
