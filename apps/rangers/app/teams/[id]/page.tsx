@@ -119,10 +119,12 @@ export default async function TeamPage({ params }: TeamPageProps) {
 
     const team = teamResult.data
     const members = membersResult.data || []
+    const now = new Date()
     const sessions = (sessionsResult.data || [])
       .filter(
         (s: Record<string, unknown>) =>
-          s.session_status === "open" || s.session_status === "confirmed"
+          (s.session_status === "open" || s.session_status === "confirmed") &&
+          new Date(s.scheduled_at as string) > now
       )
       .slice(0, 10)
     const joinRequests = joinRequestsResult.data || []
