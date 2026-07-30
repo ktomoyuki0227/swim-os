@@ -64,7 +64,7 @@ export function ScheduleSection({ sessions, teams }: Props) {
 
   const tabFiltered = sessions.filter((s) => {
     const dt = new Date(s.scheduled_at)
-    if (tab === "all") return dt > now
+    if (tab === "all") return true
     if (tab === "registered") return dt > now && s.is_registered
     if (tab === "past") return dt <= now && s.is_registered
     return true
