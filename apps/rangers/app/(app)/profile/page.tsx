@@ -32,6 +32,10 @@ import {
 
 type EditingSection = "basic" | "swimmer" | "emergency" | "registration" | "public" | null
 
+// actions/profile.ts の uploadAvatar と同じ上限。ここで弾いておけば無駄な
+// アップロード試行(サーバー側チェックのラウンドトリップ)を避けられる
+const MAX_AVATAR_SIZE_BYTES = 2 * 1024 * 1024
+
 const EMPTY_BASIC: BasicForm = { name: "", furigana: "", gender: "", birthday: "", phone: "", address: "" }
 const EMPTY_EMERGENCY: EmergencyForm = { emergencyContact: "", emergencyContactName: "", emergencyContactRelation: "" }
 const EMPTY_REGISTRATION: RegistrationForm = { mastersRegistered: false, mastersNumber: "", jsaRegistered: false, jsaNumber: "", swimwearSize: "" }
@@ -95,6 +99,10 @@ export default function ProfilePage() {
   }
 
   const handleAvatarFileSelected = (file: File) => {
+    if (file.size > MAX_AVATAR_SIZE_BYTES) {
+      showToast("ファイルサイズは2MB以下にしてください", "error")
+      return
+    }
     // プレビュー表示（アップロード中）
     if (previewObjectUrlRef.current) URL.revokeObjectURL(previewObjectUrlRef.current)
     const url = URL.createObjectURL(file)

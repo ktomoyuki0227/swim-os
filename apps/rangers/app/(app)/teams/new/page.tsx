@@ -14,6 +14,8 @@ import { PricingStep } from "./pricing-step"
 import { PaymentSetupStep } from "./payment-setup-step"
 import type { BasicFormData, ImageData, FeeFormData, TeamType } from "./types"
 
+const MAX_TEAM_IMAGE_SIZE_BYTES = 5 * 1024 * 1024
+
 const EMPTY_BASIC_FORM: BasicFormData = {
   name: "",
   description: "",
@@ -102,6 +104,13 @@ export default function NewTeamPage() {
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>, type: "cover" | "icon") => {
     const file = e.target.files?.[0]
     if (!file) return
+    // actions/teams/crud.ts の uploadTeamImage と同じ上限。ここで弾かないと
+    // サーバー側チェックに届く前にNext.jsのServer Actionsボディ上限に当たり得る
+    if (file.size > MAX_TEAM_IMAGE_SIZE_BYTES) {
+      showToast("ファイルサイズは5MB以下にしてください", "error")
+      e.target.value = ""
+      return
+    }
     const preview = URL.createObjectURL(file)
     if (type === "cover") {
       setImages((prev) => {
@@ -150,6 +159,8 @@ export default function NewTeamPage() {
       setCoverImageUrl(newCoverUrl)
       setIconImageUrl(newIconUrl)
       goToStep(4)
+    } catch {
+      showToast("画像のアップロードに失敗しました", "error")
     } finally {
       setUploading(false)
     }
@@ -191,17 +202,21 @@ export default function NewTeamPage() {
     }
 
     startTransition(async () => {
-      const result = await createTeam(payload)
-      if (result.error) {
-        showToast(result.error, "error")
-      } else if (result.data) {
-        const hasFees = feeForm.hasSessionFee || feeForm.hasAnnualFee || feeForm.hasMonthlyFee
-        setCreatedTeamId(result.data.id)
-        if (hasFees) {
-          goToStep(5)
-        } else {
-          router.push(`/teams/${result.data.id}`)
+      try {
+        const result = await createTeam(payload)
+        if (result.error) {
+          showToast(result.error, "error")
+        } else if (result.data) {
+          const hasFees = feeForm.hasSessionFee || feeForm.hasAnnualFee || feeForm.hasMonthlyFee
+          setCreatedTeamId(result.data.id)
+          if (hasFees) {
+            goToStep(5)
+          } else {
+            router.push(`/teams/${result.data.id}`)
+          }
         }
+      } catch {
+        showToast("グループの作成に失敗しました。もう一度お試しください。", "error")
       }
     })
   }

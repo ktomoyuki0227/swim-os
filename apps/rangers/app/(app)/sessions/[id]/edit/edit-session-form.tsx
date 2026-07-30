@@ -168,35 +168,40 @@ export function EditSessionForm({ session, teamName }: EditSessionFormProps) {
     }
 
     startTransition(async () => {
-      const result = await updateSession(sessionId, {
-        title: form.title,
-        description: form.description || undefined,
-        type: form.type as "practice" | "camp" | "competition" | "event" | "meeting",
-        scheduled_at: form.scheduled_at,
-        end_at: form.end_at || undefined,
-        location: form.location,
-        meeting_point: form.meeting_point || undefined,
-        gender_filter: form.gender_filter,
-        member_price: isConfirmed ? undefined : (parseInt(form.member_price) || 0),
-        guest_price: isConfirmed ? undefined : (parseInt(form.guest_price) || 0),
-        registration_deadline: form.registration_deadline || undefined,
-        min_participants: parseOptionalInt(form.min_participants),
-        max_participants: parseOptionalInt(form.max_participants),
-        cancellation_days: parseOptionalInt(form.cancellation_days),
-        allow_point_card: form.allow_point_card,
-        is_external: form.is_external,
-        target_tags: selectedTags,
-        // idはReact key用のクライアント内部データのため送信前に取り除く
-        competition_fields: form.type === "competition"
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars -- idを分割代入で除外するための意図的な未使用束縛
-          ? competitionFields.map(({ id, ...f }): CompetitionField => f)
-          : undefined,
-      })
-      if (result.error) {
-        showToast(result.error, "error")
-      } else {
-        showToast("セッションを更新しました", "success")
-        router.push(`/sessions/${sessionId}`)
+      // startTransition内の例外はエラーバウンダリまで突き抜けてしまうため、Server Action呼び出しはtry/catchで受け止める
+      try {
+        const result = await updateSession(sessionId, {
+          title: form.title,
+          description: form.description || undefined,
+          type: form.type as "practice" | "camp" | "competition" | "event" | "meeting",
+          scheduled_at: form.scheduled_at,
+          end_at: form.end_at || undefined,
+          location: form.location,
+          meeting_point: form.meeting_point || undefined,
+          gender_filter: form.gender_filter,
+          member_price: isConfirmed ? undefined : (parseInt(form.member_price) || 0),
+          guest_price: isConfirmed ? undefined : (parseInt(form.guest_price) || 0),
+          registration_deadline: form.registration_deadline || undefined,
+          min_participants: parseOptionalInt(form.min_participants),
+          max_participants: parseOptionalInt(form.max_participants),
+          cancellation_days: parseOptionalInt(form.cancellation_days),
+          allow_point_card: form.allow_point_card,
+          is_external: form.is_external,
+          target_tags: selectedTags,
+          // idはReact key用のクライアント内部データのため送信前に取り除く
+          competition_fields: form.type === "competition"
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars -- idを分割代入で除外するための意図的な未使用束縛
+            ? competitionFields.map(({ id, ...f }): CompetitionField => f)
+            : undefined,
+        })
+        if (result.error) {
+          showToast(result.error, "error")
+        } else {
+          showToast("セッションを更新しました", "success")
+          router.push(`/sessions/${sessionId}`)
+        }
+      } catch {
+        showToast("セッションの更新に失敗しました。もう一度お試しください。", "error")
       }
     })
   }

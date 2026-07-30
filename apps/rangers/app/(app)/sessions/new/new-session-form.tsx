@@ -214,36 +214,41 @@ export function NewSessionForm({
   const handleSubmit = () => {
     if (!activeTeamId) { showToast("グループが選択されていません", "error"); return }
     startTransition(async () => {
-      const result = await createSession(activeTeamId, {
-        title: form.title,
-        description: form.description || undefined,
-        type: form.type as "practice" | "camp" | "competition" | "event" | "meeting",
-        scheduled_at: form.scheduled_at,
-        end_at: form.end_at || undefined,
-        location: form.location,
-        meeting_point: form.meeting_point || undefined,
-        gender_filter: form.gender_filter,
-        member_price: parseInt(form.member_price) || 0,
-        guest_price: parseInt(form.guest_price) || 0,
-        registration_deadline: form.registration_deadline || undefined,
-        min_participants: parseOptionalInt(form.min_participants),
-        max_participants: parseOptionalInt(form.max_participants),
-        cancellation_days: parseOptionalInt(form.cancellation_days),
-        allow_point_card: form.allow_point_card,
-        is_external: form.is_external,
-        target_tags: selectedTags,
-        target_members: selectedMemberIds ?? undefined,
-        // idはReact key用のクライアント内部データのため送信前に取り除く
-        competition_fields: form.type === "competition"
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars -- idを分割代入で除外するための意図的な未使用束縛
-          ? competitionFields.map(({ id, ...f }): CompetitionField => f)
-          : undefined,
-      })
-      if (result.error) {
-        showToast(result.error, "error")
-      } else if (result.data) {
-        showToast("セッションを作成しました", "success")
-        router.push(`/sessions/${result.data.id}`)
+      // startTransition内の例外はエラーバウンダリまで突き抜けてしまうため、Server Action呼び出しはtry/catchで受け止める
+      try {
+        const result = await createSession(activeTeamId, {
+          title: form.title,
+          description: form.description || undefined,
+          type: form.type as "practice" | "camp" | "competition" | "event" | "meeting",
+          scheduled_at: form.scheduled_at,
+          end_at: form.end_at || undefined,
+          location: form.location,
+          meeting_point: form.meeting_point || undefined,
+          gender_filter: form.gender_filter,
+          member_price: parseInt(form.member_price) || 0,
+          guest_price: parseInt(form.guest_price) || 0,
+          registration_deadline: form.registration_deadline || undefined,
+          min_participants: parseOptionalInt(form.min_participants),
+          max_participants: parseOptionalInt(form.max_participants),
+          cancellation_days: parseOptionalInt(form.cancellation_days),
+          allow_point_card: form.allow_point_card,
+          is_external: form.is_external,
+          target_tags: selectedTags,
+          target_members: selectedMemberIds ?? undefined,
+          // idはReact key用のクライアント内部データのため送信前に取り除く
+          competition_fields: form.type === "competition"
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars -- idを分割代入で除外するための意図的な未使用束縛
+            ? competitionFields.map(({ id, ...f }): CompetitionField => f)
+            : undefined,
+        })
+        if (result.error) {
+          showToast(result.error, "error")
+        } else if (result.data) {
+          showToast("セッションを作成しました", "success")
+          router.push(`/sessions/${result.data.id}`)
+        }
+      } catch {
+        showToast("セッションの作成に失敗しました。もう一度お試しください。", "error")
       }
     })
   }

@@ -1,8 +1,10 @@
 "use client"
 
 import { useTransition } from "react"
+import { useRouter } from "next/navigation"
 import { Badge } from "@/components/ui/badge"
 import { markCashPaid } from "@/actions/sessions"
+import { useToast } from "@/components/toast"
 
 interface CashRegistration {
   id: string
@@ -43,8 +45,25 @@ export function CashCollectionPanel({ registrations }: CashCollectionPanelProps)
 
 function CashRow({ reg }: { reg: CashRegistration }) {
   const [isPending, startTransition] = useTransition()
+  const router = useRouter()
+  const { showToast } = useToast()
   const isCollected = reg.paymentStatus === "paid"
   const isFree = reg.paymentStatus === "free"
+
+  const handleMarkPaid = () => {
+    startTransition(async () => {
+      try {
+        const result = await markCashPaid(reg.id)
+        if (result?.error) {
+          showToast(result.error, "error")
+        } else {
+          router.refresh()
+        }
+      } catch {
+        showToast("処理に失敗しました。もう一度お試しください。", "error")
+      }
+    })
+  }
 
   return (
     <div className="flex items-center gap-3 rounded-lg bg-white px-3 py-2.5">
@@ -58,7 +77,7 @@ function CashRow({ reg }: { reg: CashRegistration }) {
         <Badge className="bg-[#eaf7f0] text-[#0f8a4f] border-transparent text-xs">集金済み</Badge>
       ) : (
         <button
-          onClick={() => startTransition(async () => { await markCashPaid(reg.id) })}
+          onClick={handleMarkPaid}
           disabled={isPending}
           className="rounded-lg bg-[#005F8C] px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50 hover:bg-[#004E73] transition-colors"
         >

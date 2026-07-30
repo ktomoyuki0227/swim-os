@@ -13,6 +13,8 @@ import { FeeFields } from "./fee-fields"
 import { StatusCard } from "./status-card"
 import type { FeeFieldsForm } from "./types"
 
+const MAX_TEAM_IMAGE_SIZE_BYTES = 5 * 1024 * 1024
+
 interface Team {
   id: string
   name: string
@@ -98,6 +100,13 @@ export function EditTeamForm({ team, stripeEnabled, connectStatus }: EditTeamFor
   ) => {
     const file = e.target.files?.[0]
     if (!file) return
+    // actions/teams/crud.ts の uploadTeamImage と同じ上限。ここで弾かないと
+    // サーバー側チェックに届く前にNext.jsのServer Actionsボディ上限に当たり得る
+    if (file.size > MAX_TEAM_IMAGE_SIZE_BYTES) {
+      showToast("ファイルサイズは5MB以下にしてください", "error")
+      e.target.value = ""
+      return
+    }
     const preview = URL.createObjectURL(file)
     if (type === "cover") {
       setCoverFile(file)
@@ -137,80 +146,86 @@ export function EditTeamForm({ team, stripeEnabled, connectStatus }: EditTeamFor
     const data = new FormData(form)
 
     startTransition(async () => {
-      let newCoverUrl: string | undefined
-      let newIconUrl: string | undefined
-
-      // Upload any newly-selected images first
-      setImageUploading(true)
+      // startTransition内の例外はエラーバウンダリまで突き抜けてしまう(500画面化)ため、
+      // Server Action呼び出しは必ずtry/catchで受け止める
       try {
-        if (coverFile) {
-          const fd = new FormData()
-          fd.append("file", coverFile)
-          fd.append("type", "cover")
-          const result = await uploadTeamImage(fd)
-          if (result.error) {
-            showToast(result.error, "error")
-            return
+        let newCoverUrl: string | undefined
+        let newIconUrl: string | undefined
+
+        // Upload any newly-selected images first
+        setImageUploading(true)
+        try {
+          if (coverFile) {
+            const fd = new FormData()
+            fd.append("file", coverFile)
+            fd.append("type", "cover")
+            const result = await uploadTeamImage(fd)
+            if (result.error) {
+              showToast(result.error, "error")
+              return
+            }
+            newCoverUrl = result.url
           }
-          newCoverUrl = result.url
+
+          if (iconFile) {
+            const fd = new FormData()
+            fd.append("file", iconFile)
+            fd.append("type", "icon")
+            const result = await uploadTeamImage(fd)
+            if (result.error) {
+              showToast(result.error, "error")
+              return
+            }
+            newIconUrl = result.url
+          }
+        } finally {
+          setImageUploading(false)
         }
 
-        if (iconFile) {
-          const fd = new FormData()
-          fd.append("file", iconFile)
-          fd.append("type", "icon")
-          const result = await uploadTeamImage(fd)
-          if (result.error) {
-            showToast(result.error, "error")
-            return
-          }
-          newIconUrl = result.url
+        const annualFeeVal = parseInt(feeForm.annualFeeAmount)
+        const monthlyFeeVal = parseInt(feeForm.monthlyFeeAmount)
+        const pointCardPriceVal = parseInt(feeForm.pointCardPrice)
+
+        const payload: Record<string, unknown> = {
+          name: data.get("name") as string,
+          description: (data.get("description") as string) || undefined,
+          activity_area: (data.get("activity_area") as string) || undefined,
+          practice_frequency: (data.get("practice_frequency") as string) || null,
+          practice_days: practiceDays,
+          main_pool: (data.get("main_pool") as string) || null,
+          is_recruiting: isRecruiting,
+          show_member_count: showMemberCount,
+          status: isActive ? "active" : "inactive",
+          has_session_fee: feeForm.hasSessionFee,
+          has_annual_fee: feeForm.hasAnnualFee,
+          has_monthly_fee: feeForm.hasMonthlyFee,
+          has_point_card: feeForm.hasPointCard,
+          default_member_price: feeForm.hasSessionFee ? (parseInt(feeForm.defaultMemberPrice) || 0) : 0,
+          default_guest_price: feeForm.hasSessionFee ? (parseInt(feeForm.defaultGuestPrice) || 0) : 0,
+          annual_fee_amount: feeForm.hasAnnualFee ? (Number.isNaN(annualFeeVal) ? undefined : annualFeeVal) : undefined,
+          monthly_fee_amount: feeForm.hasMonthlyFee ? (Number.isNaN(monthlyFeeVal) ? undefined : monthlyFeeVal) : undefined,
+          cancellation_days: parseInt(feeForm.cancellationDays) || 3,
+          point_card_count: feeForm.hasPointCard ? (parseInt(feeForm.pointCardCount) || team.point_card_count || 10) : undefined,
+          point_card_price: feeForm.hasPointCard ? (Number.isNaN(pointCardPriceVal) ? undefined : pointCardPriceVal) : undefined,
+          contact_email: (data.get("contact_email") as string) || null,
+          contact_phone: (data.get("contact_phone") as string) || null,
+          fee_members_exempt_session: team.fee_members_exempt_session,
         }
-      } finally {
-        setImageUploading(false)
-      }
 
-      const annualFeeVal = parseInt(feeForm.annualFeeAmount)
-      const monthlyFeeVal = parseInt(feeForm.monthlyFeeAmount)
-      const pointCardPriceVal = parseInt(feeForm.pointCardPrice)
+        if (newCoverUrl) payload.cover_image_url = newCoverUrl
+        if (newIconUrl) payload.avatar_url = newIconUrl
 
-      const payload: Record<string, unknown> = {
-        name: data.get("name") as string,
-        description: (data.get("description") as string) || undefined,
-        activity_area: (data.get("activity_area") as string) || undefined,
-        practice_frequency: (data.get("practice_frequency") as string) || null,
-        practice_days: practiceDays,
-        main_pool: (data.get("main_pool") as string) || null,
-        is_recruiting: isRecruiting,
-        show_member_count: showMemberCount,
-        status: isActive ? "active" : "inactive",
-        has_session_fee: feeForm.hasSessionFee,
-        has_annual_fee: feeForm.hasAnnualFee,
-        has_monthly_fee: feeForm.hasMonthlyFee,
-        has_point_card: feeForm.hasPointCard,
-        default_member_price: feeForm.hasSessionFee ? (parseInt(feeForm.defaultMemberPrice) || 0) : 0,
-        default_guest_price: feeForm.hasSessionFee ? (parseInt(feeForm.defaultGuestPrice) || 0) : 0,
-        annual_fee_amount: feeForm.hasAnnualFee ? (Number.isNaN(annualFeeVal) ? undefined : annualFeeVal) : undefined,
-        monthly_fee_amount: feeForm.hasMonthlyFee ? (Number.isNaN(monthlyFeeVal) ? undefined : monthlyFeeVal) : undefined,
-        cancellation_days: parseInt(feeForm.cancellationDays) || 3,
-        point_card_count: feeForm.hasPointCard ? (parseInt(feeForm.pointCardCount) || team.point_card_count || 10) : undefined,
-        point_card_price: feeForm.hasPointCard ? (Number.isNaN(pointCardPriceVal) ? undefined : pointCardPriceVal) : undefined,
-        contact_email: (data.get("contact_email") as string) || null,
-        contact_phone: (data.get("contact_phone") as string) || null,
-        fee_members_exempt_session: team.fee_members_exempt_session,
-      }
-
-      if (newCoverUrl) payload.cover_image_url = newCoverUrl
-      if (newIconUrl) payload.avatar_url = newIconUrl
-
-      const result = await updateTeam(team.id, payload)
-      if (result.error) {
-        showToast(result.error, "error")
-      } else {
-        showToast("グループ情報を更新しました", "success")
-        setTimeout(() => {
-          router.push(`/teams/${team.id}`)
-        }, 800)
+        const result = await updateTeam(team.id, payload)
+        if (result.error) {
+          showToast(result.error, "error")
+        } else {
+          showToast("グループ情報を更新しました", "success")
+          setTimeout(() => {
+            router.push(`/teams/${team.id}`)
+          }, 800)
+        }
+      } catch {
+        showToast("保存に失敗しました。もう一度お試しください。", "error")
       }
     })
   }

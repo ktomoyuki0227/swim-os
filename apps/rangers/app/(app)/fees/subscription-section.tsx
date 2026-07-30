@@ -69,12 +69,16 @@ function MemberSubscriptionCard({
 
   const handleStart = () => {
     startTransition(async () => {
-      const res = await startMonthlySubscription(teamId, member.swimmer_id)
-      if (res.error) {
-        showToast(res.error, "error")
-      } else {
-        showToast("Subscription を開始しました", "success")
-        onAction()
+      try {
+        const res = await startMonthlySubscription(teamId, member.swimmer_id)
+        if (res.error) {
+          showToast(res.error, "error")
+        } else {
+          showToast("Subscription を開始しました", "success")
+          onAction()
+        }
+      } catch {
+        showToast("処理に失敗しました。もう一度お試しください。", "error")
       }
     })
   }
@@ -82,12 +86,16 @@ function MemberSubscriptionCard({
   const handleCancel = () => {
     setShowCancelConfirm(false)
     startTransition(async () => {
-      const res = await cancelMonthlySubscription(teamId, member.swimmer_id)
-      if (res.error) {
-        showToast(res.error, "error")
-      } else {
-        showToast("Subscription をキャンセル設定しました", "success")
-        onAction()
+      try {
+        const res = await cancelMonthlySubscription(teamId, member.swimmer_id)
+        if (res.error) {
+          showToast(res.error, "error")
+        } else {
+          showToast("Subscription をキャンセル設定しました", "success")
+          onAction()
+        }
+      } catch {
+        showToast("処理に失敗しました。もう一度お試しください。", "error")
       }
     })
   }

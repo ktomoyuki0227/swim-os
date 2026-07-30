@@ -28,18 +28,22 @@ export function AnnouncementsSection({ teamId, announcements }: AnnouncementsSec
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     startTransition(async () => {
-      const result = await createAnnouncement(teamId, {
-        title: title.trim(),
-        body: body.trim() || undefined,
-        target_tags: [],
-      })
-      if (result.error) {
-        showToast(result.error, "error")
-      } else {
-        showToast("お知らせを配信しました", "success")
-        setTitle("")
-        setBody("")
-        setShowForm(false)
+      try {
+        const result = await createAnnouncement(teamId, {
+          title: title.trim(),
+          body: body.trim() || undefined,
+          target_tags: [],
+        })
+        if (result.error) {
+          showToast(result.error, "error")
+        } else {
+          showToast("お知らせを配信しました", "success")
+          setTitle("")
+          setBody("")
+          setShowForm(false)
+        }
+      } catch {
+        showToast("お知らせの配信に失敗しました。もう一度お試しください。", "error")
       }
     })
   }
