@@ -13,6 +13,7 @@ import { FeeActions } from "./fee-actions"
 import { FeeFilters } from "./fee-filters"
 import { StampSection } from "./stamp-section"
 import { SubscriptionSection } from "./subscription-section"
+import type { SubscriptionStatus } from "@/types/database"
 
 interface FeesPageProps {
   searchParams: Promise<{ team?: string; type?: string; period?: string }>
@@ -140,7 +141,7 @@ export default async function FeesPage({ searchParams }: FeesPageProps) {
   type MonthlyMember = {
     swimmer_id: string
     stripe_subscription_id: string | null
-    subscription_status: string | null
+    subscription_status: SubscriptionStatus | null
     swimmer: { name: string | null } | null
   }
   let monthlyMembers: MonthlyMember[] = []
@@ -155,7 +156,7 @@ export default async function FeesPage({ searchParams }: FeesPageProps) {
     monthlyMembers = (members || []).map((m) => ({
       swimmer_id: m.swimmer_id,
       stripe_subscription_id: m.stripe_subscription_id ?? null,
-      subscription_status: m.subscription_status ?? null,
+      subscription_status: (m.subscription_status ?? null) as SubscriptionStatus | null,
       swimmer: Array.isArray(m.swimmer) ? (m.swimmer[0] ?? null) : (m.swimmer ?? null),
     }))
   }

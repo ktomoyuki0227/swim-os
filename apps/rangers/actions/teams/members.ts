@@ -8,6 +8,10 @@ import type { MembershipType } from "@/types/database"
 import type { Database } from "@/types/database-generated"
 import { isTeamAdmin, getActiveTeamAdminIds } from "@/lib/auth/require-team-admin"
 import { notifyUsers } from "@/lib/notifications"
+import { isRateLimited } from "@/lib/rate-limit"
+
+const JOIN_TEAM_RATE_LIMIT = 10
+const JOIN_TEAM_RATE_WINDOW_MS = 60 * 1000
 
 export async function joinTeamByCode(
   inviteCode: unknown,
@@ -23,6 +27,10 @@ export async function joinTeamByCode(
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
+
+  if (isRateLimited(`join_team:${user.id}`, JOIN_TEAM_RATE_LIMIT, JOIN_TEAM_RATE_WINDOW_MS)) {
+    return { error: "試行回数が多すぎます。しばらく時間をおいてから再度お試しください" }
+  }
 
   const admin = createAdminClient()
 

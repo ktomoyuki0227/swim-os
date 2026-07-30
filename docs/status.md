@@ -1,5 +1,48 @@
 # 作業ステータス
-最終更新: 2026-07-29（Rangers リファクタリング実施、コミット未・確認待ち）
+最終更新: 2026-07-30（Rangers 7回目全体レビュー実施、指摘9件すべて修正・ビルド確認済み）
+
+---
+
+## 完了 ✅: Rangers 7回目全体レビュー（2026-07-30）
+
+ともくんから「全体的に丁寧に時間をかけて」7回目の最終チェックを依頼され実施。
+tsc/eslint/Supabase advisorsをまず自分で確認した上で、security-reviewer・database-reviewer・typescript-reviewerの3エージェントを並列起動し、報告された指摘は主要なものを実コードで裏取り確認済み。HIGH2件・MEDIUM3件・LOW4件の**計9件すべてを修正**し、tsc/eslint/buildすべてクリーンを確認済み（**コミット・プッシュはまだ**）。
+
+### 修正済み ✅
+
+1. **HIGH（DB/決済整合性）→ 修正済み**: `transfer_records` のINSERT失敗時、`chargeSessionRegistrationStripe`(`lib/stripe-payment-helpers.ts:82-96`)はログを出すだけで課金を続行していた。後で`refundSessionRegistrationStripe`がConnect送金の有無を`transfer_records`の`status='succeeded'`行の存在のみで判定していたため（旧コード）、INSERT失敗時はこの行が永久に存在せず、返金時に`reverse_transfer`が指定されず、コーチ側に送金済みの資金が戻らずプラットフォームが返金額を丸かぶりする実害があった。
+   - 修正: `refundSessionRegistrationStripe`(`lib/stripe-payment-helpers.ts:147-196`)の`hasConnect`判定を、ローカルDBのtransfer_records依存から**Stripe上のPaymentIntent.transfer_dataを直接取得して判定**する方式に変更。ローカル記帳の欠落に影響されない一次情報源にした。PaymentIntent取得自体が失敗した場合はfail-closed(返金処理を進めずエラーを返す)。
+
+2. **HIGH（型安全性）→ 修正済み**: `SubscriptionStatus`型(`types/database.ts:264`)が実際のStripeステータス(`trialing`/`incomplete`/`incomplete_expired`/`paused`)を含んでおらず、`subscription-section.tsx`で未対応ステータスが英語の生文字列のままUIに表示されていた。
+   - 修正: `SubscriptionStatus`型にStripeの全ステータスを追加。`app/(app)/fees/subscription-section.tsx`のバッジ表示に`trialing`(お試し期間中)/`incomplete`・`incomplete_expired`(支払い未完了)/`paused`(一時停止中)の分岐を追加し、未知の値は「状態不明」にフォールバック。`app/(app)/fees/page.tsx`・`subscription-section.tsx`の型を`string | null`から`SubscriptionStatus | null`に統一。
+
+3. **MEDIUM（セキュリティ/データ露出）→ 修正済み**: `getSession()`(`actions/sessions/crud.ts`)が外部公開セッション分岐で`select("*")`をそのまま返し、`member_price`・`target_members`(uuid[])・`coach_id`等が非メンバーにも漏洩していた。
+   - 修正: `getSession()`をメンバー判定(`isTeamMember`)ベースに再設計。メンバーは全カラム、非メンバー(ログイン済み他ユーザー/未ログイン)は`id/title/description/content/type/scheduled_at/location/status/registration_deadline/max_participants/allow_point_card/target_tags/competition_fields`等の安全なカラムのみ返す（`member_price`/`guest_price`/`target_members`/`course_rules`/`coach_id`は除外）。呼び出し元4箇所(`app/(app)/sessions/[id]/page.tsx`・`sessions/new/new-session-form.tsx`・`teams/[id]/sessions/[sid]/page.tsx`)は`"member_price" in session`のtype guardで全カラム取得を前提とする箇所を保護し、非メンバー用の限定データが渡った場合は安全側(notFound/スキップ)に倒す。
+
+4. **MEDIUM（セキュリティ設計不備）→ 修正済み**: 「料金を確認する」ボタン(`price-reveal.tsx`)の`memberPrice`/`guestPrice`がRSC payload経由でボタン未クリックでも取得できていた。
+   - 修正: `recordPriceView`(`actions/sessions/reporting.ts`)を「閲覧記録の登録＋価格取得」を単一アクションにまとめる形に変更。`PriceReveal`コンポーネントは価格をpropsで受け取らず、ボタン押下時に`recordPriceView`を呼んで初めて価格を取得・表示するように変更。`page.tsx`から`memberPrice`/`guestPrice`のprops渡しを削除。
+
+5. **MEDIUM（フォームバグ）→ 修正済み**: `parseInt(...) || undefined`のfalsy-zeroバグで「0」明示入力が無視される問題。
+   - 修正: `lib/utils.ts`に`parseOptionalInt()`ヘルパーを新設(空文字のみundefined、0は0のまま返す)。`new-session-form.tsx`・`edit-session-form.tsx`の`min_participants`/`max_participants`/`cancellation_days`をこれに置き換え。`actions/sessions/crud.ts`の`createSession`側も`|| null`→`?? null`に修正（サーバー側でも同種のバグがあったため）。
+
+6. **LOW → 修正済み**: `add_stamp_purchase`のTOCTOU。マイグレーション`00063`で`team_members`のUPDATEを先に行い`if not found then raise exception`を追加(increment_stamp/decrement_stampと同パターンに統一)、本番DB適用済み。
+7. **LOW → 修正済み**: `platform_settings_read`ポリシーにanon読み取り漏れ。マイグレーション`00064`で`to authenticated`を追加、本番DB適用済み（コード側は`createAdminClient()`経由のみで読んでいるため影響なし確認済み）。
+8. **LOW → 修正済み**: `getOrCreateStripeProduct`/`getOrCreateMonthlyPrice`(`lib/stripe-helpers.ts`)に`getOrCreateStripeCustomer`と同じ排他制御(条件付きUPDATE+競合負け時はStripeオブジェクトをarchive)を追加。
+9. **LOW → 修正済み**: `createTeam`(`actions/teams/crud.ts`)・`joinTeamByCode`(`actions/teams/members.ts`)にレート制限を追加。
+
+### 適用したDBマイグレーション（本番反映済み、jeosqnkeyiwapeeujrml）
+- `00063_fix_add_stamp_purchase_toctou.sql`
+- `00064_restrict_platform_settings_to_authenticated.sql`
+
+### 確認済み・問題なし（過去レビューの受容済みリスクが健全に維持されていることを再確認）
+- リファクタリング(`ab1dc31`)によるロジック欠落・循環import・バレルexport漏れ: なし（byte-for-byte一致確認済み）
+- profiles/practice_sessionsのRLS、public_profilesビューの安全カラムのみ公開、SECURITY DEFINER関数群の認可チェック: 健全
+- Stripe webhookの署名検証・冪等性、confirmSession/cancelSession/registerForSessionの排他制御: 健全
+- レガシーテーブル(lessons/bookings/reviews/schedule_requests)は実コードから完全に未参照であることを確認（advisorのRLS initplan警告は無視して良い）
+- タッチターゲット(44px以上)は共通Buttonコンポーネントで担保されており、icon-onlyの32pxサイズは未使用
+
+### 未実施
+- Playwrightでのモバイル実機確認: ブラウザ接続がタイムアウトし断念（既存chromeプロセス多数でシステム負荷が高い状態だった）。静的解析（h1欠如・loading.tsx欠如の棚卸し）は実施済みで、既存バックログの件数と一致することを確認。
 
 ---
 

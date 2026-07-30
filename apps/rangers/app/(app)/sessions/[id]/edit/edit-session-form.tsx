@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/components/toast"
 import { SYSTEM_TAGS } from "@/types/database"
+import { parseOptionalInt } from "@/lib/utils"
 
 type CompetitionField = {
   key: string
@@ -179,9 +180,9 @@ export function EditSessionForm({ session, teamName }: EditSessionFormProps) {
         member_price: isConfirmed ? undefined : (parseInt(form.member_price) || 0),
         guest_price: isConfirmed ? undefined : (parseInt(form.guest_price) || 0),
         registration_deadline: form.registration_deadline || undefined,
-        min_participants: parseInt(form.min_participants) || undefined,
-        max_participants: parseInt(form.max_participants) || undefined,
-        cancellation_days: parseInt(form.cancellation_days) || undefined,
+        min_participants: parseOptionalInt(form.min_participants),
+        max_participants: parseOptionalInt(form.max_participants),
+        cancellation_days: parseOptionalInt(form.cancellation_days),
         allow_point_card: form.allow_point_card,
         is_external: form.is_external,
         target_tags: selectedTags,

@@ -149,18 +149,22 @@ export async function refundSessionRegistrationStripe(
 ): Promise<RefundResult> {
   const { admin, registrationId, stripePaymentIntentId, logPrefix } = params
 
-  // この決済自体がConnect送金(destination charge)を伴ったかどうかを、
-  // "現在の"チームのConnect設定ではなく、決済時に記録された transfer_records の
-  // 実履歴で判定する。チームのConnect状態は後から変わりうるため、現在状態で
-  // 判定すると「送金していないのに引き戻し指定」「送金済みなのに引き戻し漏れ」
-  // が発生し、プラットフォームの資金不整合につながる。
-  const { data: transferRecord } = await admin
-    .from("transfer_records")
-    .select("id, status")
-    .eq("stripe_payment_intent_id", stripePaymentIntentId)
-    .eq("status", "succeeded")
-    .maybeSingle()
-  const hasConnect = !!transferRecord
+  // この決済自体がConnect送金(destination charge)を伴ったかどうかを、Stripe上の
+  // PaymentIntent.transfer_dataで直接判定する。以前はローカルのtransfer_recordsに
+  // status='succeeded'の行があるかで判定していたが、chargeSessionRegistrationStripe
+  // でのtransfer_records INSERT失敗(まれなDB障害等)やwebhook反映前のタイミングでは
+  // 行が存在せずhasConnectが常にfalseになり、reverse_transferが漏れて送金済みの
+  // 資金が引き戻されないままプラットフォームが返金額を丸かぶりする不整合があった。
+  // Stripe自身が決済時に記録したtransfer_dataは事実そのものであり、ローカルの
+  // 記帳漏れの影響を受けないため、これを一次情報源とする。
+  let hasConnect: boolean
+  try {
+    const pi = await stripe.paymentIntents.retrieve(stripePaymentIntentId)
+    hasConnect = !!pi.transfer_data
+  } catch (err) {
+    console.error(`${logPrefix} Failed to retrieve PaymentIntent ${stripePaymentIntentId} for transfer check:`, err)
+    return { ok: false, error: "failed to verify payment intent transfer data" }
+  }
 
   try {
     // Connect(Destination Charge)経由の決済は reverse_transfer を指定しないと

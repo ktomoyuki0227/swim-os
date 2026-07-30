@@ -9,6 +9,7 @@ import { getTeamMembers, getMyTeams } from "@/actions/teams"
 import { createClient } from "@/lib/supabase/client"
 import { useMounted } from "@/hooks/use-mounted"
 import { useScrollLock } from "@/hooks/use-scroll-lock"
+import { parseOptionalInt } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/components/toast"
 import { SYSTEM_TAGS } from "@/types/database"
@@ -142,7 +143,9 @@ export function NewSessionForm({
   useEffect(() => {
     if (copySessionId) {
       getSession(copySessionId).then(({ data }) => {
-        if (!data) return
+        // コピー元は必ず自チームのセッション(=メンバー閲覧)のはずだが、
+        // 非メンバー向けの限定カラムしか返らなかった場合は安全側に倒して何もしない
+        if (!data || !("member_price" in data)) return
         applyPrefill({
           title: data.title, type: data.type, location: data.location ?? undefined,
           description: data.description ?? undefined, member_price: data.member_price,
@@ -223,9 +226,9 @@ export function NewSessionForm({
         member_price: parseInt(form.member_price) || 0,
         guest_price: parseInt(form.guest_price) || 0,
         registration_deadline: form.registration_deadline || undefined,
-        min_participants: parseInt(form.min_participants) || undefined,
-        max_participants: parseInt(form.max_participants) || undefined,
-        cancellation_days: parseInt(form.cancellation_days) || undefined,
+        min_participants: parseOptionalInt(form.min_participants),
+        max_participants: parseOptionalInt(form.max_participants),
+        cancellation_days: parseOptionalInt(form.cancellation_days),
         allow_point_card: form.allow_point_card,
         is_external: form.is_external,
         target_tags: selectedTags,

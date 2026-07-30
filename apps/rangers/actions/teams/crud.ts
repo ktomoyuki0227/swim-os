@@ -17,6 +17,9 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
 const TEAM_IMAGE_UPLOAD_RATE_LIMIT = 10
 const TEAM_IMAGE_UPLOAD_RATE_WINDOW_MS = 60 * 1000
 
+const CREATE_TEAM_RATE_LIMIT = 5
+const CREATE_TEAM_RATE_WINDOW_MS = 60 * 1000
+
 export async function uploadTeamImage(
   formData: FormData
 ): Promise<{ url?: string; error?: string }> {
@@ -62,6 +65,10 @@ export async function createTeam(data: unknown) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
+
+  if (isRateLimited(`create_team:${user.id}`, CREATE_TEAM_RATE_LIMIT, CREATE_TEAM_RATE_WINDOW_MS)) {
+    return { error: "作成が多すぎます。しばらく時間をおいてから再度お試しください" }
+  }
 
   const { data: team, error } = await supabase
     .from("teams")

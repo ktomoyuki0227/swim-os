@@ -205,7 +205,7 @@ export default async function MemberSessionPage({ params }: SessionPageProps) {
           </div>
 
           {/* 料金表示: メンバーには直接表示、非メンバーには閲覧追跡付き */}
-          {isMember ? (
+          {isMember && "member_price" in session ? (
             <div className="flex items-center justify-between px-4 py-3">
               <span className="text-sm text-[#475569]">参加費（メンバー）</span>
               <span className="text-sm font-bold text-[#005F8C]">
@@ -213,11 +213,7 @@ export default async function MemberSessionPage({ params }: SessionPageProps) {
               </span>
             </div>
           ) : (
-            <PriceReveal
-              sessionId={sessionId}
-              memberPrice={session.member_price || 0}
-              guestPrice={session.guest_price || 0}
-            />
+            <PriceReveal sessionId={sessionId} />
           )}
 
           <div className="flex items-center justify-between px-4 py-3">

@@ -6,6 +6,19 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
+ * フォームの数値入力(文字列)を任意の整数に変換する。
+ * `parseInt(value) || undefined` は "0" を明示入力してもfalsyのため
+ * undefinedになり、0が有効な値のフィールド(cancellation_days等)で
+ * ユーザーの入力が無言で無視されるバグの原因になる。空文字/非数値のみ
+ * undefinedとして扱い、0はそのまま0として返す。
+ */
+export function parseOptionalInt(value: string): number | undefined {
+  if (value.trim() === "") return undefined
+  const parsed = parseInt(value, 10)
+  return Number.isNaN(parsed) ? undefined : parsed
+}
+
+/**
  * 配列の各要素に対して非同期処理を実行するが、同時実行数を制限する。
  * Stripe APIのように大量の独立した決済リクエストを1件ずつ直列処理すると
  * 参加者数に比例して処理時間が伸びサーバーレス関数のタイムアウトに近づくため、

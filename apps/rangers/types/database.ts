@@ -261,7 +261,18 @@ export type FeeType = "annual" | "monthly"
 export type FeeStatus = "unpaid" | "paid" | "failed"
 export type StampPaymentStatus = "paid" | "unpaid" | "failed"
 export type StampPaymentMethod = "cash" | "stripe"
-export type SubscriptionStatus = "active" | "past_due" | "canceled" | "unpaid"
+// Stripe Subscription.status の全パターン(trialing/incomplete/incomplete_expired/paused含む)。
+// 従来は主要4種のみだったが、actions/subscriptions.tsがsubscription.statusをそのまま
+// DBへ書き込む(200行目・294行目)ため、Stripeが返しうる値と型を一致させる必要がある。
+export type SubscriptionStatus =
+  | "active"
+  | "past_due"
+  | "canceled"
+  | "unpaid"
+  | "trialing"
+  | "incomplete"
+  | "incomplete_expired"
+  | "paused"
 export type TransferStatus = "pending" | "succeeded" | "failed" | "reversed"
 
 export interface Team {

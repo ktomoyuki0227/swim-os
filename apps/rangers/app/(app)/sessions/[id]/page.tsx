@@ -51,6 +51,13 @@ export default async function SessionDetailPage({ params, searchParams }: Sessio
     notFound()
   }
 
+  // このページは管理画面(参加者一覧・現金回収・売上集計)のため、常に自チームの
+  // メンバー閲覧(全カラム)を前提とする。非メンバー向けの限定カラムしか
+  // 返らなかった場合は不正アクセスとして扱う
+  if (!("member_price" in sessionResult.data)) {
+    notFound()
+  }
+
   const session = sessionResult.data
   const registrations = (registrationsResult.data || []) as Record<string, unknown>[]
   const priceViews = (priceViewsResult.data || []) as Record<string, unknown>[]

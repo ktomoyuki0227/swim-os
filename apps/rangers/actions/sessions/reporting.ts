@@ -73,6 +73,15 @@ export async function exportSessionRegistrations(sessionId: string) {
 const PRICE_VIEW_RATE_LIMIT = 60
 const PRICE_VIEW_RATE_WINDOW_MS = 60 * 1000
 
+/**
+ * 「料金を確認する」ボタン押下時に呼ばれ、閲覧記録の登録と価格の取得を
+ * 単一のServer Actionにまとめて行う。
+ * 以前はページ側からmemberPrice/guestPriceをクライアントコンポーネントへ
+ * 無条件にpropsで渡していたため、RSC payload経由でボタンを押す前でも
+ * 価格が読み取れてしまい、「閲覧＝管理者に通知」という設計が形骸化していた。
+ * このアクションを呼ぶまで価格をクライアントに一切送らないことで、
+ * 通知トリガーとデータ取得のタイミングを一致させる。
+ */
 export async function recordPriceView(sessionId: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -82,12 +91,23 @@ export async function recordPriceView(sessionId: string) {
     return { error: "しばらく時間をおいてから再度お試しください" }
   }
 
+  const admin = createAdminClient()
+  const { data: session } = await admin
+    .from("practice_sessions")
+    .select("member_price, guest_price, is_external, status")
+    .eq("id", sessionId)
+    .single()
+
+  if (!session || !session.is_external || session.status !== "published") {
+    return { error: "セッションが見つかりません" }
+  }
+
   await supabase.from("price_views").insert({
     session_id: sessionId,
     viewer_id: user.id,
   })
 
-  return { success: true }
+  return { data: { memberPrice: session.member_price, guestPrice: session.guest_price } }
 }
 
 export async function getPriceViewers(sessionId: string) {

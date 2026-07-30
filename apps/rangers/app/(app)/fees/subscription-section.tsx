@@ -8,11 +8,12 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { useToast } from "@/components/toast"
+import type { SubscriptionStatus } from "@/types/database"
 
 interface MonthlyMember {
   swimmer_id: string
   stripe_subscription_id: string | null
-  subscription_status: string | null
+  subscription_status: SubscriptionStatus | null
   swimmer: { name: string | null } | null
 }
 
@@ -104,7 +105,17 @@ function MemberSubscriptionCard({
     if (status === "unpaid") {
       return <Badge className="bg-[#fdecea] text-[#c0392b] border-transparent">未払い</Badge>
     }
-    return <Badge className="bg-[#edf0f4] text-[#475569] border-transparent">{status}</Badge>
+    if (status === "trialing") {
+      return <Badge className="bg-[#eaf2fb] text-[#005F8C] border-transparent">お試し期間中</Badge>
+    }
+    if (status === "incomplete" || status === "incomplete_expired") {
+      return <Badge className="bg-[#fdecea] text-[#c0392b] border-transparent">支払い未完了</Badge>
+    }
+    if (status === "paused") {
+      return <Badge className="bg-[#edf0f4] text-[#475569] border-transparent">一時停止中</Badge>
+    }
+    // Stripeが将来追加しうる未知のステータス用フォールバック
+    return <Badge className="bg-[#edf0f4] text-[#475569] border-transparent">状態不明</Badge>
   }
 
   const canStart = !member.stripe_subscription_id || status === "canceled"

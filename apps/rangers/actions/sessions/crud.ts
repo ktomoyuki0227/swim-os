@@ -40,12 +40,12 @@ export async function createSession(teamId: string, data: unknown) {
       registration_deadline: parsed.data.registration_deadline
         ? new Date(parsed.data.registration_deadline + '+09:00').toISOString()
         : null,
-      min_participants: parsed.data.min_participants || null,
-      max_participants: parsed.data.max_participants || null,
+      min_participants: parsed.data.min_participants ?? null,
+      max_participants: parsed.data.max_participants ?? null,
       course_rules: parsed.data.course_rules || null,
       target_tags: parsed.data.target_tags,
       target_members: parsed.data.target_members || null,
-      cancellation_days: parsed.data.cancellation_days || null,
+      cancellation_days: parsed.data.cancellation_days ?? null,
       allow_point_card: parsed.data.allow_point_card,
       is_external: parsed.data.is_external,
       competition_fields: parsed.data.competition_fields || null,
@@ -304,9 +304,18 @@ export async function getSession(sessionId: string) {
 
   if (error || !data) return { error: "セッションが見つかりません" }
 
-  // 外部公開セッション（ゲスト向け）はログイン不要で閲覧可能。
-  // ただし匿名の閲覧者には team の全カラム（invite_code, stripe_account_id等の機微情報）を
-  // 返してはならないため、公開して問題ない項目のみに絞る。
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  const isMember = !!user && (await isTeamMember(admin, data.team_id, user.id))
+
+  // 同じチームのアクティブなメンバーには全カラムを返す（管理画面での編集等に必要）
+  if (isMember) return { data }
+
+  // 非メンバー（未ログイン、または他チームの一般ユーザー）には
+  // 外部公開セッションのみ、安全なカラムに絞って返す。
+  // member_price/guest_price は「料金を確認する」操作(recordPriceView)経由でのみ
+  // 取得させる（管理者への閲覧通知を確実にトリガーさせるため、ここには含めない）。
+  // target_members(内部ユーザーID列挙)・course_rules・coach_id等の内部運用カラムも除外する。
   if (data.is_external && data.status === "published") {
     const rawTeam = data.team as Record<string, unknown> | null
     const publicTeam = rawTeam
@@ -317,14 +326,31 @@ export async function getSession(sessionId: string) {
           avatar_url: rawTeam.avatar_url,
         }
       : null
-    return { data: { ...data, team: publicTeam } }
+    return {
+      data: {
+        id: data.id,
+        team_id: data.team_id,
+        title: data.title,
+        description: data.description,
+        content: data.content,
+        type: data.type,
+        scheduled_at: data.scheduled_at,
+        end_at: data.end_at,
+        location: data.location,
+        gender_filter: data.gender_filter,
+        session_status: data.session_status,
+        status: data.status,
+        is_external: data.is_external,
+        registration_deadline: data.registration_deadline,
+        min_participants: data.min_participants,
+        max_participants: data.max_participants,
+        allow_point_card: data.allow_point_card,
+        target_tags: data.target_tags,
+        competition_fields: data.competition_fields,
+        team: publicTeam,
+      },
+    }
   }
 
-  // それ以外は同じチームのアクティブなメンバーのみ閲覧可能
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { error: "セッションが見つかりません" }
-  if (!(await isTeamMember(admin, data.team_id, user.id))) return { error: "セッションが見つかりません" }
-
-  return { data }
+  return { error: "セッションが見つかりません" }
 }

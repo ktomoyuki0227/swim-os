@@ -82,7 +82,25 @@ export async function getOrCreateStripeProduct(
   }
 
   const admin = createAdminClient()
-  await admin.from("teams").update({ stripe_product_id: product.id }).eq("id", teamId)
+  // stripe_product_id がまだ null の行のみ更新（並行リクエストによる重複Product作成を防ぐ）
+  const { data: saved } = await admin
+    .from("teams")
+    .update({ stripe_product_id: product.id })
+    .eq("id", teamId)
+    .is("stripe_product_id", null)
+    .select("stripe_product_id")
+    .maybeSingle()
+
+  if (!saved) {
+    // 別リクエストが先に書き込んだ場合: 今作成したProductをarchiveして既存値を返す
+    await stripe.products.update(product.id, { active: false }).catch(() => null)
+    const { data: existing } = await admin
+      .from("teams")
+      .select("stripe_product_id")
+      .eq("id", teamId)
+      .single()
+    return existing?.stripe_product_id ?? product.id
+  }
 
   return product.id
 }
@@ -121,7 +139,24 @@ export async function getOrCreateMonthlyPrice(
   }
 
   const admin = createAdminClient()
-  await admin.from("teams").update({ stripe_monthly_price_id: price.id }).eq("id", teamId)
+  // 読み取り時点のexistingPriceIdから値が変わっていない行のみ更新
+  // （並行リクエストによる重複Price作成を防ぐ。getOrCreateStripeCustomerと同じパターン）
+  let updateQuery = admin.from("teams").update({ stripe_monthly_price_id: price.id }).eq("id", teamId)
+  updateQuery = existingPriceId
+    ? updateQuery.eq("stripe_monthly_price_id", existingPriceId)
+    : updateQuery.is("stripe_monthly_price_id", null)
+  const { data: saved } = await updateQuery.select("stripe_monthly_price_id").maybeSingle()
+
+  if (!saved) {
+    // 別リクエストが先に書き込んだ場合: 今作成したPriceをarchiveして既存値を返す
+    await stripe.prices.update(price.id, { active: false }).catch(() => null)
+    const { data: existing } = await admin
+      .from("teams")
+      .select("stripe_monthly_price_id")
+      .eq("id", teamId)
+      .single()
+    return existing?.stripe_monthly_price_id ?? price.id
+  }
 
   return price.id
 }
