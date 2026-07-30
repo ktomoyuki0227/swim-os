@@ -12,9 +12,15 @@ interface SwimmerProfileStepProps {
   onChange: (next: SwimmerProfileForm) => void
 }
 
+// actions/profile.ts の uploadAvatar と同じ上限。ここで弾いておかないと
+// サーバー側の2MBチェックに届く前にNext.jsのServer Actionsボディ上限に当たり
+// 500エラー画面になってしまう
+const MAX_AVATAR_SIZE_BYTES = 2 * 1024 * 1024
+
 export function SwimmerProfileStep({ form, onChange }: SwimmerProfileStepProps) {
   const [prefDropdownOpen, setPrefDropdownOpen] = useState(false)
   const prefDropdownRef = useRef<HTMLDivElement>(null)
+  const [avatarError, setAvatarError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!prefDropdownOpen) return
@@ -54,6 +60,12 @@ export function SwimmerProfileStep({ form, onChange }: SwimmerProfileStepProps) 
           onChange={(e) => {
             const file = e.target.files?.[0]
             if (!file) return
+            if (file.size > MAX_AVATAR_SIZE_BYTES) {
+              setAvatarError("ファイルサイズは2MB以下にしてください")
+              e.target.value = ""
+              return
+            }
+            setAvatarError(null)
             const reader = new FileReader()
             reader.onloadend = () => onChange({ ...form, avatarFile: file, avatarPreview: reader.result as string })
             reader.readAsDataURL(file)
@@ -73,6 +85,9 @@ export function SwimmerProfileStep({ form, onChange }: SwimmerProfileStepProps) 
             </button>
           )}
         </div>
+        {avatarError && (
+          <p className="text-xs text-[#c0392b]">{avatarError}</p>
+        )}
       </div>
 
       {/* 水泳カテゴリ（任意） */}

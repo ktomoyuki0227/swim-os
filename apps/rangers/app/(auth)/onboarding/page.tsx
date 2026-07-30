@@ -122,59 +122,65 @@ export default function OnboardingPage() {
   const handleComplete = (stripePaymentMethodId?: string) => {
     setSaveError(null)
     startTransition(async () => {
-      // カード登録済みの場合: Stripe 側で Customer のデフォルト PM を設定する
-      // (SetupIntent 確認だけでは invoice_settings.default_payment_method が更新されない)
-      if (stripePaymentMethodId) {
-        const { error: pmError } = await updatePaymentMethod(stripePaymentMethodId)
-        if (pmError) {
-          setSaveError("カード情報の設定に失敗しました。もう一度お試しください。")
-          return
+      // startTransition内の例外はエラーバウンダリまで突き抜けてしまう(500画面化)ため、
+      // Server Action呼び出しは必ずtry/catchで受け止める(/profileページの同パターンに合わせる)
+      try {
+        // カード登録済みの場合: Stripe 側で Customer のデフォルト PM を設定する
+        // (SetupIntent 確認だけでは invoice_settings.default_payment_method が更新されない)
+        if (stripePaymentMethodId) {
+          const { error: pmError } = await updatePaymentMethod(stripePaymentMethodId)
+          if (pmError) {
+            setSaveError("カード情報の設定に失敗しました。もう一度お試しください。")
+            return
+          }
         }
-      }
 
-      if (swimmerForm.avatarFile) {
-        const fd = new FormData()
-        fd.append("avatar", swimmerForm.avatarFile)
-        const avatarResult = await uploadAvatar(fd)
-        if (avatarResult.error) {
-          setSaveError("プロフィール写真のアップロードに失敗しました。もう一度お試しください。")
-          return
+        if (swimmerForm.avatarFile) {
+          const fd = new FormData()
+          fd.append("avatar", swimmerForm.avatarFile)
+          const avatarResult = await uploadAvatar(fd)
+          if (avatarResult.error) {
+            setSaveError("プロフィール写真のアップロードに失敗しました。もう一度お試しください。")
+            return
+          }
         }
-      }
 
-      const birthday =
-        personalForm.birthYear && personalForm.birthMonth && personalForm.birthDay
-          ? `${personalForm.birthYear}-${personalForm.birthMonth.padStart(2, "0")}-${personalForm.birthDay.padStart(2, "0")}`
-          : undefined
+        const birthday =
+          personalForm.birthYear && personalForm.birthMonth && personalForm.birthDay
+            ? `${personalForm.birthYear}-${personalForm.birthMonth.padStart(2, "0")}-${personalForm.birthDay.padStart(2, "0")}`
+            : undefined
 
-      const data: OnboardingData = {
-        furigana: personalForm.furigana || undefined,
-        birthday,
-        gender: (personalForm.gender as OnboardingData["gender"]) || undefined,
-        phone: personalForm.phone || undefined,
-        address: personalForm.address || undefined,
-        emergency_contact_name: personalForm.emergency_contact_name || undefined,
-        emergency_contact_relation: personalForm.emergency_contact_relation || undefined,
-        emergency_contact: personalForm.emergency_contact || undefined,
-        masters_registered: personalForm.masters_registered,
-        masters_number: personalForm.masters_number || undefined,
-        jsa_registered: personalForm.jsa_registered,
-        jsa_number: personalForm.jsa_number || undefined,
-        bio: swimmerForm.bio || undefined,
-        stripe_payment_method_id: stripePaymentMethodId,
-        level: swimmerForm.level || undefined,
-        specialties: swimmerForm.specialties,
-        swimming_goals: swimmerForm.goals,
-        prefectures: swimmerForm.prefectures,
-        swimmer_type: swimmerForm.swimmerType || null,
-        swim_disciplines: swimmerForm.swimDisciplines,
-      }
-      const result = await completeOnboarding(data)
-      if (!result.error) {
-        const params = new URLSearchParams(window.location.search)
-        const destination = safeRedirectPath(params.get("next"))
-        router.push(destination)
-      } else {
+        const data: OnboardingData = {
+          furigana: personalForm.furigana || undefined,
+          birthday,
+          gender: (personalForm.gender as OnboardingData["gender"]) || undefined,
+          phone: personalForm.phone || undefined,
+          address: personalForm.address || undefined,
+          emergency_contact_name: personalForm.emergency_contact_name || undefined,
+          emergency_contact_relation: personalForm.emergency_contact_relation || undefined,
+          emergency_contact: personalForm.emergency_contact || undefined,
+          masters_registered: personalForm.masters_registered,
+          masters_number: personalForm.masters_number || undefined,
+          jsa_registered: personalForm.jsa_registered,
+          jsa_number: personalForm.jsa_number || undefined,
+          bio: swimmerForm.bio || undefined,
+          stripe_payment_method_id: stripePaymentMethodId,
+          level: swimmerForm.level || undefined,
+          specialties: swimmerForm.specialties,
+          swimming_goals: swimmerForm.goals,
+          prefectures: swimmerForm.prefectures,
+          swimmer_type: swimmerForm.swimmerType || null,
+          swim_disciplines: swimmerForm.swimDisciplines,
+        }
+        const result = await completeOnboarding(data)
+        if (!result.error) {
+          const params = new URLSearchParams(window.location.search)
+          const destination = safeRedirectPath(params.get("next"))
+          router.push(destination)
+        } else {
+          setSaveError("保存に失敗しました。もう一度お試しください。")
+        }
+      } catch {
         setSaveError("保存に失敗しました。もう一度お試しください。")
       }
     })

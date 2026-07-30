@@ -25,6 +25,13 @@ const nextConfig: NextConfig = {
     staleTimes: {
       dynamic: 0,
     },
+    // Server Actionsのデフォルト上限は1MBだが、アバター/チーム画像アップロードは
+    // アプリ側で2MBまで許可しているため、multipart境界等のオーバーヘッドを見込んで
+    // それより大きい値に設定する（未設定だと1〜2MBの画像で「Body exceeded 1 MB limit」
+    // という素の例外が投げられ、500エラー画面に直行してしまう）
+    serverActions: {
+      bodySizeLimit: "3mb",
+    },
   },
   images: {
     remotePatterns: [
