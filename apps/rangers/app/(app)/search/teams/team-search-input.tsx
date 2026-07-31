@@ -8,6 +8,7 @@ interface TeamSearchInputProps {
   sort?: string
   recruitingOnly?: boolean
   days?: string[]
+  prefectures?: string[]
 }
 
 export function TeamSearchInput({
@@ -15,6 +16,7 @@ export function TeamSearchInput({
   sort = "newest",
   recruitingOnly = false,
   days = [],
+  prefectures = [],
 }: TeamSearchInputProps) {
   const { inputRef, handleSubmit } = useSearchQueryForm("/search/teams", (q) => {
     const p = new URLSearchParams()
@@ -22,6 +24,7 @@ export function TeamSearchInput({
     if (sort !== "newest") p.set("sort", sort)
     if (recruitingOnly) p.set("recruiting", "1")
     if (days.length > 0) p.set("days", days.join(","))
+    if (prefectures.length > 0) p.set("prefecture", prefectures.join(","))
     return p
   })
 

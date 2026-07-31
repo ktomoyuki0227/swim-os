@@ -6,14 +6,29 @@ import { ChevronLeft } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
 import { getPublicTeams } from "@/actions/teams"
 import { PersonalSearchInput } from "./personal-search-input"
+import { PersonalFiltersBar } from "./personal-filters-bar"
 
 interface PersonalPageProps {
-  searchParams: Promise<{ q?: string }>
+  searchParams: Promise<{
+    q?: string
+    sort?: string
+    recruiting?: string
+    days?: string
+    prefecture?: string
+    gender?: string
+  }>
 }
 
 export default async function PersonalPage({ searchParams }: PersonalPageProps) {
   const params = await searchParams
   const q = params.q || ""
+  const sort = (params.sort === "name" ? "name" : "newest") as "newest" | "name"
+  const recruitingOnly = params.recruiting !== "0"
+  const days = params.days ? params.days.split(",").filter(Boolean) : []
+  const prefectures = params.prefecture ? params.prefecture.split(",").filter(Boolean) : []
+  const gender = (params.gender === "male" || params.gender === "female" || params.gender === "other")
+    ? params.gender
+    : ""
 
   const supabase = await createClient()
   const {
@@ -24,11 +39,16 @@ export default async function PersonalPage({ searchParams }: PersonalPageProps) 
     q: q || undefined,
     excludeUserId: user?.id,
     teamType: "personal",
+    sort,
+    recruitingOnly,
+    days: days.length > 0 ? days : undefined,
+    prefectures: prefectures.length > 0 ? prefectures : undefined,
+    gender: gender || undefined,
   })
 
   return (
     <div className="space-y-0">
-      {/* 検索行（sticky） */}
+      {/* 検索行 + フィルター行（sticky） */}
       <div className="sticky top-0 z-10 -mx-4 overflow-hidden rounded-b-2xl bg-white/95 shadow-sm backdrop-blur">
         <div className="flex items-center gap-2 px-3 py-2">
           <Link
@@ -38,8 +58,24 @@ export default async function PersonalPage({ searchParams }: PersonalPageProps) 
           >
             <ChevronLeft className="h-5 w-5" />
           </Link>
-          <PersonalSearchInput defaultValue={q} />
+          <PersonalSearchInput
+            defaultValue={q}
+            sort={sort}
+            recruitingOnly={recruitingOnly}
+            days={days}
+            prefectures={prefectures}
+            gender={gender}
+          />
         </div>
+        {/* フィルター行 */}
+        <PersonalFiltersBar
+          sort={sort}
+          recruitingOnly={recruitingOnly}
+          days={days}
+          prefectures={prefectures}
+          gender={gender}
+          q={q}
+        />
       </div>
 
       {/* 結果 */}

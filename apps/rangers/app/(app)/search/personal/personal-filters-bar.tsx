@@ -20,6 +20,13 @@ const SORT_LABELS: Record<string, string> = {
 
 const DAY_OPTIONS = ["日", "月", "火", "水", "木", "金", "土"]
 
+const GENDER_OPTIONS = [
+  { key: "", label: "指定なし" },
+  { key: "male", label: "男性" },
+  { key: "female", label: "女性" },
+  { key: "other", label: "その他" },
+]
+
 // ---- ボトムシート ----
 function BottomSheet({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
   const sheetRef = useRef<HTMLDivElement>(null)
@@ -60,26 +67,29 @@ function BottomSheet({ children, onClose }: { children: React.ReactNode; onClose
 }
 
 // ---- メインコンポーネント ----
-interface TeamFiltersBarProps {
+interface PersonalFiltersBarProps {
   sort: string
   recruitingOnly: boolean
   days: string[]
   prefectures: string[]
+  gender: string
   q: string
 }
 
-export function TeamFiltersBar({ sort, recruitingOnly, days, prefectures, q }: TeamFiltersBarProps) {
+export function PersonalFiltersBar({ sort, recruitingOnly, days, prefectures, gender, q }: PersonalFiltersBarProps) {
   const router = useRouter()
   const [openSheet, setOpenSheet] = useState<"filter" | "sort" | null>(null)
   const mounted = useMounted()
 
   const [tempDays, setTempDays] = useState<string[]>(days)
   const [tempPrefectures, setTempPrefectures] = useState<string[]>(prefectures)
+  const [tempGender, setTempGender] = useState(gender)
 
   // シートを開くタイミングで一時編集用stateを現在値にリセットする（effectではなくイベント起点で行う）
   function openFilterSheet() {
     setTempDays(days)
     setTempPrefectures(prefectures)
+    setTempGender(gender)
     setOpenSheet("filter")
   }
 
@@ -96,8 +106,9 @@ export function TeamFiltersBar({ sort, recruitingOnly, days, prefectures, q }: T
     if (!recruitingOnly) p.set("recruiting", "0")
     if (tempDays.length > 0) p.set("days", tempDays.join(","))
     if (tempPrefectures.length > 0) p.set("prefecture", tempPrefectures.join(","))
+    if (tempGender) p.set("gender", tempGender)
     if (sort !== "newest") p.set("sort", sort)
-    router.push(`/search/teams?${p.toString()}`)
+    router.push(`/search/personal?${p.toString()}`)
     setOpenSheet(null)
   }
 
@@ -106,8 +117,9 @@ export function TeamFiltersBar({ sort, recruitingOnly, days, prefectures, q }: T
     if (!recruitingOnly) p.set("recruiting", "0")
     if (days.length > 0) p.set("days", days.join(","))
     if (prefectures.length > 0) p.set("prefecture", prefectures.join(","))
+    if (gender) p.set("gender", gender)
     if (value !== "newest") p.set("sort", value)
-    router.push(`/search/teams?${p.toString()}`)
+    router.push(`/search/personal?${p.toString()}`)
     setOpenSheet(null)
   }
 
@@ -116,8 +128,9 @@ export function TeamFiltersBar({ sort, recruitingOnly, days, prefectures, q }: T
     if (!value) p.set("recruiting", "0")
     if (days.length > 0) p.set("days", days.join(","))
     if (prefectures.length > 0) p.set("prefecture", prefectures.join(","))
+    if (gender) p.set("gender", gender)
     if (sort !== "newest") p.set("sort", sort)
-    router.push(`/search/teams?${p.toString()}`)
+    router.push(`/search/personal?${p.toString()}`)
   }
 
   function toggleDay(day: string) {
@@ -126,10 +139,10 @@ export function TeamFiltersBar({ sort, recruitingOnly, days, prefectures, q }: T
     )
   }
 
-  const filterActive = days.length > 0 || prefectures.length > 0
+  const filterActive = days.length > 0 || prefectures.length > 0 || !!gender
   const sortActive = sort !== "newest"
 
-  const activeFilterCount = (days.length > 0 ? 1 : 0) + (prefectures.length > 0 ? 1 : 0)
+  const activeFilterCount = (days.length > 0 ? 1 : 0) + (prefectures.length > 0 ? 1 : 0) + (gender ? 1 : 0)
   const filterLabel = activeFilterCount > 0 ? `絞り込み (${activeFilterCount})` : "絞り込み"
 
   return (
@@ -142,11 +155,11 @@ export function TeamFiltersBar({ sort, recruitingOnly, days, prefectures, q }: T
           onClick={() => (openSheet === "filter" ? setOpenSheet(null) : openFilterSheet())}
           style={{ minHeight: "44px" }}
           className={`flex flex-1 items-center justify-center gap-1 text-sm transition-colors ${
-            filterActive ? "font-semibold text-[#0f8a4f]" : "text-[#475569]"
+            filterActive ? "font-semibold text-[#d97706]" : "text-[#475569]"
           }`}
         >
           <span>{filterLabel}</span>
-          {filterActive && <span className="h-1.5 w-1.5 rounded-full bg-[#0f8a4f]" />}
+          {filterActive && <span className="h-1.5 w-1.5 rounded-full bg-[#d97706]" />}
           <svg
             width="14" height="14" viewBox="0 0 24 24" fill="none"
             stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
@@ -163,7 +176,7 @@ export function TeamFiltersBar({ sort, recruitingOnly, days, prefectures, q }: T
           onClick={() => setOpenSheet(openSheet === "sort" ? null : "sort")}
           style={{ minHeight: "44px" }}
           className={`flex flex-1 items-center justify-center gap-1 text-sm transition-colors ${
-            sortActive ? "font-semibold text-[#0f8a4f]" : "text-[#475569]"
+            sortActive ? "font-semibold text-[#d97706]" : "text-[#475569]"
           }`}
         >
           <span>{SORT_LABELS[sort] ?? "並び替え"}</span>
@@ -184,10 +197,10 @@ export function TeamFiltersBar({ sort, recruitingOnly, days, prefectures, q }: T
           style={{ minHeight: "44px" }}
           className="flex flex-1 items-center justify-center gap-1.5"
         >
-          <span className={`text-sm transition-colors ${recruitingOnly ? "font-semibold text-[#0f8a4f]" : "text-[#475569]"}`}>
+          <span className={`text-sm transition-colors ${recruitingOnly ? "font-semibold text-[#d97706]" : "text-[#475569]"}`}>
             募集中
           </span>
-          <div className={`relative h-5 w-9 rounded-full transition-colors ${recruitingOnly ? "bg-[#0f8a4f]" : "bg-[#dce3ea]"}`}>
+          <div className={`relative h-5 w-9 rounded-full transition-colors ${recruitingOnly ? "bg-[#d97706]" : "bg-[#dce3ea]"}`}>
             <div className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${recruitingOnly ? "translate-x-4" : "translate-x-0.5"}`} />
           </div>
         </button>
@@ -204,7 +217,7 @@ export function TeamFiltersBar({ sort, recruitingOnly, days, prefectures, q }: T
             <button
               type="button"
               onClick={() => setOpenSheet(null)}
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f2f7fa] text-[#475569] transition-colors hover:bg-[rgba(0,95,140,0.08)]"
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f2f7fa] text-[#475569] transition-colors hover:bg-[rgba(217,119,6,0.08)]"
             >
               <X className="h-4 w-4" aria-hidden="true" />
             </button>
@@ -226,7 +239,7 @@ export function TeamFiltersBar({ sort, recruitingOnly, days, prefectures, q }: T
                       onClick={() => toggleDay(day)}
                       style={
                         sel
-                          ? { background: "rgba(15,138,79,0.09)", color: "#0f8a4f", borderColor: "rgba(15,138,79,0.25)" }
+                          ? { background: "rgba(217,119,6,0.09)", color: "#d97706", borderColor: "rgba(217,119,6,0.25)" }
                           : { borderColor: "#e0eaef" }
                       }
                       className={`flex h-10 flex-1 items-center justify-center rounded-full border text-sm transition-all ${
@@ -244,15 +257,40 @@ export function TeamFiltersBar({ sort, recruitingOnly, days, prefectures, q }: T
               <PrefectureMultiSelect
                 value={tempPrefectures}
                 onChange={setTempPrefectures}
-                accentColor="#0f8a4f"
-                accentBg="rgba(15,138,79,0.09)"
+                accentColor="#d97706"
+                accentBg="rgba(217,119,6,0.09)"
               />
+
+              {/* 性別 */}
+              <p className="mb-3 mt-6 text-[11px] font-bold uppercase tracking-widest text-[#64748b]">性別</p>
+              <div className="flex gap-2">
+                {GENDER_OPTIONS.map((opt) => {
+                  const sel = tempGender === opt.key
+                  return (
+                    <button
+                      key={opt.key || "none"}
+                      type="button"
+                      onClick={() => setTempGender(opt.key)}
+                      style={
+                        sel
+                          ? { background: "rgba(217,119,6,0.09)", color: "#d97706", borderColor: "rgba(217,119,6,0.25)" }
+                          : { borderColor: "#e0eaef" }
+                      }
+                      className={`flex h-10 flex-1 items-center justify-center rounded-full border text-sm transition-all ${
+                        sel ? "font-semibold" : "bg-[#f8fafc] text-[#475569]"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  )
+                })}
+              </div>
 
               {/* フッター */}
               <div className="mt-6 flex gap-3">
                 <button
                   type="button"
-                  onClick={() => { setTempDays([]); setTempPrefectures([]) }}
+                  onClick={() => { setTempDays([]); setTempPrefectures([]); setTempGender("") }}
                   className="flex-1 rounded-2xl border border-[#dce3ea] py-3.5 text-sm font-semibold text-[#475569] transition-colors hover:bg-[#f2f7fa]"
                 >
                   リセット
@@ -261,7 +299,7 @@ export function TeamFiltersBar({ sort, recruitingOnly, days, prefectures, q }: T
                   type="button"
                   onClick={applyFilter}
                   className="flex-[2] rounded-2xl py-3.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 active:opacity-80"
-                  style={{ background: "#0f8a4f" }}
+                  style={{ background: "#d97706" }}
                 >
                   適用する
                 </button>
@@ -279,14 +317,14 @@ export function TeamFiltersBar({ sort, recruitingOnly, days, prefectures, q }: T
                     key={opt.key}
                     type="button"
                     onClick={() => applySort(opt.key)}
-                    style={sel ? { background: "rgba(15,138,79,0.06)" } : undefined}
+                    style={sel ? { background: "rgba(217,119,6,0.06)" } : undefined}
                     className={`flex w-full items-center gap-3 rounded-xl px-4 py-4 text-sm transition-colors ${
-                      sel ? "text-[#0f8a4f]" : "text-[#1a2332] hover:bg-[#f2f7fa]"
+                      sel ? "text-[#d97706]" : "text-[#1a2332] hover:bg-[#f2f7fa]"
                     }`}
                   >
                     <div
                       className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
-                      style={{ background: sel ? "rgba(15,138,79,0.1)" : "#f2f7fa" }}
+                      style={{ background: sel ? "rgba(217,119,6,0.1)" : "#f2f7fa" }}
                     >
                       {opt.key === "newest" ? (
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -305,7 +343,7 @@ export function TeamFiltersBar({ sort, recruitingOnly, days, prefectures, q }: T
                     {sel && (
                       <div
                         className="ml-auto flex h-5 w-5 shrink-0 items-center justify-center rounded-full"
-                        style={{ background: "#0f8a4f" }}
+                        style={{ background: "#d97706" }}
                       >
                         <Check className="h-3 w-3 text-white" aria-hidden="true" />
                       </div>

@@ -14,6 +14,7 @@ interface TeamsPageProps {
     sort?: string
     recruiting?: string
     days?: string
+    prefecture?: string
   }>
 }
 
@@ -23,6 +24,7 @@ export default async function TeamsPage({ searchParams }: TeamsPageProps) {
   const sort = (params.sort === "name" ? "name" : "newest") as "newest" | "name"
   const recruitingOnly = params.recruiting !== "0"
   const days = params.days ? params.days.split(",").filter(Boolean) : []
+  const prefectures = params.prefecture ? params.prefecture.split(",").filter(Boolean) : []
 
   const supabase = await createClient()
   const {
@@ -36,6 +38,7 @@ export default async function TeamsPage({ searchParams }: TeamsPageProps) {
     sort,
     recruitingOnly,
     days: days.length > 0 ? days : undefined,
+    prefectures: prefectures.length > 0 ? prefectures : undefined,
   })
 
   return (
@@ -56,10 +59,11 @@ export default async function TeamsPage({ searchParams }: TeamsPageProps) {
             sort={sort}
             recruitingOnly={recruitingOnly}
             days={days}
+            prefectures={prefectures}
           />
         </div>
         {/* フィルター行 */}
-        <TeamFiltersBar sort={sort} recruitingOnly={recruitingOnly} days={days} q={q} />
+        <TeamFiltersBar sort={sort} recruitingOnly={recruitingOnly} days={days} prefectures={prefectures} q={q} />
       </div>
 
       {/* 結果 */}
