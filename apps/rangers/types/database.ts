@@ -254,7 +254,7 @@ export type TeamMemberRole = "admin" | "member"
 export type MembershipType = "annual" | "monthly" | "point_card"
 export type JoinRequestStatus = "pending" | "approved" | "rejected"
 export type SessionType = "practice" | "camp" | "competition" | "event" | "meeting"
-export type SessionStatus = "open" | "confirmed" | "cancelled"
+export type SessionStatus = "open" | "closed" | "confirmed" | "cancelled"
 export type PaymentMethod = "stripe" | "cash" | "point_card"
 export type PaymentStatus = "pending" | "paid" | "failed" | "refunded" | "free" | "disputed"
 export type FeeType = "annual" | "monthly"
@@ -294,7 +294,6 @@ export interface Team {
   default_guest_price: number
   annual_fee_amount: number | null
   monthly_fee_amount: number | null
-  cancellation_days: number
   point_card_count: number
   point_card_price: number | null
   practice_frequency: string | null
@@ -308,7 +307,6 @@ export interface Team {
   fee_members_exempt_session: boolean
   status: TeamStatus
   created_at: string
-  instructor_title: string | null
 }
 
 export interface TeamMember {
@@ -379,7 +377,6 @@ export interface PracticeSession {
   course_rules: CourseRule[] | null
   target_tags: string[]
   target_members: string[] | null
-  cancellation_days: number | null
   allow_point_card: boolean
   is_external: boolean
   is_lp_featured: boolean
@@ -468,10 +465,13 @@ export type NotificationType =
   | "session_min_reached"
   | "session_updated"
   | "session_reminder"
+  | "session_registration_closed"
+  | "session_registration_closed_admin"
   | "waitlist_available"
   // 支払い関連
   | "payment_charged"
   | "payment_failed"
+  | "payment_reverted"
   | "stamp_low"
   | "fee_reminder"
   | "fee_amount_changed"
@@ -525,7 +525,6 @@ export interface SessionTemplate {
   course_rules: CourseRule[] | null
   target_tags: string[]
   allow_point_card: boolean
-  cancellation_days: number | null
   is_external: boolean
   created_at: string
 }

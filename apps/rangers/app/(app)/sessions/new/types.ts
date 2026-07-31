@@ -30,7 +30,6 @@ export type FormData = {
   registration_deadline: string
   min_participants: string
   max_participants: string
-  cancellation_days: string
   is_external: boolean
 }
 
@@ -63,12 +62,11 @@ export interface TemplateOption {
   name: string
 }
 
-export type PrefillInput = Partial<Omit<FormData, "member_price" | "guest_price" | "min_participants" | "max_participants" | "cancellation_days">> & {
+export type PrefillInput = Partial<Omit<FormData, "member_price" | "guest_price" | "min_participants" | "max_participants">> & {
   member_price?: string | number
   guest_price?: string | number
   min_participants?: string | number
   max_participants?: string | number
-  cancellation_days?: string | number
   target_tags?: string[]
   competition_fields?: CompetitionField[]
 }

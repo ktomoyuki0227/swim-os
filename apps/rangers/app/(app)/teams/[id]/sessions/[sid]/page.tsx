@@ -152,14 +152,20 @@ export default async function MemberSessionPage({ params }: SessionPageProps) {
     session.session_status !== "cancelled" &&
     !myRegistration
 
-  // キャンセル可能か判定（開催後はロック）
-  const canCancel = myRegistration && !isPast
+  // キャンセル可能か判定（開催後・申込み締切後はロック。開催確定後は決済済み(paid)のみロック）
+  const canCancel =
+    !!myRegistration &&
+    !isPast &&
+    session.session_status !== "closed" &&
+    session.session_status !== "cancelled" &&
+    !(session.session_status === "confirmed" && myRegistration.payment_status === "paid")
 
   const isCompetition = session.type === "competition"
   const competitionFields = (session.competition_fields || []) as { key: string; label: string; type: string; required: boolean; options?: string[] }[]
 
   const statusConfig: Record<string, { label: string; className: string }> = {
     open: { label: "受付中", className: "bg-[#e8f2f8] text-[#005F8C] border-transparent" },
+    closed: { label: "受付終了・判断待ち", className: "bg-[#fdf6e3] text-[#b8860b] border-transparent" },
     confirmed: { label: "開催確定", className: "bg-[#eaf7f0] text-[#0f8a4f] border-transparent" },
     cancelled: { label: "中止", className: "bg-[#fdecea] text-[#c0392b] border-transparent" },
   }
@@ -268,12 +274,24 @@ export default async function MemberSessionPage({ params }: SessionPageProps) {
             </CardContent>
           </Card>
 
-          {/* キャンセルボタン: 開催後はロック */}
+          {/* キャンセルボタン: 開催後はロック。締切後は受付停止、確定後は決済済みのみロック */}
           {canCancel ? (
             <CancelButton sessionId={sessionId} />
-          ) : isPast && myRegistration ? (
+          ) : isPast ? (
             <div className="rounded-xl border border-[#dce3ea] bg-[#f2f7fa] p-3 text-center text-xs text-[#64748b]">
               開催日を過ぎたためキャンセルできません
+            </div>
+          ) : session.session_status === "cancelled" ? (
+            <div className="rounded-xl border border-[#dce3ea] bg-[#f2f7fa] p-3 text-center text-xs text-[#64748b]">
+              このセッションは中止になりました
+            </div>
+          ) : session.session_status === "confirmed" ? (
+            <div className="rounded-xl border border-[#dce3ea] bg-[#f2f7fa] p-3 text-center text-xs text-[#64748b]">
+              開催確定・決済が完了しているためキャンセルできません。やむを得ない事情がある場合は運営にお問い合わせください
+            </div>
+          ) : session.session_status !== "open" ? (
+            <div className="rounded-xl border border-[#dce3ea] bg-[#f2f7fa] p-3 text-center text-xs text-[#64748b]">
+              申込み締切を過ぎているためキャンセルできません。やむを得ない事情がある場合は運営にお問い合わせください
             </div>
           ) : null}
         </div>
@@ -292,6 +310,8 @@ export default async function MemberSessionPage({ params }: SessionPageProps) {
             ? "このセッションは中止になりました"
             : isFull
             ? "定員に達しました"
+            : session.session_status === "closed"
+            ? "申込みを締め切りました。開催者が確定/中止を判断中です"
             : isDeadlinePassed
             ? "申込期限を過ぎています"
             : "参加受付終了"}

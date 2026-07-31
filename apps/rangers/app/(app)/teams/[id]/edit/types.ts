@@ -7,7 +7,6 @@ export interface FeeFieldsForm {
   monthlyFeeAmount: string
   defaultMemberPrice: string
   defaultGuestPrice: string
-  cancellationDays: string
   pointCardCount: string
   pointCardPrice: string
 }

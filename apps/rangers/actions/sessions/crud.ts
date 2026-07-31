@@ -5,17 +5,8 @@ import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { sessionSchema, sessionUpdateSchema } from "@/lib/validations"
 import { isTeamAdmin, isTeamMember } from "@/lib/auth/require-team-admin"
-import { formatSessionDateJa } from "@/lib/format-date"
+import { formatSessionDateJa, toJstIso, toJstEndOfDayIso } from "@/lib/format-date"
 import { notifyUsers } from "@/lib/notifications"
-
-// datetime-local由来("YYYY-MM-DDTHH:mm")はそのまま、type="date"由来の日付のみの文字列
-// ("YYYY-MM-DD")には時刻がないため、末尾に"+09:00"だけを連結すると
-// "2026-08-05+09:00"のような不正な日時文字列になりtoISOString()がRangeErrorを投げる。
-// (registration_deadlineは<input type="date">のため常に日付のみで渡ってくる)
-function toJstIso(value: string): string {
-  const withTime = value.includes("T") ? value : `${value}T00:00:00`
-  return new Date(`${withTime}+09:00`).toISOString()
-}
 
 export async function createSession(teamId: string, data: unknown) {
   const parsed = sessionSchema.safeParse(data)
@@ -47,14 +38,13 @@ export async function createSession(teamId: string, data: unknown) {
       member_price: parsed.data.member_price,
       guest_price: parsed.data.guest_price,
       registration_deadline: parsed.data.registration_deadline
-        ? toJstIso(parsed.data.registration_deadline)
+        ? toJstEndOfDayIso(parsed.data.registration_deadline)
         : null,
       min_participants: parsed.data.min_participants ?? null,
       max_participants: parsed.data.max_participants ?? null,
       course_rules: parsed.data.course_rules || null,
       target_tags: parsed.data.target_tags,
       target_members: parsed.data.target_members || null,
-      cancellation_days: parsed.data.cancellation_days ?? null,
       allow_point_card: parsed.data.allow_point_card,
       is_external: parsed.data.is_external,
       competition_fields: parsed.data.competition_fields || null,
@@ -128,7 +118,7 @@ export async function updateSession(sessionId: string, data: unknown) {
     updateData.end_at = toJstIso(updateData.end_at)
   }
   if (updateData.registration_deadline) {
-    updateData.registration_deadline = toJstIso(updateData.registration_deadline)
+    updateData.registration_deadline = toJstEndOfDayIso(updateData.registration_deadline)
   }
 
   // adminClientでRLSをバイパスして更新（user clientだとサイレントブロックの可能性あり）

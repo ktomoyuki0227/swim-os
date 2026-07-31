@@ -126,10 +126,14 @@ export function MemberSessionList({ teamId, sessions }: MemberSessionListProps) 
 
       {/* 次のセッション（ハイライト・今後タブのみ） */}
       {nextSession && (() => {
+        // session_statusのclosed遷移は締切通過を検知するバッチ(1日1回)頼みのため、
+        // バッチが未実行の間はisDeadlinePassedを併用して表示上の受付終了を即時反映する
         const isDeadlinePassed = nextSession.registration_deadline &&
           new Date(nextSession.registration_deadline) < now
+        const isClosed = nextSession.session_status === "closed" || isDeadlinePassed
         const isConfirmed = nextSession.session_status === "confirmed"
-        const canRegister = !nextSession.is_registered && !isDeadlinePassed && !isConfirmed
+        const isCancelled = nextSession.session_status === "cancelled"
+        const canRegister = !nextSession.is_registered && !isClosed && !isConfirmed && !isCancelled
 
         return (
           <div>
@@ -182,9 +186,11 @@ export function MemberSessionList({ teamId, sessions }: MemberSessionListProps) 
                           <Badge className={`text-xs ${
                             isConfirmed
                               ? "bg-[#eaf7f0] text-[#0f8a4f] border-transparent"
-                              : "bg-[#edf0f4] text-[#475569] border-transparent"
+                              : isCancelled
+                              ? "bg-[#fdecea] text-[#c0392b] border-transparent"
+                              : "bg-[#fdf6e3] text-[#b8860b] border-transparent"
                           }`}>
-                            {isConfirmed ? "開催確定" : "締切済"}
+                            {isConfirmed ? "開催確定" : isCancelled ? "中止" : "締切済"}
                           </Badge>
                         )}
                       </div>
@@ -238,17 +244,23 @@ export function MemberSessionList({ teamId, sessions }: MemberSessionListProps) 
                     <div className="flex shrink-0 flex-col items-end gap-1">
                       {(() => {
                         if (filter === "past") {
+                          if (session.session_status === "cancelled") {
+                            return <Badge className="bg-[#fdecea] text-[#c0392b] border-transparent text-xs">中止</Badge>
+                          }
                           return session.is_registered ? (
                             <Badge className="bg-[#eaf7f0] text-[#0f8a4f] border-transparent text-xs">参加済</Badge>
                           ) : null
                         }
                         const isDeadlinePassed = session.registration_deadline &&
                           new Date(session.registration_deadline) < now
+                        if (session.session_status === "cancelled") {
+                          return <Badge className="bg-[#fdecea] text-[#c0392b] border-transparent text-xs">中止</Badge>
+                        }
                         if (session.session_status === "confirmed") {
                           return <Badge className="bg-[#eaf7f0] text-[#0f8a4f] border-transparent text-xs">開催確定</Badge>
                         }
-                        if (isDeadlinePassed) {
-                          return <Badge className="bg-[#edf0f4] text-[#475569] border-transparent text-xs">締切済</Badge>
+                        if (session.session_status === "closed" || isDeadlinePassed) {
+                          return <Badge className="bg-[#fdf6e3] text-[#b8860b] border-transparent text-xs">締切済</Badge>
                         }
                         return <Badge className="bg-[#e8f2f8] text-[#005F8C] border-transparent text-xs">受付中</Badge>
                       })()}

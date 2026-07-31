@@ -124,14 +124,6 @@ export function AdminActionButtons({ team }: AdminActionButtonsProps) {
                       </span>
                     </div>
                   )}
-                  {team.has_session_fee && (
-                    <div className="flex justify-between text-sm">
-                      <span className="text-[#475569]">キャンセル期限</span>
-                      <span className="font-medium text-[#1a2332]">
-                        {team.cancellation_days}日前まで
-                      </span>
-                    </div>
-                  )}
                 </CardContent>
               </Card>
 

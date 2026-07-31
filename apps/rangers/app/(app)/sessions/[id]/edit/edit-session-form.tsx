@@ -45,6 +45,11 @@ function utcToJstInput(utcIso: string | null | undefined): string {
   return `${jst.getUTCFullYear()}-${pad(jst.getUTCMonth() + 1)}-${pad(jst.getUTCDate())}T${pad(jst.getUTCHours())}:${pad(jst.getUTCMinutes())}`
 }
 
+// 申込締切は<input type="date">で編集するため、時刻を含まない日付部分だけを取り出す
+function utcToJstDateInput(utcIso: string | null | undefined): string {
+  return utcToJstInput(utcIso).split("T")[0]
+}
+
 function calcEndAt(scheduledAt: string, durationMinutes: number): string {
   if (!scheduledAt) return ""
   const d = new Date(scheduledAt)
@@ -77,7 +82,6 @@ type FormData = {
   registration_deadline: string
   min_participants: string
   max_participants: string
-  cancellation_days: string
   is_external: boolean
 }
 
@@ -97,7 +101,7 @@ export function EditSessionForm({ session, teamName }: EditSessionFormProps) {
 
   const jstScheduledAt = utcToJstInput(session.scheduled_at as string)
   const jstEndAt = utcToJstInput(session.end_at as string | null)
-  const jstDeadline = utcToJstInput(session.registration_deadline as string | null)
+  const jstDeadline = utcToJstDateInput(session.registration_deadline as string | null)
 
   const [form, setForm] = useState<FormData>({
     title: (session.title as string) || "",
@@ -115,7 +119,6 @@ export function EditSessionForm({ session, teamName }: EditSessionFormProps) {
     registration_deadline: jstDeadline,
     min_participants: session.min_participants != null ? String(session.min_participants) : "",
     max_participants: session.max_participants != null ? String(session.max_participants) : "",
-    cancellation_days: session.cancellation_days != null ? String(session.cancellation_days) : "",
     is_external: (session.is_external as boolean) ?? false,
   })
 
@@ -184,7 +187,6 @@ export function EditSessionForm({ session, teamName }: EditSessionFormProps) {
           registration_deadline: form.registration_deadline || undefined,
           min_participants: parseOptionalInt(form.min_participants),
           max_participants: parseOptionalInt(form.max_participants),
-          cancellation_days: parseOptionalInt(form.cancellation_days),
           allow_point_card: form.allow_point_card,
           is_external: form.is_external,
           target_tags: selectedTags,
@@ -439,11 +441,14 @@ export function EditSessionForm({ session, teamName }: EditSessionFormProps) {
             <Label htmlFor="registration_deadline">申込締切</Label>
             <Input
               id="registration_deadline"
-              type="datetime-local"
+              type="date"
               value={form.registration_deadline}
               onChange={(e) => set("registration_deadline", e.target.value)}
               className="border-[#dce3ea]"
             />
+            <p className="text-xs text-[#64748b]">
+              この日の23:59までが申込み・キャンセルの受付期間です。締切後は開催確定/中止を判断します
+            </p>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
@@ -471,19 +476,6 @@ export function EditSessionForm({ session, teamName }: EditSessionFormProps) {
                 className="border-[#dce3ea]"
               />
             </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="cancellation_days">キャンセル期限（何日前まで）</Label>
-            <Input
-              id="cancellation_days"
-              type="number"
-              min={0}
-              value={form.cancellation_days}
-              onChange={(e) => set("cancellation_days", e.target.value)}
-              placeholder="例: 3"
-              className="border-[#dce3ea]"
-            />
           </div>
         </CardContent>
       </Card>

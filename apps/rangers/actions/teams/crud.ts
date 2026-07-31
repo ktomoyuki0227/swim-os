@@ -6,6 +6,7 @@ import { redirect } from "next/navigation"
 import { teamSchema, teamUpdateSchema } from "@/lib/validations"
 import { isValidImageFile } from "@/lib/file-validation"
 import type { MembershipType, SessionType, TeamStatus } from "@/types/database"
+import { PREFECTURES } from "@/types/database"
 import { isTeamAdmin } from "@/lib/auth/require-team-admin"
 import { notifyUser, notifyUsers } from "@/lib/notifications"
 import { syncActiveSubscriptionsToNewPrice } from "@/actions/subscriptions"
@@ -91,13 +92,11 @@ export async function createTeam(data: unknown) {
       default_guest_price: parsed.data.default_guest_price,
       annual_fee_amount: parsed.data.annual_fee_amount || null,
       monthly_fee_amount: parsed.data.monthly_fee_amount || null,
-      cancellation_days: parsed.data.cancellation_days,
       point_card_count: parsed.data.point_card_count,
       point_card_price: parsed.data.point_card_price || null,
       contact_email: parsed.data.contact_email || null,
       contact_phone: parsed.data.contact_phone || null,
       team_type: parsed.data.team_type ?? "team",
-      instructor_title: parsed.data.instructor_title || null,
       show_member_count: parsed.data.show_member_count ?? true,
     })
     .select()
@@ -283,7 +282,6 @@ export async function getTeam(teamId: string) {
       practice_days: team.practice_days ?? [],
       default_member_price: team.default_member_price ?? 0,
       default_guest_price: team.default_guest_price ?? 0,
-      cancellation_days: team.cancellation_days ?? 3,
       point_card_count: team.point_card_count ?? 10,
       status: team.status as TeamStatus,
     },
@@ -297,6 +295,8 @@ export async function getPublicTeams(options?: {
   sort?: "newest" | "name"
   recruitingOnly?: boolean
   days?: string[]
+  prefectures?: string[]
+  gender?: "male" | "female" | "other"
 }) {
   const admin = createAdminClient()
 
@@ -311,9 +311,12 @@ export async function getPublicTeams(options?: {
     excludeIds = (memberships ?? []).map((m) => m.team_id as string)
   }
 
+  // coach.gender で絞り込む場合、埋め込みリソースへのフィルタには !inner 結合が必要
+  // （teams.coach_id は not null かつ profiles への外部キーのため常に一致する行があり、
+  // !inner に切り替えても通常時の結果セットには影響しない）
   let query = admin
     .from("teams")
-    .select("id, name, description, avatar_url, coach_id, team_type, is_recruiting, activity_area, practice_frequency, practice_days, main_pool, default_guest_price, coach:profiles!coach_id(name, avatar_url)")
+    .select("id, name, description, avatar_url, coach_id, team_type, is_recruiting, activity_area, practice_frequency, practice_days, main_pool, default_guest_price, coach:profiles!coach_id!inner(name, avatar_url, gender)")
     .eq("status", "active")
     .limit(50)
 
@@ -337,6 +340,22 @@ export async function getPublicTeams(options?: {
 
   if (options?.days && options.days.length > 0) {
     query = query.overlaps("practice_days", options.days)
+  }
+
+  if (options?.prefectures && options.prefectures.length > 0) {
+    // URL経由で渡された値は .or() の生シンタックスに直接埋め込むため、
+    // 既知の都道府県マスターに含まれる値だけを許可する（フィルタ構文の混入防止）
+    const validPrefectures = options.prefectures.filter((p) =>
+      (PREFECTURES as readonly string[]).includes(p)
+    )
+    if (validPrefectures.length > 0) {
+      const orFilter = validPrefectures.map((p) => `activity_area.ilike.${p}%`).join(",")
+      query = query.or(orFilter)
+    }
+  }
+
+  if (options?.gender) {
+    query = query.eq("coach.gender", options.gender)
   }
 
   if (excludeIds.length > 0) {

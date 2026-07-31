@@ -36,7 +36,6 @@ interface Team {
   default_guest_price: number
   annual_fee_amount: number | null
   monthly_fee_amount: number | null
-  cancellation_days: number
   point_card_count: number
   point_card_price: number | null
   contact_email: string | null
@@ -79,7 +78,6 @@ export function EditTeamForm({ team, stripeEnabled, connectStatus }: EditTeamFor
     monthlyFeeAmount: team.monthly_fee_amount != null ? String(team.monthly_fee_amount) : "",
     defaultMemberPrice: String(team.default_member_price ?? 0),
     defaultGuestPrice: String(team.default_guest_price ?? 0),
-    cancellationDays: String(team.cancellation_days ?? 3),
     pointCardCount: String(team.point_card_count ?? 10),
     pointCardPrice: team.point_card_price != null ? String(team.point_card_price) : "",
   })
@@ -204,7 +202,6 @@ export function EditTeamForm({ team, stripeEnabled, connectStatus }: EditTeamFor
           default_guest_price: feeForm.hasSessionFee ? (parseInt(feeForm.defaultGuestPrice) || 0) : 0,
           annual_fee_amount: feeForm.hasAnnualFee ? (Number.isNaN(annualFeeVal) ? undefined : annualFeeVal) : undefined,
           monthly_fee_amount: feeForm.hasMonthlyFee ? (Number.isNaN(monthlyFeeVal) ? undefined : monthlyFeeVal) : undefined,
-          cancellation_days: parseInt(feeForm.cancellationDays) || 3,
           point_card_count: feeForm.hasPointCard ? (parseInt(feeForm.pointCardCount) || team.point_card_count || 10) : undefined,
           point_card_price: feeForm.hasPointCard ? (Number.isNaN(pointCardPriceVal) ? undefined : pointCardPriceVal) : undefined,
           contact_email: (data.get("contact_email") as string) || null,

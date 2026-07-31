@@ -109,12 +109,6 @@ export function StepConfirm({ form, competitionFields, selectedTags, selectedMem
                 <span className="text-[#1a2332]">{form.max_participants}人</span>
               </div>
             )}
-            {form.cancellation_days && (
-              <div className="flex gap-2">
-                <span className="w-24 shrink-0 text-[#64748b]">キャンセル期限</span>
-                <span className="text-[#1a2332]">{form.cancellation_days}日前まで</span>
-              </div>
-            )}
             <div className="flex gap-2">
               <span className="w-24 shrink-0 text-[#64748b]">外部公開</span>
               <span className="text-[#1a2332]">{form.is_external ? "あり" : "なし"}</span>

@@ -35,7 +35,6 @@ export const DEFAULT_FORM: FormData = {
   registration_deadline: "",
   min_participants: "",
   max_participants: "",
-  cancellation_days: "",
   is_external: false,
 }
 

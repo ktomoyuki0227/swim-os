@@ -172,3 +172,46 @@ export async function markCashPaid(registrationId: string) {
   revalidatePath("/notifications")
   return { data: null }
 }
+
+// 現金払いの集金済みステータスを未回収に戻す（管理者のみ）。
+// 誤って別の参加者を集金済みにしてしまった場合の取り消し用。
+export async function unmarkCashPaid(registrationId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "認証が必要です" }
+
+  const adminClient = createAdminClient()
+
+  const { data: reg, error: regError } = await adminClient
+    .from("session_registrations")
+    .select("session_id, swimmer_id, payment_method, payment_status, session:practice_sessions!inner(team_id, title)")
+    .eq("id", registrationId)
+    .single()
+
+  if (regError || !reg) return { error: "参加登録が見つかりません" }
+  if (reg.payment_method !== "cash") return { error: "現金払い以外は変更できません" }
+  if (reg.payment_status !== "paid") return { error: "集金済みの登録のみ取り消せます" }
+
+  const session = reg.session
+
+  if (!(await isTeamAdmin(adminClient, session.team_id, user.id))) return { error: "管理者のみ操作できます" }
+
+  const { error } = await adminClient
+    .from("session_registrations")
+    .update({ payment_status: "pending" })
+    .eq("id", registrationId)
+
+  if (error) return { error: "更新に失敗しました" }
+
+  await notifyUser(reg.swimmer_id, {
+    type: "payment_reverted",
+    title: `「${session.title}」の現金参加費の集金記録を取り消しました`,
+    body: "受領記録に誤りがあったため未回収に戻しました。当日改めてお支払いください",
+    team_id: session.team_id,
+    link: "/payments",
+  })
+
+  revalidatePath(`/sessions/${reg.session_id}`)
+  revalidatePath("/notifications")
+  return { data: null }
+}

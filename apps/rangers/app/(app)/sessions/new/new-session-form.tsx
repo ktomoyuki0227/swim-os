@@ -130,7 +130,6 @@ export function NewSessionForm({
       allow_point_card: data.allow_point_card ?? prev.allow_point_card,
       min_participants: data.min_participants !== undefined ? String(data.min_participants) : prev.min_participants,
       max_participants: data.max_participants !== undefined ? String(data.max_participants) : prev.max_participants,
-      cancellation_days: data.cancellation_days !== undefined ? String(data.cancellation_days) : prev.cancellation_days,
       is_external: data.is_external ?? prev.is_external,
     }))
     if (data.target_tags) setSelectedTags(data.target_tags)
@@ -151,7 +150,6 @@ export function NewSessionForm({
           description: data.description ?? undefined, member_price: data.member_price,
           guest_price: data.guest_price, allow_point_card: data.allow_point_card ?? undefined,
           min_participants: data.min_participants ?? undefined, max_participants: data.max_participants ?? undefined,
-          cancellation_days: data.cancellation_days ?? undefined,
           is_external: data.is_external ?? undefined, target_tags: (data.target_tags as string[]) ?? [],
           competition_fields: data.competition_fields as CompetitionField[],
         })
@@ -164,7 +162,6 @@ export function NewSessionForm({
           description: (data.description as string) ?? undefined, member_price: data.member_price as number,
           guest_price: data.guest_price as number, allow_point_card: data.allow_point_card as boolean,
           min_participants: (data.min_participants as number) ?? undefined, max_participants: (data.max_participants as number) ?? undefined,
-          cancellation_days: (data.cancellation_days as number) ?? undefined,
           is_external: data.is_external as boolean, target_tags: (data.target_tags as string[]) ?? [],
         })
       })
@@ -230,7 +227,6 @@ export function NewSessionForm({
           registration_deadline: form.registration_deadline || undefined,
           min_participants: parseOptionalInt(form.min_participants),
           max_participants: parseOptionalInt(form.max_participants),
-          cancellation_days: parseOptionalInt(form.cancellation_days),
           allow_point_card: form.allow_point_card,
           is_external: form.is_external,
           target_tags: selectedTags,
@@ -286,7 +282,6 @@ export function NewSessionForm({
                   description: (data.description as string) ?? undefined, member_price: data.member_price as number,
                   guest_price: data.guest_price as number, allow_point_card: data.allow_point_card as boolean,
                   min_participants: (data.min_participants as number) ?? undefined, max_participants: (data.max_participants as number) ?? undefined,
-                  cancellation_days: (data.cancellation_days as number) ?? undefined,
                   is_external: data.is_external as boolean, target_tags: (data.target_tags as string[]) ?? [],
                 })
               })

@@ -8,7 +8,7 @@ export function cn(...inputs: ClassValue[]) {
 /**
  * フォームの数値入力(文字列)を任意の整数に変換する。
  * `parseInt(value) || undefined` は "0" を明示入力してもfalsyのため
- * undefinedになり、0が有効な値のフィールド(cancellation_days等)で
+ * undefinedになり、0が有効な値のフィールド(min_participants等)で
  * ユーザーの入力が無言で無視されるバグの原因になる。空文字/非数値のみ
  * undefinedとして扱い、0はそのまま0として返す。
  */

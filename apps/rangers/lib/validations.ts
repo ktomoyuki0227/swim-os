@@ -85,14 +85,12 @@ export const teamSchema = z.object({
   default_guest_price: z.number().int().min(0, "0以上で入力してください").default(0),
   annual_fee_amount: z.number().int().min(0).optional(),
   monthly_fee_amount: z.number().int().min(0).optional(),
-  cancellation_days: z.number().int().min(0).max(30).default(3),
   point_card_count: z.number().int().min(1).max(100).default(10),
   point_card_price: z.number().int().min(0).optional(),
   contact_email: z.string().max(254).optional(),
   contact_phone: z.string().max(20).optional(),
   fee_members_exempt_session: z.boolean().default(false),
   team_type: z.enum(["team", "personal"]).default("team"),
-  instructor_title: z.string().max(100).optional(),
 })
 
 export const sessionSchema = z.object({
@@ -118,7 +116,6 @@ export const sessionSchema = z.object({
   })).optional(),
   target_tags: z.array(z.string()).default([]),
   target_members: z.array(z.string()).optional(),
-  cancellation_days: z.number().int().min(0).optional(),
   allow_point_card: z.boolean().default(true),
   is_external: z.boolean().default(false),
   competition_fields: z.array(z.object({
@@ -162,7 +159,6 @@ export const teamUpdateSchema = z.object({
   default_guest_price: z.number().int().min(0).optional(),
   annual_fee_amount: z.number().int().min(0).optional(),
   monthly_fee_amount: z.number().int().min(0).optional(),
-  cancellation_days: z.number().int().min(0).max(30).optional(),
   point_card_count: z.number().int().min(1).max(100).optional(),
   point_card_price: z.number().int().min(0).optional(),
   status: z.enum(["active", "inactive"]).optional(),
@@ -194,7 +190,6 @@ export const sessionUpdateSchema = z.object({
     cancel_below: z.number().int().min(0).optional(),
   })).optional(),
   target_tags: z.array(z.string()).optional(),
-  cancellation_days: z.number().int().min(0).optional(),
   allow_point_card: z.boolean().optional(),
   is_external: z.boolean().optional(),
   is_lp_featured: z.boolean().optional(),
@@ -259,7 +254,6 @@ export const templateUpdateSchema = z.object({
   })).optional(),
   target_tags: z.array(z.string()).optional(),
   allow_point_card: z.boolean().optional(),
-  cancellation_days: z.number().int().min(0).optional(),
   is_external: z.boolean().optional(),
 })
 

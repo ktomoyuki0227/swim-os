@@ -23,6 +23,9 @@ export function StepDetails({ form, set, competitionFields, setCompetitionFields
             onChange={(e) => set("registration_deadline", e.target.value)}
             className="border-[#dce3ea]"
           />
+          <p className="text-xs text-[#64748b]">
+            この日の23:59までが申込み・キャンセルの受付期間です。締切後は開催者が開催確定/中止を判断します
+          </p>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
@@ -49,32 +52,6 @@ export function StepDetails({ form, set, competitionFields, setCompetitionFields
               onChange={(e) => set("max_participants", e.target.value)}
               className="border-[#dce3ea]"
             />
-          </div>
-        </div>
-
-        <div className="space-y-1.5">
-          <Label htmlFor="cancellation_days">キャンセル期限</Label>
-          <div className="flex items-center gap-2">
-            <Input
-              id="cancellation_days"
-              type="number"
-              min="0"
-              max="30"
-              placeholder="未設定"
-              value={form.cancellation_days}
-              onChange={(e) => set("cancellation_days", e.target.value)}
-              className="w-28 border-[#dce3ea]"
-            />
-            <span className="text-sm text-[#475569]">日前まで</span>
-            {form.cancellation_days && form.scheduled_at && (() => {
-              const deadline = new Date(form.scheduled_at)
-              deadline.setDate(deadline.getDate() - parseInt(form.cancellation_days))
-              return (
-                <span className="ml-auto text-sm font-medium text-[#005F8C]">
-                  {deadline.toLocaleDateString("ja-JP", { month: "long", day: "numeric" })}まで
-                </span>
-              )
-            })()}
           </div>
         </div>
 

@@ -176,7 +176,7 @@ export function SessionActions({
   return (
     <div className="space-y-3">
       <div className="flex gap-3">
-        {currentStatus === "open" && (
+        {(currentStatus === "open" || currentStatus === "closed") && (
           <Button
             onClick={() => setPendingAction("confirm")}
             disabled={isConfirming || isCancelling || isDeleting}

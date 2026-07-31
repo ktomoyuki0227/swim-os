@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { templateSchema, templateUpdateSchema } from "@/lib/validations"
 import { isTeamAdmin } from "@/lib/auth/require-team-admin"
+import { toJstEndOfDayIso } from "@/lib/format-date"
 
 export async function saveAsTemplate(sessionId: string, name: string) {
   const parsed = templateSchema.safeParse({ name })
@@ -29,6 +30,24 @@ export async function saveAsTemplate(sessionId: string, name: string) {
     return { error: "権限がありません" }
   }
 
+  // deadline_days: 開催日から何日前を申込み締切とするかをテンプレートに保存する。
+  // テンプレートには具体的なscheduled_atがないため、相対日数で持っておき
+  // createSessionFromTemplateで新しいscheduled_atから締切日を再計算する。
+  // registration_deadlineがscheduled_at以降になっている不整合なセッション(サーバー側では
+  // 順序を強制していない)からコピーされた場合でも負値にならないよう下限を0に固定する。
+  // 負値のまま保存すると、createSessionFromTemplate側の
+  // `deadline.setDate(deadline.getDate() - template.deadline_days)` が符号反転し、
+  // 新しいセッションの締切が開催日より後になってしまう。
+  const deadlineDays = session.registration_deadline
+    ? Math.max(
+        0,
+        Math.round(
+          (new Date(session.scheduled_at).getTime() - new Date(session.registration_deadline).getTime()) /
+            (24 * 60 * 60 * 1000)
+        )
+      )
+    : null
+
   const { data: template, error } = await admin
     .from("session_templates")
     .insert({
@@ -41,13 +60,12 @@ export async function saveAsTemplate(sessionId: string, name: string) {
       location: session.location,
       member_price: session.member_price,
       guest_price: session.guest_price,
-      deadline_days: session.cancellation_days,
+      deadline_days: deadlineDays,
       min_participants: session.min_participants,
       max_participants: session.max_participants,
       course_rules: session.course_rules,
       target_tags: session.target_tags,
       allow_point_card: session.allow_point_card,
-      cancellation_days: session.cancellation_days,
       is_external: session.is_external,
     })
     .select()
@@ -187,7 +205,7 @@ export async function createSessionFromTemplate(
   if (template.deadline_days) {
     const deadline = new Date(scheduledAt)
     deadline.setDate(deadline.getDate() - template.deadline_days)
-    registrationDeadline = deadline.toISOString()
+    registrationDeadline = toJstEndOfDayIso(deadline.toISOString())
   }
 
   const { data: session, error } = await admin
@@ -208,7 +226,6 @@ export async function createSessionFromTemplate(
       max_participants: template.max_participants,
       course_rules: template.course_rules,
       target_tags: template.target_tags,
-      cancellation_days: template.cancellation_days,
       allow_point_card: template.allow_point_card,
       is_external: template.is_external,
     })

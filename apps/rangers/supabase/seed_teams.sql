@@ -38,7 +38,7 @@ INSERT INTO teams (
   id, coach_id, name, description,
   default_member_price, default_guest_price,
   annual_fee_amount, monthly_fee_amount,
-  cancellation_days, point_card_count, point_card_price,
+  point_card_count, point_card_price,
   status
 ) VALUES (
   gen_random_uuid(), v_instructor_id,
@@ -46,7 +46,7 @@ INSERT INTO teams (
   '山梨県甲府市を拠点とするマスターズ水泳チーム。'||chr(10)||'毎週水・土曜日に甲府市民プールで練習を行っています。',
   1000, 1500,
   5000, NULL,
-  3, 10, 9000,
+  10, 9000,
   'active'
 ) RETURNING id INTO v_team_id;
 

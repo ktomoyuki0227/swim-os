@@ -1,10 +1,11 @@
 "use client"
 
-import { useTransition } from "react"
+import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { Badge } from "@/components/ui/badge"
-import { markCashPaid } from "@/actions/sessions"
+import { markCashPaid, unmarkCashPaid } from "@/actions/sessions"
 import { useToast } from "@/components/toast"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 
 interface CashRegistration {
   id: string
@@ -45,6 +46,7 @@ export function CashCollectionPanel({ registrations }: CashCollectionPanelProps)
 
 function CashRow({ reg }: { reg: CashRegistration }) {
   const [isPending, startTransition] = useTransition()
+  const [showUndoConfirm, setShowUndoConfirm] = useState(false)
   const router = useRouter()
   const { showToast } = useToast()
   const isCollected = reg.paymentStatus === "paid"
@@ -65,6 +67,22 @@ function CashRow({ reg }: { reg: CashRegistration }) {
     })
   }
 
+  const handleUndoPaid = () => {
+    setShowUndoConfirm(false)
+    startTransition(async () => {
+      try {
+        const result = await unmarkCashPaid(reg.id)
+        if (result?.error) {
+          showToast(result.error, "error")
+        } else {
+          router.refresh()
+        }
+      } catch {
+        showToast("処理に失敗しました。もう一度お試しください。", "error")
+      }
+    })
+  }
+
   return (
     <div className="flex items-center gap-3 rounded-lg bg-white px-3 py-2.5">
       <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#005F8C]/10 text-xs font-semibold text-[#005F8C]">
@@ -74,7 +92,16 @@ function CashRow({ reg }: { reg: CashRegistration }) {
       {isFree ? (
         <Badge className="bg-[#edf0f4] text-[#475569] border-transparent text-xs">免除</Badge>
       ) : isCollected ? (
-        <Badge className="bg-[#eaf7f0] text-[#0f8a4f] border-transparent text-xs">集金済み</Badge>
+        <button
+          onClick={() => setShowUndoConfirm(true)}
+          disabled={isPending}
+          className="rounded-full disabled:opacity-50"
+          aria-label="集金済みを取り消す"
+        >
+          <Badge className="bg-[#eaf7f0] text-[#0f8a4f] border-transparent text-xs hover:bg-[#d5efe0] transition-colors">
+            {isPending ? "処理中..." : "集金済み"}
+          </Badge>
+        </button>
       ) : (
         <button
           onClick={handleMarkPaid}
@@ -84,6 +111,19 @@ function CashRow({ reg }: { reg: CashRegistration }) {
           {isPending ? "処理中..." : "集金済みにする"}
         </button>
       )}
+
+      <ConfirmDialog
+        open={showUndoConfirm}
+        title="集金済みステータスを取り消しますか？"
+        description={`${reg.swimmerName}さんの支払いステータスを「未回収」に戻します。本当に元に戻しても大丈夫ですか？`}
+        confirmLabel="元に戻す"
+        cancelLabel="キャンセル"
+        variant="danger"
+        isLoading={isPending}
+        loadingLabel="処理中..."
+        onConfirm={handleUndoPaid}
+        onCancel={() => setShowUndoConfirm(false)}
+      />
     </div>
   )
 }

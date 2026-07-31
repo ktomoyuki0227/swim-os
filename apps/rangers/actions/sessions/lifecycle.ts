@@ -81,12 +81,15 @@ export async function confirmSession(sessionId: string) {
     .single()
 
   if (!session) return { error: "セッションが見つかりません" }
-  if (session.session_status !== "open") return { error: "受付中のセッションのみ開催確定できます" }
+  // open: 締切未設定のまま受付中。closed: 締切通過済みで確定/中止の判断待ち。どちらからも確定できる。
+  if (!["open", "closed"].includes(session.session_status)) {
+    return { error: "受付中または受付終了のセッションのみ開催確定できます" }
+  }
 
   // admin権限チェック
   if (!(await isTeamAdmin(confirmAdmin, session.team_id, user.id))) return { error: "権限がありません" }
 
-  // セッションステータスを条件付きUPDATEで原子的に open -> confirmed へ遷移させる。
+  // セッションステータスを条件付きUPDATEで原子的に open/closed -> confirmed へ遷移させる。
   // ボタンの二重クリックや通信リトライで confirmSession が同時に2回呼ばれても、
   // 片方だけがこのUPDATEに成功し、もう片方は0件更新で即座に中断するため、
   // 決済処理の重複実行（＝参加者への二重課金）を防げる。
@@ -94,7 +97,7 @@ export async function confirmSession(sessionId: string) {
     .from("practice_sessions")
     .update({ session_status: "confirmed" })
     .eq("id", sessionId)
-    .eq("session_status", "open")
+    .in("session_status", ["open", "closed"])
     .select("id")
     .maybeSingle()
   if (claimErr || !claimed) return { error: "このセッションは既に開催確定処理が実行されています" }

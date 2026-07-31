@@ -43,7 +43,7 @@ BEGIN
     id, coach_id, name, description, avatar_url,
     default_member_price, default_guest_price,
     annual_fee_amount, monthly_fee_amount,
-    cancellation_days, point_card_count, point_card_price,
+    point_card_count, point_card_price,
     status
   ) VALUES (
     gen_random_uuid(), v_user1,
@@ -53,7 +53,7 @@ BEGIN
     'https://picsum.photos/seed/tokyomasters/400',
     1200, 2000,
     6000, NULL,
-    2, 10, 10000,
+    10, 10000,
     'active'
   ) RETURNING id INTO v_team2_id;
 

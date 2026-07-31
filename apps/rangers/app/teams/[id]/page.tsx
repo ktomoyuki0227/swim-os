@@ -124,7 +124,7 @@ export default async function TeamPage({ params }: TeamPageProps) {
     const sessions = (sessionsResult.data || [])
       .filter(
         (s: Record<string, unknown>) =>
-          (s.session_status === "open" || s.session_status === "confirmed") &&
+          (s.session_status === "open" || s.session_status === "closed" || s.session_status === "confirmed") &&
           new Date(s.scheduled_at as string) > now
       )
       .slice(0, 10)
@@ -293,10 +293,16 @@ export default async function TeamPage({ params }: TeamPageProps) {
                             className={
                               session.session_status === "confirmed"
                                 ? "border-transparent bg-[#eaf7f0] text-[#0f8a4f]"
+                                : session.session_status === "closed"
+                                ? "border-transparent bg-[#fdf6e3] text-[#b8860b]"
                                 : "border-transparent bg-[#e8f2f8] text-[#005F8C]"
                             }
                           >
-                            {session.session_status === "confirmed" ? "確定" : "受付中"}
+                            {session.session_status === "confirmed"
+                              ? "確定"
+                              : session.session_status === "closed"
+                              ? "受付終了・判断待ち"
+                              : "受付中"}
                           </Badge>
                         </CardContent>
                       </Card>
@@ -329,8 +335,10 @@ export default async function TeamPage({ params }: TeamPageProps) {
 
   const team = teamResult.data
   const allMembers = memberPreviewResult.data || []
+  // 中止済みセッションも表示対象に含める。除外すると一覧から突然消えて
+  // 「なぜ消えたか」が分からなくなるため、MemberSessionList側の「中止」バッジで
+  // 明示的に状態を伝える(除外していた場合はここに絞り込みを戻す)
   const allSessions = ((sessionsResult.data || []) as Record<string, unknown>[])
-    .filter((s) => s.session_status !== "cancelled")
     .sort(
       (a, b) =>
         new Date(a.scheduled_at as string).getTime() -

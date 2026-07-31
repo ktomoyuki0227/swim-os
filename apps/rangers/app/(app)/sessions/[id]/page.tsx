@@ -98,6 +98,7 @@ export default async function SessionDetailPage({ params, searchParams }: Sessio
 
   const statusConfig: Record<string, { label: string; className: string }> = {
     open: { label: "受付中", className: "bg-[#e8f2f8] text-[#005F8C] border-transparent" },
+    closed: { label: "受付終了・判断待ち", className: "bg-[#fdf6e3] text-[#b8860b] border-transparent" },
     confirmed: { label: "開催確定", className: "bg-[#eaf7f0] text-[#0f8a4f] border-transparent" },
     cancelled: { label: "中止", className: "bg-[#fdecea] text-[#c0392b] border-transparent" },
   }
@@ -310,6 +311,12 @@ export default async function SessionDetailPage({ params, searchParams }: Sessio
           </CardContent>
         </Card>
       </div>
+
+      {session.session_status === "closed" && (
+        <div className="rounded-[10px] border border-[#b8860b]/30 bg-[#fdf6e3] px-4 py-3 text-sm text-[#b8860b]">
+          申込みを締め切りました。開催確定または中止を選んでください
+        </div>
+      )}
 
       {/* Action buttons */}
       {!isPast && session.session_status !== "cancelled" && (

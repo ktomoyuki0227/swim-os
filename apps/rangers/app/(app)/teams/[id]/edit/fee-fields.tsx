@@ -144,18 +144,6 @@ export function FeeFields({ form, onChange, simulatorMemberPrice }: FeeFieldsPro
                     </div>
                   </div>
                 </div>
-                <div className="space-y-1">
-                  <Label htmlFor="cancellation_days" className="text-xs">キャンセル期限</Label>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      id="cancellation_days" name="cancellation_days" type="number" min="0" max="30"
-                      value={form.cancellationDays}
-                      onChange={(e) => onChange({ ...form, cancellationDays: e.target.value })}
-                      className="w-20 border-[#dce3ea]"
-                    />
-                    <span className="text-xs text-[#475569]">日前まで無料キャンセル可</span>
-                  </div>
-                </div>
                 <div className="border-t border-[#dce3ea]/30 pt-3 space-y-2">
                   <label className="flex cursor-pointer items-center gap-2.5">
                     <input type="checkbox" checked={form.hasPointCard} onChange={(e) => onChange({ ...form, hasPointCard: e.target.checked })} className="h-4 w-4 rounded border-[#dce3ea] accent-[#005F8C]" />

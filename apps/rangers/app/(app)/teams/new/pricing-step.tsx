@@ -151,18 +151,6 @@ export function PricingStep({ form, onChange, isPending, typeLabel, onSubmit, on
                     </div>
                   </div>
                 </div>
-                <div className="space-y-1">
-                  <Label htmlFor="cancellation_days" className="text-xs">キャンセル期限</Label>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      id="cancellation_days" name="cancellation_days" type="number" min="0" max="30" placeholder="3"
-                      value={form.cancellationDays}
-                      onChange={(e) => onChange({ ...form, cancellationDays: e.target.value })}
-                      className="w-20 border-[#dce3ea]"
-                    />
-                    <span className="text-xs text-[#475569]">日前まで無料キャンセル可</span>
-                  </div>
-                </div>
 
                 {/* 回数券 */}
                 <div className="border-t border-[#dce3ea]/30 pt-3 space-y-2">

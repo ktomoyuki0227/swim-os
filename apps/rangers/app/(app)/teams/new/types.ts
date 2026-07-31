@@ -3,7 +3,8 @@ export type TeamType = "team" | "personal"
 export interface BasicFormData {
   name: string
   description: string
-  instructor_title: string
+  career: string
+  bio: string
   is_recruiting: boolean
   show_member_count: boolean
   activity_area: string
@@ -30,7 +31,6 @@ export interface FeeFormData {
   monthlyFeeAmount: string
   defaultMemberPrice: string
   defaultGuestPrice: string
-  cancellationDays: string
   pointCardCount: string
   pointCardPrice: string
 }

@@ -8,7 +8,6 @@ import type { Database, Json } from "@/types/database-generated"
 import { getActiveTeamAdminIds } from "@/lib/auth/require-team-admin"
 import { formatSessionDateJa } from "@/lib/format-date"
 import { notifyUser, notifyUsers } from "@/lib/notifications"
-import { refundSessionRegistrationStripe } from "@/lib/stripe-payment-helpers"
 import { competitionEntrySchema } from "@/lib/validations"
 
 export async function registerForSession(
@@ -190,49 +189,21 @@ export async function cancelRegistration(sessionId: string) {
 
   const session = registration.session
 
-  // 開催確定後のキャンセル: 返金可否を判定してから後の単一書き込みで適用
-  // Stripe 返金 / スタンプ戻しが失敗した場合はここで早期リターン（cancelled_at は未設定のまま）
-  let newPaymentStatus: string | null = null
-
-  if (session.session_status === "confirmed" && registration.payment_status === "paid") {
-    if (registration.payment_method === "stripe" && registration.stripe_payment_intent_id) {
-      // キャンセル規定に基づく返金判定
-      const isRefundEligible =
-        session.cancellation_days !== null &&
-        new Date(session.scheduled_at).getTime() - Date.now() >=
-          session.cancellation_days * 24 * 60 * 60 * 1000
-      if (isRefundEligible && process.env.STRIPE_SECRET_KEY) {
-        // Connect送金の判定・refunds.create・transfer_records更新はcancelSessionと同じ
-        // 処理のため共通ヘルパーに集約している（判定条件・更新内容は変更していない）。
-        const refundResult = await refundSessionRegistrationStripe({
-          admin: adminClient,
-          registrationId: registration.id,
-          stripePaymentIntentId: registration.stripe_payment_intent_id,
-          logPrefix: "[cancelRegistration]",
-        })
-        if (!refundResult.ok) {
-          return { error: "返金処理に失敗しました。管理者にお問い合わせください" }
-        }
-        newPaymentStatus = "refunded"
-      }
-      // isRefundEligible = false の場合は payment_status = "paid" のまま（支払い済み・返金なし）
-    } else if (registration.payment_method === "point_card") {
-      // ポイント戻し（adminClientでRLSをバイパス・アトミックなSQL式で競合を防ぐ）
-      const { error: stampErr } = await adminClient.rpc("increment_stamp", {
-        p_session_id: sessionId,
-        p_swimmer_id: user.id,
-      })
-      if (stampErr) {
-        return { error: "スタンプの返却に失敗しました。管理者にお問い合わせください" }
-      }
-      newPaymentStatus = "refunded"
-    }
+  // closed/cancelled: 締切通過後は受付・キャンセルとも凍結し、開催者の確定/中止判断に委ねる
+  // (cancelledは既にセッション自体が中止済みで、個別キャンセルの余地がない)。
+  if (session.session_status === "closed" || session.session_status === "cancelled") {
+    return { error: "申込み締切を過ぎているため、ご自身でのキャンセルはできません。やむを得ない事情がある場合は運営にお問い合わせください" }
   }
 
-  // キャンセル記録と payment_status 更新を 1 回の書き込みで原子的に行う
-  // これにより「Stripe返金済み + cancelled_at 未設定」のゾンビ状態を防ぐ
+  // confirmed: 決済済み(paid)の場合のみキャンセル不可・返金なしとする。
+  // pending/failed/free は実際に課金されていない(Stripe請求/回数券消費はconfirmSession実行時のみ発生)
+  // ため、無条件にキャンセルを許可してよい。ここを一律ブロックにすると、決済失敗などで
+  // 実質お金が動いていない登録者まで運営への個別問い合わせが必要になり、運営の負担が増えてしまう。
+  if (session.session_status === "confirmed" && registration.payment_status === "paid") {
+    return { error: "開催確定・決済が完了しているため、ご自身でのキャンセルはできません。やむを得ない事情がある場合は運営にお問い合わせください" }
+  }
+
   const cancelUpdate: Database["public"]["Tables"]["session_registrations"]["Update"] = { cancelled_at: new Date().toISOString() }
-  if (newPaymentStatus) cancelUpdate.payment_status = newPaymentStatus
 
   const { error: cancelWriteErr } = await adminClient
     .from("session_registrations")

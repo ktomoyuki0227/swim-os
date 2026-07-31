@@ -502,7 +502,6 @@ export type Database = {
       practice_sessions: {
         Row: {
           allow_point_card: boolean | null
-          cancellation_days: number | null
           coach_id: string
           competition_fields: Json | null
           content: string | null
@@ -532,7 +531,6 @@ export type Database = {
         }
         Insert: {
           allow_point_card?: boolean | null
-          cancellation_days?: number | null
           coach_id: string
           competition_fields?: Json | null
           content?: string | null
@@ -562,7 +560,6 @@ export type Database = {
         }
         Update: {
           allow_point_card?: boolean | null
-          cancellation_days?: number | null
           coach_id?: string
           competition_fields?: Json | null
           content?: string | null
@@ -982,7 +979,6 @@ export type Database = {
       session_templates: {
         Row: {
           allow_point_card: boolean | null
-          cancellation_days: number | null
           content: string | null
           course_rules: Json | null
           created_at: string
@@ -1003,7 +999,6 @@ export type Database = {
         }
         Insert: {
           allow_point_card?: boolean | null
-          cancellation_days?: number | null
           content?: string | null
           course_rules?: Json | null
           created_at?: string
@@ -1024,7 +1019,6 @@ export type Database = {
         }
         Update: {
           allow_point_card?: boolean | null
-          cancellation_days?: number | null
           content?: string | null
           course_rules?: Json | null
           created_at?: string
@@ -1204,7 +1198,6 @@ export type Database = {
           activity_area: string | null
           annual_fee_amount: number | null
           avatar_url: string | null
-          cancellation_days: number | null
           coach_id: string
           contact_email: string | null
           contact_phone: string | null
@@ -1242,7 +1235,6 @@ export type Database = {
           activity_area?: string | null
           annual_fee_amount?: number | null
           avatar_url?: string | null
-          cancellation_days?: number | null
           coach_id: string
           contact_email?: string | null
           contact_phone?: string | null
@@ -1280,7 +1272,6 @@ export type Database = {
           activity_area?: string | null
           annual_fee_amount?: number | null
           avatar_url?: string | null
-          cancellation_days?: number | null
           coach_id?: string
           contact_email?: string | null
           contact_phone?: string | null
@@ -1465,11 +1456,13 @@ export type Database = {
         }
         Returns: string
       }
+      close_expired_session_registrations: { Args: never; Returns: undefined }
       decrement_stamp: {
         Args: { p_session_id: string; p_swimmer_id: string }
         Returns: undefined
       }
       get_my_admin_team_ids: { Args: never; Returns: string[] }
+      get_my_profile_role: { Args: never; Returns: string }
       get_my_team_ids: { Args: never; Returns: string[] }
       increment_stamp: {
         Args: { p_session_id: string; p_swimmer_id: string }

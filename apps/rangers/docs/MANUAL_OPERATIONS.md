@@ -102,6 +102,32 @@ LINE でのソーシャルログインを有効にしたい場合：
 
 ---
 
+## 5.5 pg_cron ジョブ登録（マイグレーション履歴に残らない本番専用設定）
+
+pg_cron の `cron.schedule(...)` 呼び出しはマイグレーションファイルに含めていない（Supabaseダッシュボード/SQL Editorから直接登録する運用）。関数定義自体はマイグレーションで管理されるが、スケジュール登録は本番DBに対して手動で1回実行する必要がある。
+
+現在登録済みのジョブ（`select jobname, schedule, command from cron.job;` で確認可能）:
+
+| jobname | schedule | 実行内容 |
+|---------|----------|----------|
+| `monthly-fee-reminder` | `0 0 1 * *`（毎月1日 UTC0時=JST9時） | `send_monthly_fee_reminders()` |
+| `session-day-before-reminder` | `0 9 * * *`（毎日 UTC9時=JST18時） | `send_session_reminders()` |
+| `session-registration-close` | `5 15 * * *`（毎日 UTC15:05=JST0:05） | `close_expired_session_registrations()` |
+
+### `session-registration-close` について
+
+登録済み（jobid: 5）。再登録が必要な場合はSQL Editorで以下を実行する:
+
+```sql
+select cron.schedule(
+  'session-registration-close',
+  '5 15 * * *',
+  $$select close_expired_session_registrations()$$
+);
+```
+
+---
+
 ## 6. デプロイ（Vercel）
 
 ```bash
