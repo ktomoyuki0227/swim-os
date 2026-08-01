@@ -79,19 +79,3 @@ export function swimmerFromProfile(p: Profile): SwimmerForm {
     swimDisciplines: p.swim_disciplines ?? [],
   }
 }
-
-export interface PublicForm {
-  bio: string
-  career: string
-  achievements: string
-  targetAges: string[]
-}
-
-export function publicFromProfile(p: Profile): PublicForm {
-  return {
-    bio: p.bio ?? "",
-    career: p.career ?? "",
-    achievements: p.achievements ?? "",
-    targetAges: p.target_ages ?? [],
-  }
-}

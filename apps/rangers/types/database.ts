@@ -250,6 +250,7 @@ export const PRACTICE_DAYS = ["日", "月", "火", "水", "木", "金", "土"] a
 export type PracticeDay = (typeof PRACTICE_DAYS)[number]
 
 export type TeamStatus = "active" | "inactive"
+export type TeamType = "team" | "personal"
 export type TeamMemberRole = "admin" | "member"
 export type MembershipType = "annual" | "monthly" | "point_card"
 export type JoinRequestStatus = "pending" | "approved" | "rejected"
@@ -279,12 +280,16 @@ export interface Team {
   id: string
   coach_id: string
   name: string
+  team_type: TeamType
   description: string | null
   avatar_url: string | null
   cover_image_url: string | null
   is_recruiting: boolean
   show_member_count: boolean
   activity_area: string | null
+  bio: string | null
+  career: string | null
+  target_ages: string[]
   invite_code: string
   has_session_fee: boolean
   has_annual_fee: boolean

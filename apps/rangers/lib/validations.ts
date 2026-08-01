@@ -77,6 +77,11 @@ export const teamSchema = z.object({
     z.string().refine((v) => (PRACTICE_DAYS as readonly string[]).includes(v), "無効な練習曜日です")
   ).default([]),
   main_pool: z.string().max(200).optional(),
+  bio: z.string().max(1000, "1000文字以内").optional(),
+  career: z.string().max(1000, "1000文字以内").optional(),
+  target_ages: z.array(
+    z.string().refine((v) => (TARGET_AGES as readonly string[]).includes(v), "無効な対象年齢です")
+  ).default([]),
   has_session_fee: z.boolean().default(true),
   has_annual_fee: z.boolean().default(false),
   has_monthly_fee: z.boolean().default(false),
@@ -150,6 +155,11 @@ export const teamUpdateSchema = z.object({
     z.string().refine((v) => (PRACTICE_DAYS as readonly string[]).includes(v), "無効な練習曜日です")
   ).optional(),
   main_pool: z.string().max(200).nullable().optional(),
+  bio: z.string().max(1000, "1000文字以内").nullable().optional(),
+  career: z.string().max(1000, "1000文字以内").nullable().optional(),
+  target_ages: z.array(
+    z.string().refine((v) => (TARGET_AGES as readonly string[]).includes(v), "無効な対象年齢です")
+  ).optional(),
   avatar_url: httpUrl().optional(),
   has_session_fee: z.boolean().optional(),
   has_annual_fee: z.boolean().optional(),

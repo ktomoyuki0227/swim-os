@@ -29,6 +29,9 @@ interface PublicTeamData {
     main_pool: string | null
     contact_email: string | null
     contact_phone: string | null
+    bio: string | null
+    career: string | null
+    target_ages: string[]
   }
   coach: Record<string, unknown> | null
   memberCount: number
@@ -63,12 +66,9 @@ export function PublicTeamView({ data, hasBottomNav = false, joinRequestStatus =
   const coachId = (coach?.id as string) ?? null
   const coachName = (coach?.name as string) ?? null
   const coachAvatarUrl = (coach?.avatar_url as string) ?? null
-  const coachCareer = (coach?.career as string) ?? null
-  const coachPrefecture = (coach?.prefectures as string[] | undefined)?.[0] ?? null
-  const coachBio = (coach?.bio as string) ?? null
 
   const heroBannerUrl = team.cover_image_url ?? team.avatar_url ?? null
-  const activityArea = team.activity_area ?? coachPrefecture ?? null
+  const activityArea = team.activity_area ?? null
 
   const ctaBottom = hasBottomNav ? "bottom-16" : "bottom-4"
 
@@ -150,9 +150,6 @@ export function PublicTeamView({ data, hasBottomNav = false, joinRequestStatus =
                   </span>
                 </div>
               )}
-              {coachCareer && (
-                <p className="text-xs text-[#475569]">{coachCareer}</p>
-              )}
               {team.show_member_count && (
                 <div className="mt-1.5 flex items-center gap-1">
                   <span className="text-base">👥</span>
@@ -206,12 +203,37 @@ export function PublicTeamView({ data, hasBottomNav = false, joinRequestStatus =
                 </div>
               </div>
             )}
-            {coachBio && (
+            {team.bio && (
               <div className="flex items-start gap-3">
                 <span className="shrink-0 rounded-md border border-[#dce3ea] px-2 py-0.5 text-xs text-[#475569]">
-                  グループ紹介
+                  自己紹介
                 </span>
-                <p className="text-sm leading-relaxed text-[#1a2332]">{coachBio}</p>
+                <p className="text-sm leading-relaxed text-[#1a2332]">{team.bio}</p>
+              </div>
+            )}
+            {team.career && (
+              <div className="flex items-start gap-3">
+                <span className="shrink-0 rounded-md border border-[#dce3ea] px-2 py-0.5 text-xs text-[#475569]">
+                  経歴・実績
+                </span>
+                <p className="text-sm leading-relaxed text-[#1a2332]">{team.career}</p>
+              </div>
+            )}
+            {team.target_ages && team.target_ages.length > 0 && (
+              <div className="flex items-start gap-3">
+                <span className="shrink-0 rounded-md border border-[#dce3ea] px-2 py-0.5 text-xs text-[#475569]">
+                  指導対象年齢
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {team.target_ages.map((age) => (
+                    <span
+                      key={age}
+                      className="rounded-full bg-[#e8f2f8] px-2 py-0.5 text-xs font-medium text-[#005F8C]"
+                    >
+                      {age}
+                    </span>
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -236,9 +258,6 @@ export function PublicTeamView({ data, hasBottomNav = false, joinRequestStatus =
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold text-[#1a2332]">{coachName}</p>
-                    {coachCareer && (
-                      <p className="text-xs text-[#64748b]">{coachCareer}</p>
-                    )}
                   </div>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M9 18l6-6-6-6" />
@@ -257,9 +276,6 @@ export function PublicTeamView({ data, hasBottomNav = false, joinRequestStatus =
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-[#1a2332]">{coachName}</p>
-                    {coachCareer && (
-                      <p className="text-xs text-[#64748b]">{coachCareer}</p>
-                    )}
                   </div>
                 </div>
               )}

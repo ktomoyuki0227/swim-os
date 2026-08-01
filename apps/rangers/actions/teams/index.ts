@@ -6,6 +6,7 @@ export {
   getTeam,
   getPublicTeams,
   getPublicTeam,
+  getPersonalTeamByCoach,
   regenerateInviteCode,
 } from "./crud"
 

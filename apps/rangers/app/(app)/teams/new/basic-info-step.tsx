@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { TARGET_AGES } from "@/types/database"
 import type { BasicFormData, TeamType } from "./types"
 
 interface BasicInfoStepProps {
@@ -55,32 +56,91 @@ export function BasicInfoStep({ teamType, typeLabel, form, onChange, onSubmit, o
               className="border-[#dce3ea]"
             />
           </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="description">
-              {typeLabel}の説明
-              <span className="ml-1 text-xs font-normal text-[#64748b]">（任意）</span>
-            </Label>
-            <Textarea
-              id="description" name="description"
-              placeholder={teamType === "personal" ? "レッスンの特徴や対象者を入力してください" : "活動内容や特徴を入力してください"}
-              defaultValue={form.description}
-              rows={4} maxLength={2000}
-              className="resize-none border-[#dce3ea]"
-            />
-          </div>
-          {teamType === "personal" && (
+          {teamType === "personal" ? (
             <div className="space-y-1.5">
-              <Label htmlFor="instructor_title">
-                肩書き
+              <Label htmlFor="description">
+                キャッチコピー・一言
                 <span className="ml-1 text-xs font-normal text-[#64748b]">（任意）</span>
               </Label>
               <Input
-                id="instructor_title" name="instructor_title"
-                placeholder="例: 水泳コーチ"
-                defaultValue={form.instructor_title}
-                maxLength={100}
+                id="description" name="description"
+                placeholder="例: レベルを問わず、一緒に楽しく泳ぎを上達させましょう！"
+                defaultValue={form.description}
+                maxLength={60}
                 className="border-[#dce3ea]"
               />
+            </div>
+          ) : (
+            <div className="space-y-1.5">
+              <Label htmlFor="description">
+                {typeLabel}の説明
+                <span className="ml-1 text-xs font-normal text-[#64748b]">（任意）</span>
+              </Label>
+              <Textarea
+                id="description" name="description"
+                placeholder="活動内容や特徴を入力してください"
+                defaultValue={form.description}
+                rows={4} maxLength={2000}
+                className="resize-none border-[#dce3ea]"
+              />
+            </div>
+          )}
+          {teamType === "personal" && (
+            <div className="space-y-4 rounded-[10px] border border-[#dce3ea] bg-[#f8fafb] p-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="bio">
+                  自己紹介
+                  <span className="ml-1 text-xs font-normal text-[#64748b]">（任意）</span>
+                </Label>
+                <Textarea
+                  id="bio" name="bio"
+                  placeholder="例: 一人ひとりのペースに合わせて、楽しみながら上達できる指導を心がけています"
+                  defaultValue={form.bio}
+                  rows={3} maxLength={1000}
+                  className="resize-none border-[#dce3ea] bg-white"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="career">
+                  経歴・実績
+                  <span className="ml-1 text-xs font-normal text-[#64748b]">（任意）</span>
+                </Label>
+                <Textarea
+                  id="career" name="career"
+                  placeholder="例: ○○大学水泳部出身、指導歴10年。全日本マスターズ大会優勝、指導した選手の県大会入賞多数"
+                  defaultValue={form.career}
+                  rows={3} maxLength={1000}
+                  className="resize-none border-[#dce3ea] bg-white"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>
+                  指導対象年齢
+                  <span className="ml-1 text-xs font-normal text-[#64748b]">（任意・複数選択可）</span>
+                </Label>
+                <div className="flex flex-wrap gap-2">
+                  {TARGET_AGES.map((age) => {
+                    const checked = form.target_ages.includes(age)
+                    return (
+                      <button
+                        key={age}
+                        type="button"
+                        onClick={() => onChange({
+                          ...form,
+                          target_ages: checked
+                            ? form.target_ages.filter((a) => a !== age)
+                            : [...form.target_ages, age],
+                        })}
+                        className={`rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
+                          checked ? "border-[#005F8C] bg-[#005F8C] text-white" : "border-[#dce3ea] bg-white text-[#475569] hover:border-[#005F8C]/50"
+                        }`}
+                      >
+                        {age}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
             </div>
           )}
           <div className="space-y-2">

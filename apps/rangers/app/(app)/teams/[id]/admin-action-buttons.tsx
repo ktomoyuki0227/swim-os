@@ -170,7 +170,7 @@ export function AdminActionButtons({ team }: AdminActionButtonsProps) {
                   className="w-full rounded-full border-[#005F8C] text-[#005F8C]"
                   style={{ minHeight: "48px" }}
                 >
-                  グループ情報を編集
+                  {team.team_type === "personal" ? "パーソナル情報を編集" : "グループ情報を編集"}
                 </Button>
               </Link>
             </div>

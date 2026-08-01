@@ -1,10 +1,8 @@
 "use client"
 
-import { useEffect, useState, useTransition } from "react"
+import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { createTeam, uploadTeamImage } from "@/actions/teams"
-import { getProfile, updateProfilePartial } from "@/actions/profile"
-import type { Profile } from "@/types/database"
 import { useToast } from "@/components/toast"
 import { BackLink } from "@/components/back-link"
 import { StepIndicator } from "./step-indicator"
@@ -23,6 +21,7 @@ const EMPTY_BASIC_FORM: BasicFormData = {
   description: "",
   career: "",
   bio: "",
+  target_ages: [],
   is_recruiting: true,
   show_member_count: true,
   activity_area: "",
@@ -71,20 +70,6 @@ export default function NewTeamPage() {
     setStep(n)
     window.scrollTo({ top: 0, behavior: "smooth" })
   }
-
-  // パーソナル選択時、既存の公開プロフィール(経歴・自己紹介)を取得してプレフィルする
-  useEffect(() => {
-    if (teamType !== "personal") return
-    getProfile().then((p) => {
-      const profile = p as Profile | null
-      if (!profile) return
-      setForm((prev) => ({
-        ...prev,
-        career: profile.career ?? "",
-        bio: profile.bio ?? "",
-      }))
-    })
-  }, [teamType])
 
   const handleTypeSelect = (type: TeamType) => {
     setTeamType(type)
@@ -214,23 +199,13 @@ export default function NewTeamPage() {
       fee_members_exempt_session: false,
       team_type: teamType ?? "team",
       show_member_count: form.show_member_count,
+      ...(teamType === "personal"
+        ? { bio: form.bio || undefined, career: form.career || undefined, target_ages: form.target_ages }
+        : {}),
     }
 
     startTransition(async () => {
       try {
-        // パーソナルの経歴・自己紹介は teams ではなく profiles 側で一元管理する。
-        // team 作成が失敗しても profiles の更新自体は残したいため先に保存する。
-        if (teamType === "personal") {
-          const profileResult = await updateProfilePartial({
-            career: form.career || null,
-            bio: form.bio || null,
-          })
-          if (profileResult.error) {
-            showToast(profileResult.error, "error")
-            return
-          }
-        }
-
         const result = await createTeam(payload)
         if (result.error) {
           showToast(result.error, "error")

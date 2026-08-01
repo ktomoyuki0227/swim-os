@@ -28,6 +28,10 @@ interface Team {
   practice_frequency: string | null
   practice_days: string[]
   main_pool: string | null
+  team_type: string
+  bio: string | null
+  career: string | null
+  target_ages: string[]
   has_session_fee: boolean
   has_annual_fee: boolean
   has_monthly_fee: boolean
@@ -68,6 +72,7 @@ export function EditTeamForm({ team, stripeEnabled, connectStatus }: EditTeamFor
   const [showMemberCount, setShowMemberCount] = useState(team.show_member_count)
   const [isActive, setIsActive] = useState((team.status ?? "active") === "active")
   const [practiceDays, setPracticeDays] = useState<string[]>(team.practice_days ?? [])
+  const [targetAges, setTargetAges] = useState<string[]>(team.target_ages ?? [])
 
   const [feeForm, setFeeForm] = useState<FeeFieldsForm>({
     hasSessionFee: team.has_session_fee,
@@ -207,6 +212,13 @@ export function EditTeamForm({ team, stripeEnabled, connectStatus }: EditTeamFor
           contact_email: (data.get("contact_email") as string) || null,
           contact_phone: (data.get("contact_phone") as string) || null,
           fee_members_exempt_session: team.fee_members_exempt_session,
+          ...(team.team_type === "personal"
+            ? {
+                bio: (data.get("bio") as string) || null,
+                career: (data.get("career") as string) || null,
+                target_ages: targetAges,
+              }
+            : {}),
         }
 
         if (newCoverUrl) payload.cover_image_url = newCoverUrl
@@ -216,7 +228,7 @@ export function EditTeamForm({ team, stripeEnabled, connectStatus }: EditTeamFor
         if (result.error) {
           showToast(result.error, "error")
         } else {
-          showToast("グループ情報を更新しました", "success")
+          showToast(team.team_type === "personal" ? "パーソナル情報を更新しました" : "グループ情報を更新しました", "success")
           setTimeout(() => {
             router.push(`/teams/${team.id}`)
           }, 800)
@@ -239,7 +251,9 @@ export function EditTeamForm({ team, stripeEnabled, connectStatus }: EditTeamFor
             <polyline points="15 18 9 12 15 6" />
           </svg>
         </BackLink>
-        <h1 className="text-xl font-bold text-[#1a2332]">グループ情報を編集</h1>
+        <h1 className="text-xl font-bold text-[#1a2332]">
+          {team.team_type === "personal" ? "パーソナル情報を編集" : "グループ情報を編集"}
+        </h1>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -251,6 +265,8 @@ export function EditTeamForm({ team, stripeEnabled, connectStatus }: EditTeamFor
           onIsRecruitingChange={setIsRecruiting}
           showMemberCount={showMemberCount}
           onShowMemberCountChange={setShowMemberCount}
+          targetAges={targetAges}
+          onTargetAgesChange={setTargetAges}
         />
 
         <TeamImageFields

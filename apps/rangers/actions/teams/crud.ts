@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { teamSchema, teamUpdateSchema } from "@/lib/validations"
 import { isValidImageFile } from "@/lib/file-validation"
-import type { MembershipType, SessionType, TeamStatus } from "@/types/database"
+import type { MembershipType, SessionType, TeamStatus, TeamType } from "@/types/database"
 import { PREFECTURES } from "@/types/database"
 import { isTeamAdmin } from "@/lib/auth/require-team-admin"
 import { notifyUser, notifyUsers } from "@/lib/notifications"
@@ -84,6 +84,9 @@ export async function createTeam(data: unknown) {
       practice_frequency: parsed.data.practice_frequency || null,
       practice_days: parsed.data.practice_days ?? [],
       main_pool: parsed.data.main_pool || null,
+      bio: parsed.data.bio || null,
+      career: parsed.data.career || null,
+      target_ages: parsed.data.target_ages ?? [],
       has_session_fee: parsed.data.has_session_fee ?? true,
       has_annual_fee: parsed.data.has_annual_fee ?? false,
       has_monthly_fee: parsed.data.has_monthly_fee ?? false,
@@ -284,6 +287,7 @@ export async function getTeam(teamId: string) {
       default_guest_price: team.default_guest_price ?? 0,
       point_card_count: team.point_card_count ?? 10,
       status: team.status as TeamStatus,
+      team_type: team.team_type as TeamType,
     },
   }
 }
@@ -401,17 +405,17 @@ export async function getPublicTeam(teamId: string) {
 
   const { data: team, error } = await admin
     .from("teams")
-    .select("id, name, description, avatar_url, cover_image_url, is_recruiting, show_member_count, activity_area, practice_frequency, practice_days, main_pool, status, has_annual_fee, has_monthly_fee, has_point_card, annual_fee_amount, monthly_fee_amount, point_card_count, point_card_price, contact_email, contact_phone")
+    .select("id, name, description, avatar_url, cover_image_url, is_recruiting, show_member_count, activity_area, practice_frequency, practice_days, main_pool, status, has_annual_fee, has_monthly_fee, has_point_card, annual_fee_amount, monthly_fee_amount, point_card_count, point_card_price, contact_email, contact_phone, bio, career, target_ages")
     .eq("id", teamId)
     .eq("status", "active")
     .single()
 
   if (error || !team) return { error: "グループが見つかりません" }
 
-  // 管理者プロフィール
+  // 管理者プロフィール(コーチ本人へのリンク表示のみに使用。経歴・実績等はteams自身のカラムを使う)
   const { data: adminMember } = await admin
     .from("team_members")
-    .select("swimmer:profiles(id, name, avatar_url, bio, career, achievements, prefectures)")
+    .select("swimmer:profiles(id, name, avatar_url)")
     .eq("team_id", teamId)
     .eq("role", "admin")
     .eq("status", "active")
@@ -448,4 +452,22 @@ export async function getPublicTeam(teamId: string) {
       sessions: (sessions ?? []).map((s) => ({ ...s, type: s.type as SessionType })),
     },
   }
+}
+
+// そのユーザーが持つパーソナル(team_type=personal)を1件取得する。
+// 個人の公開プロフィールページ(/profiles/[id])で、キャッチコピー・自己紹介・
+// 経歴実績・指導対象年齢はteams固有のデータのため、profilesではなくここから取得する。
+// 1人が複数パーソナルを持つ可能性があるため、最も古いものを代表として返す。
+export async function getPersonalTeamByCoach(coachId: string) {
+  const admin = createAdminClient()
+  const { data } = await admin
+    .from("teams")
+    .select("id, description, bio, career, target_ages")
+    .eq("coach_id", coachId)
+    .eq("team_type", "personal")
+    .eq("status", "active")
+    .order("created_at", { ascending: true })
+    .limit(1)
+
+  return data?.[0] ?? null
 }

@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { PRACTICE_FREQUENCIES, PRACTICE_DAYS } from "@/types/database"
+import { PRACTICE_FREQUENCIES, PRACTICE_DAYS, TARGET_AGES } from "@/types/database"
 
 interface Team {
   name: string
@@ -14,6 +14,9 @@ interface Team {
   main_pool: string | null
   contact_email: string | null
   contact_phone: string | null
+  team_type: string
+  bio: string | null
+  career: string | null
 }
 
 interface BasicInfoFieldsProps {
@@ -24,6 +27,8 @@ interface BasicInfoFieldsProps {
   onIsRecruitingChange: (next: boolean) => void
   showMemberCount: boolean
   onShowMemberCountChange: (next: boolean) => void
+  targetAges: string[]
+  onTargetAgesChange: (next: string[]) => void
 }
 
 export function BasicInfoFields({
@@ -34,7 +39,10 @@ export function BasicInfoFields({
   onIsRecruitingChange,
   showMemberCount,
   onShowMemberCountChange,
+  targetAges,
+  onTargetAgesChange,
 }: BasicInfoFieldsProps) {
+  const isPersonal = team.team_type === "personal"
   return (
     <Card className="border-[#dce3ea]">
       <CardHeader className="pb-3">
@@ -42,29 +50,107 @@ export function BasicInfoFields({
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-1.5">
-          <Label htmlFor="name">グループ名 <span className="text-[#c0392b]">*</span></Label>
+          <Label htmlFor="name">{isPersonal ? "パーソナル名" : "グループ名"} <span className="text-[#c0392b]">*</span></Label>
           <Input
             id="name"
             name="name"
             defaultValue={team.name}
-            placeholder="例: マウントリバー水泳クラブ"
+            placeholder={isPersonal ? "例: 田中コーチのパーソナルレッスン" : "例: マウントリバー水泳クラブ"}
             maxLength={100}
             required
             className="border-[#dce3ea]"
           />
         </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="description">グループの説明</Label>
-          <Textarea
-            id="description"
-            name="description"
-            defaultValue={team.description ?? ""}
-            placeholder="グループの活動内容や特徴を入力してください"
-            rows={3}
-            maxLength={2000}
-            className="resize-none border-[#dce3ea]"
-          />
-        </div>
+        {isPersonal ? (
+          <div className="space-y-1.5">
+            <Label htmlFor="description">
+              キャッチコピー・一言
+              <span className="ml-1 text-xs font-normal text-[#64748b]">（任意）</span>
+            </Label>
+            <Input
+              id="description"
+              name="description"
+              defaultValue={team.description ?? ""}
+              placeholder="例: レベルを問わず、一緒に楽しく泳ぎを上達させましょう！"
+              maxLength={60}
+              className="border-[#dce3ea]"
+            />
+          </div>
+        ) : (
+          <div className="space-y-1.5">
+            <Label htmlFor="description">グループの説明</Label>
+            <Textarea
+              id="description"
+              name="description"
+              defaultValue={team.description ?? ""}
+              placeholder="グループの活動内容や特徴を入力してください"
+              rows={3}
+              maxLength={2000}
+              className="resize-none border-[#dce3ea]"
+            />
+          </div>
+        )}
+        {isPersonal && (
+          <div className="space-y-4 rounded-[10px] border border-[#dce3ea] bg-[#f8fafb] p-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="bio">
+                自己紹介
+                <span className="ml-1 text-xs font-normal text-[#64748b]">（任意）</span>
+              </Label>
+              <Textarea
+                id="bio"
+                name="bio"
+                defaultValue={team.bio ?? ""}
+                placeholder="例: 一人ひとりのペースに合わせて、楽しみながら上達できる指導を心がけています"
+                rows={3}
+                maxLength={1000}
+                className="resize-none border-[#dce3ea] bg-white"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="career">
+                経歴・実績
+                <span className="ml-1 text-xs font-normal text-[#64748b]">（任意）</span>
+              </Label>
+              <Textarea
+                id="career"
+                name="career"
+                defaultValue={team.career ?? ""}
+                placeholder="例: ○○大学水泳部出身、指導歴10年。全日本マスターズ大会優勝、指導した選手の県大会入賞多数"
+                rows={3}
+                maxLength={1000}
+                className="resize-none border-[#dce3ea] bg-white"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>
+                指導対象年齢
+                <span className="ml-1 text-xs font-normal text-[#64748b]">（任意・複数選択可）</span>
+              </Label>
+              <div className="flex flex-wrap gap-2">
+                {TARGET_AGES.map((age) => {
+                  const checked = targetAges.includes(age)
+                  return (
+                    <button
+                      key={age}
+                      type="button"
+                      onClick={() =>
+                        onTargetAgesChange(
+                          checked ? targetAges.filter((a) => a !== age) : [...targetAges, age]
+                        )
+                      }
+                      className={`rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
+                        checked ? "border-[#005F8C] bg-[#005F8C] text-white" : "border-[#dce3ea] bg-white text-[#475569] hover:border-[#005F8C]/50"
+                      }`}
+                    >
+                      {age}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
+        )}
         <div className="space-y-1.5">
           <Label htmlFor="activity_area">
             活動エリア

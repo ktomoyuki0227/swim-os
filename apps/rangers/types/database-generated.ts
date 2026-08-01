@@ -1198,6 +1198,8 @@ export type Database = {
           activity_area: string | null
           annual_fee_amount: number | null
           avatar_url: string | null
+          bio: string | null
+          career: string | null
           coach_id: string
           contact_email: string | null
           contact_phone: string | null
@@ -1212,7 +1214,6 @@ export type Database = {
           has_point_card: boolean
           has_session_fee: boolean
           id: string
-          instructor_title: string | null
           invite_code: string
           is_recruiting: boolean
           main_pool: string | null
@@ -1229,12 +1230,15 @@ export type Database = {
           stripe_monthly_price_id: string | null
           stripe_onboarding_completed: boolean
           stripe_product_id: string | null
+          target_ages: string[]
           team_type: string
         }
         Insert: {
           activity_area?: string | null
           annual_fee_amount?: number | null
           avatar_url?: string | null
+          bio?: string | null
+          career?: string | null
           coach_id: string
           contact_email?: string | null
           contact_phone?: string | null
@@ -1249,7 +1253,6 @@ export type Database = {
           has_point_card?: boolean
           has_session_fee?: boolean
           id?: string
-          instructor_title?: string | null
           invite_code?: string
           is_recruiting?: boolean
           main_pool?: string | null
@@ -1266,12 +1269,15 @@ export type Database = {
           stripe_monthly_price_id?: string | null
           stripe_onboarding_completed?: boolean
           stripe_product_id?: string | null
+          target_ages?: string[]
           team_type?: string
         }
         Update: {
           activity_area?: string | null
           annual_fee_amount?: number | null
           avatar_url?: string | null
+          bio?: string | null
+          career?: string | null
           coach_id?: string
           contact_email?: string | null
           contact_phone?: string | null
@@ -1286,7 +1292,6 @@ export type Database = {
           has_point_card?: boolean
           has_session_fee?: boolean
           id?: string
-          instructor_title?: string | null
           invite_code?: string
           is_recruiting?: boolean
           main_pool?: string | null
@@ -1303,6 +1308,7 @@ export type Database = {
           stripe_monthly_price_id?: string | null
           stripe_onboarding_completed?: boolean
           stripe_product_id?: string | null
+          target_ages?: string[]
           team_type?: string
         }
         Relationships: [

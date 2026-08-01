@@ -16,21 +16,18 @@ import { BasicInfoCard } from "./basic-info-card"
 import { SwimmerInfoCard } from "./swimmer-info-card"
 import { EmergencyContactCard } from "./emergency-contact-card"
 import { RegistrationInfoCard } from "./registration-info-card"
-import { PublicProfileCard } from "./public-profile-card"
 import {
   basicFromProfile,
   emergencyFromProfile,
   registrationFromProfile,
   swimmerFromProfile,
-  publicFromProfile,
   type BasicForm,
   type EmergencyForm,
   type RegistrationForm,
   type SwimmerForm,
-  type PublicForm,
 } from "./profile-sections"
 
-type EditingSection = "basic" | "swimmer" | "emergency" | "registration" | "public" | null
+type EditingSection = "basic" | "swimmer" | "emergency" | "registration" | null
 
 // actions/profile.ts の uploadAvatar と同じ上限。ここで弾いておけば無駄な
 // アップロード試行(サーバー側チェックのラウンドトリップ)を避けられる
@@ -40,14 +37,12 @@ const EMPTY_BASIC: BasicForm = { name: "", furigana: "", gender: "", birthday: "
 const EMPTY_EMERGENCY: EmergencyForm = { emergencyContact: "", emergencyContactName: "", emergencyContactRelation: "" }
 const EMPTY_REGISTRATION: RegistrationForm = { mastersRegistered: false, mastersNumber: "", jsaRegistered: false, jsaNumber: "", swimwearSize: "" }
 const EMPTY_SWIMMER: SwimmerForm = { level: "", prefectures: [], specialties: [], swimmingGoals: [], participationStyles: [], swimmerType: "", swimDisciplines: [] }
-const EMPTY_PUBLIC: PublicForm = { bio: "", career: "", achievements: "", targetAges: [] }
 
 export default function ProfilePage() {
   const [isPending, startTransition] = useTransition()
   const [isAvatarPending, startAvatarTransition] = useTransition()
   const [profile, setProfile] = useState<Profile | null>(null)
   const [email, setEmail] = useState("")
-  const [userId, setUserId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [editingSection, setEditingSection] = useState<EditingSection>(null)
   const previewObjectUrlRef = useRef<string | null>(null)
@@ -57,7 +52,6 @@ export default function ProfilePage() {
   const [emergencyForm, setEmergencyForm] = useState<EmergencyForm>(EMPTY_EMERGENCY)
   const [registrationForm, setRegistrationForm] = useState<RegistrationForm>(EMPTY_REGISTRATION)
   const [swimmerForm, setSwimmerForm] = useState<SwimmerForm>(EMPTY_SWIMMER)
-  const [publicForm, setPublicForm] = useState<PublicForm>(EMPTY_PUBLIC)
 
   // アバター
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
@@ -72,11 +66,9 @@ export default function ProfilePage() {
         setEmergencyForm(emergencyFromProfile(prof))
         setRegistrationForm(registrationFromProfile(prof))
         setSwimmerForm(swimmerFromProfile(prof))
-        setPublicForm(publicFromProfile(prof))
         setAvatarUrl(prof.avatar_url)
       }
       if (data.user?.email) setEmail(data.user.email)
-      if (data.user?.id) setUserId(data.user.id)
     }).catch(() => {
       showToast("プロフィールの読み込みに失敗しました", "error")
     }).finally(() => setIsLoading(false))
@@ -163,9 +155,6 @@ export default function ProfilePage() {
       case "swimmer":
         setSwimmerForm(swimmerFromProfile(profile))
         break
-      case "public":
-        setPublicForm(publicFromProfile(profile))
-        break
     }
     setEditingSection(null)
   }
@@ -232,22 +221,12 @@ export default function ProfilePage() {
     })
   }
 
-  const savePublic = () => {
-    saveSection({
-      bio: publicForm.bio || null,
-      career: publicForm.career || null,
-      achievements: publicForm.achievements || null,
-      target_ages: publicForm.targetAges,
-    })
-  }
-
   // ── プロフィール完成度 ────────────────────────────────────────────
 
   const completenessFields = [
     !!basicForm.furigana, !!basicForm.gender, !!basicForm.birthday, !!basicForm.phone, !!basicForm.address,
     !!emergencyForm.emergencyContact,
     !!registrationForm.swimwearSize,
-    !!publicForm.bio,
     !!swimmerForm.level,
     swimmerForm.prefectures.length > 0,
     swimmerForm.specialties.length > 0,
@@ -321,19 +300,6 @@ export default function ProfilePage() {
         onEdit={() => setEditingSection("registration")}
         onCancel={cancelEdit}
         onSave={saveRegistration}
-      />
-
-      <PublicProfileCard
-        isLoading={isLoading}
-        isEditing={editingSection === "public"}
-        canEdit={editingSection === null && !isLoading}
-        isPending={isPending}
-        userId={userId}
-        form={publicForm}
-        onChange={setPublicForm}
-        onEdit={() => setEditingSection("public")}
-        onCancel={cancelEdit}
-        onSave={savePublic}
       />
 
       <div className="pb-10" />

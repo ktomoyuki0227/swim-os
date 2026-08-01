@@ -5,6 +5,7 @@ export interface BasicFormData {
   description: string
   career: string
   bio: string
+  target_ages: string[]
   is_recruiting: boolean
   show_member_count: boolean
   activity_area: string

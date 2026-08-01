@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation"
 import Image from "next/image"
 import { createClient } from "@/lib/supabase/server"
 import { getPublicProfile } from "@/actions/profile"
+import { getPersonalTeamByCoach } from "@/actions/teams"
 import { Navigation } from "@/components/navigation"
 import { BackButton } from "./back-button"
 
@@ -30,8 +31,10 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
   const { data: profile, error } = await getPublicProfile(id)
   if (error || !profile) notFound()
 
+  const personalTeam = await getPersonalTeamByCoach(id)
+
   const specialties: string[] = (profile.specialties as string[]) ?? []
-  const targetAges: string[] = (profile.target_ages as string[]) ?? []
+  const targetAges: string[] = personalTeam?.target_ages ?? []
   const prefectures: string[] = (profile.prefectures as string[]) ?? []
   const swimDisciplines: string[] = (profile.swim_disciplines as string[]) ?? []
   const swimmingGoals: string[] = (profile.swimming_goals as string[]) ?? []
@@ -66,8 +69,8 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
             </div>
             <div className="min-w-0 flex-1">
               <h1 className="text-xl font-bold text-[#1a2332]">{profile.name as string}</h1>
-              {profile.career && (
-                <p className="mt-0.5 text-sm text-[#475569]">{profile.career as string}</p>
+              {personalTeam?.description && (
+                <p className="mt-0.5 text-sm text-[#475569]">{personalTeam.description}</p>
               )}
               {prefectures.length > 0 && (
                 <p className="mt-0.5 text-xs text-[#64748b]">{prefectures.slice(0, 2).join("・")}</p>
@@ -96,27 +99,19 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
             </div>
           )}
 
-          {/* 自己紹介 */}
-          {profile.bio && (
+          {/* 自己紹介(パーソナルを持つ場合のみ) */}
+          {personalTeam?.bio && (
             <div className="mt-5 border-t border-[#e8edf2] pt-4">
               <p className="mb-1.5 text-xs font-medium text-[#64748b]">自己紹介</p>
-              <p className="text-sm leading-relaxed text-[#1a2332]">{profile.bio as string}</p>
+              <p className="text-sm leading-relaxed text-[#1a2332]">{personalTeam.bio}</p>
             </div>
           )}
 
-          {/* 経歴 */}
-          {profile.career && (
+          {/* 経歴・実績(パーソナルを持つ場合のみ) */}
+          {personalTeam?.career && (
             <div className="mt-4 border-t border-[#e8edf2] pt-4">
-              <p className="mb-1.5 text-xs font-medium text-[#64748b]">経歴</p>
-              <p className="text-sm leading-relaxed text-[#1a2332]">{profile.career as string}</p>
-            </div>
-          )}
-
-          {/* 実績 */}
-          {profile.achievements && (
-            <div className="mt-4 border-t border-[#e8edf2] pt-4">
-              <p className="mb-1.5 text-xs font-medium text-[#64748b]">実績</p>
-              <p className="text-sm leading-relaxed text-[#1a2332]">{profile.achievements as string}</p>
+              <p className="mb-1.5 text-xs font-medium text-[#64748b]">経歴・実績</p>
+              <p className="text-sm leading-relaxed text-[#1a2332]">{personalTeam.career}</p>
             </div>
           )}
 
