@@ -183,15 +183,20 @@ export async function approveJoinRequest(
   }
 
   // 年会費メンバーなら年会費レコードを自動生成
+  // 年会費生成失敗は参加承認自体を妨げない（非致命的）が、joinTeamByCodeと同様に
+  // 原因調査できるようログには残す
   if (request.membership_type === "annual" && team.annual_fee_amount) {
     const currentYear = new Date().getFullYear().toString()
-    await admin.from("membership_fees").insert({
+    const { error: feeError } = await admin.from("membership_fees").insert({
       team_id: request.team_id,
       swimmer_id: request.swimmer_id,
       type: "annual",
       period: currentYear,
       amount: team.annual_fee_amount,
     })
+    if (feeError) {
+      console.error("[approveJoinRequest] Failed to create annual fee record:", feeError)
+    }
   }
 
   // 申請者に承認通知を送信

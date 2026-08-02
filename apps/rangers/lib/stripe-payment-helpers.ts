@@ -98,7 +98,16 @@ export async function chargeSessionRegistrationStripe(
   // Step 3: 確定（ここで実際に課金）— 失敗してもwebhookがDBを更新できる
   try {
     await stripe.paymentIntents.confirm(pi.id, { off_session: true })
-    await admin.from("session_registrations").update({ payment_status: "paid" }).eq("id", registrationId)
+    const { error: paidStatusErr } = await admin
+      .from("session_registrations")
+      .update({ payment_status: "paid" })
+      .eq("id", registrationId)
+    if (paidStatusErr) {
+      // Stripe側の課金自体は成功しているためユーザー通知はそのまま行うが、
+      // DB側がpendingのまま取り残されるとretryPaymentが拾えなくなるため、
+      // webhook(payment_intent.succeeded)による事後整合までの間を追跡できるようログに残す
+      console.error(`[chargeSessionRegistrationStripe] payment_status update to "paid" failed for ${registrationId}:`, paidStatusErr)
+    }
     await notifyUser(swimmerId, {
       type: "payment_charged",
       title: `「${sessionTitle}」の参加費が決済されました`,

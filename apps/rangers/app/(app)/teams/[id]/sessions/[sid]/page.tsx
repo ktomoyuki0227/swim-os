@@ -62,6 +62,8 @@ export default async function MemberSessionPage({ params }: SessionPageProps) {
   let isAdmin = false
   let membershipType: string | null = null
   let hasCard = false
+  let isGenderEligible = true
+  let isTargetEligible = true
   if (user) {
     const [{ data: membership }, { data: profileData }] = await Promise.all([
       supabase
@@ -73,7 +75,7 @@ export default async function MemberSessionPage({ params }: SessionPageProps) {
         .maybeSingle(),
       supabase
         .from("profiles")
-        .select("stripe_payment_method_id")
+        .select("stripe_payment_method_id, gender")
         .eq("id", user.id)
         .maybeSingle(),
     ])
@@ -81,6 +83,11 @@ export default async function MemberSessionPage({ params }: SessionPageProps) {
     isAdmin = membership?.role === "admin"
     membershipType = membership?.membership_type ?? null
     hasCard = !!profileData?.stripe_payment_method_id
+    isGenderEligible = session.gender_filter === "all" || profileData?.gender === session.gender_filter
+    // target_membersは非メンバー向けの絞り込み済みレスポンスには含まれないカラムのため、
+    // 存在確認してからアクセスする(メンバーのみisMember経由でこの分岐に到達する想定)
+    const targetMembers = "target_members" in session ? session.target_members : null
+    isTargetEligible = !targetMembers || targetMembers.length === 0 || targetMembers.includes(user.id)
   }
 
   // 管理者向け: 参加者ごとの支払いステータス一覧
@@ -150,7 +157,9 @@ export default async function MemberSessionPage({ params }: SessionPageProps) {
     !isDeadlinePassed &&
     !isFull &&
     session.session_status !== "cancelled" &&
-    !myRegistration
+    !myRegistration &&
+    isGenderEligible &&
+    isTargetEligible
 
   // キャンセル可能か判定（開催後・申込み締切後はロック。開催確定後は決済済み(paid)のみロック）
   const canCancel =
@@ -308,6 +317,8 @@ export default async function MemberSessionPage({ params }: SessionPageProps) {
         <div className="rounded-xl border border-[#dce3ea] bg-[#f2f7fa] p-4 text-center text-sm text-[#475569]">
           {session.session_status === "cancelled"
             ? "このセッションは中止になりました"
+            : !isGenderEligible || !isTargetEligible
+            ? "対象外のため参加登録できません"
             : isFull
             ? "定員に達しました"
             : session.session_status === "closed"

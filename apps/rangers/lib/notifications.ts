@@ -35,17 +35,28 @@ export async function notifyUser(userId: string, data: NotifyData) {
 export async function notifyUsers(userIds: string[], data: NotifyData) {
   if (userIds.length === 0) return { error: null }
   const admin = createAdminClient()
-  const { error } = await admin.from("notifications").insert(
-    userIds.map((userId) => ({
-      user_id: userId,
-      type: data.type,
-      title: data.title,
-      body: data.body ?? null,
-      link: data.link ?? null,
-      team_id: data.team_id ?? null,
-      metadata: data.metadata ?? {},
-    }))
-  )
-  if (error) console.error("[notifyUsers] insert failed:", error)
-  return { error: error ? "通知の作成に失敗しました" : null }
+  const rows = userIds.map((userId) => ({
+    user_id: userId,
+    type: data.type,
+    title: data.title,
+    body: data.body ?? null,
+    link: data.link ?? null,
+    team_id: data.team_id ?? null,
+    metadata: data.metadata ?? {},
+  }))
+  const { error } = await admin.from("notifications").insert(rows)
+  if (!error) return { error: null }
+
+  console.error("[notifyUsers] batch insert failed, retrying individually:", error)
+  // 1件のバッチINSERTは1行でも制約違反(存在しないuser_id等)があると全体が失敗するため、
+  // 全員への通知が失われないよう1件ずつ再送する（他の受信者への影響を切り離す）
+  let failedCount = 0
+  for (const row of rows) {
+    const { error: rowError } = await admin.from("notifications").insert(row)
+    if (rowError) {
+      failedCount++
+      console.error(`[notifyUsers] individual insert failed for user ${row.user_id}:`, rowError)
+    }
+  }
+  return { error: failedCount > 0 ? "通知の作成に失敗しました" : null }
 }

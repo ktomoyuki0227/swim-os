@@ -4,7 +4,7 @@ import { SWIM_SPECIALTIES, PREFECTURES, SWIMMING_GOALS, PARTICIPATION_STYLES, SW
 // new Date(v).toISOString() が RangeError を投げないことを保証するための日時文字列検証。
 // サーバーアクション側でこの検証をすり抜けると、不正な文字列が原因で
 // 未捕捉例外によりリクエスト全体が落ちてしまう。
-const isValidDateString = (v: string) => !Number.isNaN(new Date(v).getTime())
+export const isValidDateString = (v: string) => !Number.isNaN(new Date(v).getTime())
 
 // z.string().url() は構文チェックのみで javascript: 等の危険なスキームを拒否しないため、
 // 将来これらのURLを <a href> 等でレンダリングする機能が追加された場合の

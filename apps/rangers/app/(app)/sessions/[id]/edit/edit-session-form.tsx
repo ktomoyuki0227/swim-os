@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/components/toast"
 import { SYSTEM_TAGS } from "@/types/database"
 import { parseOptionalInt } from "@/lib/utils"
+import { toJstIso, toJstEndOfDayIso } from "@/lib/format-date"
 
 type CompetitionField = {
   key: string
@@ -156,8 +157,10 @@ export function EditSessionForm({ session, teamName }: EditSessionFormProps) {
     if (!form.scheduled_at) { showToast("日時を入力してください", "error"); return }
     if (!form.location.trim()) { showToast("場所を入力してください", "error"); return }
     if (form.registration_deadline && form.scheduled_at) {
-      const deadline = new Date(form.registration_deadline)
-      const scheduled = new Date(form.scheduled_at)
+      // date-only(申込締切)とdatetime-local(開始日時)を素朴にnew Date()で比較すると
+      // タイムゾーン解釈がずれるため、サーバーと同じJST変換後のISO文字列で比較する
+      const deadline = new Date(toJstEndOfDayIso(form.registration_deadline))
+      const scheduled = new Date(toJstIso(form.scheduled_at))
       if (deadline >= scheduled) {
         showToast("申込締切は開始日時より前に設定してください", "error")
         return

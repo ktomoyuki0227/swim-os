@@ -35,6 +35,20 @@ export default async function HomePage() {
       .order("review_count", { ascending: false })
       .limit(4)
     coaches = (coachData ?? []) as Profile[]
+
+    // コーチの自己紹介は「パーソナル」チーム(teams.bio)に一元化されているため
+    // (00067_personal_team_fields.sql)、表示があればprofiles.bioより優先する。
+    // 未設定のコーチはprofiles.bio(オンボーディング時の自己紹介)にフォールバックする。
+    if (coaches.length > 0) {
+      const { data: personalTeams } = await admin
+        .from("teams")
+        .select("coach_id, bio")
+        .in("coach_id", coaches.map((c) => c.id))
+        .eq("team_type", "personal")
+        .eq("status", "active")
+      const bioByCoachId = new Map((personalTeams ?? []).map((t) => [t.coach_id, t.bio]))
+      coaches = coaches.map((c) => ({ ...c, bio: bioByCoachId.get(c.id) || c.bio }))
+    }
   }
 
   // ===== 新着イベント・合宿 =====

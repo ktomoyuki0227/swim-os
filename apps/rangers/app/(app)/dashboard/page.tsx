@@ -5,7 +5,7 @@ import Image from "next/image"
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { getMyTeams } from "@/actions/teams"
-import { getTeamSessions, getPublicSessions } from "@/actions/sessions"
+import { getTeamSessionsForTeams, getPublicSessions } from "@/actions/sessions"
 import { ScheduleSection } from "@/components/dashboard/schedule-section"
 import type { ScheduleSessionItem, TeamFilterOption } from "@/components/dashboard/schedule-section"
 import { InviteCodeInput } from "@/components/dashboard/invite-code-input"
@@ -185,12 +185,12 @@ export default async function DashboardPage() {
   type SessionRaw = Record<string, unknown> & { team_name: string; team_color: string }
 
   const featuredTeams = allTeams.slice(0, 8)
-  const teamSessionResults = await Promise.all(
-    featuredTeams.map((team) => getTeamSessions(team.id as string))
+  const { data: sessionsByTeam } = await getTeamSessionsForTeams(
+    featuredTeams.map((team) => team.id as string)
   )
 
-  const allSessions: SessionRaw[] = featuredTeams.flatMap((team, idx) => {
-    const { data: sessions } = teamSessionResults[idx]
+  const allSessions: SessionRaw[] = featuredTeams.flatMap((team) => {
+    const sessions = sessionsByTeam[team.id as string]
     if (!sessions) return []
     return sessions
       .filter((s: Record<string, unknown>) => s.session_status !== "cancelled")

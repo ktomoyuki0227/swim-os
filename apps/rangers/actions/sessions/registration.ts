@@ -76,6 +76,23 @@ export async function registerForSession(
     return { error: "このグループのメンバーではありません" }
   }
 
+  // 対象性別チェック（gender_filterが'all'以外の場合、一致しないメンバーは参加不可）
+  if (session.gender_filter && session.gender_filter !== "all") {
+    const { data: profile } = await adminClient
+      .from("profiles")
+      .select("gender")
+      .eq("id", user.id)
+      .single()
+    if (profile?.gender !== session.gender_filter) {
+      return { error: "対象外のため参加登録できません" }
+    }
+  }
+
+  // 対象メンバーチェック（target_membersが指定されている場合、含まれないメンバーは参加不可）
+  if (session.target_members && session.target_members.length > 0 && !session.target_members.includes(user.id)) {
+    return { error: "対象外のため参加登録できません" }
+  }
+
   // 締め切りチェック
   if (session.registration_deadline && new Date(session.registration_deadline) < new Date()) {
     return { error: "参加登録の締め切りを過ぎています" }

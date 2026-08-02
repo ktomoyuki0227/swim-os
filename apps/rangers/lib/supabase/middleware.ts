@@ -58,13 +58,16 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname.startsWith("/register/sent") ||
     request.nextUrl.pathname.startsWith("/onboarding/complete") ||
     request.nextUrl.pathname.startsWith("/teams/join") ||
-    // チーム公開ページ（UUID形式の /teams/[id] のみ。/teams/new, /teams/join などは除外）
-    /^\/teams\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(request.nextUrl.pathname)
+    // チーム公開ページ（UUID形式の /teams/[id] と、そのゲストプレビュー /teams/[id]/preview。
+    // /teams/new, /teams/join などは除外）
+    /^\/teams\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(\/preview)?$/i.test(request.nextUrl.pathname)
 
   // リフレッシュトークンが無効など認証エラーが発生した場合は
   // 古い sb- Cookie をすべて削除してから /login へリダイレクト
-  // ただし認証ページ・公開ページにいる場合はループを避けるためスキップ
-  if (authError && !isAuthPage && !isPublicPage) {
+  // ただし認証ページ・公開ページ・APIルートにいる場合はループやHTMLリダイレクトへの
+  // 誤フォールバックを避けるためスキップ（APIルートは呼び出し元がJSONレスポンスを
+  // 期待しているため、ここでHTMLページへの307を返すとfetch側でパースエラーになる）
+  if (authError && !isAuthPage && !isPublicPage && !isApiRoute) {
     const loginUrl = new URL("/login", request.url)
     const redirectResponse = NextResponse.redirect(loginUrl)
     request.cookies.getAll()

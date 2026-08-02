@@ -134,6 +134,19 @@ export async function confirmSession(sessionId: string) {
   ): Promise<void> => {
     if (reg.payment_method === "stripe") {
       if (!process.env.STRIPE_SECRET_KEY) {
+        // 他の失敗パス（決済情報未登録・RPC失敗・決済失敗）と同様、pendingのまま放置せず
+        // failedに倒してretryPaymentで復旧可能にし、本人にも通知する
+        await confirmAdmin
+          .from("session_registrations")
+          .update({ payment_status: "failed" })
+          .eq("id", reg.id)
+        await notifyUser(reg.swimmer_id, {
+          type: "payment_failed",
+          title: `「${session.title}」の参加費決済に失敗しました`,
+          body: "決済処理が一時的に利用できません。しばらくしてから運営にお問い合わせください",
+          team_id: session.team_id,
+          link: "/payments",
+        })
         paymentErrors.push(`${reg.id}: stripe not configured`)
         return
       }
@@ -277,8 +290,23 @@ export async function cancelSession(sessionId: string) {
   // admin権限チェック
   if (!(await isTeamAdmin(cancelAdmin, session.team_id, user.id))) return { error: "権限がありません" }
 
+  const originalStatus = session.session_status
+
+  // confirmSessionと同様、条件付きUPDATEで原子的に現在のステータス -> cancelled へ
+  // 遷移させる。ボタンの二重クリックや通信リトライでcancelSessionが同時に2回呼ばれても、
+  // 片方だけがこのUPDATEに成功し、もう片方は0件更新で即座に中断するため、
+  // 返金・ポイント戻し処理の重複実行（＝二重返金・二重付与）を防げる。
+  const { data: claimed, error: claimErr } = await cancelAdmin
+    .from("practice_sessions")
+    .update({ session_status: "cancelled" })
+    .eq("id", sessionId)
+    .eq("session_status", originalStatus)
+    .select("id")
+    .maybeSingle()
+  if (claimErr || !claimed) return { error: "このセッションは既に中止処理が実行されています" }
+
   // 確定後の中止の場合、返金・ポイント戻し
-  if (session.session_status === "confirmed") {
+  if (originalStatus === "confirmed") {
     const { data: registrations } = await cancelAdmin
       .from("session_registrations")
       .select("*")
@@ -338,18 +366,18 @@ export async function cancelSession(sessionId: string) {
       })
 
       if (refundErrors.length > 0) {
+        // 返金に失敗したまま cancelled 確定にはせず、上のclaimで進めたステータスを
+        // 元に戻して中止処理自体を再試行できるようにする
+        await cancelAdmin
+          .from("practice_sessions")
+          .update({ session_status: originalStatus })
+          .eq("id", sessionId)
         return { error: `返金処理中にエラーが発生しました（${refundErrors.length}件）` }
       }
     }
   }
 
-  // セッションステータスを cancelled に（adminClientでRLSをバイパス）
-  const { error: cancelErr } = await cancelAdmin
-    .from("practice_sessions")
-    .update({ session_status: "cancelled" })
-    .eq("id", sessionId)
-
-  if (cancelErr) return { error: "セッションの中止に失敗しました" }
+  // セッションステータスは返金処理の前に既に上のclaimで cancelled へ原子的に更新済み
 
   // 参加登録済みメンバーへ個別中止通知（中止操作者本人は除外）
   await notifySessionCancelled(cancelAdmin, sessionId, session, user.id)

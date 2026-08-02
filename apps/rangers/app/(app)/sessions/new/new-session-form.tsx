@@ -7,6 +7,7 @@ import { createSession, getSession } from "@/actions/sessions"
 import { getTeamTemplates, getTemplate } from "@/actions/templates"
 import { getTeamMembers, getMyTeams } from "@/actions/teams"
 import { createClient } from "@/lib/supabase/client"
+import { toJstIso, toJstEndOfDayIso } from "@/lib/format-date"
 import { useMounted } from "@/hooks/use-mounted"
 import { useScrollLock } from "@/hooks/use-scroll-lock"
 import { parseOptionalInt } from "@/lib/utils"
@@ -183,8 +184,10 @@ export function NewSessionForm({
     }
     if (step === 2) {
       if (form.registration_deadline && form.scheduled_at) {
-        const deadline = new Date(form.registration_deadline)
-        const scheduled = new Date(form.scheduled_at)
+        // date-only(申込締切)とdatetime-local(開始日時)を素朴にnew Date()で比較すると
+        // タイムゾーン解釈がずれるため、サーバーと同じJST変換後のISO文字列で比較する
+        const deadline = new Date(toJstEndOfDayIso(form.registration_deadline))
+        const scheduled = new Date(toJstIso(form.scheduled_at))
         if (deadline >= scheduled) return "申込締切は開始日時より前に設定してください"
       }
       if (form.min_participants && form.max_participants) {

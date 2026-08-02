@@ -3,9 +3,9 @@
 import { createClient, createAdminClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
-import { templateSchema, templateUpdateSchema } from "@/lib/validations"
+import { templateSchema, templateUpdateSchema, isValidDateString } from "@/lib/validations"
 import { isTeamAdmin } from "@/lib/auth/require-team-admin"
-import { toJstEndOfDayIso } from "@/lib/format-date"
+import { toJstEndOfDayIso, toJstIso } from "@/lib/format-date"
 
 export async function saveAsTemplate(sessionId: string, name: string) {
   const parsed = templateSchema.safeParse({ name })
@@ -183,6 +183,8 @@ export async function createSessionFromTemplate(
   templateId: string,
   scheduledAt: string
 ) {
+  if (!isValidDateString(scheduledAt)) return { error: "日時の形式が不正です" }
+
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
@@ -201,9 +203,13 @@ export async function createSessionFromTemplate(
     return { error: "権限がありません" }
   }
 
+  // datetime-local値はタイムゾーン情報がないためJSTとして解釈してUTCに変換する
+  // (createSession/updateSessionと同じ規約に合わせる)
+  const scheduledAtIso = toJstIso(scheduledAt)
+
   let registrationDeadline: string | null = null
   if (template.deadline_days) {
-    const deadline = new Date(scheduledAt)
+    const deadline = new Date(scheduledAtIso)
     deadline.setDate(deadline.getDate() - template.deadline_days)
     registrationDeadline = toJstEndOfDayIso(deadline.toISOString())
   }
@@ -217,7 +223,7 @@ export async function createSessionFromTemplate(
       description: template.description,
       content: template.content,
       type: template.type,
-      scheduled_at: scheduledAt,
+      scheduled_at: scheduledAtIso,
       location: template.location,
       member_price: template.member_price ?? 0,
       guest_price: template.guest_price ?? 0,

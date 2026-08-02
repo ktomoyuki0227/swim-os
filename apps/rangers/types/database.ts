@@ -290,6 +290,8 @@ export interface Team {
   bio: string | null
   career: string | null
   target_ages: string[]
+  contact_email: string | null
+  contact_phone: string | null
   invite_code: string
   has_session_fee: boolean
   has_annual_fee: boolean

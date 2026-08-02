@@ -20,6 +20,18 @@ export async function createSession(teamId: string, data: unknown) {
   const adminClient = createAdminClient()
   if (!(await isTeamAdmin(adminClient, teamId, user.id))) return { error: "権限がありません" }
 
+  const scheduledAtIso = toJstIso(parsed.data.scheduled_at)
+  const registrationDeadlineIso = parsed.data.registration_deadline
+    ? toJstEndOfDayIso(parsed.data.registration_deadline)
+    : null
+
+  // クライアント側のstep-detailsでも同様のチェックがあるが、date-only文字列と
+  // datetime-local文字列を素朴に比較するとタイムゾーン解釈がずれて回避できてしまうため、
+  // 両方をJST変換後のISO文字列にしてからサーバー側でも検証する
+  if (registrationDeadlineIso && new Date(registrationDeadlineIso) >= new Date(scheduledAtIso)) {
+    return { error: "申込締切は開始日時より前に設定してください" }
+  }
+
   // RLS の自己参照ポリシーをバイパスするため adminClient で INSERT
   const { data: session, error } = await adminClient
     .from("practice_sessions")
@@ -30,16 +42,14 @@ export async function createSession(teamId: string, data: unknown) {
       description: parsed.data.description || null,
       content: parsed.data.content || null,
       type: parsed.data.type,
-      scheduled_at: toJstIso(parsed.data.scheduled_at),
+      scheduled_at: scheduledAtIso,
       end_at: parsed.data.end_at ? toJstIso(parsed.data.end_at) : null,
       location: parsed.data.location,
       meeting_point: parsed.data.meeting_point || null,
       gender_filter: parsed.data.gender_filter || "all",
       member_price: parsed.data.member_price,
       guest_price: parsed.data.guest_price,
-      registration_deadline: parsed.data.registration_deadline
-        ? toJstEndOfDayIso(parsed.data.registration_deadline)
-        : null,
+      registration_deadline: registrationDeadlineIso,
       min_participants: parsed.data.min_participants ?? null,
       max_participants: parsed.data.max_participants ?? null,
       course_rules: parsed.data.course_rules || null,
@@ -96,7 +106,7 @@ export async function updateSession(sessionId: string, data: unknown) {
   const updateAdmin = createAdminClient()
   const { data: session } = await updateAdmin
     .from("practice_sessions")
-    .select("team_id, session_status, title, scheduled_at, location, member_price, guest_price")
+    .select("team_id, session_status, title, scheduled_at, registration_deadline, location, member_price, guest_price")
     .eq("id", sessionId)
     .single()
   if (!session) return { error: "セッションが見つかりません" }
@@ -119,6 +129,18 @@ export async function updateSession(sessionId: string, data: unknown) {
   }
   if (updateData.registration_deadline) {
     updateData.registration_deadline = toJstEndOfDayIso(updateData.registration_deadline)
+  }
+
+  // クライアント側の検証だけだとdate-only/datetime-local文字列の解釈違いで
+  // すり抜けうるため、JST変換後のISO文字列同士でサーバー側でも検証する。
+  // 今回のリクエストで変更されていない側は現在DBの値（既にISO変換済み）を使う
+  const effectiveScheduledAt = updateData.scheduled_at ?? session.scheduled_at
+  const effectiveDeadline =
+    updateData.registration_deadline !== undefined
+      ? updateData.registration_deadline
+      : session.registration_deadline
+  if (effectiveDeadline && new Date(effectiveDeadline) >= new Date(effectiveScheduledAt)) {
+    return { error: "申込締切は開始日時より前に設定してください" }
   }
 
   // adminClientでRLSをバイパスして更新（user clientだとサイレントブロックの可能性あり）
@@ -233,6 +255,50 @@ export async function getTeamSessions(teamId: string) {
 
   if (error) return { data: [] }
   return { data: data || [] }
+}
+
+/**
+ * 複数チームのセッション一覧を1回のクエリでまとめて取得する（ダッシュボード等、
+ * 複数チームを横断表示する画面向け）。getTeamSessionsをチーム数分ループ呼び出しすると
+ * チームごとにメンバーシップ確認+セッション取得の2クエリが走るN+1になるため、
+ * メンバーシップ確認・セッション取得それぞれを .in() で1回にまとめる。
+ */
+export async function getTeamSessionsForTeams(teamIds: string[]) {
+  if (teamIds.length === 0) return { data: {} as Record<string, Record<string, unknown>[]> }
+
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { data: {} as Record<string, Record<string, unknown>[]> }
+
+  const admin = createAdminClient()
+
+  // 呼び出し元が渡したteamIdsのうち、実際にアクティブなメンバーであるチームのみに絞り込む
+  const { data: memberships } = await admin
+    .from("team_members")
+    .select("team_id")
+    .in("team_id", teamIds)
+    .eq("swimmer_id", user.id)
+    .eq("status", "active")
+
+  const memberTeamIds = (memberships || []).map((m) => m.team_id)
+  if (memberTeamIds.length === 0) return { data: {} as Record<string, Record<string, unknown>[]> }
+
+  const { data, error } = await admin
+    .from("practice_sessions")
+    .select("*")
+    .in("team_id", memberTeamIds)
+    .order("scheduled_at", { ascending: true })
+    .limit(500 * memberTeamIds.length) // getTeamSessionsのチームあたり上限(500)と同等の総枠を確保
+
+  if (error) return { data: {} as Record<string, Record<string, unknown>[]> }
+
+  const grouped: Record<string, Record<string, unknown>[]> = {}
+  for (const session of data || []) {
+    const teamId = session.team_id as string
+    if (!grouped[teamId]) grouped[teamId] = []
+    grouped[teamId].push(session)
+  }
+  return { data: grouped }
 }
 
 export async function getPublicSessions(filters?: {

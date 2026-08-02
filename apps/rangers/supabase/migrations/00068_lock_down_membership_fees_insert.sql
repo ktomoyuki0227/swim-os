@@ -1,0 +1,14 @@
+-- 00059で「bulkCreateFeesが通常クライアントを使用しているため維持」としていた
+-- fees_insert_admin ポリシーを削除する。
+--
+-- actions/fees.ts の bulkCreateFees を admin(service_role)クライアント経由の書き込みに
+-- 変更したため、membership_fees への直接 INSERT 経路はアプリコード上に存在しなくなった。
+-- 00059と同じ理由（authenticatedのJWTが漏洩・悪用された場合に、アプリの認可チェックを
+-- バイパスして会費レコードを直接作成できてしまう）により、未使用になったこのポリシーを
+-- 削除して攻撃対象を減らす。service_role は RLS を常にバイパスするため、
+-- 削除してもアプリの正規動作には一切影響しない。
+--
+-- 検証方法: actions/**配下を全文grepし、membership_fees への INSERT が
+-- 全て admin(service_role)クライアント経由(actions/fees.ts の bulkCreateFees のみ)で
+-- あることを確認済み。
+drop policy if exists "fees_insert_admin" on membership_fees;

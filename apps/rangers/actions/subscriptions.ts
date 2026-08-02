@@ -62,6 +62,7 @@ export async function syncActiveSubscriptionsToNewPrice(
 
   let updated = 0
   let failed = 0
+  const updatedSwimmerIds: string[] = []
 
   await mapWithConcurrency(activeMembers, SUBSCRIPTION_SYNC_CONCURRENCY, async (member) => {
     if (!member.stripe_subscription_id) return
@@ -77,14 +78,17 @@ export async function syncActiveSubscriptionsToNewPrice(
         proration_behavior: "none",
       })
       updated++
+      updatedSwimmerIds.push(member.swimmer_id)
     } catch (err) {
       console.error(`[syncActiveSubscriptionsToNewPrice] failed for member ${member.id}:`, err)
       failed++
     }
   })
 
-  if (updated > 0) {
-    await notifyUsers(activeMembers.map((m) => m.swimmer_id), {
+  // 実際に価格変更が成功したメンバーにのみ通知する（失敗したメンバーは
+  // 旧価格のままなのに「新しい金額が適用されます」という誤った通知を受け取らないよう）
+  if (updatedSwimmerIds.length > 0) {
+    await notifyUsers(updatedSwimmerIds, {
       type: "fee_amount_changed",
       title: "月謝額が変更されました",
       body: `次回の請求から新しい金額(¥${newAmount.toLocaleString()})が適用されます`,

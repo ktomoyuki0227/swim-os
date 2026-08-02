@@ -9,9 +9,37 @@ import type { Database } from "@/types/database-generated"
 import { isTeamAdmin, getActiveTeamAdminIds } from "@/lib/auth/require-team-admin"
 import { notifyUsers } from "@/lib/notifications"
 import { isRateLimited } from "@/lib/rate-limit"
+import { stripe } from "@/lib/stripe"
 
 const JOIN_TEAM_RATE_LIMIT = 10
 const JOIN_TEAM_RATE_WINDOW_MS = 60 * 1000
+
+/**
+ * メンバー削除・会員種別変更で月謝会員でなくなる際に、既存のStripe Subscriptionを
+ * cancelMonthlySubscription(actions/subscriptions.ts)と同じcancel_at_period_end方式で
+ * キャンセルする内部ヘルパー。これを呼ばないと、削除/変更後もStripe側の定期課金が
+ * 残り続けて請求され続けてしまう。Stripe未設定環境やSubscriptionが無い場合は何もしない。
+ */
+async function cancelStripeSubscriptionIfActive(
+  admin: ReturnType<typeof createAdminClient>,
+  teamMemberId: string,
+  stripeSubscriptionId: string | null
+): Promise<void> {
+  if (!process.env.STRIPE_SECRET_KEY || !stripeSubscriptionId) return
+  try {
+    await stripe.subscriptions.update(stripeSubscriptionId, { cancel_at_period_end: true })
+  } catch (err) {
+    console.error("[cancelStripeSubscriptionIfActive] Stripe subscription cancel failed:", err)
+    return
+  }
+  const { error } = await admin
+    .from("team_members")
+    .update({ subscription_status: "canceled" })
+    .eq("id", teamMemberId)
+  if (error) {
+    console.error("[cancelStripeSubscriptionIfActive] DB update failed:", error)
+  }
+}
 
 export async function joinTeamByCode(
   inviteCode: unknown,
@@ -164,7 +192,7 @@ export async function removeMember(teamId: string, swimmerId: string) {
   // 最後の管理者の削除を防ぐ
   const { data: targetMember } = await admin
     .from("team_members")
-    .select("role")
+    .select("id, role, stripe_subscription_id")
     .eq("team_id", teamId)
     .eq("swimmer_id", swimmerId)
     .eq("status", "active")
@@ -190,6 +218,10 @@ export async function removeMember(teamId: string, swimmerId: string) {
 
   if (error) return { error: "メンバーの削除に失敗しました" }
 
+  if (targetMember?.id) {
+    await cancelStripeSubscriptionIfActive(admin, targetMember.id, targetMember.stripe_subscription_id)
+  }
+
   revalidatePath(`/teams/${teamId}`)
   return { success: true }
 }
@@ -208,7 +240,7 @@ export async function updateMembershipType(
   const admin = createAdminClient()
   const { data: tm } = await admin
     .from("team_members")
-    .select("team_id")
+    .select("team_id, membership_type, stripe_subscription_id")
     .eq("id", teamMemberId)
     .single()
   if (!tm) return { error: "メンバーが見つかりません" }
@@ -221,6 +253,12 @@ export async function updateMembershipType(
     .eq("id", teamMemberId)
 
   if (error) return { error: "会員種別の変更に失敗しました" }
+
+  // 月謝以外に変更した場合、既存のStripe Subscriptionが残っていれば請求が続かないよう
+  // キャンセルする（cancelStripeSubscriptionIfActiveが内部でsubscription_statusも更新する）
+  if (type !== "monthly" && tm.membership_type === "monthly") {
+    await cancelStripeSubscriptionIfActive(admin, teamMemberId, tm.stripe_subscription_id)
+  }
 
   revalidatePath("/teams")
   return { success: true }
@@ -260,24 +298,24 @@ export async function updateMemberInfo(
     return { error: "自分自身のロールは変更できません" }
   }
 
+  // 変更前の会員種別・Subscription情報を取得（月謝→他種別への変更時にキャンセル判定で使う）
+  const { data: beforeUpdate } = await admin
+    .from("team_members")
+    .select("role, membership_type, stripe_subscription_id")
+    .eq("team_id", teamId)
+    .eq("swimmer_id", swimmerId)
+    .single()
+
   // 最後の管理者を降格しようとしていないかチェック（管理者→一般への変更のみ対象）
-  if (data.role === "member") {
-    const { data: current } = await admin
+  if (data.role === "member" && beforeUpdate?.role === "admin") {
+    const { count } = await admin
       .from("team_members")
-      .select("role")
+      .select("id", { count: "exact", head: true })
       .eq("team_id", teamId)
-      .eq("swimmer_id", swimmerId)
-      .single()
-    if (current?.role === "admin") {
-      const { count } = await admin
-        .from("team_members")
-        .select("id", { count: "exact", head: true })
-        .eq("team_id", teamId)
-        .eq("role", "admin")
-        .eq("status", "active")
-      if ((count ?? 0) <= 1) {
-        return { error: "最後の管理者のロールは変更できません" }
-      }
+      .eq("role", "admin")
+      .eq("status", "active")
+    if ((count ?? 0) <= 1) {
+      return { error: "最後の管理者のロールは変更できません" }
     }
   }
 
@@ -303,6 +341,12 @@ export async function updateMemberInfo(
 
   if (error) return { error: "メンバー情報の更新に失敗しました" }
   if (!updated || updated.length === 0) return { error: "メンバーが見つかりません" }
+
+  // 月謝以外に変更した場合、既存のStripe Subscriptionが残っていれば請求が続かないよう
+  // キャンセルする（cancelStripeSubscriptionIfActiveが内部でsubscription_statusも更新する）
+  if (data.membershipType !== "monthly" && beforeUpdate?.membership_type === "monthly") {
+    await cancelStripeSubscriptionIfActive(admin, updated[0].id, beforeUpdate.stripe_subscription_id)
+  }
 
   revalidatePath(`/teams/${teamId}`)
   return { success: true }

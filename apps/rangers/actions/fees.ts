@@ -155,7 +155,7 @@ export async function bulkCreateFees(
     amount,
   }))
 
-  const { error } = await supabase
+  const { error } = await admin
     .from("membership_fees")
     .upsert(fees, { onConflict: "team_id,swimmer_id,type,period" })
 

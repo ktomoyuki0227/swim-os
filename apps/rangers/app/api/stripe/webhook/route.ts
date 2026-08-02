@@ -13,27 +13,30 @@ export const dynamic = "force-dynamic"
 async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent) {
   const admin = createAdminClient()
 
-  // .neq("payment_status", "paid") で冪等性を保証（二重処理防止）しつつ、
-  // confirm()がタイムアウト等の例外で"failed"のまま残ったケースからの復旧も
-  // このwebhookだけで自動的に拾えるようにする（"pending"限定だと復旧できない）。
+  // "pending"/"failed" からのみ "paid" に遷移させる（二重処理防止の冪等性ガード）。
+  // confirm()がタイムアウト等の例外で"failed"のまま残ったケースからの復旧は拾いつつ、
+  // 遅延/リトライされたイベントが "refunded"/"disputed" 等の終端状態を
+  // 誤って "paid" に巻き戻さないよう、対象状態を明示的に限定する
+  // （以前は .neq("payment_status", "paid") で "paid" 以外すべてを対象にしていたため、
+  // 返金・チャージバック後に届いた遅延イベントが状態を巻き戻すバグがあった）。
   const { error } = await admin
     .from("session_registrations")
     .update({ payment_status: "paid" })
     .eq("stripe_payment_intent_id", paymentIntent.id)
-    .neq("payment_status", "paid")
+    .in("payment_status", ["pending", "failed"])
 
   if (error) {
     console.error(`[webhook] payment_intent.succeeded (${paymentIntent.id}): DB update failed`, error)
     throw error
   }
 
-  // Connect 送金記録を confirmed に更新（同様に"failed"からの復旧も拾う）
+  // Connect 送金記録も同様に "pending"/"failed" からのみ "succeeded" に遷移させる
   if (paymentIntent.transfer_data) {
     await admin
       .from("transfer_records")
       .update({ status: "succeeded" })
       .eq("stripe_payment_intent_id", paymentIntent.id)
-      .neq("status", "succeeded")
+      .in("status", ["pending", "failed"])
   }
 }
 
@@ -248,21 +251,17 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
   const admin = createAdminClient()
 
   // Stripeは同一請求の支払い失敗を複数回(リトライスケジュールに応じて)通知してくるため、
-  // 既にpast_dueへ遷移済みなら再通知しない(subscription_statusを冪等性の判定に使う)
-  const { data: currentMember } = await admin
-    .from("team_members")
-    .select("subscription_status")
-    .eq("stripe_subscription_id", subId)
-    .maybeSingle()
-  const alreadyNotified = currentMember?.subscription_status === "past_due"
-
-  // subscription_status を past_due に更新
-  await admin
+  // 既にpast_dueへ遷移済みなら再通知しない。read-then-writeではなく条件付きUPDATE +
+  // .select()の戻り件数で「実際に遷移させた呼び出しか」を判定する（同時配信時の
+  // 読み取り→書き込みの間のレースで両方が通知を送ってしまうのを防ぐ）。
+  const { data: updated } = await admin
     .from("team_members")
     .update({ subscription_status: "past_due" })
     .eq("stripe_subscription_id", subId)
+    .neq("subscription_status", "past_due")
+    .select("swimmer_id")
 
-  if (alreadyNotified) return
+  if (!updated || updated.length === 0) return
 
   // 管理者に通知
   const { data: admins } = await admin

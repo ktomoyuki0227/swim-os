@@ -1,6 +1,17 @@
 -- 追加デモデータ: チーム4件 + パーソナル3件 + 各セッション
 -- 冪等性: 先に削除してから挿入
 
+-- 以下のINSERTが参照する fee_members_exempt_session / contact_email / contact_phone は
+-- 本来もっと後のマイグレーション(00050)で初めて追加されるカラムだが、本番DBには
+-- マイグレーション履歴外で先に追加されていたため、当時はこの並びのままでも本番では
+-- 問題なく実行できていた。ローカル開発環境やCIのようにマイグレーションを最初から
+-- 順番に再生する環境では、このファイルの実行時点でカラムが存在せず失敗するため、
+-- ここで冪等に(IF NOT EXISTS)先に作成しておく。本番など既にカラムが存在する環境では
+-- 何も変更されないため安全。
+alter table teams add column if not exists fee_members_exempt_session boolean not null default false;
+alter table teams add column if not exists contact_email text;
+alter table teams add column if not exists contact_phone text;
+
 DO $$
 DECLARE
   -- 既存ユーザー
