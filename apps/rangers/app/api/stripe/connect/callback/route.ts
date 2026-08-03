@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createClient, createAdminClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/server"
 import { stripe } from "@/lib/stripe"
+import { requireRedirectUser } from "@/lib/auth/require-api-user"
 
 export const dynamic = "force-dynamic"
 
@@ -18,9 +19,8 @@ export async function GET(req: NextRequest) {
   }
 
   // 認証チェック（未ログインはログインページへ）
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.redirect(new URL("/login", req.url))
+  const { user, response } = await requireRedirectUser(new URL("/login", req.url))
+  if (response) return response
 
   if (!process.env.STRIPE_SECRET_KEY) {
     return NextResponse.redirect(new URL(`/teams/${teamId}?connectError=true`, req.url))

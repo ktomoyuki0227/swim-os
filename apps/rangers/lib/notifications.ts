@@ -49,14 +49,17 @@ export async function notifyUsers(userIds: string[], data: NotifyData) {
 
   console.error("[notifyUsers] batch insert failed, retrying individually:", error)
   // 1件のバッチINSERTは1行でも制約違反(存在しないuser_id等)があると全体が失敗するため、
-  // 全員への通知が失われないよう1件ずつ再送する（他の受信者への影響を切り離す）
+  // 全員への通知が失われないよう1件ずつ再送する（他の受信者への影響を切り離す）。
+  // 各行のINSERTは互いに独立しているため、直列awaitではなく並列実行する
+  const results = await Promise.all(
+    rows.map((row) => admin.from("notifications").insert(row))
+  )
   let failedCount = 0
-  for (const row of rows) {
-    const { error: rowError } = await admin.from("notifications").insert(row)
+  results.forEach(({ error: rowError }, i) => {
     if (rowError) {
       failedCount++
-      console.error(`[notifyUsers] individual insert failed for user ${row.user_id}:`, rowError)
+      console.error(`[notifyUsers] individual insert failed for user ${rows[i].user_id}:`, rowError)
     }
-  }
+  })
   return { error: failedCount > 0 ? "通知の作成に失敗しました" : null }
 }

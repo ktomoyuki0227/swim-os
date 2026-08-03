@@ -66,10 +66,64 @@ async function handlePaymentIntentFailed(paymentIntent: Stripe.PaymentIntent) {
 }
 
 /**
+ * チャージバック（支払い異議申し立て）発生時、destination charge経由で既にコーチ側
+ * Connectアカウントへ送金済みの資金を巻き戻す。Stripeはdisputeの金額・手数料を
+ * プラットフォーム残高から引き落とす一方、送金済みの資金は自動では戻らないため、
+ * ここでtransfers.createReversalを呼ばないとプラットフォームが送金分+dispute額を
+ * 二重に負担することになる（返金フロー(refundSessionRegistrationStripe)で
+ * reverse_transferを指定しているのと同じ理由）。
+ * 参照: https://docs.stripe.com/connect/disputes
+ */
+async function reverseConnectTransferForDispute(
+  admin: ReturnType<typeof createAdminClient>,
+  paymentIntentId: string
+): Promise<void> {
+  // Connect送金済み(status="succeeded")の記録がある場合のみ対象。
+  // 未送金決済やStripe未設定チームの決済は何もしない。
+  const { data: transferRecord } = await admin
+    .from("transfer_records")
+    .select("id")
+    .eq("stripe_payment_intent_id", paymentIntentId)
+    .eq("status", "succeeded")
+    .maybeSingle()
+
+  if (!transferRecord) return
+
+  try {
+    // destination chargeでは実際のTransferオブジェクトのIDはPaymentIntentからは
+    // 直接取得できず、確定後に作成されたChargeのtransferフィールドにのみ存在する
+    const pi = await stripe.paymentIntents.retrieve(paymentIntentId, { expand: ["latest_charge"] })
+    const charge = pi.latest_charge as Stripe.Charge | null
+    const transferId = charge?.transfer
+      ? (typeof charge.transfer === "string" ? charge.transfer : charge.transfer.id)
+      : null
+
+    if (!transferId) {
+      console.error(`[webhook] charge.dispute.created: no transfer found for PI ${paymentIntentId}`)
+      return
+    }
+
+    await stripe.transfers.createReversal(transferId, { refund_application_fee: true })
+
+    await admin
+      .from("transfer_records")
+      .update({ status: "reversed", stripe_transfer_id: transferId })
+      .eq("stripe_payment_intent_id", paymentIntentId)
+      .eq("status", "succeeded")
+  } catch (err) {
+    // 連結アカウントの残高不足等でreversal自体が失敗するケースがある。
+    // ここで例外を投げるとStripeにリトライされ、下流の冪等性ガード(neq disputed)により
+    // 争議記録・管理者通知が二度と行われなくなってしまうため、ログのみに留めて処理を継続する。
+    console.error(`[webhook] charge.dispute.created: transfer reversal failed for PI ${paymentIntentId}:`, err)
+  }
+}
+
+/**
  * チャージバック（支払い異議申し立て）が発生した際のハンドラ。
  * 従来はこのイベントを一切処理しておらず、DB上は"paid"のまま・管理者への通知もなく、
  * Stripeダッシュボードを個別に確認しない限り一切気づけなかった。
- * 解決(勝訴/敗訴)の自動反映まではスコープに含めず、まずは可視化と通知を行う。
+ * 解決(勝訴/敗訴)の自動反映まではスコープに含めず、まずは可視化・通知に加えて
+ * Connect送金済みの資金の巻き戻しを行う。
  */
 async function handleChargeDisputeCreated(dispute: Stripe.Dispute) {
   const paymentIntentId =
@@ -100,6 +154,8 @@ async function handleChargeDisputeCreated(dispute: Stripe.Dispute) {
   // 既に disputed 済み（冪等性）なら重複通知しない
   if (!updated || updated.length === 0) return
 
+  await reverseConnectTransferForDispute(admin, paymentIntentId)
+
   const session = registration.session as { team_id: string; title: string } | null
   if (!session) return
 
@@ -118,6 +174,45 @@ async function handleChargeDisputeCreated(dispute: Stripe.Dispute) {
       team_id: session.team_id,
       link: "/payments",
     })
+  }
+}
+
+/**
+ * transfer_recordsを"reversed"に更新してよいのは、Stripe側で実際にConnect送金(Transfer)が
+ * 取り消された場合のみ。Stripeダッシュボードからreverse_transferを指定せずに返金した場合、
+ * 送金はコーチ側に残ったままになるが、そこで無条件に"reversed"と記帳するとDBが
+ * 「送金は取り消し済み」と実態と乖離した状態を主張してしまう
+ * （実際には返金額をプラットフォームが単独負担している状態）。
+ * Transferオブジェクトの reversed フィールドを確認してから反映する。
+ */
+async function syncTransferReversalStatus(
+  admin: ReturnType<typeof createAdminClient>,
+  chargeId: string,
+  paymentIntentId: string
+): Promise<void> {
+  const { data: transferRecord } = await admin
+    .from("transfer_records")
+    .select("id")
+    .eq("stripe_payment_intent_id", paymentIntentId)
+    .eq("status", "succeeded")
+    .maybeSingle()
+
+  if (!transferRecord) return
+
+  try {
+    const chargeWithTransfer = await stripe.charges.retrieve(chargeId, { expand: ["transfer"] })
+    const transfer = chargeWithTransfer.transfer
+    const transferObj = typeof transfer === "string" ? await stripe.transfers.retrieve(transfer) : transfer
+
+    if (!transferObj?.reversed) return
+
+    await admin
+      .from("transfer_records")
+      .update({ status: "reversed", stripe_transfer_id: transferObj.id })
+      .eq("stripe_payment_intent_id", paymentIntentId)
+      .eq("status", "succeeded")
+  } catch (err) {
+    console.error(`[webhook] charge.refunded: failed to verify transfer reversal for PI ${paymentIntentId}:`, err)
   }
 }
 
@@ -147,11 +242,7 @@ async function handleChargeRefunded(charge: Stripe.Charge) {
     throw error
   }
 
-  await admin
-    .from("transfer_records")
-    .update({ status: "reversed" })
-    .eq("stripe_payment_intent_id", paymentIntentId)
-    .eq("status", "succeeded")
+  await syncTransferReversalStatus(admin, charge.id, paymentIntentId)
 }
 
 // ── 月謝 Subscription ハンドラ ─────────────────────────────────────────────────

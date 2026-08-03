@@ -136,41 +136,41 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
     .single()
   if (!profile) redirect("/login")
 
-  // カード情報取得（Stripe 未設定環境では省略）
-  let cardDetails: Awaited<ReturnType<typeof getCardDetails>> = null
-  if (process.env.STRIPE_SECRET_KEY) {
-    await getOrCreateStripeCustomer(user.id, user.email ?? "", profile.name)
-    if (profile.stripe_payment_method_id) {
-      cardDetails = await getCardDetails(profile.stripe_payment_method_id)
-    }
-  }
+  // カード情報取得・①セッション参加履歴・②会費履歴・③管理者チーム一覧は互いに独立した
+  // クエリのため並列実行する（以前はawaitを直列に8回連ねており、通帳ページの応答が
+  // 不必要に遅くなっていた）。
+  const [cardDetails, { data: sessionRegs }, { data: membershipFees }, { data: adminMemberships }] =
+    await Promise.all([
+      (async (): Promise<Awaited<ReturnType<typeof getCardDetails>>> => {
+        // カード情報取得（Stripe 未設定環境では省略）
+        if (!process.env.STRIPE_SECRET_KEY) return null
+        await getOrCreateStripeCustomer(user.id, user.email ?? "", profile.name)
+        if (!profile.stripe_payment_method_id) return null
+        return getCardDetails(profile.stripe_payment_method_id)
+      })(),
+      supabase
+        .from("session_registrations")
+        .select(
+          `id, payment_status, payment_method, registered_at, is_member, cancelled_at, charged_amount,
+           session:practice_sessions(
+             id, title, scheduled_at, member_price, guest_price, team_id
+           )`
+        )
+        .eq("swimmer_id", user.id)
+        .order("registered_at", { ascending: false }),
+      supabase
+        .from("membership_fees")
+        .select(`id, type, period, amount, status, paid_at, created_at, team_id`)
+        .eq("swimmer_id", user.id)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("team_members")
+        .select("team_id")
+        .eq("swimmer_id", user.id)
+        .eq("role", "admin")
+        .eq("status", "active"),
+    ])
 
-  // ① セッション参加履歴（支出）
-  const { data: sessionRegs } = await supabase
-    .from("session_registrations")
-    .select(
-      `id, payment_status, payment_method, registered_at, is_member, cancelled_at, charged_amount,
-       session:practice_sessions(
-         id, title, scheduled_at, member_price, guest_price, team_id
-       )`
-    )
-    .eq("swimmer_id", user.id)
-    .order("registered_at", { ascending: false })
-
-  // ② 会費履歴（支出）
-  const { data: membershipFees } = await supabase
-    .from("membership_fees")
-    .select(`id, type, period, amount, status, paid_at, created_at, team_id`)
-    .eq("swimmer_id", user.id)
-    .order("created_at", { ascending: false })
-
-  // ③ 自分が管理者を務めるチーム（収入の対象範囲）
-  const { data: adminMemberships } = await supabase
-    .from("team_members")
-    .select("team_id")
-    .eq("swimmer_id", user.id)
-    .eq("role", "admin")
-    .eq("status", "active")
   const adminTeamIds = (adminMemberships ?? []).map((m) => m.team_id)
   const isTeamAdmin = adminTeamIds.length > 0
 
@@ -181,12 +181,22 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
   let incomeFees: IncomeFee[] = []
 
   if (isTeamAdmin) {
-    const { data: incomeSessions } = await supabase
-      .from("practice_sessions")
-      .select("id, title, scheduled_at, member_price, guest_price, team_id")
-      .in("team_id", adminTeamIds)
+    // incomeSessions と incomeFees は互いに独立（どちらもadminTeamIdsのみに依存）なので並列化。
+    // incomeRegs は incomeSessions から得た session_id 一覧に依存するため、その後に取得する。
+    const [{ data: incomeSessions }, { data: fees }] = await Promise.all([
+      supabase
+        .from("practice_sessions")
+        .select("id, title, scheduled_at, member_price, guest_price, team_id")
+        .in("team_id", adminTeamIds),
+      supabase
+        .from("membership_fees")
+        .select("id, type, period, amount, status, paid_at, created_at, team_id, swimmer_id")
+        .in("team_id", adminTeamIds)
+        .neq("swimmer_id", user.id),
+    ])
 
     incomeSessionById = new Map((incomeSessions ?? []).map((s) => [s.id, s]))
+    incomeFees = fees ?? []
     const incomeSessionIds = Array.from(incomeSessionById.keys())
 
     if (incomeSessionIds.length > 0) {
@@ -199,16 +209,11 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
         .neq("swimmer_id", user.id)
       incomeRegs = regs ?? []
     }
-
-    const { data: fees } = await supabase
-      .from("membership_fees")
-      .select("id, type, period, amount, status, paid_at, created_at, team_id, swimmer_id")
-      .in("team_id", adminTeamIds)
-      .neq("swimmer_id", user.id)
-    incomeFees = fees ?? []
   }
 
-  // ⑤ チーム情報を一括取得（ネスト JOIN の RLS 問題を避けるため分離）
+  // ⑤ チーム情報、⑥ 支払者プロフィールは互いに独立なクエリのため並列実行する
+  // （ネスト JOIN の RLS 問題を避けるため分離済み。他ユーザーの行は public_profiles
+  // ビュー経由 — profiles 本体の SELECT ポリシーは本人のみに制限されているため）
   const teamIdSet = new Set<string>(adminTeamIds)
   for (const reg of sessionRegs ?? []) {
     const session = Array.isArray(reg.session) ? (reg.session[0] ?? null) : reg.session
@@ -218,21 +223,19 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
   for (const fee of membershipFees ?? []) {
     if (fee.team_id) teamIdSet.add(fee.team_id)
   }
-  const { data: teamsData } =
-    teamIdSet.size > 0
-      ? await supabase.from("teams").select("id, name").in("id", Array.from(teamIdSet))
-      : { data: [] as { id: string; name: string }[] }
-  const teamById = new Map((teamsData ?? []).map((t) => [t.id, t.name]))
-
-  // ⑥ 支払者（収入の相手）のプロフィールを一括取得（他ユーザーの行は public_profiles ビュー経由。
-  // profiles 本体の SELECT ポリシーは本人のみに制限されているため）
   const payerIdSet = new Set<string>()
   for (const reg of incomeRegs) payerIdSet.add(reg.swimmer_id)
   for (const fee of incomeFees) payerIdSet.add(fee.swimmer_id)
-  const { data: payersData } =
+
+  const [{ data: teamsData }, { data: payersData }] = await Promise.all([
+    teamIdSet.size > 0
+      ? supabase.from("teams").select("id, name").in("id", Array.from(teamIdSet))
+      : Promise.resolve({ data: [] as { id: string; name: string }[] }),
     payerIdSet.size > 0
-      ? await supabase.from("public_profiles").select("id, name").in("id", Array.from(payerIdSet))
-      : { data: [] as { id: string; name: string }[] }
+      ? supabase.from("public_profiles").select("id, name").in("id", Array.from(payerIdSet))
+      : Promise.resolve({ data: [] as { id: string; name: string }[] }),
+  ])
+  const teamById = new Map((teamsData ?? []).map((t) => [t.id, t.name]))
   const payerNameById = new Map((payersData ?? []).map((p) => [p.id, p.name]))
 
   // ——— 統合リストを作成 ———

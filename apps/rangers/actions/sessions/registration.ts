@@ -51,10 +51,14 @@ export async function registerForSession(
   // 管理者は自チームのセッションに無料で参加（ロールベースで判定）
   const isAdmin = membership?.role === "admin"
 
-  // 月謝会員はStripe Subscriptionが未払い状態(past_due/unpaid/canceled/incomplete_expired)の間は
+  // 月謝会員はStripe Subscriptionが未払い状態
+  // (past_due/unpaid/canceled/incomplete_expired/incomplete)の間は
   // membership_typeが"monthly"のままでも免除対象から外す(支払い遅延中の無料参加を防ぐ)。
+  // startMonthlySubscriptionはdefault_incompleteで作成するため、初回決済用のカードが
+  // 登録されていない場合、確定(active)までの間は"incomplete"のままになる。これを
+  // 免除対象外に含めないと、支払い方法未登録のまま一時的に月謝免除扱いになってしまう。
   // subscription_status が null(現金払い等、Subscription未作成)の場合は従来通り免除対象。
-  const LAPSED_SUBSCRIPTION_STATUSES = ["past_due", "unpaid", "canceled", "incomplete_expired"]
+  const LAPSED_SUBSCRIPTION_STATUSES = ["past_due", "unpaid", "canceled", "incomplete_expired", "incomplete"]
   const hasLapsedSubscription =
     membership?.membership_type === "monthly" &&
     !!membership.subscription_status &&

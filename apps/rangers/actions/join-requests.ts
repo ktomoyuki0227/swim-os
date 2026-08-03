@@ -163,17 +163,38 @@ export async function approveJoinRequest(
     .maybeSingle()
   if (claimError || !claimed) return { error: "この申請は既に処理されています" }
 
-  // team_members にメンバー追加
-  const { error: memberError } = await admin
+  // team_members にメンバー追加。過去に退会(status="inactive"へのソフトデリート)した
+  // 履歴がある場合、team_id+swimmer_idのunique制約により素朴なINSERTは失敗し続けるため、
+  // 既存行(inactiveのはず。requestJoinTeamがactiveなら申請自体を拒否している)を
+  // 再アクティブ化する形に倒す。
+  const { data: existingMember } = await admin
     .from("team_members")
-    .insert({
-      team_id: request.team_id,
-      swimmer_id: request.swimmer_id,
-      role: "member",
-      membership_type: request.membership_type,
-      stamp_remaining: 0,
-      status: "active",
-    })
+    .select("id")
+    .eq("team_id", request.team_id)
+    .eq("swimmer_id", request.swimmer_id)
+    .maybeSingle()
+
+  const { error: memberError } = existingMember
+    ? await admin
+      .from("team_members")
+      .update({
+        role: "member",
+        membership_type: request.membership_type,
+        stamp_remaining: 0,
+        status: "active",
+        joined_at: new Date().toISOString(),
+      })
+      .eq("id", existingMember.id)
+    : await admin
+      .from("team_members")
+      .insert({
+        team_id: request.team_id,
+        swimmer_id: request.swimmer_id,
+        role: "member",
+        membership_type: request.membership_type,
+        stamp_remaining: 0,
+        status: "active",
+      })
 
   if (memberError) {
     // メンバー追加に失敗した場合、承認済みステータスのままにすると実体のないまま

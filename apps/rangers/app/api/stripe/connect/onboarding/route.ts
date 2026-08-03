@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createClient, createAdminClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/server"
 import { getOrCreateConnectAccount, createAccountLink } from "@/lib/stripe-connect"
+import { requireApiUser, requireRedirectUser } from "@/lib/auth/require-api-user"
 
 export const dynamic = "force-dynamic"
 
@@ -17,9 +18,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Stripe is not configured" }, { status: 503 })
   }
 
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  const { user, response } = await requireApiUser()
+  if (response) return response
 
   let teamId: string
   try {
@@ -80,9 +80,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(new URL(`/teams/${teamId}?connectError=true`, req.url))
   }
 
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.redirect(new URL("/login", req.url))
+  const { user, response } = await requireRedirectUser(new URL("/login", req.url))
+  if (response) return response
 
   const admin = createAdminClient()
 

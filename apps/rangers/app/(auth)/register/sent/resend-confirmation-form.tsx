@@ -17,11 +17,15 @@ export function ResendConfirmationForm({ email, next }: ResendConfirmationFormPr
   const [cooldown, setCooldown] = useState(0)
 
   // requestId は送信のたびに変わるため、2回目以降の成功でもクールダウンを確実に再起動できる
-  // （state.success は一度 true になった後は true のまま変化しないため依存値にできない）
-  useEffect(() => {
-    if (state.requestId === 0 || !state.success) return
+  // （state.success は一度 true になった後は true のまま変化しないため依存値にできない）。
+  // useEffect内でのsetStateはカスケードレンダーを招くため、Reactが推奨する
+  // 「レンダー中に前回値と比較して派生stateを調整する」パターンで実装する
+  // (https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes)。
+  const [lastHandledRequestId, setLastHandledRequestId] = useState(0)
+  if (state.success && state.requestId !== 0 && state.requestId !== lastHandledRequestId) {
+    setLastHandledRequestId(state.requestId)
     setCooldown(COOLDOWN_SECONDS)
-  }, [state.requestId, state.success])
+  }
 
   useEffect(() => {
     if (cooldown <= 0) return

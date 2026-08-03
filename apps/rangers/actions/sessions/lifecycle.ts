@@ -3,7 +3,7 @@
 import { createClient, createAdminClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
-import { getPlatformFeePercent, hasStripeConnect } from "@/lib/stripe-connect"
+import { getPlatformFeePercent, hasStripeConnect, hasBrokenStripeConnect } from "@/lib/stripe-connect"
 import { isTeamAdmin } from "@/lib/auth/require-team-admin"
 import { mapWithConcurrency } from "@/lib/utils"
 import { formatSessionDateJa } from "@/lib/format-date"
@@ -148,6 +148,26 @@ export async function confirmSession(sessionId: string) {
           link: "/payments",
         })
         paymentErrors.push(`${reg.id}: stripe not configured`)
+        return
+      }
+      if (hasBrokenStripeConnect(connectTeam)) {
+        // Connectアカウントは作成済みだが現在オンボーディング未完了(無効化・審査保留等)。
+        // ここでtransfer_dataなしのまま決済すると全額がプラットフォーム残高に入り、
+        // コーチへの送金が行われないまま気づかれにくい誤課金になるため、決済自体をブロックする
+        // (account.updatedハンドラで管理者には別途通知済みだが、個別の決済もfailedにして
+        // retryPaymentで復旧可能にする)
+        await confirmAdmin
+          .from("session_registrations")
+          .update({ payment_status: "failed" })
+          .eq("id", reg.id)
+        await notifyUser(reg.swimmer_id, {
+          type: "payment_failed",
+          title: `「${session.title}」の参加費決済に失敗しました`,
+          body: "運営者の決済アカウント連携に問題が発生しているため、決済を保留しています。運営にお問い合わせください",
+          team_id: session.team_id,
+          link: "/payments",
+        })
+        paymentErrors.push(`${reg.id}: broken stripe connect account`)
         return
       }
       const { data: swimmer } = await confirmAdmin

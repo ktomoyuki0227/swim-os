@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto"
 import Stripe from "stripe"
 import { stripe } from "@/lib/stripe"
 import { calculateFees } from "@/lib/stripe-connect"
@@ -38,7 +39,12 @@ export async function chargeSessionRegistrationStripe(
 
   const connectFees = connectAccountId ? calculateFees(amount, feePercent) : null
 
-  // Step 1: PI作成（confirm前）— 課金はまだ発生しない
+  // Step 1: PI作成（confirm前）— 課金はまだ発生しない。
+  // Idempotency Keyは呼び出し1回ごとに新規生成する（registrationId等の固定値にすると、
+  // 24時間以内の正当な再試行(retryPayment)がStripe側にキャッシュされた古いレスポンスを
+  // 返してしまい新規PIが作られなくなる）。ここでの目的はSDKの自動ネットワークリトライで
+  // 同一呼び出しが二重にPIを作成しないようにする防御であり、呼び出し単位で閉じていればよい。
+  const createIdempotencyKey = randomUUID()
   const pi = await stripe.paymentIntents.create({
     amount,
     currency: "jpy",
@@ -50,7 +56,7 @@ export async function chargeSessionRegistrationStripe(
       application_fee_amount: connectFees.platformFee,
       transfer_data: { destination: connectAccountId },
     } : {}),
-  }).catch(() => null)
+  }, { idempotencyKey: createIdempotencyKey }).catch(() => null)
 
   if (!pi) {
     await admin.from("session_registrations").update({ payment_status: "failed" }).eq("id", registrationId)

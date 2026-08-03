@@ -106,3 +106,17 @@ export function hasStripeConnect(
 ): boolean {
   return !!(team?.stripe_account_id && team?.stripe_onboarding_completed)
 }
+
+/**
+ * チームが過去にConnectアカウントを作成した(stripe_account_idがある)にもかかわらず、
+ * 現在オンボーディングが完了していない状態かどうかを判定する。この状態のまま決済すると
+ * transfer_dataなしで全額がプラットフォーム残高に入り、コーチへの送金が行われないまま
+ * 気づかれにくい「誤課金」になるため、hasStripeConnectとは別に検知し、呼び出し元で
+ * 決済をブロックする判断に使う。stripe_account_id自体が無い(Connectを一度も使っていない)
+ * チームは対象外（現金/カード決済のみで運用する正常な構成のため）。
+ */
+export function hasBrokenStripeConnect(
+  team: { stripe_account_id: string | null; stripe_onboarding_completed: boolean | null } | null | undefined
+): boolean {
+  return !!(team?.stripe_account_id && !team?.stripe_onboarding_completed)
+}

@@ -23,13 +23,16 @@ export async function exportSessionRegistrations(sessionId: string) {
   // admin権限チェック
   if (!(await isTeamAdmin(exportAdmin, session.team_id, user.id))) return { error: "権限がありません" }
 
-  // adminClientで全参加者を取得（user clientはRLSで自分の登録しか見えない）
+  // adminClientで全参加者を取得（user clientはRLSで自分の登録しか見えない）。
+  // max_participantsが未設定(無制限)のセッションもあるため、他の一覧クエリ
+  // (getTeamMembers等)と同様にデータ増加に伴う無制限クエリを防ぐ安全上限を設ける
   const { data: registrations } = await exportAdmin
     .from("session_registrations")
     .select("*, swimmer:profiles(id, name, avatar_url)")
     .eq("session_id", sessionId)
     .is("cancelled_at", null)
     .order("registered_at", { ascending: true })
+    .limit(1000)
 
   if (!registrations) return { error: "参加者情報の取得に失敗しました" }
 
@@ -154,12 +157,14 @@ export async function getSessionRegistrations(sessionId: string) {
 
   if (!(await isTeamAdmin(regAdmin, session.team_id, user.id))) return { error: "権限がありません", data: [], count: 0 }
 
-  // adminClientで全参加者を取得（user clientはRLSで自分の登録しか見えない）
+  // adminClientで全参加者を取得（user clientはRLSで自分の登録しか見えない）。
+  // exportSessionRegistrationsと同様、無制限クエリを防ぐ安全上限を設ける
   const { data, error } = await regAdmin
     .from("session_registrations")
     .select("*, swimmer:profiles(id, name, avatar_url)")
     .eq("session_id", sessionId)
     .order("registered_at", { ascending: true })
+    .limit(1000)
 
   if (error) return { data: [], count: 0 }
   const activeCount = data?.filter((r) => !r.cancelled_at).length || 0

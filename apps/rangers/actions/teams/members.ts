@@ -74,26 +74,47 @@ export async function joinTeamByCode(
 
   if (teamError || !team) return { error: "無効な招待コードです" }
 
-  // 既にメンバーか確認
+  // 既にメンバーか確認（removeMemberはソフトデリート(status="inactive")のため、
+  // 過去に退会した行が残っている場合がある。statusを見ずに存在チェックすると
+  // 退会済みユーザーが二度と参加できなくなるため、activeな行のみを対象にする）
   const { data: existing } = await supabase
     .from("team_members")
-    .select("id")
+    .select("id, status")
     .eq("team_id", team.id)
     .eq("swimmer_id", user.id)
-    .single()
+    .maybeSingle()
 
-  if (existing) return { error: "既にこのグループに参加しています" }
+  if (existing?.status === "active") return { error: "既にこのグループに参加しています" }
 
-  // メンバーとして追加
-  const { error: joinError } = await supabase.from("team_members").insert({
-    team_id: team.id,
-    swimmer_id: user.id,
-    role: "member",
-    membership_type: membershipType,
-    stamp_remaining: 0,
-  })
+  if (existing) {
+    // 退会済み(inactive)の行を再アクティブ化する。team_members_update ポリシーは
+    // admin限定のUPDATEしか許可しないため、通常クライアントでの自己UPDATEは通らない。
+    // 招待コードの正当性は直前のteams検索(adminClient)で確認済みのため、adminClientで
+    // 再アクティブ化してよい。
+    const { error: reactivateError } = await admin
+      .from("team_members")
+      .update({
+        status: "active",
+        role: "member",
+        membership_type: membershipType,
+        stamp_remaining: 0,
+        joined_at: new Date().toISOString(),
+      })
+      .eq("id", existing.id)
 
-  if (joinError) return { error: "グループへの参加に失敗しました" }
+    if (reactivateError) return { error: "グループへの再参加に失敗しました" }
+  } else {
+    // メンバーとして追加
+    const { error: joinError } = await supabase.from("team_members").insert({
+      team_id: team.id,
+      swimmer_id: user.id,
+      role: "member",
+      membership_type: membershipType,
+      stamp_remaining: 0,
+    })
+
+    if (joinError) return { error: "グループへの参加に失敗しました" }
+  }
 
   // 年会費会員なら年会費レコードを自動生成
   // fees_insert_admin ポリシーは管理者のみ許可のため、参加した本人（非管理者）による

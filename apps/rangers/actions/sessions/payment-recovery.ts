@@ -4,7 +4,7 @@ import { createClient, createAdminClient } from "@/lib/supabase/server"
 import { stripe } from "@/lib/stripe"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
-import { getPlatformFeePercent, hasStripeConnect } from "@/lib/stripe-connect"
+import { getPlatformFeePercent, hasStripeConnect, hasBrokenStripeConnect } from "@/lib/stripe-connect"
 import { isTeamAdmin } from "@/lib/auth/require-team-admin"
 import { notifyUser } from "@/lib/notifications"
 import { chargeSessionRegistrationStripe } from "@/lib/stripe-payment-helpers"
@@ -101,6 +101,13 @@ export async function retryPayment(registrationId: string) {
       .select("stripe_account_id, stripe_onboarding_completed")
       .eq("id", retrySession.team_id)
       .single()
+
+    if (hasBrokenStripeConnect(retryTeam)) {
+      // confirmSessionと同様、Connectアカウントが壊れた状態での送金なし決済を防ぐ
+      await retryAdmin.from("session_registrations").update({ payment_status: "failed" }).eq("id", registrationId)
+      return { error: "運営者の決済アカウント連携に問題が発生しているため、再決済できません" }
+    }
+
     const retryHasConnect = hasStripeConnect(retryTeam)
     const retryFeePercent = retryHasConnect ? await getPlatformFeePercent() : 0
 
