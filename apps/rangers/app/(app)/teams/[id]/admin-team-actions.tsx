@@ -4,14 +4,12 @@ import { useState } from "react"
 import { createPortal } from "react-dom"
 import Link from "next/link"
 import { AlertTriangle } from "lucide-react"
-import { MemberList } from "./member-list"
 import { JoinRequestsTab } from "./join-requests-tab"
 import { useMounted } from "@/hooks/use-mounted"
 import { useScrollLock } from "@/hooks/use-scroll-lock"
 import { useEscapeToClose } from "@/hooks/use-escape-to-close"
-import type { TeamMemberWithProfile } from "@/types/database"
 
-type SheetType = "members" | "requests" | null
+type SheetType = "requests" | null
 
 interface JoinRequest {
   id: string
@@ -30,25 +28,13 @@ interface FeeStats {
 
 interface Props {
   teamId: string
-  members: TeamMemberWithProfile[]
-  currentUserId: string
   joinRequests: JoinRequest[]
-  hasAnnualFee: boolean
-  hasMonthlyFee: boolean
-  hasPointCard: boolean
-  pointCardCount: number
   feeStats: FeeStats | null
 }
 
 export function AdminTeamActions({
   teamId,
-  members,
-  currentUserId,
   joinRequests,
-  hasAnnualFee,
-  hasMonthlyFee,
-  hasPointCard,
-  pointCardCount,
   feeStats,
 }: Props) {
   const [openSheet, setOpenSheet] = useState<SheetType>(null)
@@ -60,7 +46,6 @@ export function AdminTeamActions({
   useScrollLock(!!openSheet)
 
   const sheetTitles: Record<string, string> = {
-    members: `メンバー/会費 (${members.length})`,
     requests: `申請 (${joinRequests.length})`,
   }
 
@@ -84,9 +69,9 @@ export function AdminTeamActions({
           <span className="text-[11px] font-medium leading-tight">セッション作成</span>
         </Link>
 
-        {/* メンバー/会費 */}
-        <button
-          onClick={() => setOpenSheet("members")}
+        {/* メンバー/会費（会員一覧・会費管理ページへ遷移） */}
+        <Link
+          href={`/fees?team=${teamId}`}
           className="relative flex flex-col items-center justify-center gap-1 rounded-[14px] border border-[#dce3ea] bg-white px-2 py-2.5 text-[#1a2332] transition-colors hover:border-[#005F8C] hover:bg-[#f2f7fa]"
           style={{ minHeight: 56 }}
         >
@@ -103,7 +88,7 @@ export function AdminTeamActions({
               {unpaidCount}
             </span>
           )}
-        </button>
+        </Link>
 
         {/* 申請 */}
         <button
@@ -155,18 +140,6 @@ export function AdminTeamActions({
 
             {/* コンテンツ */}
             <div className="flex-1 overflow-y-auto overscroll-contain p-4">
-              {openSheet === "members" && (
-                <MemberList
-                  teamId={teamId}
-                  members={members}
-                  currentUserId={currentUserId}
-                  hasAnnualFee={hasAnnualFee}
-                  hasMonthlyFee={hasMonthlyFee}
-                  hasPointCard={hasPointCard}
-                  pointCardCount={pointCardCount}
-                  unpaidSwimmerIds={feeStats?.unpaidSwimmerIds ?? []}
-                />
-              )}
               {openSheet === "requests" && (
                 <JoinRequestsTab initialRequests={joinRequests} />
               )}

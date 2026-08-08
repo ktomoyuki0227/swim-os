@@ -3,6 +3,15 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 
+// 招待URL全体(https://.../teams/join/{uuid})を貼り付けた場合でも、
+// UUID部分だけを抽出して参加できるようにする。招待コードはコピー元の
+// InviteButton がURL全体をコピー体験として提供しているため、
+// ユーザーはコードそのものよりURLを貼り付けがちなことを想定している
+function extractInviteCode(input: string): string {
+  const match = input.match(/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i)
+  return match ? match[1] : input.trim()
+}
+
 export function InviteCodeInput() {
   const [open, setOpen] = useState(false)
   const [code, setCode] = useState("")
@@ -10,7 +19,7 @@ export function InviteCodeInput() {
 
   function handleJoin(e: React.FormEvent) {
     e.preventDefault()
-    const trimmed = code.trim()
+    const trimmed = extractInviteCode(code)
     if (trimmed) router.push(`/teams/join/${trimmed}`)
   }
 
@@ -36,7 +45,7 @@ export function InviteCodeInput() {
         type="text"
         value={code}
         onChange={(e) => setCode(e.target.value)}
-        placeholder="招待コードを入力..."
+        placeholder="招待コードまたはURLを入力..."
         className="flex-1 rounded-xl border border-[#005F8C] bg-white px-4 py-2.5 text-sm text-[#1a2332] focus:outline-none focus:ring-2 focus:ring-[#005F8C]/30"
       />
       <button

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import Image from "next/image"
 import { Skeleton } from "@/components/ui/skeleton"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 
 interface AvatarSectionProps {
   isLoading: boolean
@@ -28,6 +29,7 @@ export function AvatarSection({
   onDelete,
 }: AvatarSectionProps) {
   const [avatarMenuOpen, setAvatarMenuOpen] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const avatarMenuRef = useRef<HTMLDivElement>(null)
   const libraryInputRef = useRef<HTMLInputElement>(null)
   const cameraInputRef = useRef<HTMLInputElement>(null)
@@ -149,7 +151,7 @@ export function AvatarSection({
                   <button
                     type="button"
                     className="flex w-full items-center gap-3 px-4 min-h-[44px] text-sm text-[#c0392b] hover:bg-[#fdecea] transition-colors"
-                    onClick={() => { setAvatarMenuOpen(false); onDelete() }}
+                    onClick={() => { setAvatarMenuOpen(false); setShowDeleteConfirm(true) }}
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <polyline points="3 6 5 6 21 6"/>
@@ -165,6 +167,27 @@ export function AvatarSection({
           )}
         </div>
       </div>
+
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        title="プロフィール写真を削除しますか？"
+        description="プロフィール写真は本人確認のため必須です。削除すると再度アップロードが必要になります。"
+        confirmLabel="削除する"
+        cancelLabel="キャンセル"
+        variant="danger"
+        onConfirm={() => { setShowDeleteConfirm(false); onDelete() }}
+        onCancel={() => setShowDeleteConfirm(false)}
+      />
+
+      {/* 本人確認の注釈・アップロード形式・サイズのヒント（選択前から常時表示） */}
+      {!isLoading && (
+        <div className="space-y-1">
+          <p className="text-center text-xs font-medium text-[#c0392b]">
+            本人確認のため、必ずご本人の顔がわかる写真をアップロードしてください
+          </p>
+          <p className="text-center text-xs text-[#64748b]">JPEG・PNG・WebP形式・2MB以下の画像をアップロードできます</p>
+        </div>
+      )}
 
       {/* 完成度 */}
       {!isLoading && (

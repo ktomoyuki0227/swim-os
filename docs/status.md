@@ -1,5 +1,48 @@
 # 作業ステータス
-最終更新: 2026-07-30（Rangers 7回目全体レビュー実施、指摘9件すべて修正・ビルド確認済み）
+最終更新: 2026-08-07（開発依頼元からのフィードバック6件対応・実装完了、DB migration適用は未実施）
+
+---
+
+## 完了 ✅: 開発依頼元フィードバック6件対応（2026-08-07）
+
+現行ビルドを開発依頼元の関係者に共有した際に受けたフィードバック（検索フィルター・招待の分かりやすさ・写真アップロード・本人確認・現金払い管理・セッション定員表示）について、プランモードで調査→設計→実装→レビューまで実施。
+
+### 経緯・調査結果
+- 検索フィルター（活動拠点・コーチの性別）は直近コミット（`9aea92d`/`ecab7b8`）で**既に実装済み**と判明 → 対応不要と確認済み
+- 本人確認機能は未実装。プロフィール写真は8/4に意図的に任意化した経緯があり、今回の「必須化」要望と矛盾する可能性があったため、依頼者（ともくん）に確認 → 「アバターを再必須化・既存ユーザーは強制ブロックせず警告バナーで促す」で合意
+- 決済管理（現金払い・membership_fees・stamp_purchases）は基盤がほぼ実装済みで、「月次一覧画面」「現金ステータス変更のUI接続」のみ不足と判明
+
+### 実装内容
+1. **写真アップロードの事前ヒント表示**: `avatar-section.tsx`・`swimmer-profile-step.tsx`にサイズ・形式ヒントを選択前から常時表示（チーム画像は元々あったが、アバターだけ超過して初めて気づく設計だった非対称性を解消）
+2. **セッション定員表示トグル**（`teams.show_participant_count`、`show_member_count`と同型パターン）
+   - migration: `supabase/migrations/00073_add_show_participant_count.sql`（**未適用・要ともくん確認**）
+   - `types/database.ts`・`types/database-generated.ts`・`lib/validations.ts`に反映
+   - `app/(app)/teams/[id]/edit/basic-info-fields.tsx`・`edit-team-form.tsx`にトグルUI追加
+   - `app/(app)/teams/[id]/sessions/[sid]/page.tsx`（スイマー申込画面）で「現在の参加者数」表示のみ条件分岐（定員は常に表示）。`actions/sessions/crud.ts`の`getSession()`非メンバー公開分岐にも反映
+3. **招待フローの分かりやすさ改善**（UI説明文の追加のみ、仕様変更なし）
+   - `invite-button.tsx`・`(public)/teams/join/[inviteCode]/page.tsx`・`public-team-view.tsx`・`teams/[id]/join/page.tsx`に承認有無の説明文を追加
+   - `invite-code-input.tsx`: 招待URL全体を貼り付けてもコード部分を自動抽出する`extractInviteCode()`を追加
+   - `regenerateInviteCode`アクションは実装済みだが呼び出すUIがどこにも存在しないことを確認（対応対象外・既存の未接続コード）
+4. **決済管理**: 月次一覧マトリクス + 現金払いステータス変更UI接続
+   - 新規: `app/(app)/fees/fee-status-toggle.tsx`（`cash-collection.tsx`のCashRowパターンを汎用化した共通コンポーネント）
+   - 新規: `app/(app)/fees/monthly-matrix.tsx`（月謝タブに「年間支払い状況」として統合、会員×1〜12月マトリクス、年切替UI付き）
+   - 新規: `app/(app)/fees/fee-list.tsx`（既存の静的Badge表示をFeeStatusToggleに置換）
+   - 新規: `app/(app)/fees/stamp-purchase-status.tsx`（回数券購入記録の訂正用トグル、`stamp_remaining`の自動増減は対象外と明記）
+   - `actions/fees.ts`に`getMonthlyFeeMatrix()`追加、`actions/stamps.ts`に`updateStampPurchaseStatus()`追加
+5. **本人確認**: プロフィール写真（アバター）の再必須化
+   - `swimmer-profile-step.tsx`・`onboarding/page.tsx`（`step1Valid`にavatarFile必須化）
+   - `avatar-section.tsx`: 削除時に「本人確認のため必須」と警告するConfirmDialogを追加
+   - 新規: `components/avatar-warning-banner.tsx` → `app/(app)/layout.tsx`で`avatar_url`未設定の既存ユーザーに警告バナー表示（強制ブロックなし）
+
+### レビュー・検証
+- `/dev-review`スキルで自己レビュー実施。HIGH1件（MonthlyFeeMatrixが`router.refresh()`だけでは自前のクライアント側stateが更新されず、支払い状況変更が画面に反映されない不具合）を発見しその場で修正（`refetch()`を明示的に呼ぶよう変更）
+- MEDIUM: オンボーディング完了時のサーバー側アバター検証は未実装（クライアント側チェックのみ）だが、方針上「強制ブロックしない」ため許容範囲と判断
+- `tsc --noEmit`・`eslint`ともにクリーン確認済み
+
+### 未実施・次にやること
+- **`supabase/migrations/00073_add_show_participant_count.sql`の本番DB適用**（`teams.show_participant_count`カラム追加）が未実施。外部システムへの変更のため、ともくんの確認を取ってから`mcp__supabase__apply_migration`または`supabase db push`で適用する
+- commit・push はまだ（ともくんの確認後）
+- MEDIUM/LOW指摘（オンボーディングのサーバー側バリデーション追加、stamp-section.tsxの購入履歴行レイアウト微調整）は任意対応としてバックログ
 
 ---
 

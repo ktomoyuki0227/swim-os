@@ -75,6 +75,10 @@ export default async function TeamJoinPage({ params }: PageProps) {
         )}
       </div>
 
+      <p className="mb-4 rounded-[10px] bg-[#f2f7fa] px-3 py-2 text-xs text-[#475569]">
+        この参加方法は承認不要で、すぐにグループに加わります
+      </p>
+
       {user ? (
         /* ログイン済み：参加フォーム */
         <JoinForm

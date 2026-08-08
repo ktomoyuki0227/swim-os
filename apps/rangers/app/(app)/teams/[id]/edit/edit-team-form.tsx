@@ -23,6 +23,7 @@ interface Team {
   cover_image_url: string | null
   is_recruiting: boolean
   show_member_count: boolean
+  show_participant_count: boolean
   status: string | null
   activity_area: string | null
   practice_frequency: string | null
@@ -70,6 +71,7 @@ export function EditTeamForm({ team, stripeEnabled, connectStatus }: EditTeamFor
 
   const [isRecruiting, setIsRecruiting] = useState(team.is_recruiting)
   const [showMemberCount, setShowMemberCount] = useState(team.show_member_count)
+  const [showParticipantCount, setShowParticipantCount] = useState(team.show_participant_count)
   const [isActive, setIsActive] = useState((team.status ?? "active") === "active")
   const [practiceDays, setPracticeDays] = useState<string[]>(team.practice_days ?? [])
   const [targetAges, setTargetAges] = useState<string[]>(team.target_ages ?? [])
@@ -198,6 +200,7 @@ export function EditTeamForm({ team, stripeEnabled, connectStatus }: EditTeamFor
           main_pool: (data.get("main_pool") as string) || null,
           is_recruiting: isRecruiting,
           show_member_count: showMemberCount,
+          show_participant_count: showParticipantCount,
           status: isActive ? "active" : "inactive",
           has_session_fee: feeForm.hasSessionFee,
           has_annual_fee: feeForm.hasAnnualFee,
@@ -265,6 +268,8 @@ export function EditTeamForm({ team, stripeEnabled, connectStatus }: EditTeamFor
           onIsRecruitingChange={setIsRecruiting}
           showMemberCount={showMemberCount}
           onShowMemberCountChange={setShowMemberCount}
+          showParticipantCount={showParticipantCount}
+          onShowParticipantCountChange={setShowParticipantCount}
           targetAges={targetAges}
           onTargetAgesChange={setTargetAges}
         />

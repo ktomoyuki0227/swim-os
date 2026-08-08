@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { AppShell } from "@/components/app-shell"
+import { AvatarWarningBanner } from "@/components/avatar-warning-banner"
 import { PageTransition } from "@/components/page-transition"
 import { getUnreadNotificationCount } from "@/actions/notifications"
 import { getOrCreateStripeCustomer } from "@/lib/stripe-helpers"
@@ -49,6 +50,7 @@ export default async function AppLayout({
 
   return (
     <AppShell userName={profile.name} avatarUrl={profile.avatar_url} unreadCount={unreadResult.count} showNavigationProgress>
+      {!profile.avatar_url && <AvatarWarningBanner />}
       <PageTransition>{children}</PageTransition>
     </AppShell>
   )

@@ -5,7 +5,6 @@ import Image from "next/image"
 import { notFound, redirect } from "next/navigation"
 import { createClient, createAdminClient } from "@/lib/supabase/server"
 import { getTeam, getTeamMembers, getTeamFeeStats, getPublicTeam } from "@/actions/teams"
-import type { TeamMemberWithProfile } from "@/types/database"
 import { getTeamSessions } from "@/actions/sessions"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -208,13 +207,7 @@ export default async function TeamPage({ params }: TeamPageProps) {
             {/* ── アクションボタン + ウィザード ── */}
             <AdminTeamActions
               teamId={id}
-              members={members as unknown as TeamMemberWithProfile[]}
-              currentUserId={user.id}
               joinRequests={joinRequests}
-              hasAnnualFee={team.has_annual_fee ?? false}
-              hasMonthlyFee={team.has_monthly_fee ?? false}
-              hasPointCard={team.has_point_card ?? false}
-              pointCardCount={team.point_card_count ?? 0}
               feeStats={feeStats}
             />
 

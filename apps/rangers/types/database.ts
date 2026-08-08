@@ -286,6 +286,7 @@ export interface Team {
   cover_image_url: string | null
   is_recruiting: boolean
   show_member_count: boolean
+  show_participant_count: boolean
   activity_area: string | null
   bio: string | null
   career: string | null

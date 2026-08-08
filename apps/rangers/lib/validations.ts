@@ -69,6 +69,7 @@ export const teamSchema = z.object({
   avatar_url: httpUrl().optional(),
   is_recruiting: z.boolean().default(true),
   show_member_count: z.boolean().default(true),
+  show_participant_count: z.boolean().default(true),
   activity_area: z.string().max(100).optional(),
   practice_frequency: z.string()
     .refine((v) => (PRACTICE_FREQUENCIES as readonly string[]).includes(v), "無効な練習頻度です")
@@ -146,6 +147,7 @@ export const teamUpdateSchema = z.object({
   cover_image_url: httpUrl().optional(),
   is_recruiting: z.boolean().optional(),
   show_member_count: z.boolean().optional(),
+  show_participant_count: z.boolean().optional(),
   activity_area: z.string().max(100).optional(),
   practice_frequency: z.string()
     .refine((v) => (PRACTICE_FREQUENCIES as readonly string[]).includes(v), "無効な練習頻度です")

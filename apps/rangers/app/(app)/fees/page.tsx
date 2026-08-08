@@ -1,19 +1,22 @@
 export const dynamic = "force-dynamic"
 
 import Link from "next/link"
-import { redirect } from "next/navigation"
+import { notFound, redirect } from "next/navigation"
 import { createClient, createAdminClient } from "@/lib/supabase/server"
-import { getMyTeams } from "@/actions/teams"
+import { getTeam, getTeamMembers, getTeamFeeStats } from "@/actions/teams"
 import { getTeamFees } from "@/actions/fees"
 import { getStampMembers } from "@/actions/stamps"
 import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { BackLink } from "@/components/back-link"
 import { FeeActions } from "./fee-actions"
 import { FeeFilters } from "./fee-filters"
+import { FeeList } from "./fee-list"
+import { MemberList } from "@/app/(app)/teams/[id]/member-list"
+import { MonthlyFeeMatrix } from "./monthly-matrix"
 import { StampSection } from "./stamp-section"
 import { SubscriptionSection } from "./subscription-section"
-import type { SubscriptionStatus } from "@/types/database"
+import type { SubscriptionStatus, TeamMemberWithProfile } from "@/types/database"
 
 interface FeesPageProps {
   searchParams: Promise<{ team?: string; type?: string; period?: string }>
@@ -25,12 +28,27 @@ export default async function FeesPage({ searchParams }: FeesPageProps) {
   if (!user) redirect("/login")
 
   const params = await searchParams
-  const { data: teams } = await getMyTeams()
-  const adminTeams = ((teams || []) as Record<string, unknown>[]).filter((t) => t.my_role === "admin")
-  const adminTeamIds = new Set(adminTeams.map((t) => t.id as string))
+  // このページはチーム詳細ページの「メンバー/会費」から遷移してくる前提のため、
+  // team は必須。直打ちで欠けている場合はグループ一覧へ戻す
+  const teamId = params.team
+  if (!teamId) redirect("/teams")
 
-  const selectedTeamId =
-    (params.team && adminTeamIds.has(params.team) ? params.team : (adminTeams[0]?.id as string)) || ""
+  // 管理者権限チェック（team_members は RLS バイパスが必要）
+  const admin = createAdminClient()
+  const { data: membership } = await admin
+    .from("team_members")
+    .select("role")
+    .eq("team_id", teamId)
+    .eq("swimmer_id", user.id)
+    .eq("status", "active")
+    .maybeSingle()
+
+  if (membership?.role !== "admin") notFound()
+
+  const teamResult = await getTeam(teamId)
+  if (teamResult.error || !teamResult.data) notFound()
+  const team = teamResult.data
+
   const selectedType = (params.type as "annual" | "monthly" | "stamp_card") || "annual"
   const now = new Date()
   const defaultPeriod =
@@ -39,22 +57,11 @@ export default async function FeesPage({ searchParams }: FeesPageProps) {
       : `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`
   const selectedPeriod = params.period || defaultPeriod
 
-  // 選択中グループの料金体系フラグを取得
-  const admin = createAdminClient()
-  const teamFeeFlags = { has_annual_fee: false, has_monthly_fee: false, has_point_card: false }
-  if (selectedTeamId) {
-    const { data: flagData } = await admin
-      .from("teams")
-      .select("has_annual_fee, has_monthly_fee, has_point_card")
-      .eq("id", selectedTeamId)
-      .single()
-    if (flagData) {
-      teamFeeFlags.has_annual_fee = flagData.has_annual_fee ?? false
-      teamFeeFlags.has_monthly_fee = flagData.has_monthly_fee ?? false
-      teamFeeFlags.has_point_card = flagData.has_point_card ?? false
-    }
+  const teamFeeFlags = {
+    has_annual_fee: team.has_annual_fee ?? false,
+    has_monthly_fee: team.has_monthly_fee ?? false,
+    has_point_card: team.has_point_card ?? false,
   }
-
   const hasAnyFeeType =
     teamFeeFlags.has_annual_fee || teamFeeFlags.has_monthly_fee || teamFeeFlags.has_point_card
 
@@ -78,59 +85,83 @@ export default async function FeesPage({ searchParams }: FeesPageProps) {
           ? `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`
           : ""
       const periodParam = period ? `&period=${period}` : ""
-      redirect(`/fees?team=${selectedTeamId}&type=${firstValidType}${periodParam}`)
+      redirect(`/fees?team=${teamId}&type=${firstValidType}${periodParam}`)
     }
   }
 
+  // 会員一覧（全メンバー・詳細/編集/削除）: 会費種別タブに関わらず常に表示
+  const [membersResult, feeStatsResult] = await Promise.all([
+    getTeamMembers(teamId),
+    getTeamFeeStats(teamId),
+  ])
+  const members = membersResult.data || []
+  const feeStats = feeStatsResult.data ?? null
+
+  const memberListSection = (
+    <div className="space-y-3">
+      <h2 className="text-base font-semibold text-[#1a2332]">会員一覧</h2>
+      <MemberList
+        teamId={teamId}
+        members={members as unknown as TeamMemberWithProfile[]}
+        currentUserId={user.id}
+        hasAnnualFee={teamFeeFlags.has_annual_fee}
+        hasMonthlyFee={teamFeeFlags.has_monthly_fee}
+        hasPointCard={teamFeeFlags.has_point_card}
+        pointCardCount={team.point_card_count ?? 0}
+        unpaidSwimmerIds={feeStats?.unpaidSwimmerIds ?? []}
+      />
+    </div>
+  )
+
+  const header = (
+    <div className="flex items-center gap-3">
+      <BackLink
+        href={`/teams/${teamId}`}
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#dce3ea] bg-white transition-colors hover:bg-[#f2f7fa]"
+        aria-label="戻る"
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1a2332" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="15 18 9 12 15 6" />
+        </svg>
+      </BackLink>
+      <div>
+        <h1 className="text-lg font-semibold text-[#1a2332]">会費管理</h1>
+        <p className="text-xs text-[#64748b]">{team.name}</p>
+      </div>
+    </div>
+  )
+
   // 回数券タブ
   if (selectedType === "stamp_card") {
-    const { data: teamInfo } = await admin
-      .from("teams")
-      .select("point_card_count, point_card_price")
-      .eq("id", selectedTeamId)
-      .single()
-
-    const { data: stampMembers } = await getStampMembers(selectedTeamId)
+    const { data: stampMembers } = await getStampMembers(teamId)
 
     return (
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-lg font-semibold text-[#1a2332]">会費管理</h1>
-        </div>
+        {header}
+        {memberListSection}
 
-        {adminTeams.length === 0 ? (
-          <Card className="border-[#dce3ea]">
-            <CardContent className="py-10 text-center text-sm text-[#475569]">
-              グループを作成してください
-            </CardContent>
-          </Card>
+        <Card className="border-[#dce3ea]">
+          <FeeFilters
+            selectedTeamId={teamId}
+            selectedType={selectedType}
+            selectedPeriod={selectedPeriod}
+            teamFeeFlags={teamFeeFlags}
+          />
+        </Card>
+
+        {!teamFeeFlags.has_point_card ? (
+          <NoFeeTypeMessage teamId={teamId} />
         ) : (
-          <>
-            <Card className="border-[#dce3ea]">
-              <FeeFilters
-                teams={adminTeams.map((t) => ({ id: t.id as string, name: t.name as string }))}
-                selectedTeamId={selectedTeamId}
-                selectedType={selectedType}
-                selectedPeriod={selectedPeriod}
-                teamFeeFlags={teamFeeFlags}
-              />
-            </Card>
-
-            {!teamFeeFlags.has_point_card ? (
-              <NoFeeTypeMessage teamId={selectedTeamId} />
-            ) : (
-              <div className="space-y-3">
-                <h2 className="text-base font-semibold text-[#1a2332]">
-                  回数券会員 ({(stampMembers || []).length}名)
-                </h2>
-                <StampSection
-                  teamId={selectedTeamId}
-                  pointCardCount={teamInfo?.point_card_count ?? 10}
-                  members={stampMembers || []}
-                />
-              </div>
-            )}
-          </>
+          <div className="space-y-3">
+            <h2 className="text-base font-semibold text-[#1a2332]">
+              回数券会員 ({(stampMembers || []).length}名)
+            </h2>
+            <StampSection
+              teamId={teamId}
+              pointCardCount={team.point_card_count ?? 10}
+              members={stampMembers || []}
+            />
+          </div>
         )}
       </div>
     )
@@ -145,15 +176,15 @@ export default async function FeesPage({ searchParams }: FeesPageProps) {
     swimmer: { name: string | null } | null
   }
   let monthlyMembers: MonthlyMember[] = []
-  if (selectedTeamId && selectedType === "monthly" && teamFeeFlags.has_monthly_fee && stripeEnabled) {
-    const { data: members } = await admin
+  if (selectedType === "monthly" && teamFeeFlags.has_monthly_fee && stripeEnabled) {
+    const { data: subscriptionMembers } = await admin
       .from("team_members")
       .select("swimmer_id, stripe_subscription_id, subscription_status, swimmer:profiles(name)")
-      .eq("team_id", selectedTeamId)
+      .eq("team_id", teamId)
       .eq("status", "active")
       .eq("membership_type", "monthly")
     // Supabase joins return the related row as an array; normalize to single object
-    monthlyMembers = (members || []).map((m) => ({
+    monthlyMembers = (subscriptionMembers || []).map((m) => ({
       swimmer_id: m.swimmer_id,
       stripe_subscription_id: m.stripe_subscription_id ?? null,
       subscription_status: (m.subscription_status ?? null) as SubscriptionStatus | null,
@@ -163,8 +194,8 @@ export default async function FeesPage({ searchParams }: FeesPageProps) {
 
   // 年会費・月謝タブ
   let fees: Record<string, unknown>[] = []
-  if (selectedTeamId && hasAnyFeeType) {
-    const result = await getTeamFees(selectedTeamId, selectedType, selectedPeriod)
+  if (hasAnyFeeType) {
+    const result = await getTeamFees(teamId, selectedType, selectedPeriod)
     fees = (result.data || []) as Record<string, unknown>[]
   }
 
@@ -179,140 +210,104 @@ export default async function FeesPage({ searchParams }: FeesPageProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-[#1a2332]">会費管理</h1>
-      </div>
+      {header}
+      {memberListSection}
 
-      {adminTeams.length === 0 ? (
-        <Card className="border-[#dce3ea]">
-          <CardContent className="py-10 text-center text-sm text-[#475569]">
-            グループを作成してください
-          </CardContent>
-        </Card>
+      <Card className="border-[#dce3ea]">
+        <FeeFilters
+          selectedTeamId={teamId}
+          selectedType={selectedType}
+          selectedPeriod={selectedPeriod}
+          teamFeeFlags={teamFeeFlags}
+        />
+      </Card>
+
+      {!hasAnyFeeType ? (
+        <NoFeeTypeMessage teamId={teamId} />
       ) : (
         <>
-          {/* Filters */}
-          <Card className="border-[#dce3ea]">
-            <FeeFilters
-              teams={adminTeams.map((t) => ({ id: t.id as string, name: t.name as string }))}
-              selectedTeamId={selectedTeamId}
-              selectedType={selectedType}
-              selectedPeriod={selectedPeriod}
-              teamFeeFlags={teamFeeFlags}
-            />
-          </Card>
+          {/* Summary */}
+          <div className="grid grid-cols-3 gap-3">
+            <Card className="border-[#dce3ea]">
+              <CardContent className="p-4 text-center">
+                <p className="text-2xl font-bold text-[#0f8a4f]">{paidCount}</p>
+                <p className="text-xs text-[#475569]">支払済み</p>
+              </CardContent>
+            </Card>
+            <Card className="border-[#dce3ea]">
+              <CardContent className="p-4 text-center">
+                <p className="text-2xl font-bold text-[#b8860b]">{unpaidCount}</p>
+                <p className="text-xs text-[#475569]">未払い</p>
+              </CardContent>
+            </Card>
+            <Card className="border-[#dce3ea]">
+              <CardContent className="p-4 text-center">
+                <p className="text-lg font-bold text-[#005F8C]">
+                  ¥{paidAmount.toLocaleString()}
+                </p>
+                <p className="text-xs text-[#475569]">
+                  / ¥{totalAmount.toLocaleString()}
+                </p>
+              </CardContent>
+            </Card>
+          </div>
 
-          {!hasAnyFeeType ? (
-            <NoFeeTypeMessage teamId={selectedTeamId} />
-          ) : (
-            <>
-              {/* Summary */}
-              <div className="grid grid-cols-3 gap-3">
-                <Card className="border-[#dce3ea]">
-                  <CardContent className="p-4 text-center">
-                    <p className="text-2xl font-bold text-[#0f8a4f]">{paidCount}</p>
-                    <p className="text-xs text-[#475569]">支払済み</p>
-                  </CardContent>
-                </Card>
-                <Card className="border-[#dce3ea]">
-                  <CardContent className="p-4 text-center">
-                    <p className="text-2xl font-bold text-[#b8860b]">{unpaidCount}</p>
-                    <p className="text-xs text-[#475569]">未払い</p>
-                  </CardContent>
-                </Card>
-                <Card className="border-[#dce3ea]">
-                  <CardContent className="p-4 text-center">
-                    <p className="text-lg font-bold text-[#005F8C]">
-                      ¥{paidAmount.toLocaleString()}
-                    </p>
-                    <p className="text-xs text-[#475569]">
-                      / ¥{totalAmount.toLocaleString()}
-                    </p>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Stripe Subscription 管理（月謝タブ・Stripe 設定済み時のみ） */}
-              {selectedType === "monthly" && stripeEnabled && (
-                <div className="space-y-3">
-                  <h2 className="text-base font-semibold text-[#1a2332]">
-                    Stripe Subscription 管理
-                  </h2>
-                  <p className="text-xs text-[#64748b]">
-                    月謝会員ごとに自動引き落とし（Subscription）を開始・停止できます。
-                  </p>
-                  <SubscriptionSection teamId={selectedTeamId} members={monthlyMembers} />
-                </div>
-              )}
-
-              {/* Fee list */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-base font-semibold text-[#1a2332]">
-                    会員一覧 ({fees.length}名)
-                  </h2>
-                  {selectedTeamId && (
-                    <FeeActions
-                      teamId={selectedTeamId}
-                      type={selectedType}
-                      period={selectedPeriod}
-                      hasFees={fees.length > 0}
-                    />
-                  )}
-                </div>
-
-                {fees.length === 0 ? (
-                  <Card className="border-[#dce3ea]">
-                    <CardContent className="py-10 text-center">
-                      <p className="text-sm text-[#475569]">会費データがありません</p>
-                      <p className="mt-1 text-xs text-[#64748b]">
-                        「一括生成」ボタンで全メンバー分のレコードを作成できます
-                      </p>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  <div className="space-y-2">
-                    {fees.map((fee) => {
-                      const swimmer = fee.swimmer as Record<string, unknown> | null
-                      const isPaid = fee.status === "paid"
-                      const isNoRecord = fee.status === "no_record"
-                      return (
-                        <Card key={fee.id as string} className="border-[#dce3ea]">
-                          <CardContent className="flex items-center gap-3 p-4">
-                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#005F8C]/10 text-sm font-semibold text-[#005F8C]">
-                              {(swimmer?.name as string)?.[0] || "?"}
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <p className="font-medium text-[#1a2332]">
-                                {(swimmer?.name as string) || "不明"}
-                              </p>
-                              <p className="text-xs text-[#475569]">
-                                {isNoRecord
-                                  ? "会費レコード未作成"
-                                  : `¥${(fee.amount as number)?.toLocaleString()}${fee.paid_at ? ` · ${new Date(fee.paid_at as string).toLocaleDateString("ja-JP")}支払済` : ""}`
-                                }
-                              </p>
-                            </div>
-                            <Badge
-                              className={
-                                isPaid
-                                  ? "bg-[#eaf7f0] text-[#0f8a4f] border-transparent"
-                                  : isNoRecord
-                                    ? "bg-[#edf0f4] text-[#475569] border-transparent"
-                                    : "bg-[#fdf6e3] text-[#b8860b] border-transparent"
-                              }
-                            >
-                              {isPaid ? "支払済" : isNoRecord ? "未登録" : "未払い"}
-                            </Badge>
-                          </CardContent>
-                        </Card>
-                      )
-                    })}
-                  </div>
-                )}
-              </div>
-            </>
+          {/* 月次一覧（月謝タブのみ）: 1〜12月の支払い状況をまとめて確認できる年間マトリクス */}
+          {selectedType === "monthly" && teamFeeFlags.has_monthly_fee && (
+            <MonthlyFeeMatrix teamId={teamId} initialYear={now.getFullYear()} />
           )}
+
+          {/* Stripe Subscription 管理（月謝タブ・Stripe 設定済み時のみ） */}
+          {selectedType === "monthly" && stripeEnabled && (
+            <div className="space-y-3">
+              <h2 className="text-base font-semibold text-[#1a2332]">
+                Stripe Subscription 管理
+              </h2>
+              <p className="text-xs text-[#64748b]">
+                月謝会員ごとに自動引き落とし（Subscription）を開始・停止できます。
+              </p>
+              <SubscriptionSection teamId={teamId} members={monthlyMembers} />
+            </div>
+          )}
+
+          {/* Fee list */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="text-base font-semibold text-[#1a2332]">
+                支払い状況一覧 ({fees.length}名)
+              </h2>
+              <FeeActions
+                teamId={teamId}
+                type={selectedType}
+                period={selectedPeriod}
+                hasFees={fees.length > 0}
+              />
+            </div>
+
+            {fees.length === 0 ? (
+              <Card className="border-[#dce3ea]">
+                <CardContent className="py-10 text-center">
+                  <p className="text-sm text-[#475569]">会費データがありません</p>
+                  <p className="mt-1 text-xs text-[#64748b]">
+                    「一括生成」ボタンで全メンバー分のレコードを作成できます
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <FeeList
+                fees={fees.map((fee) => {
+                  const swimmer = fee.swimmer as Record<string, unknown> | null
+                  return {
+                    id: fee.id as string,
+                    name: (swimmer?.name as string) || "不明",
+                    amount: (fee.amount as number) ?? 0,
+                    paidAt: (fee.paid_at as string) ?? null,
+                    status: fee.status as "unpaid" | "paid" | "failed" | "no_record",
+                  }
+                })}
+              />
+            )}
+          </div>
         </>
       )}
     </div>

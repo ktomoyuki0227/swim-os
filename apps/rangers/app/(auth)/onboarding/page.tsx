@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition, Fragment } from "react"
+import { useEffect, useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import dynamic from "next/dynamic"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
@@ -9,6 +9,8 @@ import { completeOnboarding, type OnboardingData } from "@/actions/onboarding"
 import { uploadAvatar } from "@/actions/profile"
 import { safeRedirectPath } from "@/lib/utils"
 import { updatePaymentMethod } from "@/actions/payments"
+import { StepProgress } from "../step-progress"
+import { saveDraft, loadDraft, clearDraft, dataUrlToFile } from "./draft"
 import { SwimmerProfileStep } from "./swimmer-profile-step"
 import { PersonalInfo1Step } from "./personal-info-1-step"
 import { PersonalInfo2Step } from "./personal-info-2-step"
@@ -29,16 +31,6 @@ const StripeStep = dynamic(
     ),
   }
 )
-
-const ALL_STEPS = [
-  { num: 1, label: "アカウント作成" },
-  { num: 2, label: "自己紹介" },
-  { num: 3, label: "基本情報①" },
-  { num: 4, label: "基本情報②" },
-  { num: 5, label: "緊急連絡先" },
-  { num: 6, label: "競技登録" },
-  { num: 7, label: "お支払い" },
-]
 
 const WIZARD_STEPS = [
   { num: 1, label: "自分を紹介する", desc: "あなたのスイマープロフィールを設定してください" },
@@ -78,18 +70,62 @@ const EMPTY_PERSONAL_FORM: PersonalInfoForm = {
   jsa_number: "",
 }
 
+// 下書き復元は「effect + setState」ではなく useState の遅延初期化で行う。
+// マウント後にeffectでsetStateすると余分な再レンダーを挟むうえ、
+// 復元前の空フォームで一瞬レンダーされてしまう。localStorage読み込みは
+// 副作用そのものというより初期状態の計算なので、初期化関数の中で一度だけ行う。
+function readInitialOnboardingState() {
+  const draft = loadDraft()
+  if (!draft) {
+    return { step: 1, personalForm: EMPTY_PERSONAL_FORM, swimmerForm: EMPTY_SWIMMER_FORM, restored: false }
+  }
+  const avatarFile = draft.swimmerForm.avatarPreview
+    ? dataUrlToFile(draft.swimmerForm.avatarPreview, "avatar.jpg")
+    : null
+  return {
+    step: draft.step,
+    personalForm: draft.personalForm,
+    swimmerForm: { ...draft.swimmerForm, avatarFile },
+    restored: true,
+  }
+}
+
 export default function OnboardingPage() {
   const router = useRouter()
-  const [step, setStep] = useState(1)
+  const [initial] = useState(readInitialOnboardingState)
+  const [step, setStep] = useState(initial.step)
   const [isPending, startTransition] = useTransition()
 
-  const [swimmerForm, setSwimmerForm] = useState<SwimmerProfileForm>(EMPTY_SWIMMER_FORM)
-  const [personalForm, setPersonalForm] = useState<PersonalInfoForm>(EMPTY_PERSONAL_FORM)
+  const [swimmerForm, setSwimmerForm] = useState<SwimmerProfileForm>(initial.swimmerForm)
+  const [personalForm, setPersonalForm] = useState<PersonalInfoForm>(initial.personalForm)
   const [saveError, setSaveError] = useState<string | null>(null)
+  const [restoredDraft] = useState(initial.restored)
+
+  // 変更があるたびに下書きを保存する（写真アップロード含む長いフォームのため
+  // リロード・誤操作による離脱リスクが高い）。avatarFileはJSONにできないため
+  // avatarPreview(data URL)だけを保存し、復元時にそこから再構成する。
+  useEffect(() => {
+    saveDraft({
+      step,
+      personalForm,
+      swimmerForm: {
+        avatarPreview: swimmerForm.avatarPreview,
+        level: swimmerForm.level,
+        specialties: swimmerForm.specialties,
+        goals: swimmerForm.goals,
+        prefectures: swimmerForm.prefectures,
+        swimmerType: swimmerForm.swimmerType,
+        swimDisciplines: swimmerForm.swimDisciplines,
+        bio: swimmerForm.bio,
+      },
+    })
+  }, [step, personalForm, swimmerForm])
 
   const isValidPhone = (val: string) => /^\d{10,11}$/.test(val.replace(/[-\s]/g, ""))
 
   // Step 1 バリデーション
+  // プロフィール写真は本人確認のため必須（既存ユーザーは警告バナーで案内し、
+  // 新規登録者はここでブロックする）
   const step1Valid =
     !!swimmerForm.avatarFile &&
     !!swimmerForm.level &&
@@ -174,6 +210,7 @@ export default function OnboardingPage() {
         }
         const result = await completeOnboarding(data)
         if (!result.error) {
+          clearDraft()
           const params = new URLSearchParams(window.location.search)
           const destination = safeRedirectPath(params.get("next"))
           router.push(destination)
@@ -187,37 +224,24 @@ export default function OnboardingPage() {
   }
 
   const currentStep = WIZARD_STEPS[step - 1]
-  const progressStep = step + 1
+  // マスターの8ステップ定義（アカウント作成・メール確認を含む）における現在位置。
+  // オンボーディングのStep1(自己紹介)はマスターのStep3にあたる。
+  const progressStep = step + 2
 
   return (
     <div className="mx-auto w-full max-w-lg">
-      {/* 進捗インジケーター */}
-      <div className="mb-4 flex items-center">
-        {ALL_STEPS.map(({ num, label }, i) => (
-          <Fragment key={num}>
-            <div className="flex flex-col items-center">
-              <div className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold transition-colors ${
-                num < progressStep ? "bg-[#005F8C]/20 text-[#005F8C]"
-                : num === progressStep ? "bg-[#005F8C] text-white shadow-md"
-                : "bg-[#dce3ea] text-[#64748b]"
-              }`}>
-                {num < progressStep ? "✓" : num}
-              </div>
-              <p className={`mt-1 hidden text-xs sm:block ${num === progressStep ? "font-medium text-[#005F8C]" : "text-[#64748b]"}`}>
-                {label}
-              </p>
-            </div>
-            {i < ALL_STEPS.length - 1 && (
-              <div className={`mx-1 h-[2px] flex-1 transition-colors ${num < progressStep ? "bg-[#005F8C]/30" : "bg-[#dce3ea]"}`} />
-            )}
-          </Fragment>
-        ))}
-      </div>
+      <StepProgress current={progressStep} />
+
+      {restoredDraft && (
+        <p className="mb-3 rounded-lg border border-[#005F8C]/20 bg-[#e8f2f8] px-4 py-2.5 text-sm text-[#005F8C]">
+          前回の入力内容を復元しました。続きから入力できます。
+        </p>
+      )}
 
       <Card className="border-[#dce3ea] bg-white shadow-lg">
         <CardHeader className="pb-2">
           <p className="text-xs font-semibold uppercase tracking-widest text-[#005F8C]">
-            STEP {progressStep} / {ALL_STEPS.length}
+            STEP {progressStep} / 8
           </p>
           <h2 className="text-xl font-bold text-[#1a2332]">{currentStep.label}</h2>
           <p className="text-sm text-[#64748b]">{currentStep.desc}</p>

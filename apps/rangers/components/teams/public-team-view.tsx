@@ -107,8 +107,8 @@ export function PublicTeamView({ data, hasBottomNav = false, joinRequestStatus =
       </div>
 
       {/* ── コンテンツ ── */}
-      {/* CTA 1ボタン分の高さ(~60px) + 位置オフセット分のパディング */}
-      <div className={`mx-auto max-w-lg px-4 ${isAdmin ? "pb-8" : hasBottomNav ? "pb-36" : "pb-28"}`}>
+      {/* CTA 1ボタン分の高さ(~60px) + 承認案内の注釈1行分 + 位置オフセット分のパディング */}
+      <div className={`mx-auto max-w-lg px-4 ${isAdmin ? "pb-8" : hasBottomNav ? "pb-40" : "pb-32"}`}>
         {/* チーム名 + 問い合わせアイコン */}
         <div className="flex items-center justify-between pt-4 pb-1">
           <h1 className="text-xl font-bold text-[#1a2332]">{team.name}</h1>
@@ -344,13 +344,18 @@ export function PublicTeamView({ data, hasBottomNav = false, joinRequestStatus =
               参加申請中（承認待ち）
             </div>
           ) : team.is_recruiting ? (
-            <Link
-              href={`/teams/${team.id}/join`}
-              className="flex w-full items-center justify-center rounded-full bg-[#005F8C] py-3.5 text-base font-bold text-white shadow-lg transition-colors hover:bg-[#004E73] active:scale-[0.98]"
-              style={{ minHeight: "52px" }}
-            >
-              このグループに参加する
-            </Link>
+            <>
+              <Link
+                href={`/teams/${team.id}/join`}
+                className="flex w-full items-center justify-center rounded-full bg-[#005F8C] py-3.5 text-base font-bold text-white shadow-lg transition-colors hover:bg-[#004E73] active:scale-[0.98]"
+                style={{ minHeight: "52px" }}
+              >
+                このグループに参加する
+              </Link>
+              <p className="rounded-full bg-white/90 py-1 text-center text-xs text-[#475569] shadow">
+                ※参加には管理者の承認が必要です
+              </p>
+            </>
           ) : (
             <div
               className="flex w-full items-center justify-center rounded-full bg-[#c8d8e8] py-3.5 text-base font-bold text-[#64748b] shadow-lg"

@@ -389,6 +389,7 @@ export async function getSession(sessionId: string) {
           name: rawTeam.name,
           description: rawTeam.description,
           avatar_url: rawTeam.avatar_url,
+          show_participant_count: rawTeam.show_participant_count,
         }
       : null
     return {

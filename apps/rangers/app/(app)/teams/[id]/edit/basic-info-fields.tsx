@@ -27,6 +27,8 @@ interface BasicInfoFieldsProps {
   onIsRecruitingChange: (next: boolean) => void
   showMemberCount: boolean
   onShowMemberCountChange: (next: boolean) => void
+  showParticipantCount: boolean
+  onShowParticipantCountChange: (next: boolean) => void
   targetAges: string[]
   onTargetAgesChange: (next: string[]) => void
 }
@@ -39,6 +41,8 @@ export function BasicInfoFields({
   onIsRecruitingChange,
   showMemberCount,
   onShowMemberCountChange,
+  showParticipantCount,
+  onShowParticipantCountChange,
   targetAges,
   onTargetAgesChange,
 }: BasicInfoFieldsProps) {
@@ -302,6 +306,30 @@ export function BasicInfoFields({
               </span>
             </div>
             <p className="mt-1.5 text-xs text-[#64748b]">公開ページに「〇人のメンバー」を表示します</p>
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label>参加者数の表示</Label>
+          <div className="rounded-[10px] border border-[#dce3ea] p-3">
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => onShowParticipantCountChange(!showParticipantCount)}
+                className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
+                  showParticipantCount ? "bg-[#005F8C]" : "bg-[#dce3ea]"
+                }`}
+              >
+                <span
+                  className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
+                    showParticipantCount ? "translate-x-5" : "translate-x-0"
+                  }`}
+                />
+              </button>
+              <span className="text-sm font-medium text-[#1a2332]">
+                {showParticipantCount ? "表示する" : "表示しない"}
+              </span>
+            </div>
+            <p className="mt-1.5 text-xs text-[#64748b]">セッション詳細で現在の参加者数を表示します（定員は常に表示されます）</p>
           </div>
         </div>
       </CardContent>

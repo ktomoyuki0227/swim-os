@@ -1224,6 +1224,7 @@ export type Database = {
           practice_days: string[] | null
           practice_frequency: string | null
           show_member_count: boolean
+          show_participant_count: boolean
           status: string
           stripe_account_id: string | null
           stripe_annual_price_id: string | null
@@ -1263,6 +1264,7 @@ export type Database = {
           practice_days?: string[] | null
           practice_frequency?: string | null
           show_member_count?: boolean
+          show_participant_count?: boolean
           status?: string
           stripe_account_id?: string | null
           stripe_annual_price_id?: string | null
@@ -1302,6 +1304,7 @@ export type Database = {
           practice_days?: string[] | null
           practice_frequency?: string | null
           show_member_count?: boolean
+          show_participant_count?: boolean
           status?: string
           stripe_account_id?: string | null
           stripe_annual_price_id?: string | null

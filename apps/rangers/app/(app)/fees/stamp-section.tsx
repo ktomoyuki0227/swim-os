@@ -1,4 +1,5 @@
 import { StampPurchaseDialog } from "./stamp-purchase-dialog"
+import { StampPurchaseStatus } from "./stamp-purchase-status"
 
 interface StampMember {
   team_member_id: string
@@ -12,6 +13,7 @@ interface StampMember {
     amount: number
     note: string | null
     purchased_at: string
+    status: string
   }[]
 }
 
@@ -94,17 +96,24 @@ export function StampSection({ teamId, pointCardCount, members }: Props) {
               {m.purchases.length === 0 ? (
                 <p className="text-xs text-[#94a3b8]">購入記録がありません</p>
               ) : (
-                <ul className="space-y-1">
+                <ul className="space-y-1.5">
                   {m.purchases.map((p) => (
                     <li key={p.id} className="flex items-center justify-between gap-2 text-xs text-[#475569]">
-                      <span className="min-w-0 truncate">
-                        {new Date(p.purchased_at).toLocaleDateString("ja-JP")} ·{" "}
-                        {p.card_count}枚 × {p.stamp_count}回
-                        {p.note ? `（${p.note}）` : ""}
-                      </span>
-                      <span className="shrink-0 font-medium text-[#1a2332]">
-                        ¥{p.amount.toLocaleString()}
-                      </span>
+                      <div className="min-w-0 flex-1">
+                        <span className="truncate">
+                          {new Date(p.purchased_at).toLocaleDateString("ja-JP")} ·{" "}
+                          {p.card_count}枚 × {p.stamp_count}回
+                          {p.note ? `（${p.note}）` : ""}
+                        </span>
+                        <span className="ml-2 font-medium text-[#1a2332]">
+                          ¥{p.amount.toLocaleString()}
+                        </span>
+                      </div>
+                      <StampPurchaseStatus
+                        purchaseId={p.id}
+                        status={p.status as "unpaid" | "paid" | "failed"}
+                        swimmerName={name}
+                      />
                     </li>
                   ))}
                 </ul>

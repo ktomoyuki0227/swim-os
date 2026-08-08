@@ -94,3 +94,43 @@ export async function addStampPurchase(
   revalidatePath("/fees")
   return { success: true }
 }
+
+/**
+ * 回数券購入記録の支払いステータスを訂正する。
+ * stamp_purchases は登録時に add_stamp_purchase RPC で即座に stamp_remaining を
+ * 加算する運用(=登録時点で基本的に paid/cash 扱い)のため、これは入力ミスの
+ * 訂正用途(unmarkCashPaid と同じ位置づけ)であり、ステータス変更に連動した
+ * stamp_remaining の自動増減は行わない。
+ */
+export async function updateStampPurchaseStatus(
+  purchaseId: string,
+  status: "unpaid" | "paid" | "failed",
+  paymentMethod?: "stripe" | "cash"
+) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect("/login")
+
+  const admin = createAdminClient()
+  const { data: purchase } = await admin
+    .from("stamp_purchases")
+    .select("team_id")
+    .eq("id", purchaseId)
+    .single()
+  if (!purchase) return { error: "購入レコードが見つかりません" }
+
+  if (!(await isTeamAdmin(admin, purchase.team_id, user.id))) return { error: "権限がありません" }
+
+  const updateData: { status: "unpaid" | "paid" | "failed"; payment_method?: "stripe" | "cash" } = { status }
+  if (paymentMethod) updateData.payment_method = paymentMethod
+
+  const { error } = await admin
+    .from("stamp_purchases")
+    .update(updateData)
+    .eq("id", purchaseId)
+
+  if (error) return { error: "支払い状況の更新に失敗しました" }
+
+  revalidatePath("/fees")
+  return { success: true }
+}

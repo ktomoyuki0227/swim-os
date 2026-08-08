@@ -3,7 +3,6 @@
 import { useRouter } from "next/navigation"
 
 interface FeeFiltersProps {
-  teams: { id: string; name: string }[]
   selectedTeamId: string
   selectedType: "annual" | "monthly" | "stamp_card"
   selectedPeriod: string
@@ -14,7 +13,7 @@ interface FeeFiltersProps {
   }
 }
 
-export function FeeFilters({ teams, selectedTeamId, selectedType, selectedPeriod, teamFeeFlags }: FeeFiltersProps) {
+export function FeeFilters({ selectedTeamId, selectedType, selectedPeriod, teamFeeFlags }: FeeFiltersProps) {
   const router = useRouter()
   const now = new Date()
 
@@ -26,30 +25,6 @@ export function FeeFilters({ teams, selectedTeamId, selectedType, selectedPeriod
 
   return (
     <div className="flex flex-wrap gap-4 p-4">
-      {/* Team selector */}
-      <div className="flex flex-col gap-1">
-        <label htmlFor="fee-team" className="text-xs text-[#475569]">グループ</label>
-        <select
-          id="fee-team"
-          name="team"
-          defaultValue={selectedTeamId}
-          onChange={(e) => {
-            const url = new URL(window.location.href)
-            url.searchParams.set("team", e.target.value)
-            url.searchParams.delete("type")
-            url.searchParams.delete("period")
-            router.push(`${url.pathname}${url.search}`)
-          }}
-          className="h-9 rounded-lg border border-[#dce3ea] px-3 text-sm text-[#1a2332] outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-        >
-          {teams.map((team) => (
-            <option key={team.id} value={team.id}>
-              {team.name}
-            </option>
-          ))}
-        </select>
-      </div>
-
       {/* Type selector — enabled tabs only */}
       {tabs.length > 0 && (
         <div className="flex flex-col gap-1">

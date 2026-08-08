@@ -72,8 +72,14 @@ export function SwimmerProfileStep({ form, onChange }: SwimmerProfileStepProps) 
           }}
         />
         <div className="flex items-center gap-2 text-xs">
-          <span className={form.avatarFile ? "text-[#0f8a4f]" : "text-[#c0392b] font-medium"}>
-            {form.avatarFile ? "✓ 設定済み" : "プロフィール写真（必須）"}
+          <span className={form.avatarFile ? "font-medium text-[#0f8a4f]" : "text-[#64748b]"}>
+            {form.avatarFile ? (
+              "✓ 設定済み"
+            ) : (
+              <>
+                プロフィール写真<span className="text-[#c0392b]">（必須・本人確認のため）</span>
+              </>
+            )}
           </span>
           {form.avatarPreview && (
             <button
@@ -88,6 +94,10 @@ export function SwimmerProfileStep({ form, onChange }: SwimmerProfileStepProps) 
         {avatarError && (
           <p className="text-xs text-[#c0392b]">{avatarError}</p>
         )}
+        <p className="max-w-[280px] text-center text-xs font-medium text-[#c0392b]">
+          本人確認のため、必ずご本人の顔がわかる写真をアップロードしてください
+        </p>
+        <p className="text-center text-xs text-[#64748b]">JPEG・PNG・WebP形式・2MB以下の画像をアップロードできます</p>
       </div>
 
       {/* 水泳カテゴリ（任意） */}

@@ -149,6 +149,10 @@ export default async function TeamJoinPage({ params }: PageProps) {
         )}
       </div>
 
+      <p className="mb-4 rounded-[10px] bg-[#f2f7fa] px-3 py-2 text-xs text-[#475569]">
+        この申請は管理者の承認後に正式メンバーとなります
+      </p>
+
       {user ? (
         <JoinForm
           teamId={team.id}

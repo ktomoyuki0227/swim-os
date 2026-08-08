@@ -117,7 +117,8 @@ export default async function MemberSessionPage({ params }: SessionPageProps) {
     }))
   }
 
-  const teamInfo = session.team as { fee_members_exempt_session?: boolean } | null
+  const teamInfo = session.team as { fee_members_exempt_session?: boolean; show_participant_count?: boolean } | null
+  const showParticipantCount = teamInfo?.show_participant_count !== false
   const isExempt =
     !!teamInfo?.fee_members_exempt_session &&
     isMember &&
@@ -231,13 +232,16 @@ export default async function MemberSessionPage({ params }: SessionPageProps) {
             <PriceReveal sessionId={sessionId} />
           )}
 
-          <div className="flex items-center justify-between px-4 py-3">
-            <span className="text-sm text-[#475569]">参加者数</span>
-            <span className="text-sm font-medium text-[#1a2332]">
-              {registrationCount}名
-              {session.max_participants && ` / ${session.max_participants}名`}
-            </span>
-          </div>
+          {(showParticipantCount || session.max_participants) && (
+            <div className="flex items-center justify-between px-4 py-3">
+              <span className="text-sm text-[#475569]">{showParticipantCount ? "参加者数" : "定員"}</span>
+              <span className="text-sm font-medium text-[#1a2332]">
+                {showParticipantCount && `${registrationCount}名`}
+                {session.max_participants &&
+                  (showParticipantCount ? ` / ${session.max_participants}名` : `${session.max_participants}名`)}
+              </span>
+            </div>
+          )}
           {session.registration_deadline && (
             <div className="flex items-center justify-between px-4 py-3">
               <span className="text-sm text-[#475569]">申込締切</span>

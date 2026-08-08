@@ -86,6 +86,9 @@ export function InviteButton({ inviteCode }: InviteButtonProps) {
                 >
                   {copied ? "コピーしました" : copyFailed ? "コピーに失敗しました" : "招待URLをコピー"}
                 </button>
+                <p className="text-xs text-[#64748b]">
+                  ※このURL・QRコードを知っている人は、承認なしで即座にグループに参加できます
+                </p>
               </div>
             </div>
           </div>

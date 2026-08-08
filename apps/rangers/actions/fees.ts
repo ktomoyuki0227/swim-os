@@ -65,6 +65,69 @@ export async function getTeamFees(
   return { data: merged }
 }
 
+export interface MonthlyFeeCell {
+  month: number
+  feeId: string | null
+  status: "unpaid" | "paid" | "failed" | "no_record"
+  amount: number | null
+  paidAt: string | null
+}
+
+export interface MonthlyFeeMatrixRow {
+  swimmerId: string
+  name: string
+  months: MonthlyFeeCell[]
+}
+
+/**
+ * 月謝会員の年間(1〜12月)支払い状況マトリクスを返す。
+ * membership_fees(type='monthly') の既存レコードを集計するのみで、新規テーブルは使わない。
+ */
+export async function getMonthlyFeeMatrix(teamId: string, year: number) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect("/login")
+
+  const admin = createAdminClient()
+  if (!(await isTeamAdmin(admin, teamId, user.id))) return { data: null }
+
+  const { data: members } = await admin
+    .from("team_members")
+    .select("swimmer_id, profiles(id, name)")
+    .eq("team_id", teamId)
+    .eq("status", "active")
+    .eq("membership_type", "monthly")
+
+  if (!members || members.length === 0) return { data: { year, members: [] } }
+
+  const { data: feeRecords } = await admin
+    .from("membership_fees")
+    .select("id, swimmer_id, period, status, amount, paid_at")
+    .eq("team_id", teamId)
+    .eq("type", "monthly")
+    .like("period", `${year}-%`)
+
+  const rows: MonthlyFeeMatrixRow[] = members.map((m) => {
+    const profile = Array.isArray(m.profiles) ? (m.profiles[0] ?? null) : (m.profiles as unknown as { id: string; name: string } | null)
+    const months: MonthlyFeeCell[] = Array.from({ length: 12 }, (_, i) => {
+      const month = i + 1
+      const period = `${year}-${String(month).padStart(2, "0")}`
+      const fee = (feeRecords || []).find((f) => f.swimmer_id === m.swimmer_id && f.period === period)
+      if (!fee) return { month, feeId: null, status: "no_record", amount: null, paidAt: null }
+      return {
+        month,
+        feeId: fee.id,
+        status: fee.status as "unpaid" | "paid" | "failed",
+        amount: fee.amount,
+        paidAt: fee.paid_at,
+      }
+    })
+    return { swimmerId: m.swimmer_id, name: profile?.name || "不明", months }
+  })
+
+  return { data: { year, members: rows } }
+}
+
 export async function updateFeeStatus(
   feeId: string,
   status: "unpaid" | "paid" | "failed",
