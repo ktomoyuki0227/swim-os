@@ -17,7 +17,7 @@ export async function getStampMembers(teamId: string) {
   // 回数券会員一覧
   const { data: members } = await admin
     .from("team_members")
-    .select("id, swimmer_id, stamp_remaining, joined_at, profiles(id, name, avatar_url)")
+    .select("id, swimmer_id, role, stamp_remaining, joined_at, profiles(id, name, avatar_url)")
     .eq("team_id", teamId)
     .eq("status", "active")
     .eq("membership_type", "point_card")
@@ -38,6 +38,7 @@ export async function getStampMembers(teamId: string) {
     data: members.map((m) => ({
       team_member_id: m.id,
       swimmer_id: m.swimmer_id,
+      role: m.role,
       stamp_remaining: m.stamp_remaining ?? 0,
       joined_at: m.joined_at,
       profile: Array.isArray(m.profiles) ? (m.profiles[0] ?? null) : (m.profiles as unknown as { id: string; name: string; avatar_url: string } | null),

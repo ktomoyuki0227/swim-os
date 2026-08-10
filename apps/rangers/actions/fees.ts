@@ -8,63 +8,6 @@ import type { Database } from "@/types/database-generated"
 import { isTeamAdmin, isAdminOfAnyTeamWithMember } from "@/lib/auth/require-team-admin"
 import { notifyUser } from "@/lib/notifications"
 
-export async function getTeamFees(
-  teamId: string,
-  type?: FeeType,
-  period?: string
-) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect("/login")
-
-  const admin = createAdminClient()
-
-  if (!(await isTeamAdmin(admin, teamId, user.id))) return { data: [] }
-
-  // 年会費・月謝の対象メンバーを取得（回数券会員は除外）
-  const feeTypeMembership = type === "annual" ? ["annual"] : type === "monthly" ? ["monthly"] : ["annual", "monthly"]
-  const { data: members } = await admin
-    .from("team_members")
-    .select("swimmer_id, membership_type, profiles(id, name, avatar_url)")
-    .eq("team_id", teamId)
-    .eq("status", "active")
-    .in("membership_type", feeTypeMembership)
-
-  if (!members || members.length === 0) return { data: [] }
-
-  // 既存の会費レコードを取得
-  let feeQuery = admin
-    .from("membership_fees")
-    .select("*")
-    .eq("team_id", teamId)
-  if (type) feeQuery = feeQuery.eq("type", type)
-  if (period) feeQuery = feeQuery.eq("period", period)
-
-  const { data: feeRecords } = await feeQuery
-
-  // 全メンバーに会費レコードをマージ（レコードがなければ未登録として表示）
-  const merged = members.map((m) => {
-    const fee = (feeRecords || []).find((f) => f.swimmer_id === m.swimmer_id)
-    const profile = m.profiles
-    if (fee) {
-      return { ...fee, swimmer: profile }
-    }
-    return {
-      id: `no-record-${m.swimmer_id}`,
-      team_id: teamId,
-      swimmer_id: m.swimmer_id,
-      type: type || "annual",
-      period: period || "",
-      amount: 0,
-      status: "no_record",
-      paid_at: null,
-      swimmer: profile,
-    }
-  })
-
-  return { data: merged }
-}
-
 export interface MonthlyFeeCell {
   month: number
   feeId: string | null
@@ -76,6 +19,7 @@ export interface MonthlyFeeCell {
 export interface MonthlyFeeMatrixRow {
   swimmerId: string
   name: string
+  role: string
   months: MonthlyFeeCell[]
 }
 
@@ -93,7 +37,7 @@ export async function getMonthlyFeeMatrix(teamId: string, year: number) {
 
   const { data: members } = await admin
     .from("team_members")
-    .select("swimmer_id, profiles(id, name)")
+    .select("swimmer_id, role, profiles(id, name)")
     .eq("team_id", teamId)
     .eq("status", "active")
     .eq("membership_type", "monthly")
@@ -122,7 +66,57 @@ export async function getMonthlyFeeMatrix(teamId: string, year: number) {
         paidAt: fee.paid_at,
       }
     })
-    return { swimmerId: m.swimmer_id, name: profile?.name || "不明", months }
+    return { swimmerId: m.swimmer_id, name: profile?.name || "不明", role: m.role, months }
+  })
+
+  return { data: { year, members: rows } }
+}
+
+/**
+ * 年会費会員の年間(1〜12月)支払い状況マトリクスを返す。
+ * 年会費は年1回・単一レコードでの支払いのため、実データは1件だが、月謝と同じ
+ * 見た目(1〜12月マス目)で表示するために、同じレコードの状態を12マスすべてに
+ * 複製する。どのマスをタップしても同じ feeId が更新され、12マスまとめて切り替わる。
+ */
+export async function getAnnualFeeMatrix(teamId: string, year: number) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect("/login")
+
+  const admin = createAdminClient()
+  if (!(await isTeamAdmin(admin, teamId, user.id))) return { data: null }
+
+  const { data: members } = await admin
+    .from("team_members")
+    .select("swimmer_id, role, profiles(id, name)")
+    .eq("team_id", teamId)
+    .eq("status", "active")
+    .eq("membership_type", "annual")
+
+  if (!members || members.length === 0) return { data: { year, members: [] } }
+
+  const { data: feeRecords } = await admin
+    .from("membership_fees")
+    .select("id, swimmer_id, status, amount, paid_at")
+    .eq("team_id", teamId)
+    .eq("type", "annual")
+    .eq("period", String(year))
+
+  const rows: MonthlyFeeMatrixRow[] = members.map((m) => {
+    const profile = Array.isArray(m.profiles) ? (m.profiles[0] ?? null) : (m.profiles as unknown as { id: string; name: string } | null)
+    const fee = (feeRecords || []).find((f) => f.swimmer_id === m.swimmer_id)
+    const months: MonthlyFeeCell[] = Array.from({ length: 12 }, (_, i) => {
+      const month = i + 1
+      if (!fee) return { month, feeId: null, status: "no_record", amount: null, paidAt: null }
+      return {
+        month,
+        feeId: fee.id,
+        status: fee.status as "unpaid" | "paid" | "failed",
+        amount: fee.amount,
+        paidAt: fee.paid_at,
+      }
+    })
+    return { swimmerId: m.swimmer_id, name: profile?.name || "不明", role: m.role, months }
   })
 
   return { data: { year, members: rows } }
@@ -187,7 +181,9 @@ export async function bulkCreateFees(
   amount: number
 ) {
   if (!Number.isInteger(amount) || amount <= 0) return { error: "金額は1以上の整数を入力してください" }
-  if (!/^\d{4}(-\d{2})?$/.test(period)) return { error: "期間の形式が不正です（例: 2024 または 2024-04）" }
+  // 月部分は 01〜12 に制限する(範囲チェックなしだと "2024-13" 等の実在しない月の
+  // レコードが作成でき、マトリクス表示(1〜12月固定)からは永久に見えない孤立データになる)
+  if (!/^\d{4}(-(0[1-9]|1[0-2]))?$/.test(period)) return { error: "期間の形式が不正です（例: 2024 または 2024-04）" }
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

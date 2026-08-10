@@ -21,13 +21,15 @@ interface StampPurchaseDialogProps {
   swimmerId: string
   swimmerName: string
   defaultStampCount: number
+  /** router.refresh()に加えて呼び出し元で追加の再取得をしたい場合に指定する（成功時のみ） */
+  onChanged?: () => void
 }
 
 const MAX_CARD_COUNT = 100
 const MAX_STAMP_COUNT = 999
 const MAX_AMOUNT = 1_000_000
 
-export function StampPurchaseDialog({ teamId, swimmerId, swimmerName, defaultStampCount }: StampPurchaseDialogProps) {
+export function StampPurchaseDialog({ teamId, swimmerId, swimmerName, defaultStampCount, onChanged }: StampPurchaseDialogProps) {
   const router = useRouter()
   const { showToast } = useToast()
   const [isOpen, setIsOpen] = useState(false)
@@ -80,6 +82,7 @@ export function StampPurchaseDialog({ teamId, swimmerId, swimmerName, defaultSta
     setIsOpen(false)
     resetForm()
     router.refresh()
+    onChanged?.()
   }
 
   return (
