@@ -54,7 +54,7 @@ export async function registerForSession(
   // 月謝会員はStripe Subscriptionが未払い状態
   // (past_due/unpaid/canceled/incomplete_expired/incomplete)の間は
   // membership_typeが"monthly"のままでも免除対象から外す(支払い遅延中の無料参加を防ぐ)。
-  // startMonthlySubscriptionはdefault_incompleteで作成するため、初回決済用のカードが
+  // tryStartMonthlySubscription(lib/stripe-helpers.ts)はdefault_incompleteで作成するため、初回決済用のカードが
   // 登録されていない場合、確定(active)までの間は"incomplete"のままになる。これを
   // 免除対象外に含めないと、支払い方法未登録のまま一時的に月謝免除扱いになってしまう。
   // subscription_status が null(現金払い等、Subscription未作成)の場合は従来通り免除対象。

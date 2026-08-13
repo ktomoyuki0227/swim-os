@@ -7,6 +7,7 @@ import type { MembershipType } from "@/types/database"
 import { isTeamAdmin, getActiveTeamAdminIds } from "@/lib/auth/require-team-admin"
 import { notifyUser, notifyUsers } from "@/lib/notifications"
 import { isRateLimited } from "@/lib/rate-limit"
+import { tryStartMonthlySubscription } from "@/lib/stripe-helpers"
 
 const VALID_MEMBERSHIP_TYPES: MembershipType[] = ["annual", "monthly", "point_card"]
 const JOIN_REQUEST_RATE_LIMIT = 5
@@ -145,7 +146,7 @@ export async function approveJoinRequest(
   // チーム情報を取得
   const { data: team } = await admin
     .from("teams")
-    .select("name, annual_fee_amount")
+    .select("name, annual_fee_amount, monthly_fee_amount")
     .eq("id", request.team_id)
     .single()
 
@@ -217,6 +218,15 @@ export async function approveJoinRequest(
     })
     if (feeError) {
       console.error("[approveJoinRequest] Failed to create annual fee record:", feeError)
+    }
+  }
+
+  // 月謝会員なら、既にカード登録済みの場合に限り Stripe Subscription を自動開始する
+  // (カード未登録・Stripe未設定等の場合は何もせず現金払い会員として扱われる)
+  if (request.membership_type === "monthly" && team.monthly_fee_amount) {
+    const subResult = await tryStartMonthlySubscription(request.team_id, request.swimmer_id)
+    if (subResult.error) {
+      console.error("[approveJoinRequest] Failed to auto-start monthly subscription:", subResult.error)
     }
   }
 

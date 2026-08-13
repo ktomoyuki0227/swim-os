@@ -3,10 +3,10 @@
 import { createClient, createAdminClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
-import type { FeeType } from "@/types/database"
 import type { Database } from "@/types/database-generated"
 import { isTeamAdmin, isAdminOfAnyTeamWithMember } from "@/lib/auth/require-team-admin"
 import { notifyUser } from "@/lib/notifications"
+import { isTerminalSubscriptionStatus } from "@/lib/stripe-helpers"
 
 export interface MonthlyFeeCell {
   month: number
@@ -24,8 +24,49 @@ export interface MonthlyFeeMatrixRow {
 }
 
 /**
+ * 現金払い会員(Stripe Subscriptionが無い会員)について、「既に到来していて、
+ * 入会日以降で、まだレコードが無い」期間のmembership_feesをチーム設定額で自動生成する。
+ * Stripe決済会員はwebhook(invoice.paid)側が別途レコードを作成するため、二重管理・
+ * (team_id,swimmer_id,type,period)一意制約の衝突を避けるためここでは一切手を出さない。
+ * 失敗しても呼び出し元(マトリクス取得)自体は継続する(非致命的)。
+ */
+async function ensureCashFeeRecords(
+  admin: ReturnType<typeof createAdminClient>,
+  teamId: string,
+  type: "annual" | "monthly",
+  periods: { swimmerId: string; period: string }[],
+  amount: number
+): Promise<Database["public"]["Tables"]["membership_fees"]["Row"][]> {
+  if (periods.length === 0) return []
+
+  const toInsert: Database["public"]["Tables"]["membership_fees"]["Insert"][] = periods.map((p) => ({
+    team_id: teamId,
+    swimmer_id: p.swimmerId,
+    type,
+    period: p.period,
+    amount,
+    payment_method: "cash",
+    status: "unpaid",
+  }))
+
+  // ignoreDuplicates: 同時アクセスや既存レコードとの競合時に安全に無視する
+  // (絶対に既存レコードを上書きしない)
+  const { data: inserted, error } = await admin
+    .from("membership_fees")
+    .upsert(toInsert, { onConflict: "team_id,swimmer_id,type,period", ignoreDuplicates: true })
+    .select("*")
+
+  if (error) {
+    console.error("[ensureCashFeeRecords] Failed to auto-generate fee records:", error)
+    return []
+  }
+  return inserted ?? []
+}
+
+/**
  * 月謝会員の年間(1〜12月)支払い状況マトリクスを返す。
- * membership_fees(type='monthly') の既存レコードを集計するのみで、新規テーブルは使わない。
+ * membership_fees(type='monthly') の既存レコードを集計し、まだ到来している月で
+ * レコードが無い現金払い会員分は自動生成してから返す。新規テーブルは使わない。
  */
 export async function getMonthlyFeeMatrix(teamId: string, year: number) {
   const supabase = await createClient()
@@ -37,26 +78,58 @@ export async function getMonthlyFeeMatrix(teamId: string, year: number) {
 
   const { data: members } = await admin
     .from("team_members")
-    .select("swimmer_id, role, profiles(id, name)")
+    .select("swimmer_id, role, joined_at, stripe_subscription_id, subscription_status, profiles(id, name)")
     .eq("team_id", teamId)
     .eq("status", "active")
     .eq("membership_type", "monthly")
 
   if (!members || members.length === 0) return { data: { year, members: [] } }
 
-  const { data: feeRecords } = await admin
+  const { data: monthlyFeeRecords } = await admin
     .from("membership_fees")
     .select("id, swimmer_id, period, status, amount, paid_at")
     .eq("team_id", teamId)
     .eq("type", "monthly")
     .like("period", `${year}-%`)
+  let feeRecords: NonNullable<typeof monthlyFeeRecords> = monthlyFeeRecords ?? []
+
+  const { data: team } = await admin
+    .from("teams")
+    .select("monthly_fee_amount")
+    .eq("id", teamId)
+    .single()
+
+  const now = new Date()
+  // その年度のうち「既に到来している」最終月(未来の年度は0=対象月なし、過去の年度は12)
+  const lastDueMonth =
+    year > now.getFullYear() ? 0 : year === now.getFullYear() ? now.getMonth() + 1 : 12
+
+  if (lastDueMonth > 0 && team?.monthly_fee_amount && team.monthly_fee_amount > 0) {
+    const toGenerate: { swimmerId: string; period: string }[] = []
+    for (const m of members) {
+      // Stripe決済が有効(行き止まり状態でない)会員はwebhook側に委ねる
+      if (m.stripe_subscription_id && !isTerminalSubscriptionStatus(m.subscription_status)) continue
+
+      const joinedDate = new Date(m.joined_at)
+      const joinedYear = joinedDate.getFullYear()
+      const joinedMonth = joinedDate.getMonth() + 1
+      for (let month = 1; month <= lastDueMonth; month++) {
+        if (year < joinedYear || (year === joinedYear && month < joinedMonth)) continue
+        const period = `${year}-${String(month).padStart(2, "0")}`
+        const exists = feeRecords.some((f) => f.swimmer_id === m.swimmer_id && f.period === period)
+        if (!exists) toGenerate.push({ swimmerId: m.swimmer_id, period })
+      }
+    }
+    const inserted = await ensureCashFeeRecords(admin, teamId, "monthly", toGenerate, team.monthly_fee_amount)
+    if (inserted.length > 0) feeRecords = [...feeRecords, ...inserted]
+  }
 
   const rows: MonthlyFeeMatrixRow[] = members.map((m) => {
     const profile = Array.isArray(m.profiles) ? (m.profiles[0] ?? null) : (m.profiles as unknown as { id: string; name: string } | null)
     const months: MonthlyFeeCell[] = Array.from({ length: 12 }, (_, i) => {
       const month = i + 1
       const period = `${year}-${String(month).padStart(2, "0")}`
-      const fee = (feeRecords || []).find((f) => f.swimmer_id === m.swimmer_id && f.period === period)
+      const fee = feeRecords.find((f) => f.swimmer_id === m.swimmer_id && f.period === period)
       if (!fee) return { month, feeId: null, status: "no_record", amount: null, paidAt: null }
       return {
         month,
@@ -77,6 +150,9 @@ export async function getMonthlyFeeMatrix(teamId: string, year: number) {
  * 年会費は年1回・単一レコードでの支払いのため、実データは1件だが、月謝と同じ
  * 見た目(1〜12月マス目)で表示するために、同じレコードの状態を12マスすべてに
  * 複製する。どのマスをタップしても同じ feeId が更新され、12マスまとめて切り替わる。
+ * まだレコードが無く、かつ既にその年度が到来している(入会日以降)会員分は
+ * チーム設定額で自動生成する。年会費にはStripe自動引き落とし経路が存在しないため
+ * (現状は現金払いのみ)、月謝と異なりStripe決済会員を除外するガードは不要。
  */
 export async function getAnnualFeeMatrix(teamId: string, year: number) {
   const supabase = await createClient()
@@ -88,23 +164,39 @@ export async function getAnnualFeeMatrix(teamId: string, year: number) {
 
   const { data: members } = await admin
     .from("team_members")
-    .select("swimmer_id, role, profiles(id, name)")
+    .select("swimmer_id, role, joined_at, profiles(id, name)")
     .eq("team_id", teamId)
     .eq("status", "active")
     .eq("membership_type", "annual")
 
   if (!members || members.length === 0) return { data: { year, members: [] } }
 
-  const { data: feeRecords } = await admin
+  const { data: annualFeeRecords } = await admin
     .from("membership_fees")
     .select("id, swimmer_id, status, amount, paid_at")
     .eq("team_id", teamId)
     .eq("type", "annual")
     .eq("period", String(year))
+  let feeRecords: NonNullable<typeof annualFeeRecords> = annualFeeRecords ?? []
+
+  const { data: team } = await admin
+    .from("teams")
+    .select("annual_fee_amount")
+    .eq("id", teamId)
+    .single()
+
+  if (year <= new Date().getFullYear() && team?.annual_fee_amount && team.annual_fee_amount > 0) {
+    const toGenerate = members
+      .filter((m) => new Date(m.joined_at).getFullYear() <= year)
+      .filter((m) => !feeRecords.some((f) => f.swimmer_id === m.swimmer_id))
+      .map((m) => ({ swimmerId: m.swimmer_id, period: String(year) }))
+    const inserted = await ensureCashFeeRecords(admin, teamId, "annual", toGenerate, team.annual_fee_amount)
+    if (inserted.length > 0) feeRecords = [...feeRecords, ...inserted]
+  }
 
   const rows: MonthlyFeeMatrixRow[] = members.map((m) => {
     const profile = Array.isArray(m.profiles) ? (m.profiles[0] ?? null) : (m.profiles as unknown as { id: string; name: string } | null)
-    const fee = (feeRecords || []).find((f) => f.swimmer_id === m.swimmer_id)
+    const fee = feeRecords.find((f) => f.swimmer_id === m.swimmer_id)
     const months: MonthlyFeeCell[] = Array.from({ length: 12 }, (_, i) => {
       const month = i + 1
       if (!fee) return { month, feeId: null, status: "no_record", amount: null, paidAt: null }
@@ -172,56 +264,6 @@ export async function updateFeeStatus(
 
   revalidatePath("/fees")
   return { success: true }
-}
-
-export async function bulkCreateFees(
-  teamId: string,
-  type: FeeType,
-  period: string,
-  amount: number
-) {
-  if (!Number.isInteger(amount) || amount <= 0) return { error: "金額は1以上の整数を入力してください" }
-  // 月部分は 01〜12 に制限する(範囲チェックなしだと "2024-13" 等の実在しない月の
-  // レコードが作成でき、マトリクス表示(1〜12月固定)からは永久に見えない孤立データになる)
-  if (!/^\d{4}(-(0[1-9]|1[0-2]))?$/.test(period)) return { error: "期間の形式が不正です（例: 2024 または 2024-04）" }
-
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect("/login")
-
-  // admin権限チェック（team_members は RLS バイパスが必要）
-  const admin = createAdminClient()
-  if (!(await isTeamAdmin(admin, teamId, user.id))) return { error: "権限がありません" }
-
-  // 対応する会員種別のみ対象（年会費 → annual, 月謝 → monthly）
-  const bulkMembership = type === "annual" ? ["annual"] : type === "monthly" ? ["monthly"] : ["annual", "monthly"]
-  const { data: members } = await admin
-    .from("team_members")
-    .select("swimmer_id")
-    .eq("team_id", teamId)
-    .eq("status", "active")
-    .in("membership_type", bulkMembership)
-
-  if (!members || members.length === 0) {
-    return { error: "対象メンバーがいません" }
-  }
-
-  const fees = members.map((m) => ({
-    team_id: teamId,
-    swimmer_id: m.swimmer_id,
-    type,
-    period,
-    amount,
-  }))
-
-  const { error } = await admin
-    .from("membership_fees")
-    .upsert(fees, { onConflict: "team_id,swimmer_id,type,period" })
-
-  if (error) return { error: "会費の一括生成に失敗しました" }
-
-  revalidatePath("/fees")
-  return { success: true, count: fees.length }
 }
 
 export async function getMemberFees(swimmerId?: string) {

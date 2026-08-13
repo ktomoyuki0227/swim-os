@@ -13,7 +13,6 @@ import { useToast } from "@/components/toast"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { MemberDetailModal } from "@/app/(app)/teams/[id]/member-detail-modal"
 import type { TeamMemberWithProfile } from "@/types/database"
-import { FeeActions } from "./fee-actions"
 import { FeeTypeSelect, type FeeFilterType } from "./fee-type-select"
 import { FeeMatrixTable, type FeeMatrixGroup } from "./fee-matrix-table"
 import { StampSection } from "./stamp-section"
@@ -254,18 +253,7 @@ export function FeesManager({
         </div>
       )}
 
-      <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-[#1a2332]">会員一覧（{memberCount}名）</h2>
-        {filterType !== "stamp_card" && (
-          <FeeActions
-            teamId={teamId}
-            hasAnnualFee={hasAnnualFee}
-            hasMonthlyFee={hasMonthlyFee}
-            defaultYear={year}
-            onChanged={refetch}
-          />
-        )}
-      </div>
+      <h2 className="text-sm font-semibold text-[#1a2332]">会員一覧（{memberCount}名）</h2>
 
       {showLoading ? (
         <div className="rounded-xl border border-[#dce3ea] bg-white py-10 text-center text-sm text-[#475569]">

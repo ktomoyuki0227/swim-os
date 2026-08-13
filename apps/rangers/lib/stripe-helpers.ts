@@ -1,6 +1,19 @@
 import "server-only"
 import { stripe } from "@/lib/stripe"
 import { createAdminClient } from "@/lib/supabase/server"
+import { mapWithConcurrency } from "@/lib/utils"
+
+/**
+ * これらの状態は、そのSubscriptionが二度と課金されない「行き止まり」であることを
+ * 意味する(Stripe側で完全に終了しており、以後の状態遷移は無い)。該当する場合は
+ * 既存の stripe_subscription_id を無視して新規Subscription作成を試みてよい。
+ * past_due/unpaid/incomplete はまだ「復帰しうる」途中状態のため含めない。
+ */
+export const TERMINAL_SUBSCRIPTION_STATUSES = ["canceled", "incomplete_expired"] as const
+
+export function isTerminalSubscriptionStatus(status: string | null): boolean {
+  return !status || (TERMINAL_SUBSCRIPTION_STATUSES as readonly string[]).includes(status)
+}
 
 /**
  * userId のユーザーに紐づく Stripe Customer を取得、または新規作成する。
@@ -159,6 +172,152 @@ export async function getOrCreateMonthlyPrice(
   }
 
   return price.id
+}
+
+/**
+ * 月謝会員が入会した際に、既にカードを登録済みであれば自動でStripe Subscriptionを
+ * 開始する。以下のいずれかに該当する場合は何もせず skipped 理由を返す(エラー扱いにしない):
+ * Stripe未設定・既にSubscription有り・カード未登録・チームに月謝金額が未設定。
+ * 呼び出し元(入会処理)はこれをブロッキングせず、失敗してもログに残すだけで
+ * 入会自体は成立させる(membership_fees の年会費自動生成と同じ非致命的スタンス)。
+ */
+export async function tryStartMonthlySubscription(
+  teamId: string,
+  swimmerId: string
+): Promise<{ started: boolean; skipped?: string; error?: string }> {
+  if (!process.env.STRIPE_SECRET_KEY) return { started: false, skipped: "stripe_not_configured" }
+
+  const admin = createAdminClient()
+
+  const { data: member } = await admin
+    .from("team_members")
+    .select("id, stripe_subscription_id, subscription_status")
+    .eq("team_id", teamId)
+    .eq("swimmer_id", swimmerId)
+    .eq("status", "active")
+    .single()
+  if (!member) return { started: false, skipped: "member_not_found" }
+  // 行き止まり状態(キャンセル済み・認証期限切れ)のSubscription IDが残っている場合
+  // (種別変更で一度キャンセルした後、再度月謝に戻した等)は再開できるようスキップしない
+  if (member.stripe_subscription_id && !isTerminalSubscriptionStatus(member.subscription_status)) {
+    return { started: false, skipped: "already_subscribed" }
+  }
+
+  const { data: profile } = await admin
+    .from("profiles")
+    .select("stripe_payment_method_id, name")
+    .eq("id", swimmerId)
+    .single()
+  if (!profile?.stripe_payment_method_id) return { started: false, skipped: "no_payment_method" }
+
+  const { data: team } = await admin
+    .from("teams")
+    .select("name, monthly_fee_amount, stripe_product_id, stripe_monthly_price_id")
+    .eq("id", teamId)
+    .single()
+  if (!team?.monthly_fee_amount || team.monthly_fee_amount <= 0) {
+    return { started: false, skipped: "no_fee_configured" }
+  }
+
+  const { data: authData } = await admin.auth.admin.getUserById(swimmerId)
+  const email = authData?.user?.email ?? ""
+
+  let customerId: string
+  let productId: string
+  let priceId: string
+  try {
+    customerId = await getOrCreateStripeCustomer(swimmerId, email, profile.name ?? "")
+    productId = await getOrCreateStripeProduct(teamId, team.name, team.stripe_product_id)
+    priceId = await getOrCreateMonthlyPrice(teamId, team.monthly_fee_amount, productId, team.stripe_monthly_price_id)
+  } catch (err) {
+    console.error("[tryStartMonthlySubscription] Stripe setup failed:", err)
+    return { started: false, error: err instanceof Error ? err.message : "Stripe の準備に失敗しました" }
+  }
+
+  // idempotencyKey は team_member_id + 直前のSubscription ID(無ければ"initial")の組で
+  // 一意化する。member.id だけをキーにすると、キャンセル後の再開時にStripeが古い
+  // (既にキャンセル済みの)Subscription作成レスポンスをキャッシュから返してしまい、
+  // 実際には新しいSubscriptionが作られない、という不具合になるため。
+  const idempotencySuffix = member.stripe_subscription_id ?? "initial"
+  let subscription: Awaited<ReturnType<typeof stripe.subscriptions.create>>
+  try {
+    subscription = await stripe.subscriptions.create(
+      {
+        customer: customerId,
+        items: [{ price: priceId }],
+        payment_behavior: "default_incomplete",
+        payment_settings: {
+          payment_method_types: ["card"],
+          save_default_payment_method: "on_subscription",
+        },
+        metadata: { team_id: teamId, swimmer_id: swimmerId, team_member_id: member.id },
+      },
+      { idempotencyKey: `subscription-create-${member.id}-${idempotencySuffix}` }
+    )
+  } catch (err) {
+    console.error("[tryStartMonthlySubscription] Stripe subscription create failed:", err)
+    return { started: false, error: "Subscription の作成に失敗しました" }
+  }
+
+  const { error: dbErr } = await admin
+    .from("team_members")
+    .update({ stripe_subscription_id: subscription.id, subscription_status: subscription.status })
+    .eq("id", member.id)
+
+  if (dbErr) {
+    // DB 保存失敗 → Stripe Subscription をキャンセルしてロールバック
+    await stripe.subscriptions.cancel(subscription.id).catch(() => null)
+    console.error("[tryStartMonthlySubscription] DB save failed:", dbErr)
+    return { started: false, error: "Subscription の保存に失敗しました" }
+  }
+
+  return { started: true }
+}
+
+// チーム一括開始の同時実行数(Stripe API呼び出しが多くなりすぎないよう制限。
+// actions/subscriptions.ts の SUBSCRIPTION_SYNC_CONCURRENCY と同じ考え方)
+const BULK_SUBSCRIPTION_START_CONCURRENCY = 5
+
+/**
+ * チーム内の「月謝会員だがまだSubscriptionが無い(または過去にキャンセル済みの)」
+ * 会員全員について、既にカード登録済みであれば自動でStripe Subscriptionを開始する。
+ * チームが月謝額を新規設定・変更した際(それまで対象外だった既存会員を遡って
+ * 拾うため)に呼び出す想定。tryStartMonthlySubscription 自体が全ての前提条件
+ * (カード有無・金額設定・Stripe設定)を再チェックするため、ここでは対象候補を
+ * 絞り込んで渡すだけでよい。
+ */
+export async function tryStartMonthlySubscriptionsForTeam(
+  teamId: string
+): Promise<{ started: number; skipped: number }> {
+  if (!process.env.STRIPE_SECRET_KEY) return { started: 0, skipped: 0 }
+
+  const admin = createAdminClient()
+  const { data: members } = await admin
+    .from("team_members")
+    .select("swimmer_id, stripe_subscription_id, subscription_status")
+    .eq("team_id", teamId)
+    .eq("status", "active")
+    .eq("membership_type", "monthly")
+
+  if (!members || members.length === 0) return { started: 0, skipped: 0 }
+
+  const targets = members.filter(
+    (m) => !m.stripe_subscription_id || isTerminalSubscriptionStatus(m.subscription_status)
+  )
+  if (targets.length === 0) return { started: 0, skipped: 0 }
+
+  let started = 0
+  let skipped = 0
+  await mapWithConcurrency(targets, BULK_SUBSCRIPTION_START_CONCURRENCY, async (m) => {
+    const result = await tryStartMonthlySubscription(teamId, m.swimmer_id)
+    if (result.started) started++
+    else skipped++
+    if (result.error) {
+      console.error(`[tryStartMonthlySubscriptionsForTeam] failed for swimmer ${m.swimmer_id}:`, result.error)
+    }
+  })
+
+  return { started, skipped }
 }
 
 /**

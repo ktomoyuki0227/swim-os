@@ -10,15 +10,17 @@ import { isTeamAdmin, getActiveTeamAdminIds } from "@/lib/auth/require-team-admi
 import { notifyUsers } from "@/lib/notifications"
 import { isRateLimited } from "@/lib/rate-limit"
 import { stripe } from "@/lib/stripe"
+import { tryStartMonthlySubscription } from "@/lib/stripe-helpers"
 
 const JOIN_TEAM_RATE_LIMIT = 10
 const JOIN_TEAM_RATE_WINDOW_MS = 60 * 1000
 
 /**
  * メンバー削除・会員種別変更で月謝会員でなくなる際に、既存のStripe Subscriptionを
- * cancelMonthlySubscription(actions/subscriptions.ts)と同じcancel_at_period_end方式で
- * キャンセルする内部ヘルパー。これを呼ばないと、削除/変更後もStripe側の定期課金が
- * 残り続けて請求され続けてしまう。Stripe未設定環境やSubscriptionが無い場合は何もしない。
+ * cancel_at_period_end方式でキャンセルする内部ヘルパー。これを呼ばないと、
+ * 削除/変更後もStripe側の定期課金が残り続けて請求され続けてしまう。
+ * Stripe未設定環境やSubscriptionが無い場合は何もしない。
+ * (開始側は lib/stripe-helpers.ts の tryStartMonthlySubscription 参照)
  */
 async function cancelStripeSubscriptionIfActive(
   admin: ReturnType<typeof createAdminClient>,
@@ -131,6 +133,15 @@ export async function joinTeamByCode(
     })
     if (feeError) {
       console.error("[joinTeamByCode] Failed to create annual fee record:", feeError)
+    }
+  }
+
+  // 月謝会員なら、既にカード登録済みの場合に限り Stripe Subscription を自動開始する
+  // (カード未登録・Stripe未設定等の場合は何もせず現金払い会員として扱われる)
+  if (membershipType === "monthly" && team.monthly_fee_amount) {
+    const subResult = await tryStartMonthlySubscription(team.id, user.id)
+    if (subResult.error) {
+      console.error("[joinTeamByCode] Failed to auto-start monthly subscription:", subResult.error)
     }
   }
 
@@ -261,7 +272,7 @@ export async function updateMembershipType(
   const admin = createAdminClient()
   const { data: tm } = await admin
     .from("team_members")
-    .select("team_id, membership_type, stripe_subscription_id")
+    .select("team_id, swimmer_id, membership_type, stripe_subscription_id")
     .eq("id", teamMemberId)
     .single()
   if (!tm) return { error: "メンバーが見つかりません" }
@@ -275,10 +286,16 @@ export async function updateMembershipType(
 
   if (error) return { error: "会員種別の変更に失敗しました" }
 
-  // 月謝以外に変更した場合、既存のStripe Subscriptionが残っていれば請求が続かないよう
-  // キャンセルする（cancelStripeSubscriptionIfActiveが内部でsubscription_statusも更新する）
   if (type !== "monthly" && tm.membership_type === "monthly") {
+    // 月謝以外に変更した場合、既存のStripe Subscriptionが残っていれば請求が続かないよう
+    // キャンセルする（cancelStripeSubscriptionIfActiveが内部でsubscription_statusも更新する）
     await cancelStripeSubscriptionIfActive(admin, teamMemberId, tm.stripe_subscription_id)
+  } else if (type === "monthly" && tm.membership_type !== "monthly") {
+    // 月謝に変更した場合、既にカード登録済みなら自動でStripe Subscriptionを開始する
+    const subResult = await tryStartMonthlySubscription(tm.team_id, tm.swimmer_id)
+    if (subResult.error) {
+      console.error("[updateMembershipType] Failed to auto-start monthly subscription:", subResult.error)
+    }
   }
 
   revalidatePath("/teams")
@@ -363,10 +380,16 @@ export async function updateMemberInfo(
   if (error) return { error: "メンバー情報の更新に失敗しました" }
   if (!updated || updated.length === 0) return { error: "メンバーが見つかりません" }
 
-  // 月謝以外に変更した場合、既存のStripe Subscriptionが残っていれば請求が続かないよう
-  // キャンセルする（cancelStripeSubscriptionIfActiveが内部でsubscription_statusも更新する）
   if (data.membershipType !== "monthly" && beforeUpdate?.membership_type === "monthly") {
+    // 月謝以外に変更した場合、既存のStripe Subscriptionが残っていれば請求が続かないよう
+    // キャンセルする（cancelStripeSubscriptionIfActiveが内部でsubscription_statusも更新する）
     await cancelStripeSubscriptionIfActive(admin, updated[0].id, beforeUpdate.stripe_subscription_id)
+  } else if (data.membershipType === "monthly" && beforeUpdate?.membership_type !== "monthly") {
+    // 月謝に変更した場合、既にカード登録済みなら自動でStripe Subscriptionを開始する
+    const subResult = await tryStartMonthlySubscription(teamId, swimmerId)
+    if (subResult.error) {
+      console.error("[updateMemberInfo] Failed to auto-start monthly subscription:", subResult.error)
+    }
   }
 
   revalidatePath(`/teams/${teamId}`)

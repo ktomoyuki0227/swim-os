@@ -10,6 +10,7 @@ import { PREFECTURES } from "@/types/database"
 import { isTeamAdmin } from "@/lib/auth/require-team-admin"
 import { notifyUser, notifyUsers } from "@/lib/notifications"
 import { syncActiveSubscriptionsToNewPrice } from "@/actions/subscriptions"
+import { tryStartMonthlySubscription, tryStartMonthlySubscriptionsForTeam } from "@/lib/stripe-helpers"
 import { isRateLimited } from "@/lib/rate-limit"
 
 // PostgRESTの .not("id", "in", "(...)")  に渡す文字列結合前のUUID形式バリデーション用
@@ -125,6 +126,15 @@ export async function createTeam(data: unknown) {
     return { error: "グループの作成に失敗しました" }
   }
 
+  // 作成者自身が月謝会員として登録され、かつ既にカード登録済みなら自動でStripe
+  // Subscriptionを開始する(通常は月謝金額が未設定のため何もせずskipされる)
+  if (adminMembershipType === "monthly" && team.monthly_fee_amount) {
+    const subResult = await tryStartMonthlySubscription(team.id, user.id)
+    if (subResult.error) {
+      console.error("[createTeam] Failed to auto-start monthly subscription:", subResult.error)
+    }
+  }
+
   // チーム作成ウェルカム通知（RLS で INSERT が blocked されるため adminClient を使用）
   await notifyUser(user.id, {
     type: "team_created",
@@ -150,10 +160,11 @@ export async function updateTeam(teamId: string, data: unknown) {
   const admin = createAdminClient()
   if (!(await isTeamAdmin(admin, teamId, user.id))) return { error: "権限がありません" }
 
-  // 会費変更時、既存会員への価格同期が必要かどうかを判定するため、更新前の値を取得
+  // 会費変更時、既存会員への価格同期・新規Subscription開始が必要かどうかを
+  // 判定するため、更新前の値を取得
   const { data: beforeUpdate } = await admin
     .from("teams")
-    .select("name, monthly_fee_amount, annual_fee_amount, stripe_product_id, stripe_monthly_price_id")
+    .select("name, monthly_fee_amount, annual_fee_amount, has_monthly_fee, stripe_product_id, stripe_monthly_price_id")
     .eq("id", teamId)
     .single()
 
@@ -164,24 +175,36 @@ export async function updateTeam(teamId: string, data: unknown) {
 
   if (error) return { error: "グループ情報の更新に失敗しました" }
 
-  // 月謝額が変更された場合、既にアクティブなStripe Subscriptionを全て新価格に切り替える。
-  // 値上げ・値下げのたびにチームを作り直す必要がないようにするための仕組み。
-  if (
-    beforeUpdate &&
+  const effectiveMonthlyFeeAmount = parsed.data.monthly_fee_amount ?? beforeUpdate?.monthly_fee_amount ?? null
+  const monthlyFeeAmountChanged =
     parsed.data.monthly_fee_amount !== undefined &&
-    parsed.data.monthly_fee_amount !== beforeUpdate.monthly_fee_amount &&
-    parsed.data.monthly_fee_amount > 0
-  ) {
-    await syncActiveSubscriptionsToNewPrice(
-      admin,
-      teamId,
-      beforeUpdate.name,
-      parsed.data.monthly_fee_amount,
-      beforeUpdate.stripe_product_id,
-      beforeUpdate.stripe_monthly_price_id
-    ).catch((err) => {
-      console.error("[updateTeam] syncActiveSubscriptionsToNewPrice failed:", err)
-    })
+    parsed.data.monthly_fee_amount !== beforeUpdate?.monthly_fee_amount
+  const monthlyFeeJustEnabled = parsed.data.has_monthly_fee === true && beforeUpdate?.has_monthly_fee === false
+
+  if (beforeUpdate && effectiveMonthlyFeeAmount && effectiveMonthlyFeeAmount > 0) {
+    // 月謝額が変更された場合、既にアクティブなStripe Subscriptionを全て新価格に切り替える。
+    // 値上げ・値下げのたびにチームを作り直す必要がないようにするための仕組み。
+    if (monthlyFeeAmountChanged) {
+      await syncActiveSubscriptionsToNewPrice(
+        admin,
+        teamId,
+        beforeUpdate.name,
+        effectiveMonthlyFeeAmount,
+        beforeUpdate.stripe_product_id,
+        beforeUpdate.stripe_monthly_price_id
+      ).catch((err) => {
+        console.error("[updateTeam] syncActiveSubscriptionsToNewPrice failed:", err)
+      })
+    }
+
+    // 月謝額が新規設定・変更された、または月謝会費が新たに有効化された場合、
+    // それまで対象外だった「月謝会員だがSubscriptionが無い」既存会員を遡って拾い、
+    // 既にカード登録済みの人だけ自動でSubscriptionを開始する
+    if (monthlyFeeAmountChanged || monthlyFeeJustEnabled) {
+      await tryStartMonthlySubscriptionsForTeam(teamId).catch((err) => {
+        console.error("[updateTeam] tryStartMonthlySubscriptionsForTeam failed:", err)
+      })
+    }
   }
 
   // 年会費額が変更された場合、今年分の未払いレコードのみ新金額に更新する
