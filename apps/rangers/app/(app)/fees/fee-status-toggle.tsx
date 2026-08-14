@@ -16,6 +16,13 @@ interface FeeStatusToggleProps {
   size?: "badge" | "icon"
   confirmTitle?: string
   confirmDescription?: string
+  /**
+   * 「(会員名)さんの(対象)」のように、この操作が何を指しているかを表す文言。
+   * 指定した場合、成功時に「{successLabel}を支払済みにしました」のようなトーストを表示する。
+   * icon表示は小さく無文字のため、押し間違い不安を解消する目的（マトリクスの月ごとの
+   * セルなど「今どれを押したか」が視覚的にわかりにくい場面で特に有効）。未指定ならトーストなし。
+   */
+  successLabel?: string
   onMarkPaid: () => Promise<{ error?: string } | void>
   onRevert: () => Promise<{ error?: string } | void>
   /** router.refresh()に加えて呼び出し元で追加の再取得をしたい場合に指定する（成功時のみ） */
@@ -66,6 +73,7 @@ export function FeeStatusToggle({
   size = "badge",
   confirmTitle = "支払済みステータスを取り消しますか？",
   confirmDescription = "支払いステータスを「未払い」に戻します。本当に元に戻しても大丈夫ですか？",
+  successLabel,
   onMarkPaid,
   onRevert,
   onChanged,
@@ -79,7 +87,7 @@ export function FeeStatusToggle({
   const isPaid = status === "paid"
   const isIcon = size === "icon"
 
-  const run = (action: () => Promise<{ error?: string } | void>) => {
+  const run = (action: () => Promise<{ error?: string } | void>, successMessage?: string) => {
     startTransition(async () => {
       try {
         const result = await action()
@@ -88,6 +96,7 @@ export function FeeStatusToggle({
         } else {
           router.refresh()
           onChanged?.()
+          if (successMessage) showToast(successMessage, "success")
         }
       } catch {
         showToast("処理に失敗しました。もう一度お試しください。", "error")
@@ -133,7 +142,10 @@ export function FeeStatusToggle({
           variant="danger"
           isLoading={isPending}
           loadingLabel="処理中..."
-          onConfirm={() => { setShowUndoConfirm(false); run(onRevert) }}
+          onConfirm={() => {
+            setShowUndoConfirm(false)
+            run(onRevert, successLabel ? `${successLabel}を未払いに戻しました` : undefined)
+          }}
           onCancel={() => setShowUndoConfirm(false)}
         />
       </>
@@ -143,7 +155,7 @@ export function FeeStatusToggle({
   return (
     <button
       type="button"
-      onClick={() => run(onMarkPaid)}
+      onClick={() => run(onMarkPaid, successLabel ? `${successLabel}を支払済みにしました` : undefined)}
       disabled={isPending}
       className={isIcon ? `${ICON_CLASSNAME} ${STATUS_ICON_CLASS[status]}` : "rounded-full disabled:opacity-50"}
       title={isIcon ? "未払い・タップで現金受領済みにする" : undefined}

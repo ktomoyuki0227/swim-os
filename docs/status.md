@@ -1,5 +1,91 @@
 # 作業ステータス
-最終更新: 2026-08-07（開発依頼元からのフィードバック6件対応・実装完了、DB migration適用は未実施）
+最終更新: 2026-08-14（ヒュドールフィードバック対応: 月謝マトリクス視認性・セッション過去タブ 実装完了、commit未実施）
+
+---
+
+## 完了 ✅: ヒュドールフィードバック対応（月謝マトリクス視認性・現金回収導線）（2026-08-14）
+
+### 経緯
+
+ヒュドールさんに本番環境を再共有した際のフィードバック4点について、「調査→プラン→壁打ち→承認→実装」の順で対応。
+
+1. 支払い管理で何月分の月謝か一目でわからない
+2. 現金で受け取った月謝を支払済みにする操作がどこかわからない
+3. グループ内のセッションが日程終了後に一覧から消える
+4. 前日集金・翌日処理したい場合にどこを見ればいいかわからない
+
+調査の結果、1・2はUI改善（機能自体は既にあった）、3・4は実装漏れ（管理者ビューのセッション一覧が開催日を過ぎると恒久的に非表示になり、メンバービューには既にある「今後／過去」切り替えが管理者側だけ抜けていた）と判明。
+
+### 実装内容
+
+1. **月謝マトリクスのヘッダーをスクロール追従に**（`fee-matrix-table.tsx`）: テーブルラッパーを`max-h-[60vh] overflow-y-auto`にして自身を縦スクロールコンテナ化し、`<thead>`各`<th>`に`sticky top-0`を追加。会員数が増えて縦スクロールしても月名ヘッダーが常に見える。
+2. **支払済み切り替え時の成功トースト**（`fee-status-toggle.tsx`）: `successLabel`propを新設し、「○○さんの○月分を支払済みにしました」のようなトーストを表示。呼び出し元（`fee-matrix-table.tsx`の年会費・月謝両方、`stamp-purchase-status.tsx`）に反映。
+3. **管理者向けセッション一覧に「今後／過去」切り替え+現金未回収バッジを追加**（新規`app/(app)/teams/[id]/admin-session-list.tsx`、`app/teams/[id]/page.tsx`を全面改修）: メンバー側の`member-session-list.tsx`と同じ切り替えUIパターンを採用。過去タブの各セッションに`session_registrations`(payment_method=cash, payment_status=pending, 未キャンセル)の件数を集計した「現金未回収 N件」バッジを表示。トグルボタン自体にも過去分の合計未回収件数をバッジで常時表示し、今後タブを見ている間も見落とさないようにした。
+
+### 検証
+
+- `tsc --noEmit`・`eslint`（変更ファイル個別+プロジェクト全体）・`next build`（全27ルート）すべてクリーン確認済み
+- 自己レビューで、未回収バッジがトグルボタン上で「今後」ラベルに誤って紐づいて見える表示バグを発見・修正（フィルター文言と切り離して常時表示する形に変更）
+- Playwright実機確認は環境側のブラウザ拡張未接続のため未実施（コード・型・ビルドレベルの検証のみ）
+
+### 次にやること
+- commit・push（ともくんの確認後）
+- 可能であれば実機（Playwright）での見た目確認
+
+### 経緯
+
+ともくんから「今、月謝などの会費発生（毎月の請求）は何がトリガーで実行される仕様か」「現金払いの会員に落ち着いても、レコードは自動で作成された方がいい」「新しい会員がチームに増えた場合のStripe自動引き落としの開始・発生が自動で起こるようにしてほしい」という一連の確認・要望を受け、設計を固めてから実装。
+
+調査の結果判明した事実:
+- カード登録済みの月謝会員はStripe Subscription（`payment_behavior: default_incomplete`）が既にあれば自動課金されるが、**入会時にSubscriptionを自動開始する経路がどこにも無く**、常に管理者の手動ボタン（「会費を一括生成」）に依存していた
+- Subscriptionの停止（キャンセル）は月謝以外への種別変更・退会時に既に自動化済みで問題なし
+- 現金払い会員は請求レコード自体が自動生成されず、手動一括生成ボタンでしか作れなかった
+
+ともくんの指示（要約）: 「クレジットカード登録は会員が入会時に必ず行っている前提でよい。それ以降のSubscription開始は全てコードで担ってほしい。入会時2箇所だけでなく、後から月謝に変更した場合や、その他考えられる全ての入り口を含めて、Stripeサブスクリプションが自動開始するパターンを全体的に見直して実装してほしい」
+
+### 実装内容
+
+**1. 月謝Stripe Subscription自動開始（`lib/stripe-helpers.ts`に集約）**
+
+新設: `tryStartMonthlySubscription(teamId, swimmerId)` — 以下の全条件を満たす場合のみ自動開始し、いずれか欠ける場合は非致命的にskip（呼び出し元の処理自体は継続）:
+Stripe設定済み・対象会員が存在・既存Subscriptionが行き止まり状態でない・カード登録済み・チームに月謝金額が設定済み。
+
+自動開始を呼び出す全ての入り口（今回洗い出した「Subscriptionが始まりうる場所」すべて）:
+- `actions/teams/members.ts` `joinTeamByCode` — 招待コードでの新規入会時（月謝選択時）
+- `actions/join-requests.ts` `approveJoinRequest` — 参加リクエスト承認時（月謝選択時）
+- `actions/teams/members.ts` `updateMembershipType` — 管理者のクイック操作での会員種別変更（月謝への変更時）
+- `actions/teams/members.ts` `updateMemberInfo` — メンバー詳細編集モーダルでの会員種別変更（月謝への変更時）
+- `actions/teams/crud.ts` `createTeam` — チーム作成者自身の初期会員登録が月謝の場合
+- `actions/teams/crud.ts` `updateTeam` — チームが月謝金額を新規設定・変更した際、新設 `tryStartMonthlySubscriptionsForTeam(teamId)` で既存の「月謝会員だがSubscriptionが無い」会員を一括で遡り開始
+
+停止（キャンセル）側は元々自動化済みのため変更なし。
+
+**2. 現金払い会員の会費自動生成（`actions/fees.ts`）**
+
+手動の「会費を一括生成」ボタン（`bulkCreateFees`・`fee-actions.tsx`）を削除し、`getMonthlyFeeMatrix`/`getAnnualFeeMatrix`取得時に自動生成する方式に変更。
+- 「既に到来している・入会日以降・まだレコードが無い」期間のみ、チーム設定額で生成（未来分は生成しない）
+- 既に支払い済み等で存在する期間は`upsert(..., { ignoreDuplicates: true })`で一切触らない（例: 1〜8月分すでに支払済みの状態で9月になった場合、生成されるのは9月分のみ）
+- Stripe決済が有効（行き止まり状態でない）会員は完全に対象外とし、webhook側のレコード作成と競合しないようにした
+
+**3. 不要になったUI・関数の削除**
+- `app/(app)/fees/subscription-section.tsx`（Stripe手動開始・停止の未接続UI、元々orphan）
+- `app/(app)/fees/fee-actions.tsx`（手動一括生成ボタン）
+- `actions/subscriptions.ts`の`startMonthlySubscription`/`cancelMonthlySubscription`/`syncSubscriptionStatus`（呼び出し元ゼロを確認済み、`syncActiveSubscriptionsToNewPrice`のみ残存）
+
+### レビューで発見・修正したバグ
+
+**Stripeサブスクリプションの「行き止まり状態」判定漏れ**: `canceled`のみを終了状態として扱っており、Stripeの`incomplete_expired`（初回決済の認証期限切れ）を見落としていた。該当会員が現金フォールバックにも新規Subscription再開にも進めなくなる不具合。`lib/stripe-helpers.ts`に`TERMINAL_SUBSCRIPTION_STATUSES`定数と`isTerminalSubscriptionStatus()`を新設し、`tryStartMonthlySubscription`・`tryStartMonthlySubscriptionsForTeam`・`getMonthlyFeeMatrix`の3箇所で統一的にチェックするよう修正。Webhookハンドラが`subscription_status`をStripeの生の値でそのまま保存していることを確認し、実際にDBへ現れうる値であることを裏付け済み。
+
+他: Stripe idempotencyKeyがteam_member_idのみだと、キャンセル後の再開時にStripeが古いキャッシュレスポンスを返し実際には新しいSubscriptionが作られない不具合を先に発見・修正済み（idempotencyKeyにteam_member_id + 直前のSubscription IDの組を使用）。
+
+### 検証・commit
+
+- `tsc --noEmit`・`eslint .`・`next build`（全27ルート）すべてクリーン確認済み
+- 該当する自動課金機能10ファイルのみをステージ（他セッションの未関係な変更は含めず）
+- commit `a8951d0`（`feat(rangers): 月謝Stripeサブスクリプションの自動開始と現金会費の自動生成`）→ `main`にpush済み
+
+### 次にやること
+- 特になし。本番運用にすぐ移れる状態
 
 ---
 

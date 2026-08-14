@@ -20,6 +20,7 @@ export function StampPurchaseStatus({ purchaseId, status, swimmerName, onChanged
     <FeeStatusToggle
       status={status}
       confirmDescription={`${swimmerName}さんの回数券購入の支払いステータスを「未払い」に戻します。`}
+      successLabel={`${swimmerName}さんの回数券購入`}
       onMarkPaid={() => updateStampPurchaseStatus(purchaseId, "paid", "cash")}
       onRevert={() => updateStampPurchaseStatus(purchaseId, "unpaid")}
       onChanged={onChanged}

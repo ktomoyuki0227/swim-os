@@ -1,13 +1,10 @@
 export const dynamic = "force-dynamic"
 
-import Link from "next/link"
 import Image from "next/image"
 import { notFound, redirect } from "next/navigation"
 import { createClient, createAdminClient } from "@/lib/supabase/server"
 import { getTeam, getTeamMembers, getTeamFeeStats, getPublicTeam } from "@/actions/teams"
 import { getTeamSessions } from "@/actions/sessions"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { AppShell } from "@/components/app-shell"
 import { PublicHeader } from "@/components/layout/public-header"
 import { PublicFooter } from "@/components/layout/public-footer"
@@ -18,6 +15,7 @@ import { ContactInfoButton } from "@/components/teams/contact-info-button"
 import { AdminTeamActions } from "@/app/(app)/teams/[id]/admin-team-actions"
 import { TeamDescription } from "@/app/(app)/teams/[id]/team-description"
 import { MemberSessionList } from "@/app/(app)/teams/[id]/member-session-list"
+import { AdminSessionList } from "@/app/(app)/teams/[id]/admin-session-list"
 import { MemberPreviewBar } from "@/app/(app)/teams/[id]/member-preview-bar"
 import { InviteButton } from "@/app/(app)/teams/[id]/invite-button"
 import { StripeSetupBanner } from "@/app/(app)/teams/[id]/stripe-setup-banner"
@@ -119,16 +117,38 @@ export default async function TeamPage({ params }: TeamPageProps) {
 
     const team = teamResult.data
     const members = membersResult.data || []
-    const now = new Date()
-    const sessions = (sessionsResult.data || [])
-      .filter(
-        (s: Record<string, unknown>) =>
-          (s.session_status === "open" || s.session_status === "closed" || s.session_status === "confirmed") &&
-          new Date(s.scheduled_at as string) > now
-      )
-      .slice(0, 10)
+    // 中止済みも含めて全件保持する(過去タブで「なぜ消えたか」がわかるよう中止バッジで表示するため。
+    // MemberSessionListと同じ方針)。今後/過去の絞り込み・件数上限はAdminSessionList側で行う
+    const allSessions = (sessionsResult.data || []) as Record<string, unknown>[]
     const joinRequests = joinRequestsResult.data || []
     const feeStats = feeStatsResult.data ?? null
+
+    // 現金払いでまだ受領済みになっていない参加登録の件数をセッションごとに集計
+    // (過去タブで「集金し忘れ」を一目でわかるようにするため。フィードバック対応)
+    const sessionIds = allSessions.map((s) => s.id as string)
+    const { data: pendingCashRegs } = sessionIds.length > 0
+      ? await adminClient
+          .from("session_registrations")
+          .select("session_id")
+          .in("session_id", sessionIds)
+          .eq("payment_method", "cash")
+          .eq("payment_status", "pending")
+          .is("cancelled_at", null)
+      : { data: [] as { session_id: string }[] | null }
+    const pendingCashCountBySession = new Map<string, number>()
+    for (const reg of pendingCashRegs || []) {
+      pendingCashCountBySession.set(reg.session_id, (pendingCashCountBySession.get(reg.session_id) ?? 0) + 1)
+    }
+
+    const adminSessionItems = allSessions.map((s) => ({
+      id: s.id as string,
+      title: s.title as string,
+      scheduled_at: s.scheduled_at as string,
+      location: s.location as string | null,
+      type: s.type as string,
+      session_status: s.session_status as string,
+      pendingCashCount: pendingCashCountBySession.get(s.id as string) ?? 0,
+    }))
 
     const adminMembers = members.filter((m: Record<string, unknown>) => m.role === "admin")
     const previewMembers = members.slice(0, 3)
@@ -246,64 +266,8 @@ export default async function TeamPage({ params }: TeamPageProps) {
               </div>
             )}
 
-            {/* ── デフォルト: セッション一覧 ── */}
-            <div>
-              <h2 className="mb-3 text-[18px] font-semibold leading-[1.4] text-[#1a2332]">セッション</h2>
-              {sessions.length === 0 ? (
-                <div className="flex flex-col items-center py-12 px-6">
-                  <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[rgba(0,95,140,0.08)]">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                      <line x1="16" y1="2" x2="16" y2="6" />
-                      <line x1="8" y1="2" x2="8" y2="6" />
-                      <line x1="3" y1="10" x2="21" y2="10" />
-                    </svg>
-                  </div>
-                  <p className="text-base font-semibold text-[#1a2332]">予定されているセッションはありません</p>
-                  <p className="mt-1 text-sm text-[#475569]">セッションを作成して、メンバーに共有しましょう</p>
-                </div>
-              ) : (
-                <div className="flex flex-col gap-3">
-                  {sessions.map((session: Record<string, unknown>) => (
-                    <Link key={session.id as string} href={`/sessions/${session.id}`}>
-                      <Card className="border-[#dce3ea] transition-all hover:border-[#005F8C]">
-                        <CardContent className="flex items-center justify-between p-4">
-                          <div>
-                            <p className="font-medium text-[#1a2332]">{session.title as string}</p>
-                            <p className="text-sm text-[#475569]">
-                              {new Date(session.scheduled_at as string).toLocaleDateString("ja-JP", {
-                                month: "long",
-                                day: "numeric",
-                                weekday: "short",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                                timeZone: "Asia/Tokyo",
-                              })}
-                              {session.location ? ` · ${session.location as string}` : ""}
-                            </p>
-                          </div>
-                          <Badge
-                            className={
-                              session.session_status === "confirmed"
-                                ? "border-transparent bg-[#eaf7f0] text-[#0f8a4f]"
-                                : session.session_status === "closed"
-                                ? "border-transparent bg-[#fdf6e3] text-[#b8860b]"
-                                : "border-transparent bg-[#e8f2f8] text-[#005F8C]"
-                            }
-                          >
-                            {session.session_status === "confirmed"
-                              ? "確定"
-                              : session.session_status === "closed"
-                              ? "受付終了・判断待ち"
-                              : "受付中"}
-                          </Badge>
-                        </CardContent>
-                      </Card>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
+            {/* ── セッション一覧（今後/過去切り替え）── */}
+            <AdminSessionList sessions={adminSessionItems} />
 
           </div>
       </AppShell>

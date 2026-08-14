@@ -45,19 +45,22 @@ export function FeeMatrixTable({ groups, onOpenMember, onRemoveMember, removingI
   }
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-[#dce3ea] bg-white">
+    // max-h + overflow-y-auto でこの div 自体を縦スクロールコンテナにする(会員数が
+    // 増えてもページ全体が間延びしない上、theadのsticky top-0がこのdivを基準に効くため、
+    // 外側レイアウト(ヘッダーの高さ等)に依存せず安定して月名ヘッダーを追従表示できる)
+    <div className="max-h-[60vh] overflow-x-auto overflow-y-auto rounded-xl border border-[#dce3ea] bg-white">
       <table className="w-full min-w-[480px] border-collapse text-xs">
         <thead>
           <tr className="border-b border-[#e8edf2] bg-[#f8fafb]">
-            <th className="sticky left-0 z-10 whitespace-nowrap bg-[#f8fafb] px-2 py-1.5 text-left font-medium text-[#64748b]">
+            <th className="sticky left-0 top-0 z-20 whitespace-nowrap bg-[#f8fafb] px-2 py-1.5 text-left font-medium text-[#64748b]">
               会員
             </th>
             {MONTH_LABELS.map((label) => (
-              <th key={label} className="px-1 py-1.5 text-center font-medium text-[#64748b]">
+              <th key={label} className="sticky top-0 z-10 bg-[#f8fafb] px-1 py-1.5 text-center font-medium text-[#64748b]">
                 {label}
               </th>
             ))}
-            <th className="sticky right-0 z-10 bg-[#f8fafb]" />
+            <th className="sticky right-0 top-0 z-10 bg-[#f8fafb]" />
           </tr>
         </thead>
         <tbody>
@@ -81,6 +84,7 @@ export function FeeMatrixTable({ groups, onOpenMember, onRemoveMember, removingI
                         status={row.months[0].status}
                         disabled={!row.months[0].feeId}
                         confirmDescription={`${row.name}さんの支払いステータスを「未払い」に戻します。`}
+                        successLabel={`${row.name}さんの年会費`}
                         onMarkPaid={() => updateFeeStatus(row.months[0].feeId as string, "paid", "cash")}
                         onRevert={() => updateFeeStatus(row.months[0].feeId as string, "unpaid")}
                         onChanged={onChanged}
@@ -94,6 +98,7 @@ export function FeeMatrixTable({ groups, onOpenMember, onRemoveMember, removingI
                           status={cell.status}
                           disabled={!cell.feeId}
                           confirmDescription={`${row.name}さんの支払いステータスを「未払い」に戻します。`}
+                          successLabel={`${row.name}さんの${cell.month}月分`}
                           onMarkPaid={() => updateFeeStatus(cell.feeId as string, "paid", "cash")}
                           onRevert={() => updateFeeStatus(cell.feeId as string, "unpaid")}
                           onChanged={onChanged}
