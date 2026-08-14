@@ -58,7 +58,10 @@ export function FeeTypeSelect({ value, hasAnnualFee, hasMonthlyFee, hasPointCard
         </svg>
       </button>
       {open && (
-        <div className="absolute left-0 top-full z-20 mt-1 min-w-[140px] overflow-hidden rounded-xl border border-[#dce3ea] bg-white shadow-lg">
+        // fee-matrix-table.tsx の sticky ヘッダー(会員列)が z-20 のため、それより
+        // 確実に上に来るよう z-30 にする(同値だとDOM順で後勝ちになりテーブル側が
+        // ドロップダウンの上に描画されてしまう不具合があった)
+        <div className="absolute left-0 top-full z-30 mt-1 min-w-[140px] overflow-hidden rounded-xl border border-[#dce3ea] bg-white shadow-lg">
           {options.map((opt) => (
             <button
               key={opt}
