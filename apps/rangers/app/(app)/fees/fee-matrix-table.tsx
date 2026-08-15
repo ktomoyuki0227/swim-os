@@ -51,26 +51,30 @@ export function FeeMatrixTable({ groups, onOpenMember, onRemoveMember, removingI
     <div className="max-h-[60vh] overflow-x-auto overflow-y-auto rounded-xl border border-[#dce3ea] bg-white">
       <table className="w-full min-w-[480px] border-collapse text-xs">
         <thead>
-          <tr className="border-b border-[#e8edf2] bg-[#f8fafb]">
-            <th className="sticky left-0 top-0 z-20 whitespace-nowrap bg-[#f8fafb] px-2 py-1.5 text-left font-medium text-[#64748b]">
+          {/* h-8 で高さを固定値(32px)にし、下のグループ見出し行の sticky top をこれと
+              同じ値に合わせる(フォントの行送り任せだと1px単位でズレて隙間ができるため) */}
+          <tr className="h-8 border-b border-[#e8edf2] bg-[#f8fafb]">
+            <th className="sticky left-0 top-0 z-20 h-8 whitespace-nowrap bg-[#f8fafb] px-2 py-1.5 text-left font-medium text-[#64748b]">
               会員
             </th>
             {MONTH_LABELS.map((label) => (
-              <th key={label} className="sticky top-0 z-10 bg-[#f8fafb] px-1 py-1.5 text-center font-medium text-[#64748b]">
+              <th key={label} className="sticky top-0 z-10 h-8 bg-[#f8fafb] px-1 py-1.5 text-center font-medium text-[#64748b]">
                 {label}
               </th>
             ))}
-            <th className="sticky right-0 top-0 z-10 bg-[#f8fafb]" />
+            <th className="sticky right-0 top-0 z-10 h-8 bg-[#f8fafb]" />
           </tr>
         </thead>
         <tbody>
           {nonEmptyGroups.map((group) => (
             <Fragment key={group.label}>
               <tr className="bg-[#fafbfc]">
-                {/* 会員名列と同様、横スクロール時も見出し文字が流れて見えなくならないよう
-                    左に固定する(sticky top-0 は付けない: この行はグループの先頭にしか
-                    出ないため縦方向まで追従させる必要はない) */}
-                <td colSpan={14} className="sticky left-0 z-10 bg-[#fafbfc] px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-[#94a3b8]">
+                {/* 会員名列と同じく横スクロールでも流れないよう左に固定し、さらに
+                    上のヘッダー行(h-8=32px)の直下に張り付くよう top-8 で縦方向にも
+                    固定する。これによりグループの先頭行が常に画面内に見え続ける
+                    (いわゆる sticky セクションヘッダー: 次のグループの見出しが
+                    追いつくと自動的に前のものと入れ替わる) */}
+                <td colSpan={14} className="sticky left-0 top-8 z-10 bg-[#fafbfc] px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-[#94a3b8]">
                   {group.label}（{group.rows.length}名）
                 </td>
               </tr>
