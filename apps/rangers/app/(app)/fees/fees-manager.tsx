@@ -16,7 +16,7 @@ import type { TeamMemberWithProfile } from "@/types/database"
 import { FeeTypeSelect, type FeeFilterType } from "./fee-type-select"
 import { FeeMatrixTable, type FeeMatrixGroup } from "./fee-matrix-table"
 import { StampSection } from "./stamp-section"
-import { StampDashboard } from "./stamp-dashboard"
+import { StampLowBalanceBanner } from "./stamp-low-balance-banner"
 
 interface StampMemberRow {
   team_member_id: string
@@ -193,22 +193,23 @@ export function FeesManager({
 
   const annualStats = hasAnnualFee && (filterType === "all" || filterType === "annual") ? statsFor(annualRows, false) : null
   const monthlyStats = hasMonthlyFee && (filterType === "all" || filterType === "monthly") ? statsFor(monthlyRows, true) : null
+  // 回数券の購入記録も「支払済み/未払い/金額」の意味は年会費・月謝と同じため、
+  // 表示中の種別に応じて同じサマリーカードに合算する(常に別枠で出さない)
+  const stampStats = hasPointCard && (filterType === "all" || filterType === "stamp_card") ? stampStatsFor(stampMembers) : null
   const stats = {
-    paid: (annualStats?.paid ?? 0) + (monthlyStats?.paid ?? 0),
-    unpaid: (annualStats?.unpaid ?? 0) + (monthlyStats?.unpaid ?? 0),
-    paidAmount: (annualStats?.paidAmount ?? 0) + (monthlyStats?.paidAmount ?? 0),
-    totalAmount: (annualStats?.totalAmount ?? 0) + (monthlyStats?.totalAmount ?? 0),
+    paid: (annualStats?.paid ?? 0) + (monthlyStats?.paid ?? 0) + (stampStats?.paid ?? 0),
+    unpaid: (annualStats?.unpaid ?? 0) + (monthlyStats?.unpaid ?? 0) + (stampStats?.unpaid ?? 0),
+    paidAmount: (annualStats?.paidAmount ?? 0) + (monthlyStats?.paidAmount ?? 0) + (stampStats?.paidAmount ?? 0),
+    totalAmount: (annualStats?.totalAmount ?? 0) + (monthlyStats?.totalAmount ?? 0) + (stampStats?.totalAmount ?? 0),
   }
+  // 回数券固有の「残数0(要再購入)」だけはサマリーの数値に混ぜられないため、別途バナーで伝える
+  const lowBalanceCount = stampStats?.lowBalanceCount ?? 0
 
   const memberCount = filterType === "stamp_card"
     ? stampMembers.length
     : groups.reduce((sum, g) => sum + g.rows.length, 0)
 
   const showLoading = filterType === "stamp_card" ? !stampLoaded : !matricesLoaded && isPending
-
-  // 回数券のお金回りダッシュボード: 「回数券」表示時は一覧の上に、「すべて」表示時は
-  // 年会費・月謝の会員一覧テーブルの下に追記する(hasPointCardが無ければ両方とも出さない)
-  const stampStats = hasPointCard ? stampStatsFor(stampMembers) : null
 
   return (
     <div className="space-y-4">
@@ -262,34 +263,24 @@ export function FeesManager({
         )}
       </div>
 
-      {/* サマリー: 年会費・月謝の支払済み/未払い(回数券タブでは概念が合わないため非表示) */}
-      {filterType !== "stamp_card" && (
-        <div className="grid grid-cols-3 gap-3">
-          <div className="rounded-2xl border border-[#dce3ea] bg-white p-3 text-center">
-            <p className="text-xl font-bold text-[#0f8a4f]">{stats.paid}</p>
-            <p className="text-xs text-[#475569]">支払済み</p>
-          </div>
-          <div className="rounded-2xl border border-[#dce3ea] bg-white p-3 text-center">
-            <p className="text-xl font-bold text-[#b8860b]">{stats.unpaid}</p>
-            <p className="text-xs text-[#475569]">未払い</p>
-          </div>
-          <div className="rounded-2xl border border-[#dce3ea] bg-white p-3 text-center">
-            <p className="text-base font-bold text-[#005F8C]">¥{stats.paidAmount.toLocaleString()}</p>
-            <p className="text-xs text-[#475569]">/ ¥{stats.totalAmount.toLocaleString()}</p>
-          </div>
+      {/* サマリー: 表示中の種別(年会費・月謝・回数券)すべてを合算した支払済み/未払い/金額 */}
+      <div className="grid grid-cols-3 gap-3">
+        <div className="rounded-2xl border border-[#dce3ea] bg-white p-3 text-center">
+          <p className="text-xl font-bold text-[#0f8a4f]">{stats.paid}</p>
+          <p className="text-xs text-[#475569]">支払済み</p>
         </div>
-      )}
+        <div className="rounded-2xl border border-[#dce3ea] bg-white p-3 text-center">
+          <p className="text-xl font-bold text-[#b8860b]">{stats.unpaid}</p>
+          <p className="text-xs text-[#475569]">未払い</p>
+        </div>
+        <div className="rounded-2xl border border-[#dce3ea] bg-white p-3 text-center">
+          <p className="text-base font-bold text-[#005F8C]">¥{stats.paidAmount.toLocaleString()}</p>
+          <p className="text-xs text-[#475569]">/ ¥{stats.totalAmount.toLocaleString()}</p>
+        </div>
+      </div>
 
-      {/* 回数券ダッシュボード: 「回数券」表示時はここ(一覧の上)に出す */}
-      {filterType === "stamp_card" && stampLoaded && stampStats && (
-        <StampDashboard
-          paidCount={stampStats.paid}
-          unpaidCount={stampStats.unpaid}
-          paidAmount={stampStats.paidAmount}
-          totalAmount={stampStats.totalAmount}
-          lowBalanceCount={stampStats.lowBalanceCount}
-        />
-      )}
+      {/* 回数券固有の「残数0(要再購入)」バナー(サマリーの数値には合算できないため別枠) */}
+      <StampLowBalanceBanner count={lowBalanceCount} />
 
       <h2 className="text-sm font-semibold text-[#1a2332]">会員一覧（{memberCount}名）</h2>
 
@@ -317,16 +308,18 @@ export function FeesManager({
         />
       )}
 
-      {/* 回数券ダッシュボード: 「すべて」表示時は年会費・月謝の一覧テーブルの下に追記する */}
-      {filterType === "all" && stampLoaded && stampStats && (
+      {/* 「すべて」表示時は年会費・月謝の一覧テーブルの下に回数券会員の一覧も追記する */}
+      {filterType === "all" && hasPointCard && stampLoaded && (
         <div className="space-y-3">
           <h2 className="text-sm font-semibold text-[#1a2332]">回数券会員（{stampMembers.length}名）</h2>
-          <StampDashboard
-            paidCount={stampStats.paid}
-            unpaidCount={stampStats.unpaid}
-            paidAmount={stampStats.paidAmount}
-            totalAmount={stampStats.totalAmount}
-            lowBalanceCount={stampStats.lowBalanceCount}
+          <StampSection
+            teamId={teamId}
+            pointCardCount={pointCardCount}
+            members={stampMembers}
+            onOpenMember={openMember}
+            onRemoveMember={openDelete}
+            removingId={removingId}
+            onChanged={refetch}
           />
         </div>
       )}
