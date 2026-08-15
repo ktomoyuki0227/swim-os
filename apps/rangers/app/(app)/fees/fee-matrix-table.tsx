@@ -67,7 +67,10 @@ export function FeeMatrixTable({ groups, onOpenMember, onRemoveMember, removingI
           {nonEmptyGroups.map((group) => (
             <Fragment key={group.label}>
               <tr className="bg-[#fafbfc]">
-                <td colSpan={14} className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-[#94a3b8]">
+                {/* 会員名列と同様、横スクロール時も見出し文字が流れて見えなくならないよう
+                    左に固定する(sticky top-0 は付けない: この行はグループの先頭にしか
+                    出ないため縦方向まで追従させる必要はない) */}
+                <td colSpan={14} className="sticky left-0 z-10 bg-[#fafbfc] px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-[#94a3b8]">
                   {group.label}（{group.rows.length}名）
                 </td>
               </tr>

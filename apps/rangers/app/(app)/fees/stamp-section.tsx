@@ -57,8 +57,8 @@ export function StampSection({ teamId, pointCardCount, members, onOpenMember, on
       <div className="space-y-1.5">
         {members.map((m) => {
           const name = (m.profile?.name as string) || "不明"
+          // 残数分だけ緑に光らせる(逆に「消費数」を光らせてしまっていたバグを修正)
           const cappedRemaining = Math.min(Math.max(m.stamp_remaining, 0), pointCardCount)
-          const used = pointCardCount - cappedRemaining
 
           return (
             <div key={m.swimmer_id} className="flex items-center gap-2 rounded-xl border border-[#dce3ea] bg-white px-2.5 py-1.5">
@@ -70,7 +70,7 @@ export function StampSection({ teamId, pointCardCount, members, onOpenMember, on
                 {Array.from({ length: pointCardCount }).map((_, i) => (
                   <span
                     key={i}
-                    className={`h-[5px] flex-1 rounded-full ${i < used ? "bg-[#0f8a4f]" : "bg-[#f2f7fa]"}`}
+                    className={`h-[5px] flex-1 rounded-full ${i < cappedRemaining ? "bg-[#0f8a4f]" : "bg-[#f2f7fa]"}`}
                   />
                 ))}
               </div>
