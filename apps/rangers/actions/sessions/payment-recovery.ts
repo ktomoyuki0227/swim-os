@@ -159,12 +159,18 @@ export async function markCashPaid(registrationId: string) {
 
   if (!(await isTeamAdmin(adminClient, session.team_id, user.id))) return { error: "管理者のみ操作できます" }
 
-  const { error } = await adminClient
+  // 二重クリック・複数管理者の同時操作による重複通知を防ぐため、事前SELECTの
+  // 状態を条件に含めた原子的な更新にする(他の状態遷移と同じ claim パターン)
+  const { data: claimed, error } = await adminClient
     .from("session_registrations")
     .update({ payment_status: "paid" })
     .eq("id", registrationId)
+    .eq("payment_status", "pending")
+    .select("id")
+    .maybeSingle()
 
   if (error) return { error: "更新に失敗しました" }
+  if (!claimed) return { error: "すでに他の操作で更新されています" }
 
   const chargedAmount = reg.charged_amount ?? (reg.is_member ? (session.member_price || 0) : (session.guest_price || 0))
   await notifyUser(reg.swimmer_id, {
@@ -203,12 +209,17 @@ export async function unmarkCashPaid(registrationId: string) {
 
   if (!(await isTeamAdmin(adminClient, session.team_id, user.id))) return { error: "管理者のみ操作できます" }
 
-  const { error } = await adminClient
+  // markCashPaidと同様、事前SELECTの状態を条件に含めた原子的な更新にする
+  const { data: claimed, error } = await adminClient
     .from("session_registrations")
     .update({ payment_status: "pending" })
     .eq("id", registrationId)
+    .eq("payment_status", "paid")
+    .select("id")
+    .maybeSingle()
 
   if (error) return { error: "更新に失敗しました" }
+  if (!claimed) return { error: "すでに他の操作で更新されています" }
 
   await notifyUser(reg.swimmer_id, {
     type: "payment_reverted",

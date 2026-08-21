@@ -156,6 +156,9 @@ export async function getPublicProfile(profileId: string) {
     .from("profiles")
     .select("id, name, avatar_url, bio, career, achievements, specialties, target_ages, rating_avg, review_count, prefectures, level, swimming_goals, swimmer_type, swim_disciplines, participation_styles")
     .eq("id", profileId)
+    // public_profiles ビュー(00056)と同様、退会済み(deleted_at設定済み)ユーザーの
+    // 公開データは表示しない
+    .is("deleted_at", null)
     .single()
 
   if (error || !data) return { error: "プロフィールが見つかりません", data: null }

@@ -58,9 +58,9 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname.startsWith("/register/sent") ||
     request.nextUrl.pathname.startsWith("/onboarding/complete") ||
     request.nextUrl.pathname.startsWith("/teams/join") ||
-    // チーム公開ページ（UUID形式の /teams/[id] と、そのゲストプレビュー /teams/[id]/preview。
-    // /teams/new, /teams/join などは除外）
-    /^\/teams\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(\/preview)?$/i.test(request.nextUrl.pathname)
+    // チーム公開ページ（UUID形式の /teams/[id] と、そのゲストプレビュー /teams/[id]/preview、
+    // 未ログインでも参加申請導線を見せる /teams/[id]/join。/teams/new, /teams/join(招待コード) などは除外）
+    /^\/teams\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(\/preview|\/join)?$/i.test(request.nextUrl.pathname)
 
   // リフレッシュトークンが無効など認証エラーが発生した場合は
   // 古い sb- Cookie をすべて削除してから /login へリダイレクト

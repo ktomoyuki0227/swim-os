@@ -24,7 +24,7 @@ export function PersonalSearchInput({
     const p = new URLSearchParams()
     if (q) p.set("q", q)
     if (sort !== "newest") p.set("sort", sort)
-    if (recruitingOnly) p.set("recruiting", "1")
+    if (!recruitingOnly) p.set("recruiting", "0")
     if (days.length > 0) p.set("days", days.join(","))
     if (prefectures.length > 0) p.set("prefecture", prefectures.join(","))
     if (gender) p.set("gender", gender)

@@ -275,8 +275,11 @@ async function handleInvoicePaid(invoice: Stripe.Invoice) {
   // amount_paid = 0 は Subscription 作成直後のセットアップインボイス等。記録不要
   if (!invoice.amount_paid || invoice.amount_paid === 0) return
 
-  const subscription = await stripe.subscriptions.retrieve(subId).catch(() => null)
-  if (!subscription) return
+  // ここで例外を握りつぶさない。StripeのAPI障害等で取得に失敗した場合、
+  // 何もせず200を返すと「実際には課金されたのにmembership_feesに記録が残らない」
+  // 状態になり自動復旧できなくなる。呼び出し元(POSTハンドラ)に伝播させて500を返し、
+  // Stripeの再送に委ねる。
+  const subscription = await stripe.subscriptions.retrieve(subId)
 
   const { team_id, swimmer_id } = subscription.metadata
   if (!team_id || !swimmer_id) return
@@ -333,8 +336,8 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
 
   if (!subId) return
 
-  const subscription = await stripe.subscriptions.retrieve(subId).catch(() => null)
-  if (!subscription) return
+  // handleInvoicePaidと同様、API障害を握りつぶさず伝播させて500→Stripe再送に委ねる
+  const subscription = await stripe.subscriptions.retrieve(subId)
 
   const { team_id, swimmer_id } = subscription.metadata
   if (!team_id || !swimmer_id) return

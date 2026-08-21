@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation"
 import { useState, useRef, useEffect } from "react"
 import { cn } from "@/lib/utils"
 import { createClient } from "@/lib/supabase/client"
+import { clearDraft } from "@/app/(auth)/onboarding/draft"
 
 interface NavigationProps {
   userName: string
@@ -83,6 +84,9 @@ export function Navigation({ userName, avatarUrl, unreadCount = 0, inactiveRoute
 
   const handleLogout = async () => {
     await createClient().auth.signOut()
+    // 共有端末に残ったオンボーディング下書き(氏名以外のPII含む)を
+    // 次に別ユーザーがログインする前に確実に消す
+    clearDraft()
     router.push("/login")
   }
   // ── LOGOUT_LOCATION_CHANGE_END ────────────────────────────────────────────

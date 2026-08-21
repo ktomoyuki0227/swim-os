@@ -50,7 +50,7 @@ export default function ResetPasswordPage() {
         <CardHeader className="text-center">
           <CardTitle className="text-2xl text-[#005F8C]">新しいパスワードを設定</CardTitle>
           <CardDescription>
-            新しいパスワードを入力してください（6文字以上）
+            新しいパスワードを入力してください（8文字以上）
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -66,7 +66,7 @@ export default function ResetPasswordPage() {
                 id="password"
                 name="password"
                 type="password"
-                minLength={6}
+                minLength={8}
                 required
                 autoComplete="new-password"
                 value={password}
@@ -79,7 +79,7 @@ export default function ResetPasswordPage() {
                 id="confirm"
                 name="confirm"
                 type="password"
-                minLength={6}
+                minLength={8}
                 required
                 autoComplete="new-password"
                 value={confirm}

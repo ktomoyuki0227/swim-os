@@ -76,13 +76,13 @@ export const teamSchema = z.object({
     .optional(),
   practice_days: z.array(
     z.string().refine((v) => (PRACTICE_DAYS as readonly string[]).includes(v), "無効な練習曜日です")
-  ).default([]),
+  ).max(PRACTICE_DAYS.length, "練習曜日が多すぎます").default([]),
   main_pool: z.string().max(200).optional(),
   bio: z.string().max(1000, "1000文字以内").optional(),
   career: z.string().max(1000, "1000文字以内").optional(),
   target_ages: z.array(
     z.string().refine((v) => (TARGET_AGES as readonly string[]).includes(v), "無効な対象年齢です")
-  ).default([]),
+  ).max(TARGET_AGES.length, "対象年齢が多すぎます").default([]),
   has_session_fee: z.boolean().default(true),
   has_annual_fee: z.boolean().default(false),
   has_monthly_fee: z.boolean().default(false),
@@ -119,9 +119,9 @@ export const sessionSchema = z.object({
     max: z.number().int().min(0).optional(),
     courses: z.number().int().min(1),
     cancel_below: z.number().int().min(0).optional(),
-  })).optional(),
-  target_tags: z.array(z.string()).default([]),
-  target_members: z.array(z.string()).optional(),
+  })).max(30, "コース設定が多すぎます").optional(),
+  target_tags: z.array(z.string().max(50, "タグは50文字以内で入力してください")).max(20, "タグが多すぎます").default([]),
+  target_members: z.array(z.string()).max(500, "対象メンバーが多すぎます").optional(),
   allow_point_card: z.boolean().default(true),
   is_external: z.boolean().default(false),
   competition_fields: z.array(z.object({
@@ -130,7 +130,7 @@ export const sessionSchema = z.object({
     type: z.enum(["text", "select", "number"]),
     required: z.boolean(),
     options: z.array(z.string()).optional(),
-  })).optional(),
+  })).max(30, "入力項目が多すぎます").optional(),
 }).refine(
   (data) =>
     data.min_participants === undefined ||
@@ -155,13 +155,13 @@ export const teamUpdateSchema = z.object({
     .optional(),
   practice_days: z.array(
     z.string().refine((v) => (PRACTICE_DAYS as readonly string[]).includes(v), "無効な練習曜日です")
-  ).optional(),
+  ).max(PRACTICE_DAYS.length, "練習曜日が多すぎます").optional(),
   main_pool: z.string().max(200).nullable().optional(),
   bio: z.string().max(1000, "1000文字以内").nullable().optional(),
   career: z.string().max(1000, "1000文字以内").nullable().optional(),
   target_ages: z.array(
     z.string().refine((v) => (TARGET_AGES as readonly string[]).includes(v), "無効な対象年齢です")
-  ).optional(),
+  ).max(TARGET_AGES.length, "対象年齢が多すぎます").optional(),
   avatar_url: httpUrl().optional(),
   has_session_fee: z.boolean().optional(),
   has_annual_fee: z.boolean().optional(),
@@ -200,8 +200,8 @@ export const sessionUpdateSchema = z.object({
     max: z.number().int().min(0).optional(),
     courses: z.number().int().min(1),
     cancel_below: z.number().int().min(0).optional(),
-  })).optional(),
-  target_tags: z.array(z.string()).optional(),
+  })).max(30, "コース設定が多すぎます").optional(),
+  target_tags: z.array(z.string().max(50, "タグは50文字以内で入力してください")).max(20, "タグが多すぎます").optional(),
   allow_point_card: z.boolean().optional(),
   is_external: z.boolean().optional(),
   is_lp_featured: z.boolean().optional(),
@@ -211,7 +211,7 @@ export const sessionUpdateSchema = z.object({
     type: z.enum(["text", "select", "number"]),
     required: z.boolean(),
     options: z.array(z.string()).optional(),
-  })).optional(),
+  })).max(30, "入力項目が多すぎます").optional(),
   status: z.enum(["published", "draft"]).optional(),
 }).refine(
   (data) =>
@@ -238,7 +238,7 @@ export const announcementSchema = z.object({
   body: z.string().max(5000, "5000文字以内").optional(),
   image_url: httpUrl().optional(),
   link_url: httpUrl().optional(),
-  target_tags: z.array(z.string()).default([]),
+  target_tags: z.array(z.string().max(50, "タグは50文字以内で入力してください")).max(20, "タグが多すぎます").default([]),
 })
 
 export const templateSchema = z.object({
@@ -263,8 +263,8 @@ export const templateUpdateSchema = z.object({
     max: z.number().int().min(0).optional(),
     courses: z.number().int().min(1),
     cancel_below: z.number().int().min(0).optional(),
-  })).optional(),
-  target_tags: z.array(z.string()).optional(),
+  })).max(30, "コース設定が多すぎます").optional(),
+  target_tags: z.array(z.string().max(50, "タグは50文字以内で入力してください")).max(20, "タグが多すぎます").optional(),
   allow_point_card: z.boolean().optional(),
   is_external: z.boolean().optional(),
 })
@@ -295,14 +295,14 @@ export const profilePartialSchema = z.object({
   bio: z.string().max(1000).nullable().optional(),
   career: z.string().max(1000).nullable().optional(),
   achievements: z.string().max(1000).nullable().optional(),
-  specialties: z.array(z.string().refine((v) => (SWIM_SPECIALTIES as readonly string[]).includes(v), "無効な種目です")).optional(),
-  target_ages: z.array(z.string().refine((v) => (TARGET_AGES as readonly string[]).includes(v), "無効な対象年齢です")).optional(),
-  prefectures: z.array(z.string().refine((v) => (PREFECTURES as readonly string[]).includes(v), "無効な都道府県です")).optional(),
-  swimming_goals: z.array(z.string().refine((v) => (SWIMMING_GOALS as readonly string[]).includes(v), "無効な活動目的です")).optional(),
-  participation_styles: z.array(z.string().refine((v) => (PARTICIPATION_STYLES as readonly string[]).includes(v), "無効な参加スタイルです")).optional(),
+  specialties: z.array(z.string().refine((v) => (SWIM_SPECIALTIES as readonly string[]).includes(v), "無効な種目です")).max(SWIM_SPECIALTIES.length, "種目が多すぎます").optional(),
+  target_ages: z.array(z.string().refine((v) => (TARGET_AGES as readonly string[]).includes(v), "無効な対象年齢です")).max(TARGET_AGES.length, "対象年齢が多すぎます").optional(),
+  prefectures: z.array(z.string().refine((v) => (PREFECTURES as readonly string[]).includes(v), "無効な都道府県です")).max(PREFECTURES.length, "都道府県が多すぎます").optional(),
+  swimming_goals: z.array(z.string().refine((v) => (SWIMMING_GOALS as readonly string[]).includes(v), "無効な活動目的です")).max(SWIMMING_GOALS.length, "活動目的が多すぎます").optional(),
+  participation_styles: z.array(z.string().refine((v) => (PARTICIPATION_STYLES as readonly string[]).includes(v), "無効な参加スタイルです")).max(PARTICIPATION_STYLES.length, "参加スタイルが多すぎます").optional(),
   level: z.string().nullable().refine((v) => v === null || (SWIM_LEVELS as readonly string[]).includes(v), "無効なレベルです").optional(),
   swimmer_type: z.string().nullable().refine((v) => v === null || (SWIMMER_TYPES as readonly string[]).includes(v), "無効なスイマータイプです").optional(),
-  swim_disciplines: z.array(z.string().refine((v) => (SWIM_DISCIPLINES as readonly string[]).includes(v), "無効な水泳カテゴリです")).optional(),
+  swim_disciplines: z.array(z.string().refine((v) => (SWIM_DISCIPLINES as readonly string[]).includes(v), "無効な水泳カテゴリです")).max(SWIM_DISCIPLINES.length, "水泳カテゴリが多すぎます").optional(),
 }).strict()
 
 export type ProfilePartialInput = z.infer<typeof profilePartialSchema>

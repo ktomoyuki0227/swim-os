@@ -38,10 +38,23 @@ export function isRateLimited(key: string, limit: number, windowMs: number): boo
   return bucket.count > limit
 }
 
-/** Server Action から呼び出し元IPを取得する（Vercel/プロキシ経由を想定） */
+/**
+ * Server Action から呼び出し元IPを取得する（Vercel/プロキシ経由を想定）。
+ *
+ * x-forwarded-for は「各ホップが自分に接続してきたIPを末尾に追記していく」形式
+ * (client, proxy1, proxy2, ...)のヘッダーで、先頭の値はクライアントが
+ * リクエストヘッダーとして自由に送信できてしまう(=偽装可能)。信頼できるのは
+ * 自分たちの直近の信頼できるプロキシ(Vercelのエッジ)が実際の接続元として
+ * 追記した末尾の値だけなので、先頭ではなく末尾を採用する。
+ * これを怠ると、リクエストごとに異なる x-forwarded-for を送るだけで
+ * ログイン試行回数制限等のレート制限キーを無限にリセットできてしまう。
+ */
 export async function getClientIp(): Promise<string> {
   const h = await headers()
   const forwardedFor = h.get("x-forwarded-for")
-  if (forwardedFor) return forwardedFor.split(",")[0].trim()
+  if (forwardedFor) {
+    const ips = forwardedFor.split(",").map((v) => v.trim()).filter(Boolean)
+    if (ips.length > 0) return ips[ips.length - 1]
+  }
   return h.get("x-real-ip") ?? "unknown"
 }

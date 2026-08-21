@@ -12,6 +12,7 @@ function RegisterForm() {
   const [state, formAction, isPending] = useActionState(register, initialState)
   const searchParams = useSearchParams()
   const invite = searchParams.get("invite")
+  const redirectTo = searchParams.get("redirect")
 
   return (
     <div className="mx-auto w-full max-w-md">
@@ -22,6 +23,7 @@ function RegisterForm() {
 
         <form action={formAction} className="space-y-4">
           {invite && <input type="hidden" name="invite" value={invite} />}
+          {redirectTo && <input type="hidden" name="redirect" value={redirectTo} />}
           {state.error && (
             <p role="alert" className="rounded-[10px] bg-[#fdecea] px-4 py-3 text-sm text-[#c0392b]">
               {state.error}
@@ -65,8 +67,8 @@ function RegisterForm() {
               id="password"
               name="password"
               type="password"
-              minLength={6}
-              placeholder="6文字以上"
+              minLength={8}
+              placeholder="8文字以上"
               required
               className="w-full rounded-lg border bg-white px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#005F8C]/30"
             />

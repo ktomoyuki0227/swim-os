@@ -4,7 +4,7 @@ import { createClient, createAdminClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { announcementSchema } from "@/lib/validations"
-import { isTeamAdmin } from "@/lib/auth/require-team-admin"
+import { isTeamAdmin, isTeamMember } from "@/lib/auth/require-team-admin"
 import { notifyUsers } from "@/lib/notifications"
 
 export async function createAnnouncement(teamId: string, data: unknown) {
@@ -122,6 +122,21 @@ export async function markAnnouncementRead(announcementId: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: "ログインが必要です" }
+
+  // お知らせのチームIDを取得し、所属メンバーのみ既読登録できるようにする
+  // (所属外のお知らせIDを指定すると announcement_reads に不要な行が作られてしまうため)
+  const { data: announcement } = await supabase
+    .from("announcements")
+    .select("team_id")
+    .eq("id", announcementId)
+    .single()
+
+  if (!announcement) return { error: "お知らせが見つかりません" }
+
+  const memberAdmin = createAdminClient()
+  if (!(await isTeamMember(memberAdmin, announcement.team_id, user.id))) {
+    return { error: "権限がありません" }
+  }
 
   const { error } = await supabase
     .from("announcement_reads")

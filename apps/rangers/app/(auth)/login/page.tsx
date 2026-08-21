@@ -56,6 +56,7 @@ function LoginForm() {
   const [state, formAction, isPending] = useActionState(login, initialState)
   const searchParams = useSearchParams()
   const invite = searchParams.get("invite")
+  const redirectTo = searchParams.get("redirect")
   const confirmationFailed = searchParams.get("error") === "auth"
 
   const fillAccount = (e: string) => {
@@ -86,6 +87,7 @@ function LoginForm() {
           )}
           <form action={formAction} className="space-y-3">
             {invite && <input type="hidden" name="invite" value={invite} />}
+            {redirectTo && <input type="hidden" name="redirect" value={redirectTo} />}
             {state.error && (
               <p role="alert" className="rounded-[10px] border border-[#c0392b]/20 bg-[#fdecea] px-3 py-2 text-xs text-[#c0392b]">
                 {state.error}
@@ -142,7 +144,7 @@ function LoginForm() {
             </Link>
           </p>
 
-          {/* デモ用クイックログイン（開発・テスト用。NEXT_PUBLIC_ENABLE_DEMO_LOGIN=true のデプロイのみ表示） */}
+          {/* デモ用クイックログイン（開発・テスト用。NODE_ENV !== "production" のデプロイのみ表示、本番ビルドでは非表示） */}
           {isDemoLoginEnabled && (
             <div className="border-t border-[#dce3ea] pt-4">
               <button

@@ -1,3 +1,4 @@
+import "server-only"
 import Stripe from "stripe"
 
 // Stripeクライアントの生成をモジュール読み込み時ではなく初回アクセス時まで遅延させる。

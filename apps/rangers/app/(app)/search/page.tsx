@@ -1,6 +1,22 @@
 import Link from "next/link"
+import { redirect } from "next/navigation"
 
-export default function SearchPage() {
+const TAB_ROUTES: Record<string, string> = {
+  sessions: "/search/sessions",
+  teams: "/search/teams",
+  personal: "/search/personal",
+}
+
+interface SearchPageProps {
+  searchParams: Promise<{ tab?: string }>
+}
+
+export default async function SearchPage({ searchParams }: SearchPageProps) {
+  const { tab } = await searchParams
+  if (tab && TAB_ROUTES[tab]) {
+    redirect(TAB_ROUTES[tab])
+  }
+
   return (
     <div className="space-y-3">
       <h1 className="text-lg font-semibold text-[#1a2332]">探す</h1>

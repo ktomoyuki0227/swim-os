@@ -22,6 +22,27 @@ const RESEND_RATE_WINDOW_MS = 10 * 60 * 1000
 const RESEND_IP_RATE_LIMIT = 20
 const RESEND_IP_RATE_WINDOW_MS = 10 * 60 * 1000
 
+// invite_code は crypto.randomUUID() 由来のUUID形式のみ。ここで検証せずにパスへ
+// 直接連結すると、invite に "../" 等を仕込んだ同一オリジン内の意図しない
+// リダイレクト誘導を許してしまう
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+// ログイン/登録後の遷移先(招待コード以外の任意パス)。/teams/[id]/join のような
+// 「未ログインのままアクセスされたページ」から ?redirect= で渡ってくる想定なので、
+// safeRedirectPath で同一オリジンの相対パスであることを検証してから使う。
+function resolvePostAuthPath(formData: FormData): string | null {
+  const invite = (formData.get("invite") as string)?.trim()
+  if (invite && UUID_RE.test(invite)) {
+    return `/teams/join/${invite}`
+  }
+  const redirectParam = (formData.get("redirect") as string)?.trim()
+  if (redirectParam) {
+    const safe = safeRedirectPath(redirectParam, "")
+    if (safe) return safe
+  }
+  return null
+}
+
 export async function login(
   _prevState: AuthState,
   formData: FormData
@@ -48,13 +69,10 @@ export async function login(
     return { error: "メールアドレスまたはパスワードが正しくありません" }
   }
 
-  // 招待コードがあればチーム参加ページへ
-  const invite = (formData.get("invite") as string)?.trim()
-  if (invite) {
-    redirect(`/teams/join/${invite}`)
-  }
-
-  redirect("/dashboard")
+  // 招待コード、または /teams/[id]/join 等から渡ってきた ?redirect= があれば
+  // そちらへ、なければダッシュボードへ
+  const postAuthPath = resolvePostAuthPath(formData)
+  redirect(postAuthPath ?? "/dashboard")
 }
 
 export async function register(
@@ -84,11 +102,11 @@ export async function register(
   const supabase = await createClient()
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"
 
-  // 招待コードがある場合もオンボーディングを先に完了させる
-  // 完了後に next パラメータ経由でチーム参加ページへ遷移
-  const invite = (formData.get("invite") as string)?.trim()
-  const onboardingPath = invite
-    ? `/onboarding?next=${encodeURIComponent(`/teams/join/${invite}`)}`
+  // 招待コード・?redirect= がある場合もオンボーディングを先に完了させる
+  // 完了後に next パラメータ経由で元のページ(チーム参加ページ等)へ遷移
+  const postAuthPath = resolvePostAuthPath(formData)
+  const onboardingPath = postAuthPath
+    ? `/onboarding?next=${encodeURIComponent(postAuthPath)}`
     : "/onboarding"
 
   const { data, error: signUpError } = await supabase.auth.signUp({
