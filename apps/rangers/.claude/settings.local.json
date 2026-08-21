@@ -13,7 +13,25 @@
       "mcp__plugin_ecc_playwright__browser_navigate",
       "mcp__plugin_ecc_playwright__browser_take_screenshot",
       "mcp__plugin_ecc_playwright__browser_click",
-      "mcp__plugin_ecc_playwright__browser_snapshot"
+      "mcp__plugin_ecc_playwright__browser_snapshot",
+      "mcp__plugin_ecc_playwright__browser_tabs",
+      "mcp__plugin_ecc_playwright__browser_resize",
+      "mcp__supabase__list_projects",
+      "mcp__supabase__execute_sql",
+      "mcp__supabase__list_migrations",
+      "mcp__supabase__apply_migration",
+      "mcp__supabase__generate_typescript_types",
+      "mcp__supabase__get_advisors",
+      "mcp__supabase__list_tables",
+      "Artifact",
+      "mcp__plugin_ecc_playwright__browser_select_option",
+      "mcp__plugin_ecc_playwright__browser_type",
+      "mcp__supabase__get_project_url",
+      "mcp__plugin_ecc_playwright__browser_close",
+      "mcp__plugin_ecc_playwright__browser_press_key",
+      "mcp__supabase__search_docs",
+      "mcp__plugin_vercel_vercel__search_vercel_documentation",
+      "WebFetch(domain:supabase.com)"
     ]
   }
 }

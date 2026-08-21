@@ -7,7 +7,17 @@
       "mcp__plugin_ecc_exa__web_fetch_exa",
       "WebFetch(domain:github.com)",
       "Bash(claude mcp:*)",
-      "Bash(pnpm build:*)"
+      "Bash(pnpm build:*)",
+      "mcp__plugin_ecc_playwright__browser_take_screenshot",
+      "mcp__plugin_ecc_playwright__browser_navigate",
+      "mcp__plugin_ecc_playwright__browser_snapshot",
+      "mcp__plugin_ecc_playwright__browser_click",
+      "mcp__plugin_ecc_playwright__browser_fill_form",
+      "mcp__plugin_ecc_playwright__browser_evaluate",
+      "mcp__supabase__execute_sql",
+      "Bash(npx eslint *)",
+      "Bash(netstat -ano)",
+      "mcp__plugin_ecc_playwright__browser_tabs"
     ]
   }
 }
