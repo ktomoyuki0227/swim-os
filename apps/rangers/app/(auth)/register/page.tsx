@@ -1,59 +1,12 @@
 "use client"
 
-import { useActionState, Suspense, Fragment } from "react"
+import { useActionState, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { register, type AuthState } from "@/actions/auth"
+import { StepProgress } from "../step-progress"
 
 const initialState: AuthState = { error: null }
-
-const ALL_STEPS = [
-  { num: 1, label: "アカウント作成" },
-  { num: 2, label: "自己紹介" },
-  { num: 3, label: "基本情報①" },
-  { num: 4, label: "基本情報②" },
-  { num: 5, label: "緊急連絡先" },
-  { num: 6, label: "競技登録" },
-  { num: 7, label: "お支払い" },
-]
-
-function StepProgress({ current }: { current: number }) {
-  return (
-    <div className="mb-4 flex items-center">
-      {ALL_STEPS.map(({ num, label }, i) => (
-        <Fragment key={num}>
-          <div className="flex flex-col items-center">
-            <div
-              className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold transition-colors ${
-                num < current
-                  ? "bg-[#005F8C]/20 text-[#005F8C]"
-                  : num === current
-                  ? "bg-[#005F8C] text-white shadow-md"
-                  : "bg-[#dce3ea] text-[#64748b]"
-              }`}
-            >
-              {num < current ? "✓" : num}
-            </div>
-            <p
-              className={`mt-1 hidden text-xs sm:block ${
-                num === current ? "font-medium text-[#005F8C]" : "text-[#64748b]"
-              }`}
-            >
-              {label}
-            </p>
-          </div>
-          {i < ALL_STEPS.length - 1 && (
-            <div
-              className={`mx-1 h-[2px] flex-1 transition-colors ${
-                num < current ? "bg-[#005F8C]/30" : "bg-[#dce3ea]"
-              }`}
-            />
-          )}
-        </Fragment>
-      ))}
-    </div>
-  )
-}
 
 function RegisterForm() {
   const [state, formAction, isPending] = useActionState(register, initialState)

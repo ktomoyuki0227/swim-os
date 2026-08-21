@@ -56,6 +56,7 @@ function LoginForm() {
   const [state, formAction, isPending] = useActionState(login, initialState)
   const searchParams = useSearchParams()
   const invite = searchParams.get("invite")
+  const confirmationFailed = searchParams.get("error") === "auth"
 
   const fillAccount = (e: string) => {
     setEmail(e)
@@ -75,6 +76,14 @@ function LoginForm() {
           <p className="mt-1 text-sm text-[#475569]">マスターズ水泳グループ管理</p>
         </CardHeader>
         <CardContent className="space-y-6 pt-4">
+          {confirmationFailed && (
+            <p role="alert" className="rounded-[10px] border border-[#c0392b]/20 bg-[#fdecea] px-3 py-2.5 text-xs text-[#c0392b]">
+              確認リンクの有効期限が切れているか、既に使用されています。
+              <Link href="/register" className="ml-1 font-medium underline">
+                もう一度登録して確認メールを受け取る
+              </Link>
+            </p>
+          )}
           <form action={formAction} className="space-y-3">
             {invite && <input type="hidden" name="invite" value={invite} />}
             {state.error && (
