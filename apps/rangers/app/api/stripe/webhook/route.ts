@@ -303,10 +303,19 @@ async function handleInvoicePaid(invoice: Stripe.Invoice) {
   if (!team_id || !swimmer_id) return
 
   const feeType = resolveFeeType(subscription)
+  // 請求対象期間の開始時刻。invoice.period_start はSubscription開始からの累積開始時刻
+  // であり、2回目以降の更新インボイスでは「今回の請求サイクルの開始」ではなく常に
+  // Subscription作成時点のまま固定される(Stripeの仕様)。そのため2年目以降の年会費・
+  // 2ヶ月目以降の月謝がすべて初回と同じperiodで記録されようとし、
+  // (team_id, swimmer_id, type, period)の一意制約に阻まれて記録が失われてしまう
+  // (23505としてサイレントに握りつぶされる)。今回の請求サイクルの実際の開始時刻は
+  // 明細行(lines[0].period.start)を見る必要がある。明細が取得できない場合のみ
+  // invoice.period_start にフォールバックする。
+  const cycleStart = invoice.lines.data[0]?.period?.start ?? invoice.period_start
   // 請求期間をJST基準で変換（サーバーのローカルタイムゾーン(UTC)ではなくJSTで判定。
   // そうしないと日本時間の深夜0時台に発行された請求が前日UTC基準で前月/前年扱いに
   // なりうる）。月謝は"YYYY-MM"、年会費は"YYYY"（現金払いの年会費レコードと同じ形式）
-  const period = feeType === "annual" ? formatYearJst(invoice.period_start) : formatPeriodJst(invoice.period_start)
+  const period = feeType === "annual" ? formatYearJst(cycleStart) : formatPeriodJst(cycleStart)
 
   const admin = createAdminClient()
 
