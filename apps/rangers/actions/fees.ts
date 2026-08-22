@@ -151,8 +151,9 @@ export async function getMonthlyFeeMatrix(teamId: string, year: number) {
  * 見た目(1〜12月マス目)で表示するために、同じレコードの状態を12マスすべてに
  * 複製する。どのマスをタップしても同じ feeId が更新され、12マスまとめて切り替わる。
  * まだレコードが無く、かつ既にその年度が到来している(入会日以降)会員分は
- * チーム設定額で自動生成する。年会費にはStripe自動引き落とし経路が存在しないため
- * (現状は現金払いのみ)、月謝と異なりStripe決済会員を除外するガードは不要。
+ * チーム設定額で自動生成する。ただしStripe決済が有効(行き止まり状態でない)会員は
+ * webhook(invoice.paid)側が別途レコードを作成するため、月謝と同様に自動生成の
+ * 対象から除外する(二重生成・一意制約違反を避けるため)。
  */
 export async function getAnnualFeeMatrix(teamId: string, year: number) {
   const supabase = await createClient()
@@ -164,7 +165,7 @@ export async function getAnnualFeeMatrix(teamId: string, year: number) {
 
   const { data: members } = await admin
     .from("team_members")
-    .select("swimmer_id, role, joined_at, profiles(id, name)")
+    .select("swimmer_id, role, joined_at, stripe_subscription_id, subscription_status, profiles(id, name)")
     .eq("team_id", teamId)
     .eq("status", "active")
     .eq("membership_type", "annual")
@@ -187,6 +188,7 @@ export async function getAnnualFeeMatrix(teamId: string, year: number) {
 
   if (year <= new Date().getFullYear() && team?.annual_fee_amount && team.annual_fee_amount > 0) {
     const toGenerate = members
+      .filter((m) => !m.stripe_subscription_id || isTerminalSubscriptionStatus(m.subscription_status))
       .filter((m) => new Date(m.joined_at).getFullYear() <= year)
       .filter((m) => !feeRecords.some((f) => f.swimmer_id === m.swimmer_id))
       .map((m) => ({ swimmerId: m.swimmer_id, period: String(year) }))

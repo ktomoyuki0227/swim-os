@@ -254,7 +254,7 @@ function getSubscriptionId(invoice: Stripe.Invoice): string | null {
   return typeof sub === "string" ? sub : sub.id
 }
 
-/** Unix seconds を JST 基準の "YYYY-MM" に変換する */
+/** Unix seconds を JST 基準の "YYYY-MM" に変換する（月謝用） */
 function formatPeriodJst(unixSeconds: number): string {
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone: "Asia/Tokyo",
@@ -266,7 +266,25 @@ function formatPeriodJst(unixSeconds: number): string {
   return `${year}-${month}`
 }
 
-/** 月謝 Invoice 決済完了 → membership_fees に記録 */
+/** Unix seconds を JST 基準の "YYYY" に変換する（年会費用） */
+function formatYearJst(unixSeconds: number): string {
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Tokyo",
+    year: "numeric",
+  }).format(new Date(unixSeconds * 1000))
+}
+
+/**
+ * SubscriptionのmetadataからfeeTypeを判定する。tryStartMonthlySubscription/
+ * tryStartAnnualSubscriptionが作成するSubscriptionには必ずfee_typeが入るが、
+ * この変更より前に作成された既存Subscriptionにはmetadataが無いため、その場合は
+ * 従来唯一の種別だった"monthly"にフォールバックする(後方互換)。
+ */
+function resolveFeeType(subscription: Stripe.Subscription): "monthly" | "annual" {
+  return subscription.metadata.fee_type === "annual" ? "annual" : "monthly"
+}
+
+/** 月謝/年会費 Invoice 決済完了 → membership_fees に記録 */
 async function handleInvoicePaid(invoice: Stripe.Invoice) {
   const subId = getSubscriptionId(invoice)
 
@@ -284,9 +302,11 @@ async function handleInvoicePaid(invoice: Stripe.Invoice) {
   const { team_id, swimmer_id } = subscription.metadata
   if (!team_id || !swimmer_id) return
 
-  // 請求期間を YYYY-MM 形式に変換（サーバーのローカルタイムゾーン(UTC)ではなくJSTで判定。
-  // そうしないと日本時間の深夜0時台に発行された請求が前日UTC基準で前月扱いになりうる）
-  const period = formatPeriodJst(invoice.period_start)
+  const feeType = resolveFeeType(subscription)
+  // 請求期間をJST基準で変換（サーバーのローカルタイムゾーン(UTC)ではなくJSTで判定。
+  // そうしないと日本時間の深夜0時台に発行された請求が前日UTC基準で前月/前年扱いに
+  // なりうる）。月謝は"YYYY-MM"、年会費は"YYYY"（現金払いの年会費レコードと同じ形式）
+  const period = feeType === "annual" ? formatYearJst(invoice.period_start) : formatPeriodJst(invoice.period_start)
 
   const admin = createAdminClient()
 
@@ -296,7 +316,7 @@ async function handleInvoicePaid(invoice: Stripe.Invoice) {
     .insert({
       team_id,
       swimmer_id,
-      type: "monthly",
+      type: feeType,
       period,
       amount: invoice.amount_paid,
       payment_method: "stripe",
@@ -312,11 +332,12 @@ async function handleInvoicePaid(invoice: Stripe.Invoice) {
     throw error
   }
 
-  // 月謝決済通知（新規 INSERT 成功時のみ。二重通知防止のため unique_violation は除外）
+  // 決済通知（新規 INSERT 成功時のみ。二重通知防止のため unique_violation は除外）
   if (!error) {
+    const label = feeType === "annual" ? `${period}年の年会費` : `${period.replace("-", "年")}月の月謝`
     await notifyUser(swimmer_id, {
       type: "payment_charged",
-      title: `${period.replace("-", "年")}月の月謝が引き落とされました`,
+      title: `${label}が引き落とされました`,
       body: `¥${invoice.amount_paid.toLocaleString()}が引き落とされました`,
       team_id,
       link: "/payments",
@@ -330,7 +351,7 @@ async function handleInvoicePaid(invoice: Stripe.Invoice) {
     .eq("stripe_subscription_id", subId)
 }
 
-/** 月謝 Invoice 決済失敗 → 管理者・本人に通知 */
+/** 月謝/年会費 Invoice 決済失敗 → 管理者・本人に通知 */
 async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
   const subId = getSubscriptionId(invoice)
 
@@ -341,6 +362,9 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
 
   const { team_id, swimmer_id } = subscription.metadata
   if (!team_id || !swimmer_id) return
+
+  const feeType = resolveFeeType(subscription)
+  const feeLabel = feeType === "annual" ? "年会費" : "月謝"
 
   const admin = createAdminClient()
 
@@ -368,18 +392,18 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
   if (admins && admins.length > 0) {
     await notifyUsers(admins.map((a) => a.swimmer_id), {
       type: "payment_failed",
-      title: "メンバーの月謝決済に失敗しました",
-      body: "月謝の自動引き落としに失敗しました。Stripe ダッシュボードで詳細を確認してください。",
+      title: `メンバーの${feeLabel}決済に失敗しました`,
+      body: `${feeLabel}の自動引き落としに失敗しました。Stripe ダッシュボードで詳細を確認してください。`,
       team_id,
-      link: `/fees?team=${team_id}&type=monthly`,
+      link: `/fees?team=${team_id}&type=${feeType}`,
     })
   }
 
   // 本人に通知
   await notifyUser(swimmer_id, {
     type: "payment_failed",
-    title: "月謝の決済に失敗しました",
-    body: "今月の月謝引き落としに失敗しました。登録カードを確認してください。",
+    title: `${feeLabel}の決済に失敗しました`,
+    body: `今回の${feeLabel}引き落としに失敗しました。登録カードを確認してください。`,
     team_id,
     link: "/payments",
   })

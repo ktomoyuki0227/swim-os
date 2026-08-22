@@ -83,10 +83,13 @@ export async function getOrCreateStripeProduct(
 ): Promise<string> {
   if (existingProductId) return existingProductId
 
+  // 1チーム1Productに、月謝(interval=month)・年会費(interval=year)それぞれの
+  // Priceを紐づける構成（Stripeの一般的なプラン設計パターン）。そのため名称は
+  // 「月謝」固定ではなく「会費」という中立的な表現にする。
   let product: Awaited<ReturnType<typeof stripe.products.create>>
   try {
     product = await stripe.products.create({
-      name: `月謝 - ${teamName}`,
+      name: `会費 - ${teamName}`,
       metadata: { team_id: teamId },
     })
   } catch (err) {
@@ -175,6 +178,63 @@ export async function getOrCreateMonthlyPrice(
 }
 
 /**
+ * チームの年会費 Stripe Price を取得または新規作成する。
+ * 金額が変わった場合は新しい Price を作成して teams.stripe_annual_price_id を更新する。
+ * getOrCreateMonthlyPrice と対になる関数（interval が year になるだけで構造は同一）。
+ */
+export async function getOrCreateAnnualPrice(
+  teamId: string,
+  amount: number,
+  productId: string,
+  existingPriceId: string | null
+): Promise<string> {
+  // 既存の Price がある場合は金額確認
+  if (existingPriceId) {
+    const existingPrice = await stripe.prices.retrieve(existingPriceId).catch(() => null)
+    if (existingPrice && existingPrice.unit_amount === amount && existingPrice.active) {
+      return existingPriceId
+    }
+  }
+
+  // 新しい Price を作成
+  let price: Awaited<ReturnType<typeof stripe.prices.create>>
+  try {
+    price = await stripe.prices.create({
+      product: productId,
+      unit_amount: amount,
+      currency: "jpy",
+      recurring: { interval: "year" },
+      metadata: { team_id: teamId },
+    })
+  } catch (err) {
+    console.error("[stripe] prices.create (annual) failed:", err)
+    throw new Error("Stripe 料金プランの作成に失敗しました。時間を置いて再試行してください。")
+  }
+
+  const admin = createAdminClient()
+  // 読み取り時点のexistingPriceIdから値が変わっていない行のみ更新
+  // （並行リクエストによる重複Price作成を防ぐ。getOrCreateMonthlyPriceと同じパターン）
+  let updateQuery = admin.from("teams").update({ stripe_annual_price_id: price.id }).eq("id", teamId)
+  updateQuery = existingPriceId
+    ? updateQuery.eq("stripe_annual_price_id", existingPriceId)
+    : updateQuery.is("stripe_annual_price_id", null)
+  const { data: saved } = await updateQuery.select("stripe_annual_price_id").maybeSingle()
+
+  if (!saved) {
+    // 別リクエストが先に書き込んだ場合: 今作成したPriceをarchiveして既存値を返す
+    await stripe.prices.update(price.id, { active: false }).catch(() => null)
+    const { data: existing } = await admin
+      .from("teams")
+      .select("stripe_annual_price_id")
+      .eq("id", teamId)
+      .single()
+    return existing?.stripe_annual_price_id ?? price.id
+  }
+
+  return price.id
+}
+
+/**
  * 月謝会員が入会した際に、既にカードを登録済みであれば自動でStripe Subscriptionを
  * 開始する。以下のいずれかに該当する場合は何もせず skipped 理由を返す(エラー扱いにしない):
  * Stripe未設定・既にSubscription有り・カード未登録・チームに月謝金額が未設定。
@@ -250,9 +310,11 @@ export async function tryStartMonthlySubscription(
           payment_method_types: ["card"],
           save_default_payment_method: "on_subscription",
         },
-        metadata: { team_id: teamId, swimmer_id: swimmerId, team_member_id: member.id },
+        // fee_type: webhook(invoice.paid等)がこのSubscriptionが月謝/年会費どちらの
+        // ものかを判定するために使う（membership_feesへの記録・通知文の分岐に必要）
+        metadata: { team_id: teamId, swimmer_id: swimmerId, team_member_id: member.id, fee_type: "monthly" },
       },
-      { idempotencyKey: `subscription-create-${member.id}-${idempotencySuffix}` }
+      { idempotencyKey: `subscription-create-monthly-${member.id}-${idempotencySuffix}` }
     )
   } catch (err) {
     console.error("[tryStartMonthlySubscription] Stripe subscription create failed:", err)
@@ -272,6 +334,102 @@ export async function tryStartMonthlySubscription(
   }
 
   await payInitialInvoiceOffSession(subscription, profile.stripe_payment_method_id, "tryStartMonthlySubscription")
+
+  return { started: true }
+}
+
+/**
+ * 年会費会員が入会した際に、既にカードを登録済みであれば自動でStripe Subscriptionを
+ * 開始する(interval=year)。tryStartMonthlySubscriptionと対になる関数で、判定条件・
+ * 非致命的なskip方針は同一（annual_fee_amount/stripe_annual_price_idを読む点のみ異なる）。
+ * カード未登録・Stripe未設定の場合は呼び出し元が現金払いの年会費レコードを
+ * 生成する既存フローにフォールバックする。
+ */
+export async function tryStartAnnualSubscription(
+  teamId: string,
+  swimmerId: string
+): Promise<{ started: boolean; skipped?: string; error?: string }> {
+  if (!process.env.STRIPE_SECRET_KEY) return { started: false, skipped: "stripe_not_configured" }
+
+  const admin = createAdminClient()
+
+  const { data: member } = await admin
+    .from("team_members")
+    .select("id, stripe_subscription_id, subscription_status")
+    .eq("team_id", teamId)
+    .eq("swimmer_id", swimmerId)
+    .eq("status", "active")
+    .single()
+  if (!member) return { started: false, skipped: "member_not_found" }
+  if (member.stripe_subscription_id && !isTerminalSubscriptionStatus(member.subscription_status)) {
+    return { started: false, skipped: "already_subscribed" }
+  }
+
+  const { data: profile } = await admin
+    .from("profiles")
+    .select("stripe_payment_method_id, name")
+    .eq("id", swimmerId)
+    .single()
+  if (!profile?.stripe_payment_method_id) return { started: false, skipped: "no_payment_method" }
+
+  const { data: team } = await admin
+    .from("teams")
+    .select("name, annual_fee_amount, stripe_product_id, stripe_annual_price_id")
+    .eq("id", teamId)
+    .single()
+  if (!team?.annual_fee_amount || team.annual_fee_amount <= 0) {
+    return { started: false, skipped: "no_fee_configured" }
+  }
+
+  const { data: authData } = await admin.auth.admin.getUserById(swimmerId)
+  const email = authData?.user?.email ?? ""
+
+  let customerId: string
+  let productId: string
+  let priceId: string
+  try {
+    customerId = await getOrCreateStripeCustomer(swimmerId, email, profile.name ?? "")
+    productId = await getOrCreateStripeProduct(teamId, team.name, team.stripe_product_id)
+    priceId = await getOrCreateAnnualPrice(teamId, team.annual_fee_amount, productId, team.stripe_annual_price_id)
+  } catch (err) {
+    console.error("[tryStartAnnualSubscription] Stripe setup failed:", err)
+    return { started: false, error: err instanceof Error ? err.message : "Stripe の準備に失敗しました" }
+  }
+
+  const idempotencySuffix = member.stripe_subscription_id ?? "initial"
+  let subscription: Awaited<ReturnType<typeof stripe.subscriptions.create>>
+  try {
+    subscription = await stripe.subscriptions.create(
+      {
+        customer: customerId,
+        items: [{ price: priceId }],
+        payment_behavior: "default_incomplete",
+        payment_settings: {
+          payment_method_types: ["card"],
+          save_default_payment_method: "on_subscription",
+        },
+        metadata: { team_id: teamId, swimmer_id: swimmerId, team_member_id: member.id, fee_type: "annual" },
+      },
+      { idempotencyKey: `subscription-create-annual-${member.id}-${idempotencySuffix}` }
+    )
+  } catch (err) {
+    console.error("[tryStartAnnualSubscription] Stripe subscription create failed:", err)
+    return { started: false, error: "Subscription の作成に失敗しました" }
+  }
+
+  const { error: dbErr } = await admin
+    .from("team_members")
+    .update({ stripe_subscription_id: subscription.id, subscription_status: subscription.status })
+    .eq("id", member.id)
+
+  if (dbErr) {
+    // DB 保存失敗 → Stripe Subscription をキャンセルしてロールバック
+    await stripe.subscriptions.cancel(subscription.id).catch(() => null)
+    console.error("[tryStartAnnualSubscription] DB save failed:", dbErr)
+    return { started: false, error: "Subscription の保存に失敗しました" }
+  }
+
+  await payInitialInvoiceOffSession(subscription, profile.stripe_payment_method_id, "tryStartAnnualSubscription")
 
   return { started: true }
 }
@@ -340,6 +498,45 @@ export async function tryStartMonthlySubscriptionsForTeam(
     else skipped++
     if (result.error) {
       console.error(`[tryStartMonthlySubscriptionsForTeam] failed for swimmer ${m.swimmer_id}:`, result.error)
+    }
+  })
+
+  return { started, skipped }
+}
+
+/**
+ * チーム内の「年会費会員だがまだSubscriptionが無い(または過去にキャンセル済みの)」
+ * 会員全員について、既にカード登録済みであれば自動でStripe Subscriptionを開始する。
+ * tryStartMonthlySubscriptionsForTeamと対になる関数（membership_typeがannualになるだけ）。
+ */
+export async function tryStartAnnualSubscriptionsForTeam(
+  teamId: string
+): Promise<{ started: number; skipped: number }> {
+  if (!process.env.STRIPE_SECRET_KEY) return { started: 0, skipped: 0 }
+
+  const admin = createAdminClient()
+  const { data: members } = await admin
+    .from("team_members")
+    .select("swimmer_id, stripe_subscription_id, subscription_status")
+    .eq("team_id", teamId)
+    .eq("status", "active")
+    .eq("membership_type", "annual")
+
+  if (!members || members.length === 0) return { started: 0, skipped: 0 }
+
+  const targets = members.filter(
+    (m) => !m.stripe_subscription_id || isTerminalSubscriptionStatus(m.subscription_status)
+  )
+  if (targets.length === 0) return { started: 0, skipped: 0 }
+
+  let started = 0
+  let skipped = 0
+  await mapWithConcurrency(targets, BULK_SUBSCRIPTION_START_CONCURRENCY, async (m) => {
+    const result = await tryStartAnnualSubscription(teamId, m.swimmer_id)
+    if (result.started) started++
+    else skipped++
+    if (result.error) {
+      console.error(`[tryStartAnnualSubscriptionsForTeam] failed for swimmer ${m.swimmer_id}:`, result.error)
     }
   })
 

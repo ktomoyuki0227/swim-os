@@ -9,8 +9,8 @@ import type { MembershipType, SessionType, TeamStatus, TeamType } from "@/types/
 import { PREFECTURES } from "@/types/database"
 import { isTeamAdmin } from "@/lib/auth/require-team-admin"
 import { notifyUser, notifyUsers } from "@/lib/notifications"
-import { syncActiveSubscriptionsToNewPrice } from "@/actions/subscriptions"
-import { tryStartMonthlySubscription, tryStartMonthlySubscriptionsForTeam } from "@/lib/stripe-helpers"
+import { syncActiveSubscriptionsToNewPrice, syncActiveAnnualSubscriptionsToNewPrice } from "@/actions/subscriptions"
+import { tryStartMonthlySubscription, tryStartMonthlySubscriptionsForTeam, tryStartAnnualSubscriptionsForTeam } from "@/lib/stripe-helpers"
 import { isRateLimited } from "@/lib/rate-limit"
 
 // PostgRESTの .not("id", "in", "(...)")  に渡す文字列結合前のUUID形式バリデーション用
@@ -164,7 +164,7 @@ export async function updateTeam(teamId: string, data: unknown) {
   // 判定するため、更新前の値を取得
   const { data: beforeUpdate } = await admin
     .from("teams")
-    .select("name, monthly_fee_amount, annual_fee_amount, has_monthly_fee, stripe_product_id, stripe_monthly_price_id")
+    .select("name, monthly_fee_amount, annual_fee_amount, has_monthly_fee, has_annual_fee, stripe_product_id, stripe_monthly_price_id, stripe_annual_price_id")
     .eq("id", teamId)
     .single()
 
@@ -207,8 +207,41 @@ export async function updateTeam(teamId: string, data: unknown) {
     }
   }
 
-  // 年会費額が変更された場合、今年分の未払いレコードのみ新金額に更新する
-  // (既に支払い済みのレコードは過去の実績として変更しない)
+  const effectiveAnnualFeeAmount = parsed.data.annual_fee_amount ?? beforeUpdate?.annual_fee_amount ?? null
+  const annualFeeAmountChanged =
+    parsed.data.annual_fee_amount !== undefined &&
+    parsed.data.annual_fee_amount !== beforeUpdate?.annual_fee_amount
+  const annualFeeJustEnabled = parsed.data.has_annual_fee === true && beforeUpdate?.has_annual_fee === false
+
+  if (beforeUpdate && effectiveAnnualFeeAmount && effectiveAnnualFeeAmount > 0) {
+    // 年会費額が変更された場合、既にアクティブなStripe Subscriptionを全て新価格に
+    // 切り替える(月謝と同じ仕組み。プロレーションは行わず次回請求サイクルから適用)
+    if (annualFeeAmountChanged) {
+      await syncActiveAnnualSubscriptionsToNewPrice(
+        admin,
+        teamId,
+        beforeUpdate.name,
+        effectiveAnnualFeeAmount,
+        beforeUpdate.stripe_product_id,
+        beforeUpdate.stripe_annual_price_id
+      ).catch((err) => {
+        console.error("[updateTeam] syncActiveAnnualSubscriptionsToNewPrice failed:", err)
+      })
+    }
+
+    // 年会費額が新規設定・変更された、または年会費が新たに有効化された場合、
+    // それまで対象外だった「年会費会員だがSubscriptionが無い」既存会員を遡って拾い、
+    // 既にカード登録済みの人だけ自動でSubscriptionを開始する
+    if (annualFeeAmountChanged || annualFeeJustEnabled) {
+      await tryStartAnnualSubscriptionsForTeam(teamId).catch((err) => {
+        console.error("[updateTeam] tryStartAnnualSubscriptionsForTeam failed:", err)
+      })
+    }
+  }
+
+  // 年会費額が変更された場合、今年分の未払い(現金払い)レコードのみ新金額に更新する
+  // (既に支払い済みのレコードは過去の実績として変更しない。Stripe決済会員の未払い分は
+  // 上のsyncActiveAnnualSubscriptionsToNewPriceが別途Subscription側の価格を更新する)
   if (
     beforeUpdate &&
     parsed.data.annual_fee_amount !== undefined &&
