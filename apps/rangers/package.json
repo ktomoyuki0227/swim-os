@@ -27,6 +27,7 @@
     "zod": "4.4.3"
   },
   "devDependencies": {
+    "@playwright/test": "1.62.1",
     "@remotion/bundler": "4.0.470",
     "@remotion/renderer": "4.0.470",
     "@tailwindcss/postcss": "^4",
