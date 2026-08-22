@@ -271,7 +271,33 @@ export async function tryStartMonthlySubscription(
     return { started: false, error: "Subscription の保存に失敗しました" }
   }
 
+  await payInitialInvoiceOffSession(subscription, profile.stripe_payment_method_id, "tryStartMonthlySubscription")
+
   return { started: true }
+}
+
+/**
+ * payment_behavior: "default_incomplete" で作成したSubscriptionの初回インボイスは
+ * auto_advance=false で作成され、Stripe側が自動では課金しない
+ * (Stripe.js等でユーザー操作を挟む余地を残すための仕様)。このアプリは既に保存済みの
+ * カードでオフセッション課金する運用のため、作成直後にここで明示的に確定させる。
+ * 失敗しても例外にはしない(呼び出し元のSubscription作成自体は成功しているため)。
+ * 失敗時はStripe側のinvoice.payment_failed webhookがpast_due遷移・通知を担う。
+ */
+async function payInitialInvoiceOffSession(
+  subscription: Awaited<ReturnType<typeof stripe.subscriptions.create>>,
+  paymentMethodId: string,
+  logPrefix: string
+): Promise<void> {
+  const invoiceId =
+    typeof subscription.latest_invoice === "string" ? subscription.latest_invoice : subscription.latest_invoice?.id
+  if (!invoiceId) return
+
+  try {
+    await stripe.invoices.pay(invoiceId, { payment_method: paymentMethodId })
+  } catch (err) {
+    console.error(`[${logPrefix}] initial invoice payment failed:`, err)
+  }
 }
 
 // チーム一括開始の同時実行数(Stripe API呼び出しが多くなりすぎないよう制限。
