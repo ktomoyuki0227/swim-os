@@ -318,8 +318,11 @@ export default async function SessionDetailPage({ params, searchParams }: Sessio
         </div>
       )}
 
-      {/* Action buttons */}
-      {!isPast && session.session_status !== "cancelled" && (
+      {/* Action buttons(開催確定・中止・削除等は管理者専用の操作のため、
+          isAdminでない一般メンバーには表示しない。サーバーアクション側
+          (confirmSession/cancelSession/deleteSession)は元々isTeamAdminで
+          保護されているため実害はなかったが、UI上も権限に応じて出し分ける) */}
+      {isAdmin && !isPast && session.session_status !== "cancelled" && (
         <SessionActions
           sessionId={id}
           teamId={team?.id as string}
@@ -404,7 +407,7 @@ export default async function SessionDetailPage({ params, searchParams }: Sessio
           )}
         </div>
 
-        {isCashFilter && hasCashRegistrations && (
+        {isAdmin && isCashFilter && hasCashRegistrations && (
           <div className="mb-3">
             <CashCollectionPanel
               registrations={displayedRegistrations.map((r) => {
