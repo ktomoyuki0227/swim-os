@@ -92,8 +92,15 @@ export async function registerForSession(
     }
   }
 
-  // 対象メンバーチェック（target_membersが指定されている場合、含まれないメンバーは参加不可）
-  if (session.target_members && session.target_members.length > 0 && !session.target_members.includes(user.id)) {
+  // 対象メンバーチェック（target_membersが指定されている場合、含まれないメンバーは参加不可）。
+  // target_membersは「メンバーの中でこのセッションの対象を絞る」機能であり、ゲスト
+  // (非会員)には適用しない。getSession()はゲストにはこのカラム自体を返さず、
+  // 参加者向けページ(page.tsx)もゲストは常にisTargetEligible=trueとして「参加できる」
+  // 表示をしている。isMemberでの絞り込みなしにこの判定を行うと、外部公開
+  // (is_external)セッションはtarget_membersに現メンバー全員が入っている
+  // (作成ウィザードのデフォルト)ため、ゲストは絶対に含まれず常に登録不可になり、
+  // 「メンバー以外も参加可能」機能そのものが機能しなくなってしまう。
+  if (isMember && session.target_members && session.target_members.length > 0 && !session.target_members.includes(user.id)) {
     return { error: "対象外のため参加登録できません" }
   }
 
