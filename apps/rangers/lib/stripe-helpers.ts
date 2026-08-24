@@ -2,6 +2,8 @@ import "server-only"
 import { stripe } from "@/lib/stripe"
 import { createAdminClient } from "@/lib/supabase/server"
 import { mapWithConcurrency } from "@/lib/utils"
+import { notifyUser, notifyUsers } from "@/lib/notifications"
+import { getActiveTeamAdminIds } from "@/lib/auth/require-team-admin"
 
 /**
  * これらの状態は、そのSubscriptionが二度と課金されない「行き止まり」であることを
@@ -333,7 +335,15 @@ export async function tryStartMonthlySubscription(
     return { started: false, error: "Subscription の保存に失敗しました" }
   }
 
-  await payInitialInvoiceOffSession(subscription, profile.stripe_payment_method_id, "tryStartMonthlySubscription")
+  const paid = await payInitialInvoiceOffSession(
+    subscription, profile.stripe_payment_method_id, teamId, swimmerId, member.id, "monthly", "tryStartMonthlySubscription"
+  )
+  if (!paid) {
+    // 初回課金に失敗した場合、payInitialInvoiceOffSession内でSubscriptionは
+    // 既にキャンセル済み。呼び出し元には「開始しなかった」として伝え、
+    // 既存の現金払いフォールバックに委ねる
+    return { started: false, error: "初回のカード決済に失敗しました" }
+  }
 
   return { started: true }
 }
@@ -429,7 +439,12 @@ export async function tryStartAnnualSubscription(
     return { started: false, error: "Subscription の保存に失敗しました" }
   }
 
-  await payInitialInvoiceOffSession(subscription, profile.stripe_payment_method_id, "tryStartAnnualSubscription")
+  const paid = await payInitialInvoiceOffSession(
+    subscription, profile.stripe_payment_method_id, teamId, swimmerId, member.id, "annual", "tryStartAnnualSubscription"
+  )
+  if (!paid) {
+    return { started: false, error: "初回のカード決済に失敗しました" }
+  }
 
   return { started: true }
 }
@@ -439,22 +454,69 @@ export async function tryStartAnnualSubscription(
  * auto_advance=false で作成され、Stripe側が自動では課金しない
  * (Stripe.js等でユーザー操作を挟む余地を残すための仕様)。このアプリは既に保存済みの
  * カードでオフセッション課金する運用のため、作成直後にここで明示的に確定させる。
- * 失敗しても例外にはしない(呼び出し元のSubscription作成自体は成功しているため)。
- * 失敗時はStripe側のinvoice.payment_failed webhookがpast_due遷移・通知を担う。
+ *
+ * 注意: ここでの失敗(無効な決済方法・カード拒否等)は、更新課金の失敗と違い
+ * Stripe側のinvoice.payment_failed webhookが一切発火しない(auto_advance=falseの
+ * インボイスに対するinvoices.pay()呼び出し自体が失敗した場合、Stripeは以後
+ * 自動リトライを一切行わない)。そのため失敗時はここでSubscriptionをキャンセルし
+ * 呼び出し元に false を返す(呼び出し元は「開始しなかった」扱いとして既存の
+ * 現金払いフォールバックに委ねる)。戻り値がtrueの場合のみ実際に課金が成功している。
  */
 async function payInitialInvoiceOffSession(
   subscription: Awaited<ReturnType<typeof stripe.subscriptions.create>>,
   paymentMethodId: string,
+  teamId: string,
+  swimmerId: string,
+  teamMemberId: string,
+  feeType: "monthly" | "annual",
   logPrefix: string
-): Promise<void> {
+): Promise<boolean> {
   const invoiceId =
     typeof subscription.latest_invoice === "string" ? subscription.latest_invoice : subscription.latest_invoice?.id
-  if (!invoiceId) return
+  if (!invoiceId) return true
 
   try {
     await stripe.invoices.pay(invoiceId, { payment_method: paymentMethodId })
+    return true
   } catch (err) {
     console.error(`[${logPrefix}] initial invoice payment failed:`, err)
+
+    // ここでの失敗(存在しない/無効化された決済方法、カード拒否等)は、通常の更新課金
+    // 失敗と違いStripe側のinvoice.payment_failed webhookが一切発火しない
+    // (auto_advance=falseのインボイスをinvoices.pay()呼び出し自体が失敗した場合、
+    // Stripeは以後一切自動リトライしない。next_payment_attemptも設定されないまま)。
+    // Subscriptionを"incomplete"のまま放置すると、isTerminalSubscriptionStatusでは
+    // 「終端状態でない」=Stripe側がいずれ処理してくれるはず、と判定され、
+    // 現金払いへのフォールバック生成(ensureCashFeeRecords)の対象からも除外されて
+    // しまい、誰にも気づかれず会費が永久に未収のままになる。そのため明示的に
+    // キャンセルして終端状態にし、既存の現金フォールバックに委ねると同時に、
+    // 本人・管理者に通知する。
+    const admin = createAdminClient()
+    await stripe.subscriptions.cancel(subscription.id).catch(() => null)
+    await admin
+      .from("team_members")
+      .update({ stripe_subscription_id: null, subscription_status: "canceled" })
+      .eq("id", teamMemberId)
+
+    const feeLabel = feeType === "annual" ? "年会費" : "月謝"
+    await notifyUser(swimmerId, {
+      type: "payment_failed",
+      title: `${feeLabel}の初回決済に失敗しました`,
+      body: "登録カードでの決済に失敗しました。カード情報をご確認のうえ、再度お試しください。",
+      team_id: teamId,
+      link: "/payments",
+    })
+    const teamAdminIds = await getActiveTeamAdminIds(admin, teamId)
+    if (teamAdminIds.length > 0) {
+      await notifyUsers(teamAdminIds, {
+        type: "payment_failed",
+        title: `メンバーの${feeLabel}初回決済に失敗しました`,
+        body: `${feeLabel}の初回カード決済に失敗しました。現金払いとして扱われます。`,
+        team_id: teamId,
+        link: `/fees?team=${teamId}&type=${feeType}`,
+      })
+    }
+    return false
   }
 }
 
