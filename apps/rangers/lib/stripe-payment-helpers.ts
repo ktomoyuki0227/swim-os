@@ -45,18 +45,24 @@ export async function chargeSessionRegistrationStripe(
   // 返してしまい新規PIが作られなくなる）。ここでの目的はSDKの自動ネットワークリトライで
   // 同一呼び出しが二重にPIを作成しないようにする防御であり、呼び出し単位で閉じていればよい。
   const createIdempotencyKey = randomUUID()
+  // off_session は「confirm時に、顧客不在の請求であることをStripeに伝える」ための
+  // パラメータであり、confirm=trueを同時に指定しない限りcreate時には渡せない
+  // (渡すと invalid_request_error になる)。confirm は Step 3 で別途行うため、
+  // ここでは付与しない。
   const pi = await stripe.paymentIntents.create({
     amount,
     currency: "jpy",
     customer: stripeCustomerId,
     payment_method: stripePaymentMethodId,
-    off_session: true,
     metadata: { session_id: sessionId, registration_id: registrationId, swimmer_id: swimmerId },
     ...(connectFees && connectAccountId ? {
       application_fee_amount: connectFees.platformFee,
       transfer_data: { destination: connectAccountId },
     } : {}),
-  }, { idempotencyKey: createIdempotencyKey }).catch(() => null)
+  }, { idempotencyKey: createIdempotencyKey }).catch((err) => {
+    console.error(`[chargeSessionRegistrationStripe] paymentIntents.create failed for registration ${registrationId}:`, err)
+    return null
+  })
 
   if (!pi) {
     await admin.from("session_registrations").update({ payment_status: "failed" }).eq("id", registrationId)
